@@ -1,0 +1,39 @@
+#include "wi_os.h"
+
+#include <stdlib.h>
+
+#include "../include/wi.h"
+#include "time.h"
+
+static void
+_os_clock(wi_state_t* state, int arg_count) {
+    wi_slot_set_real(state, 0, (wi_real_t)clock() / (wi_real_t)CLOCKS_PER_SEC);
+}
+
+static void
+_os_get_env(wi_state_t* state, int arg_count) {
+    char* value = getenv(wi_slot_check_string(state, 1));
+
+    if (!value) {
+        wi_slot_set_null(state, 0);
+        return;
+    }
+
+    wi_slot_set_string(state, 0, value);
+}
+
+static void
+_os_exit(wi_state_t* state, int arg_count) {
+    int exit_code = (int)wi_slot_check_real(state, 1);
+    wi_delete_state(state);
+    exit(exit_code);
+}
+
+void
+wi_state_def_os_foreign(wi_state_t* state) {
+    wi_object_t* object = wi_state_def_object(state, "os");
+
+    wi_state_def_field_foreign(state, "clock", _os_clock, 0, object);
+    wi_state_def_field_foreign(state, "get_env", _os_get_env, 1, object);
+    wi_state_def_field_foreign(state, "exit", _os_exit, 1, object);
+}

@@ -1,0 +1,13 @@
+BasedOnStyle: Google
+
+ColumnLimit: 115
+IndentWidth: 4
+
+Language: Cpp
+
+AllowShortIfStatementsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: false
+AlwaysBreakAfterReturnType: All
+AlignArrayOfStructures: Left
+AlignConsecutiveDeclarations: true
+AlignConsecutiveAssignments: true

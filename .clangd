@@ -1,0 +1,6 @@
+CompileFlags:
+  Compiler: gcc
+  Add:
+    - -std=c11
+    - -xc
+    - -Isrc
