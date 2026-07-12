@@ -35,7 +35,7 @@ xmake
 
 # Documentation
 
-Work in progress...
+Check out the [Wi wiki](https://github.com/cyxigo/wi/wiki) for documentation and examples.
 
 # Inspiration
 
