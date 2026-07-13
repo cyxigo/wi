@@ -13,6 +13,8 @@ _base_print(wi_state_t* state, int arg_count) {
         wi_value_print(state->api_stack[i + 1]);
         printf("\n");
     }
+
+    wi_slot_set_null(state, 0);
 }
 
 static void
@@ -37,9 +39,9 @@ _base_load_foreign(wi_state_t* state, int arg_count) {
     }
 
     char*   path = wi_slot_check_string(state, 1);
-    HMODULE dll  = LoadLibraryA(path);
+    HMODULE lib  = LoadLibraryA(path);
 
-    if (!dll) {
+    if (!lib) {
         DWORD error = GetLastError();
         char* msg   = NULL;
         FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, 0, (char*)&msg, 0,
@@ -57,16 +59,17 @@ _base_load_foreign(wi_state_t* state, int arg_count) {
     }
 
     typedef void (*wi_foreign_init_fn_t)(wi_state_t* state);
-    wi_foreign_init_fn_t init = (wi_foreign_init_fn_t)GetProcAddress(dll, "wi_foreign_init");
+    wi_foreign_init_fn_t init = (wi_foreign_init_fn_t)GetProcAddress(lib, "wi_foreign_init");
 
     if (!init) {
-        FreeLibrary(dll);
+        FreeLibrary(lib);
         fprintf(stderr, "load_foreign(): foreign %s does not export wi_foreign_init", path);
         wi_slot_set_bool(state, 0, false);
         return;
     }
 
     init(state);
+    wi_state_add_foreign_handle(state, lib);
     wi_slot_set_bool(state, 0, true);
 }
 

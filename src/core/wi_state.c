@@ -48,18 +48,42 @@ wi_new_state(wi_conf_t* conf) {
     wi_table_init(&state->foreign, state->gc);
     wi_table_init(&state->required, state->gc);
 
+    state->foreign_handles = NULL;
     wi_state_def_std(state);
+
     return state;
+}
+
+static void
+_state_free_foreign_handles(wi_state_t* state) {
+    wi_foreign_handle_t* handle = state->foreign_handles;
+
+    while (handle) {
+        wi_foreign_handle_t* next = handle->next;
+        FreeLibrary(handle->lib);
+        free(handle);
+        handle = next;
+    }
 }
 
 void
 wi_delete_state(wi_state_t* state) {
+    _state_free_foreign_handles(state);
+
     wi_table_free(&state->globals);
     wi_table_free(&state->foreign);
     wi_table_free(&state->required);
 
     wi_delete_gc(state->gc);
     free(state);
+}
+
+void
+wi_state_add_foreign_handle(wi_state_t* state, HMODULE lib) {
+    wi_foreign_handle_t* handle = malloc(sizeof(wi_foreign_handle_t));
+    handle->lib                 = lib;
+    handle->next                = state->foreign_handles;
+    state->foreign_handles      = handle;
 }
 
 void

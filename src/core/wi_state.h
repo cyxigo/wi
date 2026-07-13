@@ -4,6 +4,7 @@
 #include <setjmp.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <windows.h>
 
 #include "../include/wi_conf.h"
 #include "wi_box.h"
@@ -16,6 +17,11 @@ typedef enum {
 #include "wi_opcodes.h"
 #undef WI_OPCODE
 } wi_opcode_t;
+
+typedef struct wi_foreign_handle {
+    struct wi_foreign_handle* next;
+    HMODULE                   lib;
+} wi_foreign_handle_t;
 
 typedef struct {
     wi_closure_t* closure;
@@ -40,6 +46,8 @@ typedef struct wi_state {
     wi_table_t    foreign;
     wi_table_t    required;
     wi_upvalue_t* open_upvalues;
+
+    wi_foreign_handle_t* foreign_handles;
 } wi_state_t;
 
 static inline void
@@ -77,6 +85,8 @@ wi_new_state(wi_conf_t* conf);
 void
 wi_delete_state(wi_state_t* state);
 
+void
+wi_state_add_foreign_handle(wi_state_t* state, HMODULE lib);
 void
 wi_state_def_field(wi_state_t* state, const char* name, wi_value_t value, wi_object_t* object);
 wi_object_t*
