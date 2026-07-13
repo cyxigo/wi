@@ -6,8 +6,13 @@
 
 #include "wi_conf.h"
 
+#ifdef _WIN32
 #define WI_API __declspec(dllexport)
 #define WI_FOREIGN_INIT __declspec(dllexport)
+#else
+#define WI_API
+#define WI_FOREIGN_INIT
+#endif
 
 typedef double          wi_real_t;
 typedef struct wi_state wi_state_t;

@@ -60,7 +60,13 @@ _state_free_foreign_handles(wi_state_t* state) {
 
     while (handle) {
         wi_foreign_handle_t* next = handle->next;
+
+#ifdef _WIN32
         FreeLibrary(handle->lib);
+#else
+        dlclose(handle->lib);
+#endif
+
         free(handle);
         handle = next;
     }
@@ -79,7 +85,7 @@ wi_delete_state(wi_state_t* state) {
 }
 
 void
-wi_state_add_foreign_handle(wi_state_t* state, HMODULE lib) {
+wi_state_add_foreign_handle(wi_state_t* state, wi_lib_handle_t lib) {
     wi_foreign_handle_t* handle = malloc(sizeof(wi_foreign_handle_t));
     handle->lib                 = lib;
     handle->next                = state->foreign_handles;

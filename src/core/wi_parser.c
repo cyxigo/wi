@@ -6,7 +6,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <vadefs.h>
 
 #include "wi_buf.h"
 #include "wi_gc.h"

@@ -1,8 +1,14 @@
 #include "wi_base.h"
 
+#include <limits.h>
 #include <stdbool.h>
 #include <stdio.h>
+
+#ifdef _WIN32
 #include <windows.h>
+#else
+#include <dlfcn.h>
+#endif
 
 #include "../core/wi_state.h"
 #include "../include/wi.h"
@@ -38,33 +44,45 @@ _base_load_foreign(wi_state_t* state, int arg_count) {
         wi_state_error(state, "can only use load_foreign from the main script");
     }
 
-    char*   path = wi_slot_check_string(state, 1);
-    HMODULE lib  = LoadLibraryA(path);
+    char* raw_path = wi_slot_check_string(state, 1);
+    char  path[4101];  // 4096 + 5 bytes reserved
+
+    if (strlen(raw_path) > 4096) {
+        wi_state_error(state, "foreign path too long (limit is 4096)");
+    }
+
+#ifdef _WIN32
+    snprintf(path, sizeof(path), "%s.dll", raw_path);
+    HMODULE lib = LoadLibraryA(path);
+#else
+    snprintf(path, sizeof(path), "./%s.so", raw_path);
+    void* lib = dlopen(path, RTLD_NOW | RTLD_GLOBAL);
+#endif
 
     if (!lib) {
-        DWORD error = GetLastError();
-        char* msg   = NULL;
-        FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, 0, (char*)&msg, 0,
-                       NULL);
-
-        fprintf(stderr, "load_foreign(): failed to load foreign %s: %s", path, msg ? msg : "unknown error");
-        wi_state_print_backtrace(state);
-
-        if (msg) {
-            LocalFree(msg);
-        }
-
+        wi_state_error(state, "failed to load foreign %s", path);
         wi_slot_set_bool(state, 0, false);
         return;
     }
 
     typedef void (*wi_foreign_init_fn_t)(wi_state_t* state);
+
+#ifdef _WIN32
     wi_foreign_init_fn_t init = (wi_foreign_init_fn_t)GetProcAddress(lib, "wi_foreign_init");
+#else
+    wi_foreign_init_fn_t init = (wi_foreign_init_fn_t)dlsym(lib, "wi_foreign_init");
+#endif
 
     if (!init) {
+#ifdef _WIN32
         FreeLibrary(lib);
-        fprintf(stderr, "load_foreign(): foreign %s does not export wi_foreign_init", path);
+#else
+        dlclose(lib);
+#endif
+
+        wi_state_error(state, "foreign %s does not export wi_foreign_init\n", path);
         wi_slot_set_bool(state, 0, false);
+
         return;
     }
 
