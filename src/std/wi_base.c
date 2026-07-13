@@ -80,7 +80,7 @@ _base_load_foreign(wi_state_t* state, int arg_count) {
         dlclose(lib);
 #endif
 
-        wi_state_error(state, "foreign %s does not export wi_foreign_init\n", path);
+        wi_state_error(state, "foreign %s does not export wi_foreign_init", path);
         wi_slot_set_bool(state, 0, false);
 
         return;
