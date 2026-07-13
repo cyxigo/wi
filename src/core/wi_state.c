@@ -84,12 +84,32 @@ wi_delete_state(wi_state_t* state) {
     free(state);
 }
 
-void
+bool
 wi_state_add_foreign_handle(wi_state_t* state, wi_lib_handle_t lib) {
-    wi_foreign_handle_t* handle = malloc(sizeof(wi_foreign_handle_t));
-    handle->lib                 = lib;
-    handle->next                = state->foreign_handles;
-    state->foreign_handles      = handle;
+    wi_foreign_handle_t* handle = state->foreign_handles;
+
+    while (handle) {
+        if (handle->lib == lib) {
+            wi_lib_handle_close(lib);
+            return false;
+        }
+
+        handle = handle->next;
+    }
+
+    wi_foreign_handle_t* new_handle = malloc(sizeof(wi_foreign_handle_t));
+
+    if (!new_handle) {
+        wi_lib_handle_close(lib);
+        wi_state_error(state, "not enough memory to allocate a foreign handle");
+        return false;
+    }
+
+    new_handle->lib        = lib;
+    new_handle->next       = state->foreign_handles;
+    state->foreign_handles = new_handle;
+
+    return true;
 }
 
 void

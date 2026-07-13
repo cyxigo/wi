@@ -25,7 +25,6 @@ slava->greet(); // Hello, Slava!
 - Wi is purely prototype-based. Many languages use classes - Wi uses objects. You clone these objects and create whatever you want.
 - Wi has an FFI. You can easily extend Wi using its Foreign Function Interface and load your extensions via `load_foreign`.
 
-
 # Documentation
 
 Check out the [Wi wiki](https://github.com/cyxigo/wi/wiki) for documentation and examples.

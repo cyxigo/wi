@@ -18,6 +18,15 @@ typedef void* wi_lib_handle_t;
 #include "wi_table.h"
 #include "wi_value.h"
 
+static inline void
+wi_lib_handle_close(wi_lib_handle_t lib) {
+#ifdef _WIN32
+    FreeLibrary(lib);
+#else
+    dlclose(lib);
+#endif
+}
+
 typedef enum {
 #define WI_OPCODE(name, _) WI_OP_##name,
 #include "wi_opcodes.h"
@@ -91,7 +100,7 @@ wi_new_state(wi_conf_t* conf);
 void
 wi_delete_state(wi_state_t* state);
 
-void
+bool
 wi_state_add_foreign_handle(wi_state_t* state, wi_lib_handle_t lib);
 void
 wi_state_def_field(wi_state_t* state, const char* name, wi_value_t value, wi_object_t* object);

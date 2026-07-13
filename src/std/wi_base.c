@@ -1,13 +1,21 @@
+#ifndef _WIN32
+#define _POSIX_C_SOURCE 200809L
+#define _DEFAULT_SOURCE
+#endif
+
 #include "wi_base.h"
 
 #include <limits.h>
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdio.h>
+#include <string.h>
 
 #ifdef _WIN32
 #include <windows.h>
 #else
 #include <dlfcn.h>
+#include <unistd.h>
 #endif
 
 #include "../core/wi_state.h"
@@ -44,51 +52,86 @@ _base_load_foreign(wi_state_t* state, int arg_count) {
         wi_state_error(state, "can only use load_foreign from the main script");
     }
 
-    char* raw_path = wi_slot_check_string(state, 1);
-    char  path[4101];  // 4096 + 5 bytes reserved
+    char*  raw_path     = wi_slot_check_string(state, 1);
+    size_t raw_path_len = strlen(raw_path);
+    char   path[4096];  // i assume 4kb is enough for this mess.
+    size_t path_size = sizeof(path);
 
-    if (strlen(raw_path) > 4096) {
-        wi_state_error(state, "foreign path too long (limit is 4096)");
+    // platform specific code is a legitimate way of torturing.
+#ifdef _WIN32
+    DWORD len = GetModuleFileName(NULL, path, (DWORD)path_size);
+
+    if (len < 1 || len >= path_size) {
+        wi_state_error(state, "call to GetModuleFileName failed or path truncated");
     }
 
-#ifdef _WIN32
-    snprintf(path, sizeof(path), "%s.dll", raw_path);
+    char* last_slash = strrchr(path, '\\');
+
+    if (last_slash) {
+        *last_slash = '\0';
+    }
+
+    size_t path_len  = strlen(path);
+    size_t remaining = path_size - path_len;
+
+    // 14: '\foreign\' + '.dll' + '\0'
+    if (remaining < 14 || raw_path_len > (remaining - 14)) {
+        wi_state_error(state, "foreign path too long for fallback directory");
+    }
+
+    snprintf(path + path_len, remaining, "\\foreign\\%s.dll", raw_path);
     HMODULE lib = LoadLibraryA(path);
-#else
-    snprintf(path, sizeof(path), "./%s.so", raw_path);
+#elif defined(__linux__)
+    ssize_t len = readlink("/proc/self/exe", path, path_size - 1);
+
+    if (len == -1) {
+        wi_state_error(state, "call to readlink failed");
+    }
+
+    path[len] = '\0';
+
+    char* last_slash = strrchr(path, '/');
+
+    if (last_slash) {
+        *last_slash = '\0';
+    }
+
+    size_t path_len  = strlen(path);
+    size_t remaining = path_size - path_len;
+
+    // 13: '/foreign/' + '.so' + '\0'
+    if (remaining < 13 || raw_path_len > (remaining - 13)) {
+        wi_state_error(state, "foreign path too long for fallback directory");
+    }
+
+    snprintf(path + path_len, remaining, "/foreign/%s.so", raw_path);
     void* lib = dlopen(path, RTLD_NOW | RTLD_GLOBAL);
+#else
+#error platform not supported by load_foreign()
 #endif
 
     if (!lib) {
-        wi_state_error(state, "failed to load foreign %s", path);
-        wi_slot_set_bool(state, 0, false);
-        return;
+        wi_state_error(state, "failed to load foreign %s\nattempted path: %s", raw_path, path);
     }
 
-    typedef void (*wi_foreign_init_fn_t)(wi_state_t* state);
+    typedef void (*_foreign_init_fn_t)(wi_state_t* state);
 
 #ifdef _WIN32
-    wi_foreign_init_fn_t init = (wi_foreign_init_fn_t)GetProcAddress(lib, "wi_foreign_init");
+    _foreign_init_fn_t init = (_foreign_init_fn_t)GetProcAddress(lib, "wi_foreign_init");
 #else
-    wi_foreign_init_fn_t init = (wi_foreign_init_fn_t)dlsym(lib, "wi_foreign_init");
+    _foreign_init_fn_t init = (_foreign_init_fn_t)dlsym(lib, "wi_foreign_init");
 #endif
 
     if (!init) {
-#ifdef _WIN32
-        FreeLibrary(lib);
-#else
-        dlclose(lib);
-#endif
-
-        wi_state_error(state, "foreign %s does not export wi_foreign_init", path);
-        wi_slot_set_bool(state, 0, false);
-
-        return;
+        wi_lib_handle_close(lib);
+        wi_state_error(state, "foreign %s does not export wi_foreign_init", raw_path);
     }
 
-    init(state);
-    wi_state_add_foreign_handle(state, lib);
-    wi_slot_set_bool(state, 0, true);
+    if (wi_state_add_foreign_handle(state, lib)) {
+        init(state);
+    }
+
+    wi_slot_set_null(state, 0);
 }
 
 static void
