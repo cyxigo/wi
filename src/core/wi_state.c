@@ -474,6 +474,10 @@ _state_require(wi_state_t* state, char* path, wi_value_t name_value, wi_string_t
     wi_call_frame_t* frame = wi_state_frame(state);
     char*            src   = _state_read_file(state, path);
 
+    if (wi_table_get(frame->closure->globals, name_value, NULL)) {
+        wi_state_error(state, "variable %s is already defined", name->chars);
+    }
+
     wi_prototype_t* prototype = wi_compile(state, path, src);
     wi_gc_push_root(state->gc, (wi_box_t*)prototype);
     free(src);
