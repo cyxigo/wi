@@ -5,7 +5,6 @@
 #include <string.h>
 
 #include "../include/wi_conf.h"
-#include "../std/wi_std.h"
 #include "wi_gc.h"
 #include "wi_state.h"
 
@@ -20,7 +19,7 @@ _repl(void) {
 
     char        line[2048];
     wi_state_t* state = wi_new_state(WI_DEFAULT_CONF);
-    wi_state_def_std(state);
+    wi_def_std(state);
 
     for (;;) {
         printf("wi> ");
@@ -156,7 +155,7 @@ main(int argc, const char* argv[]) {
 
     char*       src   = _read_file(file_path);
     wi_state_t* state = wi_new_state(conf);
-    wi_state_def_std(state);
+    wi_def_std(state);
 
     if (!state) {
         free(src);

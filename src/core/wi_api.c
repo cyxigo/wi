@@ -1,11 +1,29 @@
 #include <stdbool.h>
 #include <string.h>
 
+#include "../std/wi_array.h"
+#include "../std/wi_base.h"
+#include "../std/wi_map.h"
+#include "../std/wi_math.h"
+#include "../std/wi_os.h"
+#include "../std/wi_string.h"
+#include "../std/wi_utf8.h"
 #include "wi_box.h"
 #include "wi_gc.h"
 #include "wi_state.h"
 #include "wi_table.h"
 #include "wi_value.h"
+
+void
+wi_def_std(wi_state_t* state) {
+    wi_state_def_base_foreign(state);
+    wi_state_def_os_foreign(state);
+    wi_state_def_math_foreign(state);
+    wi_state_def_utf8_foreign(state);
+    wi_state_def_string_foreign(state);
+    wi_state_def_array_foreign(state);
+    wi_state_def_map_foreign(state);
+}
 
 void
 wi_def_foreign(wi_state_t* state, const char* name, wi_foreign_fn_t fn, int arity) {

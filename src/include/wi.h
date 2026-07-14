@@ -42,6 +42,14 @@ typedef void (*wi_foreign_fn_t)(wi_state_t* state, int arg_count);
 typedef void (*wi_userdata_finalizer_fn_t)(void* data);
 
 /**
+ * Define the standard library in a state
+ *
+ * @param state Wi state instance
+ */
+WI_API void
+wi_def_std(wi_state_t* state);
+
+/**
  * Define a foreign (C) function in the state
  *
  * @param state Wi state instance
