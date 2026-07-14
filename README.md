@@ -1,4 +1,7 @@
-<img width="152" height="107" alt="wi2" src="https://github.com/user-attachments/assets/501ff1ca-9bce-4314-832f-1ac373b9c875" /><?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<p align="center">
+   <img width="152" height="107" alt="wi" src="https://github.com/user-attachments/assets/bbffb89d-ce8d-45a3-8c68-4ab6ffe9d6ea" />
+</p>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 
 <svg
    width="40.268044mm"
@@ -8,7 +11,7 @@
    id="svg1"
    inkscape:version="1.4.4 (dcaf3e7, 2026-05-05)"
    sodipodi:docname="wi.svg"
-   inkscape:export-filename="wi.png"
+   inkscape:export-filename="wi2.svg"
    inkscape:export-xdpi="200"
    inkscape:export-ydpi="200"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
@@ -24,14 +27,14 @@
      transform="translate(-84.86598,-134.31641)">
     <path
        id="path10"
-       style="fill:#004fdf;stroke:#00246b;stroke-width:3.09562;stroke-dasharray:none;stroke-opacity:1;paint-order:stroke fill markers"
+       style="fill:#004fdf;stroke:#393939;stroke-width:3.09562;stroke-dasharray:none;stroke-opacity:1;paint-order:stroke fill markers"
        d="m 88.833904,135.86422 h 32.332186 c 1.34075,0 2.42012,1.07937 2.42012,2.42012 v 20.43132 c 0,1.34075 -1.07937,2.42012 -2.42012,2.42012 H 88.833904 c -1.340741,0 -2.420112,-1.07937 -2.420112,-2.42012 v -20.43132 c 0,-1.34075 1.079371,-2.42012 2.420112,-2.42012 z"
        inkscape:export-filename="path10.png"
        inkscape:export-xdpi="600"
        inkscape:export-ydpi="600" />
     <path
        id="path9"
-       style="fill:#004fdf;stroke:#5681d5;stroke-width:2.06375;stroke-dasharray:none;stroke-opacity:1;paint-order:stroke fill markers"
+       style="fill:#ffffff;stroke:#d5dce9;stroke-width:2.06375;stroke-dasharray:none;stroke-opacity:1;paint-order:stroke fill markers;fill-opacity:1"
        d="m 88.833904,135.86422 h 32.332186 c 1.34075,0 2.42012,1.07937 2.42012,2.42012 v 20.43132 c 0,1.34075 -1.07937,2.42012 -2.42012,2.42012 H 88.833904 c -1.340741,0 -2.420112,-1.07937 -2.420112,-2.42012 v -20.43132 c 0,-1.34075 1.079371,-2.42012 2.420112,-2.42012 z"
        inkscape:export-filename="path9.png"
        inkscape:export-xdpi="600"
@@ -52,7 +55,12 @@
   </g>
 </svg>
 
-Wi is a small, fast, prototype-based scripting language.
+
+
+
+<p align="center"> 
+   Wi is a small, fast, prototype-based scripting language.
+</p>
 
 ```js
 var person = object {
@@ -69,7 +77,7 @@ var slava = new person {
 slava->greet(); // Hello, Slava!
 ```
 
-# Why Wi?
+## Why Wi?
 
 - Wi is fast.
 - Wi is simple. You can learn its syntax in less than a day.
@@ -77,11 +85,11 @@ slava->greet(); // Hello, Slava!
 - Wi is purely prototype-based. Many languages use classes - Wi uses objects. You clone these objects and create whatever you want.
 - Wi has an FFI. You can easily extend Wi using its Foreign Function Interface and load your extensions via `load_foreign`.
 
-# Documentation
+## Documentation
 
 Check out the [Wi wiki](https://github.com/cyxigo/wi/wiki) for documentation and examples.
 
-# Building
+## Building
 
 Requires GCC and XMake to build. Then simply:
 
@@ -89,11 +97,11 @@ Requires GCC and XMake to build. Then simply:
 xmake
 ```
 
-# Inspiration
+## Inspiration
 
 Around 3 years ago, I was looking through interpreted programming languages (not many, of course) and realized that I didn't like any of them. Any. So then, in that very moment I decided - I will make my own simple and fast programming language. That day, the first Wi prototype was born (it wasn't even called Wi back then - it was something along the lines of "Weasel").
 
-# Current project status
+## Current project status
 
 This programming language is created by me, and only me - a single person. It's in beta and I'm working on it almost every day. The standard library is not finished at all. The code is completely uncommented because... I really, really have never commented my code in my entire life. Sure, this is a terrible practice, but it's hard for me since I'm not a native English speaker. That doesn't mean I shouldn't comment my code, so... I'll try to comment it when I can. So yeah, it's a mess.
 
