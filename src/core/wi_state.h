@@ -45,8 +45,8 @@ typedef struct {
 } wi_call_frame_t;
 
 typedef struct wi_state {
-    wi_conf_t* conf;
-    wi_gc_t*   gc;
+    wi_conf_t conf;
+    wi_gc_t*  gc;
 
     jmp_buf error_jmp;
 
@@ -96,21 +96,21 @@ wi_state_frame(wi_state_t* state) {
 }
 
 wi_state_t*
-wi_new_state(wi_conf_t* conf);
+wi_new_state(wi_conf_t conf);
 void
 wi_delete_state(wi_state_t* state);
 
 bool
 wi_state_add_foreign_handle(wi_state_t* state, wi_lib_handle_t lib);
 void
-wi_state_def_field(wi_state_t* state, const char* name, wi_value_t value, wi_object_t* object);
+wi_state_def_foreign(wi_state_t* state, const char* name, wi_foreign_fn_t fn, int arity);
 wi_object_t*
 wi_state_def_object(wi_state_t* state, const char* name);
 void
-wi_state_def_foreign(wi_state_t* state, const char* name, wi_foreign_fn_t fn, int arity);
+wi_state_set_field(wi_state_t* state, wi_object_t* object, const char* name, wi_value_t value);
 void
-wi_state_def_field_foreign(wi_state_t* state, const char* name, wi_foreign_fn_t fn, int arity,
-                           wi_object_t* object);
+wi_state_set_field_foreign(wi_state_t* state, wi_object_t* object, const char* name, wi_foreign_fn_t fn,
+                           int arity);
 
 void
 wi_state_print_backtrace(wi_state_t* state);

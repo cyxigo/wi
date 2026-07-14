@@ -7,47 +7,47 @@
 #include "wi_table.h"
 #include "wi_value.h"
 
-static bool
-_get_global(wi_state_t* state, const char* name, wi_value_t* value) {
-    wi_string_t* name_box = wi_copy_cstring(state->gc, name, (int)strlen(name));
-    bool         exists   = wi_table_get(&state->globals, WI_MAKE_BOX_VALUE(name_box), value);
+void
+wi_def_foreign(wi_state_t* state, const char* name, wi_foreign_fn_t fn, int arity) {
+    wi_state_def_foreign(state, name, fn, arity);
+}
 
-    if (!exists) {
-        exists = wi_table_get(&state->foreign, WI_MAKE_BOX_VALUE(name_box), value);
-    }
-
-    return exists;
+wi_object_t*
+wi_def_object(wi_state_t* state, const char* name) {
+    return wi_state_def_object(state, name);
 }
 
 void
-wi_get_global(wi_state_t* state, const char* name, int slot) {
-    wi_value_t value;
-
-    if (!_get_global(state, name, &value)) {
-        wi_state_error(state, "variable %s is used but not defined", name);
-    }
-
-    state->api_stack[slot] = value;
+wi_set_field_real(wi_state_t* state, wi_object_t* object, const char* name, wi_real_t real) {
+    wi_state_set_field(state, object, name, wi_make_real_value(real));
 }
 
 void
-wi_set_global(wi_state_t* state, const char* name, int slot) {
+wi_set_field_bool(wi_state_t* state, wi_object_t* object, const char* name, bool boolean) {
+    wi_state_set_field(state, object, name, wi_make_bool_value(boolean));
+}
+
+void
+wi_set_field_string(wi_state_t* state, wi_object_t* object, const char* name, char* string) {
+    wi_string_t* box = wi_copy_cstring(state->gc, string, (int)strlen(string));
+    wi_state_set_field(state, object, name, WI_MAKE_BOX_VALUE(box));
+}
+
+void
+wi_set_field_userdata(wi_state_t* state, wi_object_t* object, const char* name, void* userdata,
+                      wi_userdata_finalizer_fn_t finalizer) {
     wi_string_t* name_box = wi_copy_cstring(state->gc, name, (int)strlen(name));
     wi_gc_push_root(state->gc, (wi_box_t*)name_box);
 
-    wi_value_t key    = WI_MAKE_BOX_VALUE(name_box);
-    bool       is_new = wi_table_set(&state->foreign, key, state->api_stack[slot]);
+    wi_userdata_t* box = wi_new_userdata(state->gc, name_box, userdata, finalizer);
     wi_gc_pop_root(state->gc);
 
-    if (is_new) {
-        wi_table_delete(&state->foreign, key);
-        wi_state_error(state, "variable %s is used but not defined", name);
-    }
+    wi_state_set_field(state, object, name, WI_MAKE_BOX_VALUE(box));
 }
 
-bool
-wi_has_global(wi_state_t* state, const char* name) {
-    return _get_global(state, name, NULL);
+void
+wi_set_field_foreign(wi_state_t* state, wi_object_t* object, const char* name, wi_foreign_fn_t fn, int arity) {
+    wi_state_set_field_foreign(state, object, name, fn, arity);
 }
 
 static void

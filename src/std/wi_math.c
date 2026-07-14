@@ -156,28 +156,28 @@ void
 wi_state_def_math_foreign(wi_state_t* state) {
     wi_object_t* object = wi_state_def_object(state, "math");
 
-    wi_state_def_field(state, "e", wi_make_real_value(M_E), object);
-    wi_state_def_field(state, "pi", wi_make_real_value(M_PI), object);
-    wi_state_def_field(state, "huge", wi_make_real_value(HUGE_VAL), object);
+    wi_set_field_real(state, object, "e", M_E);
+    wi_set_field_real(state, object, "pi", M_PI);
+    wi_set_field_real(state, object, "huge", HUGE_VAL);
 
-    wi_state_def_field_foreign(state, "abs", _math_abs, 1, object);
-    wi_state_def_field_foreign(state, "acos", _math_acos, 1, object);
-    wi_state_def_field_foreign(state, "asin", _math_asin, 1, object);
-    wi_state_def_field_foreign(state, "atan", _math_atan, 1, object);
-    wi_state_def_field_foreign(state, "ceil", _math_ceil, 1, object);
-    wi_state_def_field_foreign(state, "cos", _math_cos, 1, object);
-    wi_state_def_field_foreign(state, "deg", _math_deg, 1, object);
-    wi_state_def_field_foreign(state, "exp", _math_exp, 1, object);
-    wi_state_def_field_foreign(state, "floor", _math_floor, 1, object);
-    wi_state_def_field_foreign(state, "mod", _math_mod, 2, object);
-    wi_state_def_field_foreign(state, "log", _math_log, 2, object);
-    wi_state_def_field_foreign(state, "log10", _math_log10, 1, object);
-    wi_state_def_field_foreign(state, "ln", _math_ln, 1, object);
-    wi_state_def_field_foreign(state, "max", _math_max, -1, object);
-    wi_state_def_field_foreign(state, "min", _math_min, -1, object);
-    wi_state_def_field_foreign(state, "pow", _math_pow, 2, object);
-    wi_state_def_field_foreign(state, "rad", _math_rad, 1, object);
-    wi_state_def_field_foreign(state, "sin", _math_sin, 1, object);
-    wi_state_def_field_foreign(state, "sqrt", _math_sqrt, 1, object);
-    wi_state_def_field_foreign(state, "tan", _math_tan, 1, object);
+    wi_set_field_foreign(state, object, "abs", _math_abs, 1);
+    wi_set_field_foreign(state, object, "acos", _math_acos, 1);
+    wi_set_field_foreign(state, object, "asin", _math_asin, 1);
+    wi_set_field_foreign(state, object, "atan", _math_atan, 1);
+    wi_set_field_foreign(state, object, "ceil", _math_ceil, 1);
+    wi_set_field_foreign(state, object, "cos", _math_cos, 1);
+    wi_set_field_foreign(state, object, "deg", _math_deg, 1);
+    wi_set_field_foreign(state, object, "exp", _math_exp, 1);
+    wi_set_field_foreign(state, object, "floor", _math_floor, 1);
+    wi_set_field_foreign(state, object, "mod", _math_mod, 2);
+    wi_set_field_foreign(state, object, "log", _math_log, 2);
+    wi_set_field_foreign(state, object, "log10", _math_log10, 1);
+    wi_set_field_foreign(state, object, "ln", _math_ln, 1);
+    wi_set_field_foreign(state, object, "max", _math_max, -1);
+    wi_set_field_foreign(state, object, "min", _math_min, -1);
+    wi_set_field_foreign(state, object, "pow", _math_pow, 2);
+    wi_set_field_foreign(state, object, "rad", _math_rad, 1);
+    wi_set_field_foreign(state, object, "sin", _math_sin, 1);
+    wi_set_field_foreign(state, object, "sqrt", _math_sqrt, 1);
+    wi_set_field_foreign(state, object, "tan", _math_tan, 1);
 }

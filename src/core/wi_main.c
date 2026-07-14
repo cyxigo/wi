@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "../include/wi_conf.h"
+#include "../std/wi_std.h"
 #include "wi_gc.h"
 #include "wi_state.h"
 
@@ -17,9 +18,9 @@ static void
 _repl(void) {
     _version();
 
-    wi_conf_t   conf = 0;
     char        line[2048];
-    wi_state_t* state = wi_new_state(&conf);
+    wi_state_t* state = wi_new_state(WI_DEFAULT_CONF);
+    wi_state_def_std(state);
 
     for (;;) {
         printf("wi> ");
@@ -154,7 +155,8 @@ main(int argc, const char* argv[]) {
     _parse_flags(argc, argv, &conf, &file_path);
 
     char*       src   = _read_file(file_path);
-    wi_state_t* state = wi_new_state(&conf);
+    wi_state_t* state = wi_new_state(conf);
+    wi_state_def_std(state);
 
     if (!state) {
         free(src);

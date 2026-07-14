@@ -210,14 +210,14 @@ void
 wi_state_def_string_foreign(wi_state_t* state) {
     wi_object_t* object = wi_state_def_object(state, "string");
 
-    wi_state_def_field_foreign(state, "sub", _string_sub, 3, object);
-    wi_state_def_field_foreign(state, "upper", _string_upper, 1, object);
-    wi_state_def_field_foreign(state, "lower", _string_lower, 1, object);
-    wi_state_def_field_foreign(state, "trim", _string_trim, 1, object);
-    wi_state_def_field_foreign(state, "has", _string_has, 2, object);
-    wi_state_def_field_foreign(state, "starts_with", _string_starts_with, 2, object);
-    wi_state_def_field_foreign(state, "ends_with", _string_ends_with, 2, object);
-    wi_state_def_field_foreign(state, "replace", _string_replace, 3, object);
-    wi_state_def_field_foreign(state, "split", _string_split, 2, object);
-    wi_state_def_field_foreign(state, "reverse", _string_reverse, 1, object);
+    wi_set_field_foreign(state, object, "sub", _string_sub, 3);
+    wi_set_field_foreign(state, object, "upper", _string_upper, 1);
+    wi_set_field_foreign(state, object, "lower", _string_lower, 1);
+    wi_set_field_foreign(state, object, "trim", _string_trim, 1);
+    wi_set_field_foreign(state, object, "has", _string_has, 2);
+    wi_set_field_foreign(state, object, "starts_with", _string_starts_with, 2);
+    wi_set_field_foreign(state, object, "ends_with", _string_ends_with, 2);
+    wi_set_field_foreign(state, object, "replace", _string_replace, 3);
+    wi_set_field_foreign(state, object, "split", _string_split, 2);
+    wi_set_field_foreign(state, object, "reverse", _string_reverse, 1);
 }

@@ -7,40 +7,75 @@
 #define WI_VERSION_STRING "1.0.0"
 
 enum {
+    /**
+     * Version numbers
+     */
     WI_VERSION_MAJOR = 1,
     WI_VERSION_MINOR = 0,
     WI_VERSION_PATCH = 0,
 
-    WI_CONSTANT_MAX = 1 << 16,
-    WI_JUMP_MAX     = 1 << 16,
-    WI_LOOP_MAX     = 1 << 16,
+    /**
+     * Compiler limits
+     */
+    WI_CONSTANT_MAX = 1 << 16,  // Maximum number of constants in a function
+    WI_JUMP_MAX     = 1 << 16,  // Maximum jump offset
+    WI_LOOP_MAX     = 1 << 16,  // Maximum loop offset
+    WI_LOCALS_MAX   = 1 << 8,   // Maximum number of local variables in a function
+    WI_UPVALUES_MAX = 1 << 8,   // Maximum number of upvalues in a function (closure)
 
-    WI_LOCALS_MAX   = 1 << 8,
-    WI_UPVALUES_MAX = 1 << 8,
+    /**
+     * Garbage Collector settings
+     */
+    WI_GC_HEAP_GROW_FACTOR = 2,       // Heap growth factor per garbage collection run
+    WI_GC_TEMP_ROOTS_MAX   = 1 << 4,  // Maximum number of temporary GC root references
 
-    WI_GC_HEAP_GROW_FACTOR = 2,
-    WI_GC_TEMP_ROOTS_MAX   = 1 << 4,
-
-    WI_CALL_FRAMES_COUNT = 1 << 14,
-    WI_STACK_COUNT       = 1 << 16,
+    /**
+     * VM limits
+     */
+    WI_CALL_FRAMES_COUNT = 1 << 14,  // Maximum number of call frames
+    WI_STACK_COUNT       = 1 << 16,  // Maximum number of values on the VM stack
 };
 
+/**
+ * Configuration flags for the Wi state
+ */
 typedef enum {
-    WI_CONF_PRINT_CODE,
-    WI_CONF_STRESS_GC,
-    WI_CONF_LOG_GC,
+    WI_CONF_PRINT_CODE,  // Print bytecode after compilation
+    WI_CONF_STRESS_GC,   // Run garbage collection on every allocation
+    WI_CONF_LOG_GC,      // Log garbage collection
 } wi_conf_flag_t;
 
+/**
+ * Configuration bitmask type
+ */
 typedef uint64_t wi_conf_t;
 
+/**
+ * Default configuration (all flags disabled)
+ */
+#define WI_DEFAULT_CONF 0
+
+/**
+ * Set a configuration flag
+ *
+ * @param conf Configuration bitmask
+ * @param flag Configuration flag
+ */
 static inline void
 wi_conf_set(wi_conf_t* conf, wi_conf_flag_t flag) {
     *conf |= (wi_conf_t)1 << flag;
 }
 
+/**
+ * Check if a configuration flag is set
+ *
+ * @param conf Configuration bitmask
+ * @param flag Configuration flag
+ * @return `true` if the flag is set, `false` otherwise
+ */
 static inline bool
-wi_conf_is_set(wi_conf_t* conf, wi_conf_flag_t flag) {
-    return *conf & ((wi_conf_t)1 << flag);
+wi_conf_is_set(wi_conf_t conf, wi_conf_flag_t flag) {
+    return conf & ((wi_conf_t)1 << flag);
 }
 
 #endif

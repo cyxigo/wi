@@ -15,7 +15,7 @@
 #include "wi_value.h"
 
 wi_gc_t*
-wi_new_gc(wi_conf_t* conf) {
+wi_new_gc(wi_conf_t conf) {
     wi_gc_t* gc = malloc(sizeof(wi_gc_t));
 
     if (!gc) {

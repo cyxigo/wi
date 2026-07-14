@@ -10,7 +10,7 @@
 #include "wi_table.h"
 
 typedef struct wi_gc {
-    wi_conf_t* conf;
+    wi_conf_t conf;
 
     wi_state_t*    state;
     wi_compiler_t* compiler;
@@ -55,7 +55,7 @@ wi_log_gc(wi_gc_t* gc) {
 }
 
 wi_gc_t*
-wi_new_gc(wi_conf_t* conf);
+wi_new_gc(wi_conf_t conf);
 void
 wi_delete_gc(wi_gc_t* gc);
 

@@ -218,17 +218,17 @@ void
 wi_state_def_array_foreign(wi_state_t* state) {
     wi_object_t* object = wi_state_def_object(state, "array");
 
-    wi_state_def_field_foreign(state, "copy", _array_copy, 1, object);
-    wi_state_def_field_foreign(state, "clear", _array_clear, 1, object);
-    wi_state_def_field_foreign(state, "count", _array_count, 1, object);
-    wi_state_def_field_foreign(state, "capacity", _array_capacity, 1, object);
-    wi_state_def_field_foreign(state, "equals", _array_equals, 2, object);
-    wi_state_def_field_foreign(state, "reverse", _array_reverse, 1, object);
-    wi_state_def_field_foreign(state, "reversed", _array_reversed, 1, object);
-    wi_state_def_field_foreign(state, "add", _array_add, 2, object);
-    wi_state_def_field_foreign(state, "has", _array_has, 2, object);
-    wi_state_def_field_foreign(state, "remove", _array_remove, 2, object);
-    wi_state_def_field_foreign(state, "remove_at", _array_remove_at, 2, object);
-    wi_state_def_field_foreign(state, "concat", _array_concat, -1, object);
-    wi_state_def_field_foreign(state, "slice", _array_slice, 3, object);
+    wi_set_field_foreign(state, object, "copy", _array_copy, 1);
+    wi_set_field_foreign(state, object, "clear", _array_clear, 1);
+    wi_set_field_foreign(state, object, "count", _array_count, 1);
+    wi_set_field_foreign(state, object, "capacity", _array_capacity, 1);
+    wi_set_field_foreign(state, object, "equals", _array_equals, 2);
+    wi_set_field_foreign(state, object, "reverse", _array_reverse, 1);
+    wi_set_field_foreign(state, object, "reversed", _array_reversed, 1);
+    wi_set_field_foreign(state, object, "add", _array_add, 2);
+    wi_set_field_foreign(state, object, "has", _array_has, 2);
+    wi_set_field_foreign(state, object, "remove", _array_remove, 2);
+    wi_set_field_foreign(state, object, "remove_at", _array_remove_at, 2);
+    wi_set_field_foreign(state, object, "concat", _array_concat, -1);
+    wi_set_field_foreign(state, object, "slice", _array_slice, 3);
 }

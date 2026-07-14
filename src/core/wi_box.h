@@ -198,7 +198,7 @@ wi_value_as_upvalue(wi_value_t value) {
 wi_upvalue_t*
 wi_new_upvalue(wi_gc_t* gc, wi_value_t* slot);
 
-typedef struct {
+typedef struct wi_object {
     wi_box_t     box;
     wi_string_t* name;
     wi_table_t   fields;
