@@ -1,12 +1,12 @@
 <p align="center">
-   <img width="152" height="107" alt="wi" src="https://github.com/user-attachments/assets/bbffb89d-ce8d-45a3-8c68-4ab6ffe9d6ea" />
+   <img width="117" height="79" alt="wi" src="https://github.com/user-attachments/assets/495fb471-373b-4cb7-aca7-726a74f13d55" />
 </p>
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <svg
-   width="40.268044mm"
-   height="28.367186mm"
-   viewBox="0 0 40.268044 28.367186"
+   width="30.999796mm"
+   height="21.000208mm"
+   viewBox="0 0 30.999797 21.000208"
    version="1.1"
    id="svg1"
    inkscape:version="1.4.4 (dcaf3e7, 2026-05-05)"
@@ -24,39 +24,51 @@
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
      id="layer1"
-     transform="translate(-84.86598,-134.31641)">
+     transform="translate(-89.500104,-137.9999)">
     <path
-       id="path10"
-       style="fill:#004fdf;stroke:#393939;stroke-width:3.09562;stroke-dasharray:none;stroke-opacity:1;paint-order:stroke fill markers"
-       d="m 88.833904,135.86422 h 32.332186 c 1.34075,0 2.42012,1.07937 2.42012,2.42012 v 20.43132 c 0,1.34075 -1.07937,2.42012 -2.42012,2.42012 H 88.833904 c -1.340741,0 -2.420112,-1.07937 -2.420112,-2.42012 v -20.43132 c 0,-1.34075 1.079371,-2.42012 2.420112,-2.42012 z"
-       inkscape:export-filename="path10.png"
-       inkscape:export-xdpi="600"
-       inkscape:export-ydpi="600" />
-    <path
-       id="path9"
-       style="fill:#ffffff;stroke:#d5dce9;stroke-width:2.06375;stroke-dasharray:none;stroke-opacity:1;paint-order:stroke fill markers;fill-opacity:1"
-       d="m 88.833904,135.86422 h 32.332186 c 1.34075,0 2.42012,1.07937 2.42012,2.42012 v 20.43132 c 0,1.34075 -1.07937,2.42012 -2.42012,2.42012 H 88.833904 c -1.340741,0 -2.420112,-1.07937 -2.420112,-2.42012 v -20.43132 c 0,-1.34075 1.079371,-2.42012 2.420112,-2.42012 z"
-       inkscape:export-filename="path9.png"
-       inkscape:export-xdpi="600"
-       inkscape:export-ydpi="600" />
-    <path
-       id="rect5"
-       style="fill:#004fdf;stroke:#003db8;stroke-width:1.03188;stroke-dasharray:none;paint-order:stroke fill markers"
-       d="m 88.833904,135.86422 h 32.332186 c 1.34075,0 2.42012,1.07937 2.42012,2.42012 v 20.43132 c 0,1.34075 -1.07937,2.42012 -2.42012,2.42012 H 88.833904 c -1.340741,0 -2.420112,-1.07937 -2.420112,-2.42012 v -20.43132 c 0,-1.34075 1.079371,-2.42012 2.420112,-2.42012 z" />
-    <path
-       d="m 95.452964,156.58082 -3.85852,-16.16164 h 3.34037 l 2.43638,11.10148 2.954506,-11.10148 h 3.88054 l 2.83325,11.2889 2.48047,-11.2889 h 3.28524 l -3.92465,16.16164 h -3.46164 l -3.21909,-12.08265 -3.208055,12.08265 z M 114.24939,143.2855 v -2.86632 h 3.09783 v 2.86632 z m 0,13.29532 V 144.873 h 3.09783 v 11.70782 z"
+       d="m 95.982133,156.58082 -3.85852,-16.16164 h 3.34037 l 2.43638,11.10148 2.954507,-11.10148 h 3.88054 l 2.83325,11.2889 2.48047,-11.2889 h 3.28524 l -3.92465,16.16164 h -3.46164 l -3.21909,-12.08265 -3.208056,12.08265 z M 114.77856,143.2855 v -2.86632 h 3.09783 v 2.86632 z m 0,13.29532 V 144.873 h 3.09783 v 11.70782 z"
        id="text1"
        style="font-weight:bold;font-size:22.5778px;font-family:Arial;-inkscape-font-specification:'Arial Bold';fill:#ffffff;stroke-width:0.264583"
        aria-label="Wi" />
+    <g
+       id="g19"
+       transform="matrix(0.90096057,0,0,0.92080854,12.056691,11.759939)">
+      <path
+         id="path13"
+         style="fill:#004fdf;stroke:#393939;stroke-width:2.56424;stroke-dasharray:none;stroke-opacity:1;paint-order:stroke fill markers"
+         d="M 89.311771,138.37898 H 117.0087 c 1.14853,0 2.07317,0.86455 2.07317,1.93847 v 16.36509 c 0,1.0739 -0.92464,1.93847 -2.07317,1.93847 H 89.311771 c -1.148527,0 -2.073156,-0.86457 -2.073156,-1.93847 v -16.36509 c 0,-1.07392 0.924629,-1.93847 2.073156,-1.93847 z"
+         inkscape:export-filename="path10.png"
+         inkscape:export-xdpi="600"
+         inkscape:export-ydpi="600" />
+      <path
+         id="path14"
+         style="fill:#ffffff;fill-opacity:1;stroke:#d5dce9;stroke-width:1.70948;stroke-dasharray:none;stroke-opacity:1;paint-order:stroke fill markers"
+         d="M 89.311771,138.37898 H 117.0087 c 1.14853,0 2.07317,0.86455 2.07317,1.93847 v 16.36509 c 0,1.0739 -0.92464,1.93847 -2.07317,1.93847 H 89.311771 c -1.148527,0 -2.073156,-0.86457 -2.073156,-1.93847 v -16.36509 c 0,-1.07392 0.924629,-1.93847 2.073156,-1.93847 z"
+         inkscape:export-filename="path9.png"
+         inkscape:export-xdpi="600"
+         inkscape:export-ydpi="600" />
+      <path
+         id="path15"
+         style="fill:#004fdf;stroke:#003db8;stroke-width:0.854753;stroke-dasharray:none;paint-order:stroke fill markers"
+         d="M 89.311771,138.37898 H 117.0087 c 1.14853,0 2.07317,0.86455 2.07317,1.93847 v 16.36509 c 0,1.0739 -0.92464,1.93847 -2.07317,1.93847 H 89.311771 c -1.148527,0 -2.073156,-0.86457 -2.073156,-1.93847 v -16.36509 c 0,-1.07392 0.924629,-1.93847 2.073156,-1.93847 z" />
+    </g>
     <path
-       id="path8"
-       style="fill:#ffffff;fill-opacity:0.432507;fill-rule:nonzero;stroke:#003db8;stroke-width:1.59813;stroke-dasharray:none;stroke-opacity:0;paint-order:stroke fill markers"
-       d="m 86.413847,145.23041 v 13.48548 c 0,1.34075 1.079266,2.42001 2.420007,2.42001 h 32.332396 c 1.34075,0 2.42,-1.07926 2.42,-2.42001 v -1.64072 A 42.773788,16.928139 0 0 0 86.413847,145.23041 Z" />
+       id="path19"
+       style="fill:#ffffff;fill-opacity:0.50964189;fill-rule:nonzero;stroke:none;stroke-width:4.31269;stroke-dasharray:none;stroke-opacity:1;paint-order:stroke fill markers"
+       d="m 90.655291,148.06854 v 7.96592 c 0,0.98886 0.832809,1.78491 1.867586,1.78491 h 24.954033 c 1.03478,0 1.8681,-0.79605 1.8681,-1.78491 v -4.2602 a 46.070583,16.253328 0 0 0 -28.689719,-3.70572 z" />
+    <path
+       d="m 95.358576,156.38917 -3.446075,-14.72 h 2.983311 l 2.175951,10.11121 2.6386,-10.11121 h 3.465807 l 2.53029,10.28181 2.21545,-10.28181 h 2.93396 l -3.50515,14.72 h -3.09151 l -2.87499,-11.00487 -2.865201,11.00487 z M 112.1458,144.2798 v -2.61063 h 2.76669 v 2.61063 z m 0,12.10937 v -10.66346 h 2.76669 v 10.66346 z"
+       id="path26"
+       style="font-weight:bold;font-size:22.5778px;font-family:Arial;-inkscape-font-specification:'Arial Bold';fill:#ffffff;stroke-width:0.238633"
+       aria-label="Wi" />
+    <circle
+       style="fill:#ffffff;fill-opacity:0.509642;fill-rule:nonzero;stroke:none;stroke-width:3.09562;stroke-dasharray:none;stroke-opacity:1;paint-order:stroke fill markers"
+       id="path27"
+       cx="114.0321"
+       cy="143.96335"
+       r="4.4200001" />
   </g>
 </svg>
-
-
-
 
 <p align="center"> 
    Wi is a small, fast, prototype-based scripting language.
