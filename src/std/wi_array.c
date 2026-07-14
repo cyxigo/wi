@@ -216,7 +216,7 @@ _array_slice(wi_state_t* state, int arg_count) {
 
 void
 wi_state_def_array_foreign(wi_state_t* state) {
-    wi_object_t* object = wi_state_def_object(state, "array");
+    wi_object_t* object = wi_def_object(state, "array");
 
     wi_set_field_foreign(state, object, "copy", _array_copy, 1);
     wi_set_field_foreign(state, object, "clear", _array_clear, 1);

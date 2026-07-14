@@ -219,22 +219,22 @@ _base_has_field(wi_state_t* state, int arg_count) {
 
 void
 wi_state_def_base_foreign(wi_state_t* state) {
-    wi_state_def_foreign(state, "print", _base_print, -1);
-    wi_state_def_foreign(state, "input", _base_input, 0);
-    wi_state_def_foreign(state, "load_foreign", _base_load_foreign, 1);
-    wi_state_def_foreign(state, "is_main", _base_is_main, 0);
+    wi_def_foreign(state, "print", _base_print, -1);
+    wi_def_foreign(state, "input", _base_input, 0);
+    wi_def_foreign(state, "load_foreign", _base_load_foreign, 1);
+    wi_def_foreign(state, "is_main", _base_is_main, 0);
 
-    wi_state_def_foreign(state, "is_real", _base_is_real, 1);
-    wi_state_def_foreign(state, "is_null", _base_is_null, 1);
-    wi_state_def_foreign(state, "is_bool", _base_is_bool, 1);
-    wi_state_def_foreign(state, "is_string", _base_is_string, 1);
-    wi_state_def_foreign(state, "is_array", _base_is_array, 1);
-    wi_state_def_foreign(state, "is_map", _base_is_map, 1);
-    wi_state_def_foreign(state, "is_foreign", _base_is_foreign, 1);
-    wi_state_def_foreign(state, "is_function", _base_is_function, 1);
-    wi_state_def_foreign(state, "is_object", _base_is_object, 1);
-    wi_state_def_foreign(state, "is_userdata", _base_is_userdata, 1);
-    wi_state_def_foreign(state, "is_falsy", _base_is_falsy, 1);
+    wi_def_foreign(state, "is_real", _base_is_real, 1);
+    wi_def_foreign(state, "is_null", _base_is_null, 1);
+    wi_def_foreign(state, "is_bool", _base_is_bool, 1);
+    wi_def_foreign(state, "is_string", _base_is_string, 1);
+    wi_def_foreign(state, "is_array", _base_is_array, 1);
+    wi_def_foreign(state, "is_map", _base_is_map, 1);
+    wi_def_foreign(state, "is_foreign", _base_is_foreign, 1);
+    wi_def_foreign(state, "is_function", _base_is_function, 1);
+    wi_def_foreign(state, "is_object", _base_is_object, 1);
+    wi_def_foreign(state, "is_userdata", _base_is_userdata, 1);
+    wi_def_foreign(state, "is_falsy", _base_is_falsy, 1);
 
-    wi_state_def_foreign(state, "has_field", _base_has_field, 2);
+    wi_def_foreign(state, "has_field", _base_has_field, 2);
 }

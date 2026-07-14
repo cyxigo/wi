@@ -109,66 +109,6 @@ wi_state_add_foreign_handle(wi_state_t* state, wi_lib_handle_t lib) {
     return true;
 }
 
-static void
-_state_def_foreign(wi_state_t* state, wi_table_t* table, const char* name, wi_foreign_fn_t fn, int arity) {
-    wi_string_t* name_box = wi_copy_cstring(state->gc, name, (int)strlen(name));
-    wi_gc_push_root(state->gc, (wi_box_t*)name_box);
-
-    wi_foreign_t* foreign = wi_new_foreign(state->gc, fn, name_box, arity);
-    wi_gc_push_root(state->gc, (wi_box_t*)(foreign));
-
-    wi_table_set(table, WI_MAKE_BOX_VALUE(name_box), WI_MAKE_BOX_VALUE(foreign));
-
-    wi_gc_pop_root(state->gc);
-    wi_gc_pop_root(state->gc);
-}
-
-void
-wi_state_def_foreign(wi_state_t* state, const char* name, wi_foreign_fn_t fn, int arity) {
-    _state_def_foreign(state, &state->foreign, name, fn, arity);
-}
-
-wi_object_t*
-wi_state_def_object(wi_state_t* state, const char* name) {
-    wi_string_t* name_box = wi_copy_cstring(state->gc, name, (int)strlen(name));
-    wi_gc_push_root(state->gc, (wi_box_t*)name_box);
-
-    wi_object_t* object = wi_new_object(state->gc, name_box);
-    wi_gc_push_root(state->gc, (wi_box_t*)object);
-
-    wi_table_set(&state->foreign, WI_MAKE_BOX_VALUE(name_box), WI_MAKE_BOX_VALUE(object));
-
-    wi_gc_pop_root(state->gc);
-    wi_gc_pop_root(state->gc);
-
-    return object;
-}
-
-void
-wi_state_set_field(wi_state_t* state, wi_object_t* object, const char* name, wi_value_t value) {
-    bool is_box = wi_value_is_box(value);
-
-    if (is_box) {
-        wi_gc_push_root(state->gc, wi_value_as_box(value));
-    }
-
-    wi_string_t* name_box = wi_copy_cstring(state->gc, name, (int)strlen(name));
-    wi_gc_push_root(state->gc, (wi_box_t*)name_box);
-    wi_table_set(&object->fields, WI_MAKE_BOX_VALUE(name_box), value);
-
-    if (is_box) {
-        wi_gc_pop_root(state->gc);
-    }
-
-    wi_gc_pop_root(state->gc);
-}
-
-void
-wi_state_set_field_foreign(wi_state_t* state, wi_object_t* object, const char* name, wi_foreign_fn_t fn,
-                           int arity) {
-    _state_def_foreign(state, &object->fields, name, fn, arity);
-}
-
 void
 wi_state_print_backtrace(wi_state_t* state) {
     for (int i = state->frame_count - 1; i >= 0; i--) {

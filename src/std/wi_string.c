@@ -208,7 +208,7 @@ _string_reverse(wi_state_t* state, int arg_count) {
 
 void
 wi_state_def_string_foreign(wi_state_t* state) {
-    wi_object_t* object = wi_state_def_object(state, "string");
+    wi_object_t* object = wi_def_object(state, "string");
 
     wi_set_field_foreign(state, object, "sub", _string_sub, 3);
     wi_set_field_foreign(state, object, "upper", _string_upper, 1);

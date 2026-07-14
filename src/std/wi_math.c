@@ -154,7 +154,7 @@ _math_tan(wi_state_t* state, int arg_count) {
 
 void
 wi_state_def_math_foreign(wi_state_t* state) {
-    wi_object_t* object = wi_state_def_object(state, "math");
+    wi_object_t* object = wi_def_object(state, "math");
 
     wi_set_field_real(state, object, "e", M_E);
     wi_set_field_real(state, object, "pi", M_PI);

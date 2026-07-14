@@ -67,7 +67,7 @@ _map_values(wi_state_t* state, int arg_count) {
 
 void
 wi_state_def_map_foreign(wi_state_t* state) {
-    wi_object_t* object = wi_state_def_object(state, "map");
+    wi_object_t* object = wi_def_object(state, "map");
 
     wi_set_field_foreign(state, object, "has", _map_has, 2);
     wi_set_field_foreign(state, object, "get_or_default", _map_get_or_default, 3);
