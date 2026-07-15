@@ -196,7 +196,7 @@ _array_slice(wi_state_t* state, int arg_count) {
     int         start = (int)wi_slot_check_real(state, 2);
     int         end   = (int)wi_slot_check_real(state, 3);
 
-    if (start < 0 || start >= array->items.count || end < 0 || end > array->items.count || start > end) {
+    if (start < 0 || start > array->items.count || end < 0 || end > array->items.count || start > end) {
         wi_state_error(state, "array slice bounds out of range: %i to %i", start, end);
     }
 
@@ -204,10 +204,6 @@ _array_slice(wi_state_t* state, int arg_count) {
     state->api_stack[0] = WI_MAKE_BOX_VALUE(result);
 
     int count = end - start;
-
-    if (count < 0) {
-        return;
-    }
 
     wi_value_buf_reserve(&result->items, count);
     memcpy(result->items.data, array->items.data + start, sizeof(wi_value_t) * (size_t)count);

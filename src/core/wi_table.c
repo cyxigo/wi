@@ -36,9 +36,9 @@ _init_entries(wi_entry_t* entries, int capacity) {
 void
 wi_table_init(wi_table_t* table, wi_gc_t* gc) {
     table->gc       = gc;
+    table->entries  = NULL;
     table->capacity = 0;
     table->count    = 0;
-    table->entries  = NULL;
 }
 
 void

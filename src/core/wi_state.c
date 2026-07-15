@@ -348,9 +348,7 @@ _state_tail_call(wi_state_t* state, wi_call_frame_t* frame, wi_closure_t* closur
     _state_close_upvalues(state, frame->slots);
     wi_value_t* callee_slots = state->stack_top - arg_count - 1;
 
-    for (int i = 0; i <= arg_count; i++) {
-        frame->slots[i] = callee_slots[i];
-    }
+    memmove(frame->slots, callee_slots, sizeof(wi_value_t) * (size_t)(arg_count + 1));
 
     state->stack_top = frame->slots + arg_count + 1;
     frame->closure   = closure;
@@ -773,11 +771,12 @@ _state_interpreter_loop(wi_state_t* state) {
 
             wi_value_t* item_start = state->stack_top - count;
 
-            for (int i = 0; i < count; i++) {
-                wi_value_buf_add(&array->items, item_start[i]);
+            if (count > 0) {
+                memcpy(array->items.data, item_start, sizeof(wi_value_t) * (size_t)count);
             }
 
-            state->stack_top = item_start;
+            array->items.count = count;
+            state->stack_top   = item_start;
             wi_state_push(state, WI_MAKE_BOX_VALUE(array));
             wi_gc_pop_root(state->gc);
             _DISPATCH();

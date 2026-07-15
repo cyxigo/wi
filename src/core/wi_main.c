@@ -22,7 +22,7 @@ _repl(void) {
     wi_def_std(state);
 
     for (;;) {
-        printf("wi> ");
+        printf("> ");
 
         if (!fgets(line, sizeof(line), stdin)) {
             printf("\n");
@@ -94,8 +94,6 @@ _flag_parse_error(const char* exec_path, const char* format, ...) {
 
 static void
 _parse_flags(int argc, const char* argv[], wi_conf_t* conf, const char** file_path) {
-    *file_path = NULL;
-
     for (int i = 1; i < argc; i++) {
         const char* arg = argv[i];
 
@@ -149,7 +147,7 @@ main(int argc, const char* argv[]) {
         return EXIT_SUCCESS;
     }
 
-    wi_conf_t   conf      = 0;
+    wi_conf_t   conf      = WI_DEFAULT_CONF;
     const char* file_path = NULL;
     _parse_flags(argc, argv, &conf, &file_path);
 
