@@ -180,12 +180,15 @@ wi_table_find_string(wi_table_t* table, const char* chars, int len, uint32_t has
 
 void
 wi_table_remove_white(wi_table_t* table) {
+    wi_value_t empty = wi_make_empty_value();
+    wi_value_t true_ = wi_make_true_value();
+
     for (int i = 0; i < table->capacity; i++) {
         wi_entry_t* entry = &table->entries[i];
 
         if (wi_value_is_box(entry->key) && !wi_value_as_box(entry->key)->is_marked) {
-            entry->key   = wi_make_empty_value();
-            entry->value = wi_make_true_value();
+            entry->key   = empty;
+            entry->value = true_;
         }
     }
 }
