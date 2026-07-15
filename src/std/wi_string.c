@@ -220,4 +220,6 @@ wi_state_def_string_foreign(wi_state_t* state) {
     wi_set_field_foreign(state, object, "replace", _string_replace, 3);
     wi_set_field_foreign(state, object, "split", _string_split, 2);
     wi_set_field_foreign(state, object, "reverse", _string_reverse, 1);
+
+    state->string_obj = object;
 }

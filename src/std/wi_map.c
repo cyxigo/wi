@@ -73,4 +73,6 @@ wi_state_def_map_foreign(wi_state_t* state) {
     wi_set_field_foreign(state, object, "get_or_default", _map_get_or_default, 3);
     wi_set_field_foreign(state, object, "keys", _map_keys, 1);
     wi_set_field_foreign(state, object, "values", _map_values, 1);
+
+    state->map_obj = object;
 }

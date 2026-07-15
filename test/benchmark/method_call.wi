@@ -1,0 +1,79 @@
+var toggle = object {
+    state = false;
+    value = function(self) {
+        return self.state;
+    };
+    activate = function(self) {
+        self.state = !self.state;
+        return self;
+    };
+};
+
+var new_toggle = function(start_state) {
+    return new toggle { 
+        state = start_state; 
+    };
+};  
+
+var nth_toggle = new toggle {
+    count_max = 0;
+    count = 0;
+    activate = function(self) {
+        self.count = self.count + 1;
+
+        if (self.count >= self.count_max) {
+            toggle.activate(self);
+            self.count = 0;
+        }
+
+        return self;
+    };
+};
+
+var new_nth_toggle = function(start_state, max_counter) {
+    return new nth_toggle {
+        state = start_state;
+        count_max = max_counter;
+    };
+};
+
+var main = function() {
+    var start = os.clock();
+    var n = 100000;
+    var val = true;
+    var t = new_toggle(val);
+
+    for (var i = 0; i < n; i = i + 1) {
+        val = t->activate()->value();
+        val = t->activate()->value();
+        val = t->activate()->value();
+        val = t->activate()->value();
+        val = t->activate()->value();
+        val = t->activate()->value();
+        val = t->activate()->value();
+        val = t->activate()->value();
+        val = t->activate()->value();
+        val = t->activate()->value();
+    }
+
+    print(toggle->value());
+    var nt = new_nth_toggle(val, 3);
+
+    for (var i = 0; i < n; i = i + 1) {
+        val = nt->activate()->value();
+        val = nt->activate()->value();
+        val = nt->activate()->value();
+        val = nt->activate()->value();
+        val = nt->activate()->value();
+        val = nt->activate()->value();
+        val = nt->activate()->value();
+        val = nt->activate()->value();
+        val = nt->activate()->value();
+        val = nt->activate()->value();
+    }
+
+    print(nt->value());
+    print("elapsed: " .. os.clock() - start);
+};
+
+main();

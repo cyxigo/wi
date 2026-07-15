@@ -63,6 +63,10 @@ typedef struct wi_state {
     wi_upvalue_t* open_upvalues;
 
     wi_foreign_handle_t* foreign_handles;
+
+    wi_object_t* string_obj;
+    wi_object_t* array_obj;
+    wi_object_t* map_obj;
 } wi_state_t;
 
 static inline void

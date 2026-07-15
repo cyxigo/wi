@@ -231,4 +231,6 @@ wi_state_def_array_foreign(wi_state_t* state) {
     wi_set_field_foreign(state, object, "remove_at", _array_remove_at, 2);
     wi_set_field_foreign(state, object, "concat", _array_concat, -1);
     wi_set_field_foreign(state, object, "slice", _array_slice, 3);
+
+    state->array_obj = object;
 }

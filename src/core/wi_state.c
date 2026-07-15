@@ -48,6 +48,11 @@ wi_new_state(wi_conf_t conf) {
     wi_table_init(&state->required, state->gc);
 
     state->foreign_handles = NULL;
+
+    state->string_obj = NULL;
+    state->array_obj  = NULL;
+    state->map_obj    = NULL;
+
     return state;
 }
 
@@ -364,15 +369,21 @@ _state_resolve_invoke(wi_state_t* state, wi_value_t receiver, wi_value_t name) {
         return function;
     }
 
-    const char* type_name = wi_value_type(receiver);
-    wi_value_t  key       = WI_MAKE_BOX_VALUE(wi_copy_cstring(state->gc, type_name, (int)strlen(type_name)));
-    wi_value_t  object;
+    wi_object_t* object = NULL;
 
-    if (!wi_table_get(&state->foreign, key, &object) || !wi_value_is_object(object)) {
-        wi_state_error(state, "value type %s has no functions", type_name);
+    if (wi_value_is_string(receiver)) {
+        object = state->string_obj;
+    } else if (wi_value_is_array(receiver)) {
+        object = state->array_obj;
+    } else if (wi_value_is_map(receiver)) {
+        object = state->map_obj;
     }
 
-    _state_resolve_field(state, wi_value_as_object(object), name, &function);
+    if (!object) {
+        wi_state_error(state, "value type %s has no functions", wi_value_type(receiver));
+    }
+
+    _state_resolve_field(state, object, name, &function);
     return function;
 }
 

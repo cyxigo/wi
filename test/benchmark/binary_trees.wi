@@ -1,0 +1,52 @@
+var bottom_up_tree = function(item, depth) {
+    if (depth > 0) {
+        var i = item + item;
+        depth = depth - 1;
+        var left = bottom_up_tree(i - 1, depth);
+        var right = bottom_up_tree(i, depth);
+        return [item, left, right];
+    }
+    
+    return [item];
+};
+
+var item_check = function(tree) {
+    if (#tree > 1) {
+        return tree[0] + item_check(tree[1]) - item_check(tree[2]);
+    }
+    
+    return tree[0];
+};
+
+var n = 12;
+var min_depth = 4;
+var max_depth = min_depth + 2;
+
+if (max_depth < n) {
+    max_depth = n;
+}
+
+var start = os.clock();
+
+{
+    var stretch_depth = max_depth + 1;
+    var stretch_tree = bottom_up_tree(0, stretch_depth);
+    print("stretch tree of depth " .. stretch_depth .. " check: " .. item_check(stretch_tree));
+}
+
+var long_lived_tree = bottom_up_tree(0, max_depth);
+
+for (var depth = min_depth; depth <= max_depth; depth = depth + 2) {
+    var iterations = 2 ** (max_depth - depth + min_depth);
+    var check = 0;
+    
+    for (var i = 1; i <= iterations; i = i + 1) {
+        check = check + item_check(bottom_up_tree(1, depth)) + 
+                item_check(bottom_up_tree(-1, depth));
+    }
+    
+    print(iterations * 2 .. " trees of depth " .. depth .. " check: " .. check);
+}
+
+print("long lived tree of depth " .. max_depth .. " check: " .. item_check(long_lived_tree));
+print("elapsed: " .. (os.clock() - start));
