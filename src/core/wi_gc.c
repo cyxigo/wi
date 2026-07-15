@@ -173,6 +173,10 @@ _gc_mark_box(wi_gc_t* gc, wi_box_t* box) {
 
     box->is_marked = true;
 
+    if (box->kind == WI_BOX_STRING) {
+        return;
+    }
+
     if (gc->gray_count + 1 > gc->gray_capacity) {
         gc->gray_capacity = WI_GROW_CAPACITY(gc->gray_capacity);
         gc->gray_stack    = realloc(gc->gray_stack, sizeof(wi_box_t*) * (size_t)gc->gray_capacity);
