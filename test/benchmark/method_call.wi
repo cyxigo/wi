@@ -56,7 +56,7 @@ var main = function() {
         val = t->activate()->value();
     }
 
-    print(toggle->value());
+    print(t->value());
     var nt = new_nth_toggle(val, 3);
 
     for (var i = 0; i < n; i = i + 1) {

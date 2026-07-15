@@ -1,4 +1,6 @@
-#ifndef _WIN32
+#ifdef _WIN32
+#define strdup _strdup
+#else
 #define _POSIX_C_SOURCE 200809L
 #endif
 
