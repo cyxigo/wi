@@ -1,23 +1,30 @@
-local cflags = "-O2 -fno-stack-protector -fno-common -std=c11 -Wall -Werror -Wconversion -Wsign-conversion -Wfloat-conversion"
+set_project("Wi")
+
+set_version("1.0.0")
+set_description("The Wi programming language")
+
+function defaults()
+    add_languages("c11")
+    add_cflags("-fno-stack-protector -fno-common -Wconversion -Wsign-conversion -Wfloat-conversion")
+    set_optimize("faster")
+    set_warnings("all", "error")
+
+    add_headerfiles("src/core/*.h", "src/std/*.h")
+    add_files("src/core/*.c", "src/std/*.c")
+
+    set_targetdir("bin")
+end
 
 target("wi_shared")
     set_kind("shared")
     set_group("libs")
     set_basename("wi")
-    set_targetdir("bin") 
-
-    add_cflags(cflags)
-    add_headerfiles("src/core/*.h", "src/std/*.h")
-    add_files("src/core/*.c", "src/std/*.c")
+    defaults()
 
 target("wi")
     set_kind("binary")
     set_group("apps")
-    set_targetdir("bin")
-
-    add_cflags(cflags)
-    add_headerfiles("src/core/*.h", "src/std/*.h")
-    add_files("src/core/*.c", "src/std/*.c")  
+    defaults()
 
     if is_host("windows") then 
         add_files("wi.rc")
