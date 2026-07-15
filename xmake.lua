@@ -13,8 +13,12 @@ target("wi_shared")
 target("wi")
     set_kind("binary")
     set_group("apps")
-    set_targetdir("bin") 
-    
+    set_targetdir("bin")
+
     add_cflags(cflags)
     add_headerfiles("src/core/*.h", "src/std/*.h")
     add_files("src/core/*.c", "src/std/*.c")  
+
+    if is_host("windows") then 
+        add_files("wi.rc")
+    end 

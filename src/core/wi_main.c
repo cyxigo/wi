@@ -10,7 +10,7 @@
 
 static void
 _version(void) {
-    printf("wi " WI_VERSION_STRING "\n");
+    printf("Wi " WI_VERSION_STRING " Copyright (C) 2026 cyxigo\n");
 }
 
 static void
