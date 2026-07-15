@@ -1,5 +1,6 @@
 <div align="center">
-   <img width="183" height="124" alt="wi2" src="https://github.com/user-attachments/assets/ba6737ea-604f-452d-96b0-9b37f6a60f7f" />
+   <img width="200" alt="wi" src="https://github.com/user-attachments/assets/08b5ac26-ad63-47e9-b654-dcaf081de906" />
+
    
    ## Wi is a small, fast, prototype-based scripting language.
    
