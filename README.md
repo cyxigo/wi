@@ -25,7 +25,7 @@ slava->greet(); // Hello, Slava!
 
 ## Why Wi?
 
-- Wi is fast.
+- Wi is fast. Check out [benchmarks](https://github.com/cyxigo/wi/tree/main/test/benchmark).
 - Wi is simple. You can learn its syntax in less than a day.
 - Wi is small. The entire implementation (compiler, VM, API) takes less than 8k lines of code.
 - Wi is purely prototype-based. Many languages use classes - Wi uses objects. You clone these objects and create whatever you want.
