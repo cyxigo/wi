@@ -1,10 +1,11 @@
-<p align="center">
+<div align="center">
    <img width="183" height="124" alt="wi2" src="https://github.com/user-attachments/assets/ba6737ea-604f-452d-96b0-9b37f6a60f7f" />
-</p>
-
-<p align="center"> 
-   Wi is a small, fast, prototype-based scripting language.
-</p>
+   
+   ## Wi is a small, fast, prototype-based scripting language.
+   
+   ![GitHub Tag](https://img.shields.io/github/tag-date/cyxigo/wi)
+   ![GitHub License](https://img.shields.io/github/license/cyxigo/wi)
+</div>
 
 ```js
 var person = object {
