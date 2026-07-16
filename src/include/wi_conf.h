@@ -26,8 +26,9 @@ enum {
     /**
      * Garbage Collector settings
      */
-    WI_GC_HEAP_GROW_FACTOR = 2,       // Heap growth factor per garbage collection run
-    WI_GC_TEMP_ROOTS_MAX   = 1 << 4,  // Maximum number of temporary GC root references
+    WI_GC_MIN_HEAP         = 1 << 20,  // Initial heap size before first collection
+    WI_GC_HEAP_GROW_FACTOR = 2,        // Heap growth factor per garbage collection run
+    WI_GC_TEMP_ROOTS_MAX   = 1 << 4,   // Maximum number of temporary GC root references
 
     /**
      * VM limits

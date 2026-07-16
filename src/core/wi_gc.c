@@ -29,7 +29,7 @@ wi_new_gc(wi_conf_t conf) {
 
     gc->boxes           = NULL;
     gc->bytes_allocated = 0;
-    gc->next_collection = 1 << 20;
+    gc->next_collection = WI_GC_MIN_HEAP;
 
     gc->gray_stack    = NULL;
     gc->gray_capacity = 0;
