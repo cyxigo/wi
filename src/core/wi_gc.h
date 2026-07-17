@@ -36,7 +36,7 @@ wi_gc_reset_roots(wi_gc_t* gc) {
 
 static inline void
 wi_gc_push_root(wi_gc_t* gc, wi_box_t* root) {
-    if (gc->temp_root_count >= WI_GC_TEMP_ROOTS_MAX) {
+    if (gc->temp_root_count > WI_GC_TEMP_ROOTS_MAX) {
         fprintf(stderr, "memory error: temp roots overflow (limit is %i)\n", WI_GC_TEMP_ROOTS_MAX);
         exit(EXIT_FAILURE);
     }

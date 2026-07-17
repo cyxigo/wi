@@ -97,7 +97,7 @@ _compiler_patch_jump(wi_compiler_t* compiler, int offset) {
     uint8_t* bytes = compiler->prototype->bytes.data;
     int      jump  = compiler->prototype->bytes.count - offset - 2;
 
-    if (jump >= WI_JUMP_MAX) {
+    if (jump > WI_JUMP_MAX) {
         wi_parser_error_at_curr(compiler->parser, "too much code to jump over (limit is %i)", WI_JUMP_MAX);
         return;
     }
@@ -111,7 +111,7 @@ _compiler_emit_loop(wi_compiler_t* compiler, int loop_start) {
     _compiler_emit_byte(compiler, WI_OP_LOOP);
     int offset = compiler->prototype->bytes.count - loop_start + 2;
 
-    if (offset >= WI_LOOP_MAX) {
+    if (offset > WI_LOOP_MAX) {
         wi_parser_error_at_curr(compiler->parser, "too much code to loop (limit is %i)", WI_LOOP_MAX);
         return;
     }
@@ -169,7 +169,7 @@ _compiler_make_constant(wi_compiler_t* compiler, wi_value_t value) {
     } else {
         int constant = wi_prototype_add_constant(compiler->prototype, value);
 
-        if (constant >= WI_CONSTANT_MAX) {
+        if (constant > WI_CONSTANT_MAX) {
             wi_parser_error_at_curr(compiler->parser, "too many constants in a prototype (limit is %i)",
                                     WI_CONSTANT_MAX);
         }
@@ -325,7 +325,7 @@ _compiler_add_upvalue(wi_compiler_t* compiler, uint8_t index, bool is_local) {
         }
     }
 
-    if (upvalue_count >= WI_UPVALUES_MAX) {
+    if (upvalue_count > WI_UPVALUES_MAX) {
         wi_parser_error_at_curr(compiler->parser, "too many upvalues in a closure (limit is %i)", WI_UPVALUES_MAX);
     }
 

@@ -20,24 +20,24 @@ enum {
     /**
      * Compiler limits
      */
-    WI_CONSTANT_MAX = 1 << 16,  // Maximum number of constants in a function
-    WI_JUMP_MAX     = 1 << 16,  // Maximum jump offset
-    WI_LOOP_MAX     = 1 << 16,  // Maximum loop offset
-    WI_LOCALS_MAX   = 1 << 8,   // Maximum number of local variables in a function
-    WI_UPVALUES_MAX = 1 << 8,   // Maximum number of upvalues in a function (closure)
+    WI_CONSTANT_MAX = 65535,  // Maximum number of constants in a function
+    WI_JUMP_MAX     = 65535,  // Maximum jump offset
+    WI_LOOP_MAX     = 65535,  // Maximum loop offset
+    WI_LOCALS_MAX   = 255,    // Maximum number of local variables in a function
+    WI_UPVALUES_MAX = 255,    // Maximum number of upvalues in a function (closure)
 
     /**
      * Garbage Collector settings
      */
-    WI_GC_MIN_HEAP         = 1 << 20,  // Initial heap size before first collection
+    WI_GC_MIN_HEAP         = 1048576,  // Initial heap size before first collection
     WI_GC_HEAP_GROW_FACTOR = 2,        // Heap growth factor per garbage collection run
-    WI_GC_TEMP_ROOTS_MAX   = 1 << 4,   // Maximum number of temporary GC root references
+    WI_GC_TEMP_ROOTS_MAX   = 15,       // Maximum number of temporary GC root references
 
     /**
      * VM limits
      */
-    WI_CALL_FRAMES_COUNT = 1 << 14,  // Maximum number of call frames
-    WI_STACK_COUNT       = 1 << 16,  // Maximum number of values on the VM stack
+    WI_CALL_FRAMES_COUNT = 16384,  // Maximum number of call frames
+    WI_STACK_COUNT       = 65535,  // Maximum number of values on the VM stack
 };
 
 /**
