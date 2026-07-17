@@ -1195,16 +1195,17 @@ _compiler_return_stmt(wi_compiler_t* compiler) {
 
     _compiler_expr(compiler);
     wi_parser_expect(compiler->parser, WI_TOKEN_SEMICOLON);
-    int      call_end = compiler->prototype->bytes.count;
-    uint8_t* bytes    = compiler->prototype->bytes.data;
-    int      offset   = compiler->last_call_offset;
 
-    if (offset == call_end - 2 && bytes[offset] == WI_OP_CALL) {
+    int      end    = compiler->prototype->bytes.count;
+    uint8_t* bytes  = compiler->prototype->bytes.data;
+    int      offset = compiler->last_call_offset;
+
+    if (offset == end - 2 && bytes[offset] == WI_OP_CALL) {
         bytes[offset] = WI_OP_TAIL_CALL;
         return;
     }
 
-    if (offset == call_end - 4 && bytes[offset] == WI_OP_INVOKE) {
+    if (offset == end - 4 && bytes[offset] == WI_OP_INVOKE) {
         bytes[offset] = WI_OP_TAIL_INVOKE;
         return;
     }

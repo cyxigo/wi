@@ -1,3 +1,4 @@
+#include <signal.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -8,6 +9,27 @@
 #include "wi_gc.h"
 #include "wi_state.h"
 
+static wi_state_t* g_state = NULL;
+
+static void
+_init_g_state(wi_conf_t conf) {
+    g_state = wi_new_state(conf);
+    wi_def_std(g_state);
+}
+
+static void
+_delete_g_state(void) {
+    wi_delete_state(g_state);
+    g_state = NULL;
+}
+
+static void
+_sigint_handler(int sig) {
+    if (g_state) {
+        wi_state_interrupt(g_state);
+    }
+}
+
 static void
 _version(void) {
     printf("Wi " WI_VERSION_STRING " Copyright (C) 2026 cyxigo\n");
@@ -17,9 +39,8 @@ static void
 _repl(void) {
     _version();
 
-    char        line[2048];
-    wi_state_t* state = wi_new_state(WI_DEFAULT_CONF);
-    wi_def_std(state);
+    char line[2048];
+    _init_g_state(WI_DEFAULT_CONF);
 
     for (;;) {
         printf("> ");
@@ -29,10 +50,14 @@ _repl(void) {
             break;
         }
 
-        wi_state_run(state, "<stdin>", line);
+        wi_run_result_t result = wi_state_run(g_state, "<stdin>", line);
+
+        if (result == WI_RUN_ABORT) {
+            break;
+        }
     }
 
-    wi_delete_state(state);
+    _delete_g_state();
 }
 
 static void
@@ -142,6 +167,8 @@ _parse_flags(int argc, const char* argv[], wi_conf_t* conf, const char** file_pa
 
 extern int
 main(int argc, const char* argv[]) {
+    signal(SIGINT, _sigint_handler);
+
     if (argc == 1) {
         _repl();
         return EXIT_SUCCESS;
@@ -151,20 +178,18 @@ main(int argc, const char* argv[]) {
     const char* file_path = NULL;
     _parse_flags(argc, argv, &conf, &file_path);
 
-    char*       src   = _read_file(file_path);
-    wi_state_t* state = wi_new_state(conf);
-    wi_def_std(state);
+    char* src = _read_file(file_path);
+    _init_g_state(conf);
 
-    if (!state) {
+    if (!g_state) {
         free(src);
         fprintf(stderr, "memory error: failed to allocate a state\n");
         return EXIT_FAILURE;
     }
 
-    int result = wi_state_run(state, file_path, src) ? EXIT_SUCCESS : EXIT_FAILURE;
-
+    wi_run_result_t result = wi_state_run(g_state, file_path, src);
     free(src);
-    wi_delete_state(state);
+    _delete_g_state();
 
-    return result;
+    return result == WI_RUN_ERROR ? EXIT_FAILURE : EXIT_SUCCESS;
 }

@@ -2,6 +2,7 @@
 #define WI_STATE_H
 
 #include <setjmp.h>
+#include <signal.h>
 #include <stdbool.h>
 #include <stdint.h>
 #ifdef _WIN32
@@ -44,11 +45,18 @@ typedef struct {
     wi_value_t*   slots;
 } wi_call_frame_t;
 
+enum {
+    WI_STATE_JMP_OK    = 0,
+    WI_STATE_JMP_ERROR = 1,
+    WI_STATE_JMP_ABORT = 2,
+};
+
 typedef struct wi_state {
     wi_conf_t conf;
     wi_gc_t*  gc;
 
-    jmp_buf error_jmp;
+    jmp_buf               jmp;
+    volatile sig_atomic_t interrupted;
 
     wi_call_frame_t frames[WI_CALL_FRAMES_COUNT];
     int             frame_count;
@@ -112,7 +120,12 @@ wi_state_print_backtrace(wi_state_t* state);
 void
 wi_state_error(wi_state_t* state, const char* format, ...);
 
-bool
+void
+wi_state_abort(wi_state_t* state);
+void
+wi_state_interrupt(wi_state_t* state);
+
+wi_run_result_t
 wi_state_run(wi_state_t* state, const char* file_path, const char* src);
 
 #endif

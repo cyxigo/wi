@@ -4,7 +4,7 @@ I don't have many interpreted languages installed: Wi, Lua (5.5.0), Python (3.12
 
 ## Fib
 
-- Wi: 0.145s
+- Wi: 0.140s
 - Ruby: 0.147s
 - Lua : 0.150s
 - Python: 0.265s
@@ -15,7 +15,7 @@ I don't have many interpreted languages installed: Wi, Lua (5.5.0), Python (3.12
 - Wren: 0.140s
 - Ruby: 0.144s
 - Python: 0.156s
-- Wi: 0.178s
+- Wi: 0.172s
 - Lua: 0.200s
 
 ## Binary trees
@@ -23,13 +23,13 @@ I don't have many interpreted languages installed: Wi, Lua (5.5.0), Python (3.12
 - Ruby: 0.200s
 - Wren: 0.370s
 - Lua: 0.400s
-- Wi: 0.436s
+- Wi: 0.434s
 - Python: 0.500s
 
 ## For
 
 - Lua: 0.042s
-- Wi: 0.100s
+- Wi: 0.094s
 - Wren: 0.100s
 - Ruby: 0.196s
 - Python: 0.203s
