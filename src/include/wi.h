@@ -175,17 +175,6 @@ WI_API void
 wi_state_error(wi_state_t* state, const char* format, ...);
 
 /**
- * Request the state to stop execution as soon as possible, returning `WI_RUN_ABORT` from `wi_state_run`.
- *
- * In contrast to `wi_state_abort`, this function is safe to call
- * asynchronously (e.g., from a signal handler or another thread)
- *
- * @param state Wi state instance
- */
-WI_API void
-wi_state_interrupt(wi_state_t* state);
-
-/**
  * Request the state to stop execution, returning `WI_RUN_ABORT` from `wi_state_run`.
  *
  * Must only be called while a script is running (e.g., from a foreign (C) function).
@@ -195,6 +184,17 @@ wi_state_interrupt(wi_state_t* state);
  */
 WI_API void
 wi_state_abort(wi_state_t* state);
+
+/**
+ * Request the state to stop execution as soon as possible, returning `WI_RUN_ABORT` from `wi_state_run`.
+ *
+ * In contrast to `wi_state_abort`, this function is safe to call
+ * asynchronously (e.g., from a signal handler or another thread)
+ *
+ * @param state Wi state instance
+ */
+WI_API void
+wi_state_interrupt(wi_state_t* state);
 
 /**
  * Execute Wi code
