@@ -27,6 +27,16 @@ typedef double wi_real_t;
  * Opaque Wi object handle
  */
 typedef struct wi_object wi_object_t;
+
+/**
+ * The result of running Wi code
+ */
+typedef enum {
+    WI_RUN_OK,     // No errors occurred
+    WI_RUN_ERROR,  // A runtime error or a compile error occurred
+    WI_RUN_ABORT,  // Execution was aborted early via `wi_state_abort`
+} wi_run_result_t;
+
 /**
  * Opaque Wi state handle
  */
@@ -165,14 +175,36 @@ WI_API void
 wi_state_error(wi_state_t* state, const char* format, ...);
 
 /**
+ * Request the state to stop execution as soon as possible, returning `WI_RUN_ABORT` from `wi_state_run`.
+ *
+ * In contrast to `wi_state_abort`, this function is safe to call
+ * asynchronously (e.g., from a signal handler or another thread)
+ *
+ * @param state Wi state instance
+ */
+WI_API void
+wi_state_interrupt(wi_state_t* state);
+
+/**
+ * Request the state to stop execution, returning `WI_RUN_ABORT` from `wi_state_run`.
+ *
+ * Must only be called while a script is running (e.g., from a foreign (C) function).
+ * Calling it outside `wi_state_run` is undefined behavior
+ *
+ * @param state Wi state instance
+ */
+WI_API void
+wi_state_abort(wi_state_t* state);
+
+/**
  * Execute Wi code
  *
  * @param state Wi state instance
  * @param file_path Path to the script, used for error messages
  * @param src Code string
- * @return `true` on success, `false` if a compile or runtime error occurred
+ * @return Run result
  */
-WI_API bool
+WI_API wi_run_result_t
 wi_state_run(wi_state_t* state, const char* file_path, const char* src);
 
 /**

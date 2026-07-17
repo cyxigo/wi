@@ -115,7 +115,7 @@ wi_prototype_add_constant(wi_prototype_t* prototype, wi_value_t value) {
 
 int
 wi_prototype_instr_size(wi_prototype_t* prototype, int offset) {
-    static const int _opcode_sizes[] = {
+    static const int opcode_sizes[] = {
 #define WI_OPCODE(name, size) size,
 #include "wi_opcodes.h"
 #undef WI_OPCODE
@@ -123,7 +123,7 @@ wi_prototype_instr_size(wi_prototype_t* prototype, int offset) {
 
     uint8_t*    bytes  = prototype->bytes.data;
     wi_opcode_t opcode = bytes[offset];
-    int         size   = _opcode_sizes[opcode];
+    int         size   = opcode_sizes[opcode];
 
     if (size != -1) {
         return size;

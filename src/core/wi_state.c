@@ -1,6 +1,7 @@
 #include "wi_state.h"
 
 #include <math.h>
+#include <setjmp.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -39,7 +40,8 @@ wi_new_state(wi_conf_t conf) {
         return NULL;
     }
 
-    state->gc->state = state;
+    state->gc->state   = state;
+    state->interrupted = 0;
 
     _state_reset_stack(state);
 
@@ -142,12 +144,23 @@ wi_state_error(wi_state_t* state, const char* format, ...) {
     fprintf(stderr, "\n");
 
     va_end(args);
-
     wi_state_print_backtrace(state);
-    _state_reset_stack(state);
 
+    _state_reset_stack(state);
     wi_gc_reset_roots(state->gc);
-    longjmp(state->error_jmp, 1);
+    longjmp(state->jmp, WI_STATE_JMP_ERROR);
+}
+
+void
+wi_state_abort(wi_state_t* state) {
+    _state_reset_stack(state);
+    wi_gc_reset_roots(state->gc);
+    longjmp(state->jmp, WI_STATE_JMP_ABORT);
+}
+
+void
+wi_state_interrupt(wi_state_t* state) {
+    state->interrupted = 1;
 }
 
 static void
@@ -467,7 +480,7 @@ _state_require(wi_state_t* state, char* path, wi_value_t name_value, wi_string_t
     return closure;
 }
 
-static bool
+static wi_run_result_t
 _state_interpreter_loop(wi_state_t* state) {
     wi_call_frame_t*  frame = wi_state_frame(state);
     register uint8_t* ip    = frame->ip;
@@ -487,11 +500,14 @@ _state_interpreter_loop(wi_state_t* state) {
     frame->ip = ip; \
     wi_state_error(state, __VA_ARGS__)
 
-#define _DISPATCH(void)               \
-    do {                              \
-        opcode = _READ_BYTE();        \
-        goto* dispatch_table[opcode]; \
-    } while (false)
+#define _DISPATCH(void)                            \
+    if (__builtin_expect(state->interrupted, 0)) { \
+        state->interrupted = 0;                    \
+        frame->ip          = ip;                   \
+        wi_state_abort(state);                     \
+    }                                              \
+                                                   \
+    goto* dispatch_table[(opcode = _READ_BYTE())];
 #define _OPCODE_LABEL(name) LABEL_##name
 
 #define _READ_BYTE(void) *ip++
@@ -942,7 +958,7 @@ _state_interpreter_loop(wi_state_t* state) {
 
             if (state->frame_count == 0) {
                 wi_state_drop(state);
-                return true;
+                return WI_RUN_OK;
             }
 
             state->stack_top = frame->slots;
@@ -1072,12 +1088,13 @@ _state_interpreter_loop(wi_state_t* state) {
 #undef _BIT_OP
 }
 
-bool
+wi_run_result_t
 wi_state_run(wi_state_t* state, const char* file_path, const char* src) {
+    state->interrupted        = 0;
     wi_prototype_t* prototype = wi_compile(state, file_path, src);
 
     if (!prototype) {
-        return false;
+        return WI_RUN_ERROR;
     }
 
     wi_gc_push_root(state->gc, (wi_box_t*)prototype);
@@ -1087,9 +1104,15 @@ wi_state_run(wi_state_t* state, const char* file_path, const char* src) {
     wi_state_push(state, WI_MAKE_BOX_VALUE(closure));
     _state_call(state, closure, 0);
 
-    if (setjmp(state->error_jmp) == 0) {
+    int jmp_result = setjmp(state->jmp);
+
+    if (jmp_result == WI_STATE_JMP_OK) {
         return _state_interpreter_loop(state);
     }
 
-    return false;
+    if (jmp_result == WI_STATE_JMP_ABORT) {
+        return WI_RUN_ABORT;
+    }
+
+    return WI_RUN_ERROR;
 }

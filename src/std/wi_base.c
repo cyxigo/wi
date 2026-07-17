@@ -139,6 +139,11 @@ _base_is_main(wi_state_t* state, int arg_count) {
     wi_slot_set_bool(state, 0, !frame->closure->is_required);
 }
 
+static void
+_base_exit(wi_state_t* state, int arg_count) {
+    wi_state_abort(state);
+}
+
 typedef bool(_is_type_fn_t)(wi_value_t value);
 
 static void
@@ -223,6 +228,7 @@ wi_state_def_base_foreign(wi_state_t* state) {
     wi_def_foreign(state, "input", _base_input, 0);
     wi_def_foreign(state, "load_foreign", _base_load_foreign, 1);
     wi_def_foreign(state, "is_main", _base_is_main, 0);
+    wi_def_foreign(state, "exit", _base_exit, 0);
 
     wi_def_foreign(state, "is_real", _base_is_real, 1);
     wi_def_foreign(state, "is_null", _base_is_null, 1);
