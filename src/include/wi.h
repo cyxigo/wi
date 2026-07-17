@@ -142,7 +142,7 @@ wi_set_field_foreign(wi_state_t* state, wi_object_t* object, const char* name, w
  * Create a new Wi state instance
  *
  * @param conf Wi configuration, see `wi_conf.h` for more
- * @return Created Wi instance
+ * @return Created Wi state instance
  * @note Must be freed via `wi_delete_state`
  */
 WI_API wi_state_t*
