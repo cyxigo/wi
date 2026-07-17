@@ -4,6 +4,9 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+/**
+ * Wi version as a string
+ */
 #define WI_VERSION_STRING "1.0.0"
 
 enum {
