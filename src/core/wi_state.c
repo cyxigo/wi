@@ -22,6 +22,7 @@ _state_reset_stack(wi_state_t* state) {
     state->stack_top     = state->stack;
     state->api_stack     = NULL;
     state->frame_count   = 0;
+    state->c_call_depth  = 0;
     state->open_upvalues = NULL;
 }
 
@@ -78,13 +79,13 @@ _state_free_foreign_handles(wi_state_t* state) {
 
 void
 wi_delete_state(wi_state_t* state) {
-    _state_free_foreign_handles(state);
-
     wi_table_free(&state->globals);
     wi_table_free(&state->foreign);
     wi_table_free(&state->required);
 
     wi_delete_gc(state->gc);
+
+    _state_free_foreign_handles(state);
     free(state);
 }
 
@@ -481,7 +482,7 @@ _state_require(wi_state_t* state, char* path, wi_value_t name_value, wi_string_t
 }
 
 static wi_run_result_t
-_state_interpreter_loop(wi_state_t* state) {
+_state_interpreter_loop(wi_state_t* state, int base_frame_count) {
     wi_call_frame_t*  frame = wi_state_frame(state);
     register uint8_t* ip    = frame->ip;
     wi_opcode_t       opcode;
@@ -956,7 +957,7 @@ _state_interpreter_loop(wi_state_t* state) {
             state->frame_count--;
             _state_close_upvalues(state, frame->slots);
 
-            if (state->frame_count == 0) {
+            if (state->frame_count == base_frame_count) {
                 wi_state_drop(state);
                 return WI_RUN_OK;
             }
@@ -1045,7 +1046,7 @@ _state_interpreter_loop(wi_state_t* state) {
             wi_object_t* clone  = wi_new_object(state->gc, object->name);
 
             wi_gc_push_root(state->gc, (wi_box_t*)clone);
-            wi_table_copy(&clone->fields, &object->fields);
+            wi_table_copy(&object->fields, &clone->fields);
             wi_gc_pop_root(state->gc);
 
             wi_state_pop(state);
@@ -1089,6 +1090,26 @@ _state_interpreter_loop(wi_state_t* state) {
 }
 
 wi_run_result_t
+wi_state_call(wi_state_t* state, wi_closure_t* closure, uint8_t arg_count) {
+    if (state->c_call_depth >= WI_C_CALL_STACK_MAX) {
+        wi_state_error(state, "C call stack overflow (limit is %i)", WI_C_CALL_STACK_MAX);
+    }
+
+    wi_value_t* api_stack = state->api_stack;
+
+    int base_frame_count = state->frame_count;
+    _state_call(state, closure, arg_count);
+
+    state->c_call_depth++;
+    wi_run_result_t result = _state_interpreter_loop(state, base_frame_count);
+    state->c_call_depth--;
+
+    state->api_stack = api_stack;
+
+    return result;
+}
+
+wi_run_result_t
 wi_state_run(wi_state_t* state, const char* file_path, const char* src) {
     state->interrupted        = 0;
     wi_prototype_t* prototype = wi_compile(state, file_path, src);
@@ -1107,7 +1128,7 @@ wi_state_run(wi_state_t* state, const char* file_path, const char* src) {
     int jmp_result = setjmp(state->jmp);
 
     if (jmp_result == WI_STATE_JMP_OK) {
-        return _state_interpreter_loop(state);
+        return _state_interpreter_loop(state, 0);
     }
 
     if (jmp_result == WI_STATE_JMP_ABORT) {
@@ -1115,4 +1136,20 @@ wi_state_run(wi_state_t* state, const char* file_path, const char* src) {
     }
 
     return WI_RUN_ERROR;
+}
+
+wi_closure_t*
+wi_slot_check_function(wi_state_t* state, int slot, int arity) {
+    if (!wi_value_is_closure(state->api_stack[slot])) {
+        wi_state_error(state, "bad argument %i - cannot use a value of type %s as a callback", slot,
+                       wi_value_type(state->api_stack[slot]));
+    }
+
+    wi_closure_t* closure = wi_value_as_closure(state->api_stack[slot]);
+
+    if (arity != -1 && closure->prototype->arity != arity) {
+        wi_state_error(state, "callback must take %i arguments but takes %i", arity, closure->prototype->arity);
+    }
+
+    return closure;
 }

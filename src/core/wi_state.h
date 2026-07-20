@@ -60,6 +60,7 @@ typedef struct wi_state {
 
     wi_call_frame_t frames[WI_CALL_FRAMES_COUNT];
     int             frame_count;
+    int             c_call_depth;
 
     wi_value_t  stack[WI_STACK_COUNT];
     wi_value_t* stack_top;
@@ -126,6 +127,12 @@ void
 wi_state_interrupt(wi_state_t* state);
 
 wi_run_result_t
+wi_state_call(wi_state_t* state, wi_closure_t* closure, uint8_t arg_count);
+wi_run_result_t
 wi_state_run(wi_state_t* state, const char* file_path, const char* src);
+
+// we cannot really expose this to the public API, so.. it stays here.
+wi_closure_t*
+wi_slot_check_function(wi_state_t* state, int slot, int arity);
 
 #endif

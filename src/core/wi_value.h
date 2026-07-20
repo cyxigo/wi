@@ -135,4 +135,7 @@ wi_value_to_string(wi_value_t value);
 
 WI_DECL_BUF(wi_value_t, value)
 
+wi_real_t
+wi_string_to_real(const char* string, int len, char** end_ptr);
+
 #endif

@@ -325,7 +325,7 @@ _compiler_add_upvalue(wi_compiler_t* compiler, uint8_t index, bool is_local) {
         }
     }
 
-    if (upvalue_count > WI_UPVALUES_MAX) {
+    if (upvalue_count >= WI_UPVALUES_MAX) {
         wi_parser_error_at_curr(compiler->parser, "too many upvalues in a closure (limit is %i)", WI_UPVALUES_MAX);
     }
 
@@ -427,18 +427,7 @@ _compiler_var_expr(wi_compiler_t* compiler) {
 static void
 _compiler_real_expr(wi_compiler_t* compiler) {
     wi_token_t token = compiler->parser->prev;
-    wi_real_t  real  = 0;
-
-    if (token.len > 2 && token.start[0] == '0') {
-        if (token.start[1] == 'x' || token.start[1] == 'X') {
-            real = (wi_real_t)strtoll(token.start + 2, NULL, 16);
-        } else if (token.start[1] == 'b' || token.start[1] == 'B') {
-            real = (wi_real_t)strtoll(token.start + 2, NULL, 2);
-        }
-    } else {
-        real = strtod(token.start, NULL);
-    }
-
+    wi_real_t  real  = wi_string_to_real(token.start, token.len, NULL);
     _compiler_emit_push(compiler, wi_make_real_value(real));
 }
 

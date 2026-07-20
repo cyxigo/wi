@@ -10,6 +10,21 @@ wi_is_digit(char c) {
 }
 
 static inline bool
+wi_is_bin_digit(char c) {
+    return c == '0' || c == '1';
+}
+
+static inline bool
+wi_is_oct_digit(char c) {
+    return c >= '0' && c <= '7';
+}
+
+static inline bool
+wi_is_hex_digit(char c) {
+    return wi_is_digit(c) || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
+}
+
+static inline bool
 wi_is_alpha(char c) {
     return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_' || c == '@';
 }
@@ -17,11 +32,6 @@ wi_is_alpha(char c) {
 static inline bool
 wi_is_alnum(char c) {
     return wi_is_digit(c) || wi_is_alpha(c);
-}
-
-static inline bool
-wi_is_hex_digit(char c) {
-    return wi_is_digit(c) || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
 }
 
 typedef enum {

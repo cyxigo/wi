@@ -144,10 +144,29 @@ _base_exit(wi_state_t* state, int arg_count) {
     wi_state_abort(state);
 }
 
-typedef bool(_is_type_fn_t)(wi_value_t value);
+static void
+_base_error(wi_state_t* state, int arg_count) {
+    wi_state_error(state, "%s", wi_slot_check_string(state, 1));
+}
 
 static void
-_is_type_function(wi_state_t* state, _is_type_fn_t fn) {
+_base_assert(wi_state_t* state, int arg_count) {
+    bool is_falsy = wi_value_is_falsy(state->api_stack[1]);
+
+    if (is_falsy) {
+        wi_state_error(state, "%s", wi_slot_check_string(state, 2));
+    }
+
+    wi_slot_set_bool(state, 0, !is_falsy);
+}
+
+static void
+_base_type(wi_state_t* state, int arg_count) {
+    wi_slot_set_string(state, 0, wi_value_type(state->api_stack[1]));
+}
+
+static void
+_is_type_function(wi_state_t* state, bool (*fn)(wi_value_t value)) {
     wi_slot_set_bool(state, 0, fn(state->api_stack[1]));
 }
 
@@ -206,6 +225,46 @@ _base_is_falsy(wi_state_t* state, int arg_count) {
     _is_type_function(state, wi_value_is_falsy);
 }
 
+static void
+_base_to_real(wi_state_t* state, int arg_count) {
+    wi_value_t value = state->api_stack[1];
+    wi_value_t result;
+
+    if (wi_value_is_real(value)) {
+        result = value;
+    } else if (wi_value_is_null(value)) {
+        result = wi_make_real_value(0);
+    } else if (wi_value_is_bool(value)) {
+        result = wi_make_real_value(wi_value_as_bool(value) ? 1 : 0);
+    } else if (wi_value_is_string(value)) {
+        wi_string_t* string = wi_value_as_string(state->api_stack[1]);
+        char*        end    = NULL;
+        wi_real_t    real   = wi_string_to_real(string->chars, string->len, &end);
+
+        if (end == string->chars) {
+            wi_state_error(state, "invalid real format %s", string->chars);
+        }
+
+        result = wi_make_real_value(real);
+    } else {
+        wi_state_error(state, "bad argument 1 - cannot convert a value of type %s to real", wi_value_type(value));
+    }
+
+    state->api_stack[0] = result;
+}
+
+static void
+_base_to_bool(wi_state_t* state, int arg_count) {
+    wi_slot_set_bool(state, 0, !wi_value_is_falsy(state->api_stack[1]));
+}
+
+static void
+_base_to_string(wi_state_t* state, int arg_count) {
+    char*        string     = wi_value_to_string(state->api_stack[1]);
+    wi_string_t* string_box = wi_copy_cstring(state->gc, string, (int)strlen(string));
+    state->api_stack[0]     = WI_MAKE_BOX_VALUE(string_box);
+}
+
 static wi_object_t*
 _check_arg1_object(wi_state_t* state) {
     if (!wi_value_is_object(state->api_stack[1])) {
@@ -222,6 +281,14 @@ _base_has_field(wi_state_t* state, int arg_count) {
     wi_slot_set_bool(state, 0, wi_table_get(&object->fields, state->api_stack[2], NULL));
 }
 
+static void
+_base_fields(wi_state_t* state, int arg_count) {
+    wi_object_t* object = _check_arg1_object(state);
+    wi_map_t*    fields = wi_new_map(state->gc);
+    state->api_stack[0] = WI_MAKE_BOX_VALUE(fields);
+    wi_table_copy(&object->fields, &fields->items);
+}
+
 void
 wi_state_def_base_foreign(wi_state_t* state) {
     wi_def_foreign(state, "print", _base_print, -1);
@@ -230,6 +297,10 @@ wi_state_def_base_foreign(wi_state_t* state) {
     wi_def_foreign(state, "is_main", _base_is_main, 0);
     wi_def_foreign(state, "exit", _base_exit, 0);
 
+    wi_def_foreign(state, "error", _base_error, 1);
+    wi_def_foreign(state, "assert", _base_assert, 2);
+
+    wi_def_foreign(state, "type", _base_type, 1);
     wi_def_foreign(state, "is_real", _base_is_real, 1);
     wi_def_foreign(state, "is_null", _base_is_null, 1);
     wi_def_foreign(state, "is_bool", _base_is_bool, 1);
@@ -242,5 +313,10 @@ wi_state_def_base_foreign(wi_state_t* state) {
     wi_def_foreign(state, "is_userdata", _base_is_userdata, 1);
     wi_def_foreign(state, "is_falsy", _base_is_falsy, 1);
 
+    wi_def_foreign(state, "to_real", _base_to_real, 1);
+    wi_def_foreign(state, "to_bool", _base_to_bool, 1);
+    wi_def_foreign(state, "to_string", _base_to_string, 1);
+
     wi_def_foreign(state, "has_field", _base_has_field, 2);
+    wi_def_foreign(state, "fields", _base_fields, 1);
 }

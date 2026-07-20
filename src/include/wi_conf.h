@@ -31,13 +31,14 @@ enum {
      */
     WI_GC_MIN_HEAP         = 1048576,  // Initial heap size before first collection
     WI_GC_HEAP_GROW_FACTOR = 2,        // Heap growth factor per garbage collection run
-    WI_GC_TEMP_ROOTS_MAX   = 15,       // Maximum number of temporary GC root references
+    WI_GC_TEMP_ROOTS_MAX   = 16,       // Maximum number of temporary GC root references
 
     /**
      * VM limits
      */
     WI_CALL_FRAMES_COUNT = 16384,  // Maximum number of call frames
     WI_STACK_COUNT       = 65535,  // Maximum number of values on the VM stack
+    WI_C_CALL_STACK_MAX  = 200,    // Maximum depth of nested wi_state_call
 };
 
 /**

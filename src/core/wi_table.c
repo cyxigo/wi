@@ -94,6 +94,23 @@ _table_adjust_capacity(wi_table_t* table, int capacity) {
     table->entries  = entries;
 }
 
+int
+wi_table_count(wi_table_t* table) {
+    int count = 0;
+
+    for (int i = 0; i < table->capacity; i++) {
+        wi_entry_t* entry = &table->entries[i];
+
+        if (wi_value_is_empty(entry->key)) {
+            continue;
+        }
+
+        count++;
+    }
+
+    return count;
+}
+
 bool
 wi_table_set(wi_table_t* table, wi_value_t key, wi_value_t value) {
     if (table->count + 1 > table->capacity * WI_TABLE_MAX_LOAD) {
@@ -212,8 +229,17 @@ wi_table_reserve(wi_table_t* table, int count) {
 }
 
 void
-wi_table_copy(wi_table_t* dest, wi_table_t* src) {
+wi_table_copy(wi_table_t* src, wi_table_t* dest) {
+    if (src == dest) {
+        return;
+    }
+
+    if (dest->entries) {
+        WI_GC_FREE_ARRAY(dest->gc, wi_entry_t, dest->entries, dest->capacity);
+    }
+
     if (src->capacity == 0) {
+        wi_table_init(dest, dest->gc);
         return;
     }
 

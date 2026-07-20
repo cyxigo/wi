@@ -40,19 +40,19 @@ static void
 _array_clear(wi_state_t* state, int arg_count) {
     wi_array_t* array = _check_arg1_array(state);
     wi_value_buf_free(&array->items);
-    wi_value_buf_init(&array->items, state->gc);
-}
-
-static void
-_array_count(wi_state_t* state, int arg_count) {
-    wi_array_t* array = _check_arg1_array(state);
-    wi_slot_set_real(state, 0, array->items.count);
+    wi_slot_set_null(state, 0);
 }
 
 static void
 _array_capacity(wi_state_t* state, int arg_count) {
     wi_array_t* array = _check_arg1_array(state);
     wi_slot_set_real(state, 0, array->items.capacity);
+}
+
+static void
+_array_count(wi_state_t* state, int arg_count) {
+    wi_array_t* array = _check_arg1_array(state);
+    wi_slot_set_real(state, 0, array->items.count);
 }
 
 static void
@@ -210,14 +210,29 @@ _array_slice(wi_state_t* state, int arg_count) {
     result->items.count = count;
 }
 
+static void
+_array_each(wi_state_t* state, int arg_count) {
+    wi_array_t*   array   = _check_arg1_array(state);
+    wi_closure_t* closure = wi_slot_check_function(state, 2, 1);
+
+    for (int i = 0; i < array->items.count; i++) {
+        wi_state_push(state, WI_MAKE_BOX_VALUE(closure));
+        wi_state_push(state, array->items.data[i]);
+
+        wi_state_call(state, closure, 1);
+    }
+
+    wi_slot_set_null(state, 0);
+}
+
 void
 wi_state_def_array_foreign(wi_state_t* state) {
     wi_object_t* object = wi_def_object(state, "array");
 
     wi_set_field_foreign(state, object, "copy", _array_copy, 1);
     wi_set_field_foreign(state, object, "clear", _array_clear, 1);
-    wi_set_field_foreign(state, object, "count", _array_count, 1);
     wi_set_field_foreign(state, object, "capacity", _array_capacity, 1);
+    wi_set_field_foreign(state, object, "count", _array_count, 1);
     wi_set_field_foreign(state, object, "equals", _array_equals, 2);
     wi_set_field_foreign(state, object, "reverse", _array_reverse, 1);
     wi_set_field_foreign(state, object, "reversed", _array_reversed, 1);
@@ -227,6 +242,7 @@ wi_state_def_array_foreign(wi_state_t* state) {
     wi_set_field_foreign(state, object, "remove_at", _array_remove_at, 2);
     wi_set_field_foreign(state, object, "concat", _array_concat, -1);
     wi_set_field_foreign(state, object, "slice", _array_slice, 3);
+    wi_set_field_foreign(state, object, "each", _array_each, 2);
 
     state->array_obj = object;
 }

@@ -299,25 +299,35 @@ _lexer_name(wi_lexer_t* ls) {
 }
 
 static wi_token_t
-_lexer_real(wi_lexer_t* lexer) {
-    if (lexer->start[0] == '0' && (_lexer_peek(lexer) == 'b' || _lexer_peek(lexer) == 'B')) {
-        _lexer_advance(lexer);
+_lexer_non_dec_real(wi_lexer_t* lexer) {
+    char prefix               = _lexer_peek(lexer);
+    bool (*is_digit_fn)(char) = NULL;
 
-        while (_lexer_peek(lexer) == '0' || _lexer_peek(lexer) == '1') {
-            _lexer_advance(lexer);
-        }
-
-        return _lexer_make_token(lexer, WI_TOKEN_LIT_REAL);
+    if (prefix == 'b' || prefix == 'B') {
+        is_digit_fn = wi_is_bin_digit;
+    } else if (prefix == 'o' || prefix == 'O') {
+        is_digit_fn = wi_is_oct_digit;
+    } else if (prefix == 'x' || prefix == 'X') {
+        is_digit_fn = wi_is_hex_digit;
     }
 
-    if (lexer->start[0] == '0' && (_lexer_check(lexer, 'x') || _lexer_check(lexer, 'X'))) {
+    _lexer_advance(lexer);
+
+    while (is_digit_fn(_lexer_peek(lexer))) {
         _lexer_advance(lexer);
+    }
 
-        while (wi_is_hex_digit(_lexer_peek(lexer))) {
-            _lexer_advance(lexer);
+    return _lexer_make_token(lexer, WI_TOKEN_LIT_REAL);
+}
+
+static wi_token_t
+_lexer_real(wi_lexer_t* lexer) {
+    if (lexer->start[0] == '0') {
+        char next = _lexer_peek(lexer);
+
+        if (next == 'b' || next == 'B' || next == 'o' || next == 'O' || next == 'x' || next == 'X') {
+            return _lexer_non_dec_real(lexer);
         }
-
-        return _lexer_make_token(lexer, WI_TOKEN_LIT_REAL);
     }
 
     while (wi_is_digit(_lexer_peek(lexer))) {

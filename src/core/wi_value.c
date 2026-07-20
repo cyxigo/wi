@@ -305,3 +305,24 @@ wi_value_to_string(wi_value_t value) {
 }
 
 WI_DEF_BUF(wi_value_t, value)
+
+wi_real_t
+wi_string_to_real(const char* string, int len, char** end_ptr) {
+    if (len > 2 && string[0] == '0') {
+        char c = string[1];
+
+        if (c == 'x' || c == 'X') {
+            return (wi_real_t)strtoll(string + 2, end_ptr, 16);
+        }
+
+        if (c == 'o' || c == 'O') {
+            return (wi_real_t)strtoll(string + 2, end_ptr, 8);
+        }
+
+        if (c == 'b' || c == 'B') {
+            return (wi_real_t)strtoll(string + 2, end_ptr, 2);
+        }
+    }
+
+    return strtod(string, end_ptr);
+}

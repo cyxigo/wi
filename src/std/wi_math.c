@@ -1,16 +1,16 @@
 #include "wi_math.h"
 
 #include <math.h>
+#include <stdlib.h>
+#include <time.h>
 
 #include "../include/wi.h"
 
 #define M_E 2.7182818284590452354
 #define M_PI 3.14159265358979323846
 
-typedef double (*_math_single_arg_fn_t)(double x);
-
 static void
-_math_single_arg_function(wi_state_t* state, _math_single_arg_fn_t fn) {
+_math_single_arg_function(wi_state_t* state, double (*fn)(double x)) {
     wi_slot_set_real(state, 0, fn(wi_slot_check_real(state, 1)));
 }
 
@@ -138,6 +138,16 @@ _math_rad(wi_state_t* state, int arg_count) {
 }
 
 static void
+_math_random(wi_state_t* state, int arg_count) {
+    wi_slot_set_real(state, 0, (wi_real_t)rand() / ((wi_real_t)RAND_MAX + 1.0));
+}
+
+static void
+_math_round(wi_state_t* state, int arg_count) {
+    _math_single_arg_function(state, round);
+}
+
+static void
 _math_sin(wi_state_t* state, int arg_count) {
     _math_single_arg_function(state, sin);
 }
@@ -154,6 +164,7 @@ _math_tan(wi_state_t* state, int arg_count) {
 
 void
 wi_state_def_math_foreign(wi_state_t* state) {
+    srand((unsigned)time(NULL));
     wi_object_t* object = wi_def_object(state, "math");
 
     wi_set_field_real(state, object, "e", M_E);
@@ -177,6 +188,8 @@ wi_state_def_math_foreign(wi_state_t* state) {
     wi_set_field_foreign(state, object, "min", _math_min, -1);
     wi_set_field_foreign(state, object, "pow", _math_pow, 2);
     wi_set_field_foreign(state, object, "rad", _math_rad, 1);
+    wi_set_field_foreign(state, object, "random", _math_random, 0);
+    wi_set_field_foreign(state, object, "round", _math_round, 1);
     wi_set_field_foreign(state, object, "sin", _math_sin, 1);
     wi_set_field_foreign(state, object, "sqrt", _math_sqrt, 1);
     wi_set_field_foreign(state, object, "tan", _math_tan, 1);
