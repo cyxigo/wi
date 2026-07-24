@@ -111,6 +111,7 @@ typedef struct {
     wi_int_buf_t   lines;
     wi_value_buf_t constants;
     bool           is_main;
+    bool           is_variadic;
     int            arity;
     int            upvalue_count;
 } wi_prototype_t;
@@ -139,6 +140,7 @@ typedef struct {
     wi_foreign_fn_t fn;
     wi_string_t*    name;
     int             arity;
+    bool            is_variadic;
 } wi_foreign_t;
 
 static inline bool
@@ -152,7 +154,7 @@ wi_value_as_foreign(wi_value_t value) {
 }
 
 wi_foreign_t*
-wi_new_foreign(wi_gc_t* gc, wi_foreign_fn_t fn, wi_string_t* name, int arity);
+wi_new_foreign(wi_gc_t* gc, wi_foreign_fn_t fn, wi_string_t* name, int arity, bool is_variadic);
 
 typedef struct wi_upvalue wi_upvalue_t;
 

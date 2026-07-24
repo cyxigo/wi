@@ -8,13 +8,20 @@
 #include "../include/wi_conf.h"
 #include "wi_gc.h"
 #include "wi_state.h"
+#include "wi_util.h"
 
 static wi_state_t* g_state = NULL;
 
-static void
+static bool
 _init_g_state(wi_conf_t conf) {
     g_state = wi_new_state(conf);
+
+    if (!g_state) {
+        return false;
+    }
+
     wi_def_std(g_state);
+    return true;
 }
 
 static void
@@ -40,7 +47,11 @@ _repl(void) {
     _version();
 
     char line[2048];
-    _init_g_state(WI_DEFAULT_CONF);
+
+    if (!_init_g_state(WI_DEFAULT_CONF)) {
+        fprintf(stderr, "memory error: failed to allocate a state\n");
+        return;
+    }
 
     for (;;) {
         printf("> ");
@@ -179,9 +190,8 @@ main(int argc, const char* argv[]) {
     _parse_flags(argc, argv, &conf, &file_path);
 
     char* src = _read_file(file_path);
-    _init_g_state(conf);
 
-    if (!g_state) {
+    if (!_init_g_state(conf)) {
         free(src);
         fprintf(stderr, "memory error: failed to allocate a state\n");
         return EXIT_FAILURE;

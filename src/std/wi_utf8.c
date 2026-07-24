@@ -70,6 +70,6 @@ void
 wi_state_def_utf8_foreign(wi_state_t* state) {
     wi_object_t* object = wi_def_object(state, "utf8");
 
-    wi_set_field_foreign(state, object, "len", _utf8_len, 1);
-    wi_set_field_foreign(state, object, "at", _utf8_at, 2);
+    wi_set_field_foreign(state, object, "len", _utf8_len, 1, false);
+    wi_set_field_foreign(state, object, "at", _utf8_at, 2, false);
 }

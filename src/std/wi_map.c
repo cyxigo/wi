@@ -1,3 +1,5 @@
+#include <stdbool.h>
+
 #include "../core/wi_state.h"
 #include "../include/wi.h"
 
@@ -145,9 +147,7 @@ _map_each(wi_state_t* state, int arg_count) {
     wi_map_t*     map     = _check_arg1_map(state);
     wi_closure_t* closure = wi_slot_check_function(state, 2, 2);
 
-    int capacity = map->items.capacity;
-
-    for (int i = 0; i < capacity; i++) {
+    for (int i = 0; i < map->items.capacity; i++) {
         wi_entry_t* entry = &map->items.entries[i];
 
         if (wi_value_is_empty(entry->key)) {
@@ -158,7 +158,7 @@ _map_each(wi_state_t* state, int arg_count) {
         wi_state_push(state, entry->key);
         wi_state_push(state, entry->value);
 
-        wi_state_call(state, closure, 2);
+        wi_state_call(state, closure, 2, true);
     }
 
     wi_slot_set_null(state, 0);
@@ -168,17 +168,17 @@ void
 wi_state_def_map_foreign(wi_state_t* state) {
     wi_object_t* object = wi_def_object(state, "map");
 
-    wi_set_field_foreign(state, object, "copy", _map_copy, 2);
-    wi_set_field_foreign(state, object, "clear", _map_clear, 1);
-    wi_set_field_foreign(state, object, "capacity", _map_capacity, 1);
-    wi_set_field_foreign(state, object, "count", _map_count, 1);
-    wi_set_field_foreign(state, object, "equals", _map_equals, 2);
-    wi_set_field_foreign(state, object, "keys", _map_keys, 1);
-    wi_set_field_foreign(state, object, "values", _map_values, 1);
-    wi_set_field_foreign(state, object, "has", _map_has, 2);
-    wi_set_field_foreign(state, object, "get_or_default", _map_get_or_default, 3);
-    wi_set_field_foreign(state, object, "remove", _map_remove, 2);
-    wi_set_field_foreign(state, object, "each", _map_each, 2);
+    wi_set_field_foreign(state, object, "copy", _map_copy, 1, false);
+    wi_set_field_foreign(state, object, "clear", _map_clear, 1, false);
+    wi_set_field_foreign(state, object, "capacity", _map_capacity, 1, false);
+    wi_set_field_foreign(state, object, "count", _map_count, 1, false);
+    wi_set_field_foreign(state, object, "equals", _map_equals, 2, false);
+    wi_set_field_foreign(state, object, "keys", _map_keys, 1, false);
+    wi_set_field_foreign(state, object, "values", _map_values, 1, false);
+    wi_set_field_foreign(state, object, "has", _map_has, 2, false);
+    wi_set_field_foreign(state, object, "get_or_default", _map_get_or_default, 3, false);
+    wi_set_field_foreign(state, object, "remove", _map_remove, 2, false);
+    wi_set_field_foreign(state, object, "each", _map_each, 2, false);
 
     state->map_obj = object;
 }

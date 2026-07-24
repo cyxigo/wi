@@ -35,7 +35,9 @@ wi_new_gc(wi_conf_t conf) {
     gc->gray_capacity = 0;
     gc->gray_count    = 0;
 
-    gc->temp_root_count = 0;
+    gc->temp_roots         = NULL;
+    gc->temp_root_capacity = 0;
+    gc->temp_root_count    = 0;
 
     wi_table_init(&gc->strings, gc);
     return gc;
@@ -55,8 +57,24 @@ wi_delete_gc(wi_gc_t* gc) {
     }
 
     free(gc->gray_stack);
+    free(gc->temp_roots);
     wi_table_free(&gc->strings);
     free(gc);
+}
+
+void
+wi_gc_push_root(wi_gc_t* gc, wi_box_t* root) {
+    if (gc->temp_root_count + 1 > gc->temp_root_capacity) {
+        gc->temp_root_capacity = WI_GROW_CAPACITY(gc->temp_root_capacity);
+        gc->temp_roots         = realloc(gc->temp_roots, sizeof(wi_box_t*) * (size_t)gc->temp_root_capacity);
+
+        if (!gc->temp_roots) {
+            fprintf(stderr, "memory error: failed to allocate memory for the garbage collector temp roots\n");
+            exit(EXIT_FAILURE);
+        }
+    }
+
+    gc->temp_roots[gc->temp_root_count++] = root;
 }
 
 void*
@@ -239,21 +257,29 @@ _gc_mark_roots(wi_gc_t* gc) {
     _gc_mark_compiler(gc);
     wi_state_t* state = gc->state;
 
-    for (wi_value_t* slot = state->stack; slot < state->stack_top; slot++) {
-        _gc_mark_value(gc, *slot);
+    for (int i = 0; i < state->recovery_count; i++) {
+        _gc_mark_box(gc, (wi_box_t*)state->recoveries[i].error);
     }
 
     for (int i = 0; i < state->frame_count; i++) {
         _gc_mark_box(gc, (wi_box_t*)state->frames[i].closure);
     }
 
-    for (wi_upvalue_t* upvalue = state->open_upvalues; upvalue; upvalue = upvalue->next) {
-        _gc_mark_box(gc, (wi_box_t*)upvalue);
+    for (wi_value_t* slot = state->stack; slot < state->stack_top; slot++) {
+        _gc_mark_value(gc, *slot);
     }
 
     _gc_mark_table(gc, &state->globals);
     _gc_mark_table(gc, &state->required);
     _gc_mark_table(gc, &state->foreign);
+
+    for (wi_upvalue_t* upvalue = state->open_upvalues; upvalue; upvalue = upvalue->next) {
+        _gc_mark_box(gc, (wi_box_t*)upvalue);
+    }
+
+    _gc_mark_box(gc, (wi_box_t*)state->ok_str);
+    _gc_mark_box(gc, (wi_box_t*)state->value_str);
+    _gc_mark_box(gc, (wi_box_t*)state->error_str);
 }
 
 static void

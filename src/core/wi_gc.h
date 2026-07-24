@@ -23,26 +23,25 @@ typedef struct wi_gc {
     int        gray_capacity;
     int        gray_count;
 
-    wi_box_t* temp_roots[WI_GC_TEMP_ROOTS_MAX];
-    int       temp_root_count;
+    wi_box_t** temp_roots;
+    int        temp_root_capacity;
+    int        temp_root_count;
 
     wi_table_t strings;
 } wi_gc_t;
+
+wi_gc_t*
+wi_new_gc(wi_conf_t conf);
+void
+wi_delete_gc(wi_gc_t* gc);
 
 static inline void
 wi_gc_reset_roots(wi_gc_t* gc) {
     gc->temp_root_count = 0;
 }
 
-static inline void
-wi_gc_push_root(wi_gc_t* gc, wi_box_t* root) {
-    if (gc->temp_root_count >= WI_GC_TEMP_ROOTS_MAX) {
-        fprintf(stderr, "memory error: temp roots overflow (limit is %i)\n", WI_GC_TEMP_ROOTS_MAX);
-        exit(EXIT_FAILURE);
-    }
-
-    gc->temp_roots[gc->temp_root_count++] = root;
-}
+void
+wi_gc_push_root(wi_gc_t* gc, wi_box_t* root);
 
 static inline void
 wi_gc_pop_root(wi_gc_t* gc) {
@@ -53,11 +52,6 @@ static inline bool
 wi_log_gc(wi_gc_t* gc) {
     return wi_conf_is_set(gc->conf, WI_CONF_LOG_GC);
 }
-
-wi_gc_t*
-wi_new_gc(wi_conf_t conf);
-void
-wi_delete_gc(wi_gc_t* gc);
 
 void*
 wi_gc_realloc(wi_gc_t* gc, void* ptr, size_t old_size, size_t new_size);

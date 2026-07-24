@@ -69,8 +69,4 @@ WI_DECL_BUF(int, int)
 WI_DECL_BUF(char, char)
 WI_DECL_BUF(uint8_t, byte)
 
-// yes, it's here. i have no idea where else to put it.
-char*
-wi_read_stream(FILE* stream);
-
 #endif

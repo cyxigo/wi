@@ -1,14 +1,16 @@
+#include <setjmp.h>
+#include <stdint.h>
 #ifndef _WIN32
 #define _POSIX_C_SOURCE 200809L
 #endif
-
-#include "wi_base.h"
 
 #include <limits.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
+
+#include "wi_base.h"
 
 #ifdef _WIN32
 #include <windows.h>
@@ -161,6 +163,40 @@ _base_assert(wi_state_t* state, int arg_count) {
 }
 
 static void
+_base_try(wi_state_t* state, int arg_count) {
+    wi_closure_t*   closure   = wi_slot_check_function(state, 1, -1);
+    wi_prototype_t* prototype = closure->prototype;
+    wi_state_check_arity(state, prototype->arity, (uint8_t)(arg_count - 1), prototype->is_variadic);
+
+    wi_object_t* result = wi_new_object(state->gc, NULL);
+    state->api_stack[0] = WI_MAKE_BOX_VALUE(result);
+    wi_table_reserve(&result->fields, 3);
+
+    wi_recovery_t* recovery = wi_state_push_recovery(state);
+
+    if (setjmp(recovery->jmp) == WI_JMP_OK) {
+        wi_state_push(state, WI_MAKE_BOX_VALUE(closure));
+
+        for (int i = 0; i < arg_count - 1; i++) {
+            wi_state_push(state, state->api_stack[i + 2]);
+        }
+
+        wi_state_call(state, closure, (uint8_t)(arg_count - 1), false);
+        wi_value_t call_value = wi_state_pop(state);
+
+        wi_state_pop_recovery(state);
+
+        wi_table_set(&result->fields, WI_MAKE_BOX_VALUE(state->ok_str), wi_make_true_value());
+        wi_table_set(&result->fields, WI_MAKE_BOX_VALUE(state->value_str), call_value);
+        wi_table_set(&result->fields, WI_MAKE_BOX_VALUE(state->error_str), wi_make_null_value());
+    } else {
+        wi_table_set(&result->fields, WI_MAKE_BOX_VALUE(state->ok_str), wi_make_false_value());
+        wi_table_set(&result->fields, WI_MAKE_BOX_VALUE(state->value_str), wi_make_null_value());
+        wi_table_set(&result->fields, WI_MAKE_BOX_VALUE(state->error_str), WI_MAKE_BOX_VALUE(recovery->error));
+    }
+}
+
+static void
 _base_type(wi_state_t* state, int arg_count) {
     wi_slot_set_string(state, 0, wi_value_type(state->api_stack[1]));
 }
@@ -291,32 +327,33 @@ _base_fields(wi_state_t* state, int arg_count) {
 
 void
 wi_state_def_base_foreign(wi_state_t* state) {
-    wi_def_foreign(state, "print", _base_print, -1);
-    wi_def_foreign(state, "input", _base_input, 0);
-    wi_def_foreign(state, "load_foreign", _base_load_foreign, 1);
-    wi_def_foreign(state, "is_main", _base_is_main, 0);
-    wi_def_foreign(state, "exit", _base_exit, 0);
+    wi_def_foreign(state, "print", _base_print, 0, true);
+    wi_def_foreign(state, "input", _base_input, 0, false);
+    wi_def_foreign(state, "load_foreign", _base_load_foreign, 1, false);
+    wi_def_foreign(state, "is_main", _base_is_main, 0, false);
+    wi_def_foreign(state, "exit", _base_exit, 0, false);
 
-    wi_def_foreign(state, "error", _base_error, 1);
-    wi_def_foreign(state, "assert", _base_assert, 2);
+    wi_def_foreign(state, "error", _base_error, 1, false);
+    wi_def_foreign(state, "assert", _base_assert, 2, false);
+    wi_def_foreign(state, "try", _base_try, 1, true);
 
-    wi_def_foreign(state, "type", _base_type, 1);
-    wi_def_foreign(state, "is_real", _base_is_real, 1);
-    wi_def_foreign(state, "is_null", _base_is_null, 1);
-    wi_def_foreign(state, "is_bool", _base_is_bool, 1);
-    wi_def_foreign(state, "is_string", _base_is_string, 1);
-    wi_def_foreign(state, "is_array", _base_is_array, 1);
-    wi_def_foreign(state, "is_map", _base_is_map, 1);
-    wi_def_foreign(state, "is_foreign", _base_is_foreign, 1);
-    wi_def_foreign(state, "is_function", _base_is_function, 1);
-    wi_def_foreign(state, "is_object", _base_is_object, 1);
-    wi_def_foreign(state, "is_userdata", _base_is_userdata, 1);
-    wi_def_foreign(state, "is_falsy", _base_is_falsy, 1);
+    wi_def_foreign(state, "type", _base_type, 1, false);
+    wi_def_foreign(state, "is_real", _base_is_real, 1, false);
+    wi_def_foreign(state, "is_null", _base_is_null, 1, false);
+    wi_def_foreign(state, "is_bool", _base_is_bool, 1, false);
+    wi_def_foreign(state, "is_string", _base_is_string, 1, false);
+    wi_def_foreign(state, "is_array", _base_is_array, 1, false);
+    wi_def_foreign(state, "is_map", _base_is_map, 1, false);
+    wi_def_foreign(state, "is_foreign", _base_is_foreign, 1, false);
+    wi_def_foreign(state, "is_function", _base_is_function, 1, false);
+    wi_def_foreign(state, "is_object", _base_is_object, 1, false);
+    wi_def_foreign(state, "is_userdata", _base_is_userdata, 1, false);
+    wi_def_foreign(state, "is_falsy", _base_is_falsy, 1, false);
 
-    wi_def_foreign(state, "to_real", _base_to_real, 1);
-    wi_def_foreign(state, "to_bool", _base_to_bool, 1);
-    wi_def_foreign(state, "to_string", _base_to_string, 1);
+    wi_def_foreign(state, "to_real", _base_to_real, 1, false);
+    wi_def_foreign(state, "to_bool", _base_to_bool, 1, false);
+    wi_def_foreign(state, "to_string", _base_to_string, 1, false);
 
-    wi_def_foreign(state, "has_field", _base_has_field, 2);
-    wi_def_foreign(state, "fields", _base_fields, 1);
+    wi_def_foreign(state, "has_field", _base_has_field, 2, false);
+    wi_def_foreign(state, "fields", _base_fields, 1, false);
 }

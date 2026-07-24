@@ -545,7 +545,12 @@ _compiler_function_expr(wi_compiler_t* outer) {
     compiler.prototype->name = _compiler_get_name(compiler.outer);
 
     if (compiler.prototype->name) {
-        compiler.locals[0].name = wi_token_from_string(compiler.prototype->name->chars);
+        compiler.locals[0].name = (wi_token_t){
+            .kind  = WI_TOKEN_NAME,
+            .start = compiler.prototype->name->chars,
+            .len   = compiler.prototype->name->len,
+            .line  = compiler.parser->curr.line,
+        };
     }
 
     _compiler_begin_scope(&compiler);
@@ -553,9 +558,17 @@ _compiler_function_expr(wi_compiler_t* outer) {
 
     if (!wi_parser_check(compiler.parser, WI_TOKEN_CLOSE_PAREN)) {
         do {
+            if (wi_parser_match(compiler.parser, WI_TOKEN_DOT_DOT_DOT)) {
+                compiler.prototype->is_variadic = true;
+                wi_token_t name                 = wi_parser_expect(compiler.parser, WI_TOKEN_NAME);
+                _compiler_decl_var(&compiler, name);
+                _compiler_def_var(&compiler, name);
+                break;
+            }
+
             compiler.prototype->arity++;
 
-            if (compiler.prototype->arity > UINT8_MAX) {
+            if (compiler.prototype->arity > WI_PARAMETER_MAX) {
                 wi_parser_error_at_curr(compiler.parser, "cannot have more than 255 parameters");
             }
 
@@ -588,7 +601,7 @@ _compiler_arg_list(wi_compiler_t* compiler, uint8_t start) {
         do {
             _compiler_expr(compiler);
 
-            if (arg_count == UINT8_MAX) {
+            if (arg_count == WI_PARAMETER_MAX) {
                 wi_parser_error_at_curr(compiler->parser, "cannot have more than 255 arguments in a call");
             }
 

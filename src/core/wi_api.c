@@ -26,11 +26,12 @@ wi_def_std(wi_state_t* state) {
 }
 
 static void
-_def_foreign(wi_state_t* state, wi_table_t* table, const char* name, wi_foreign_fn_t fn, int arity) {
+_def_foreign(wi_state_t* state, wi_table_t* table, const char* name, wi_foreign_fn_t fn, int arity,
+             bool is_variadic) {
     wi_string_t* name_box = wi_copy_cstring(state->gc, name, (int)strlen(name));
     wi_gc_push_root(state->gc, (wi_box_t*)name_box);
 
-    wi_foreign_t* foreign = wi_new_foreign(state->gc, fn, name_box, arity);
+    wi_foreign_t* foreign = wi_new_foreign(state->gc, fn, name_box, arity, is_variadic);
     wi_gc_push_root(state->gc, (wi_box_t*)(foreign));
 
     wi_table_set(table, WI_MAKE_BOX_VALUE(name_box), WI_MAKE_BOX_VALUE(foreign));
@@ -40,8 +41,8 @@ _def_foreign(wi_state_t* state, wi_table_t* table, const char* name, wi_foreign_
 }
 
 void
-wi_def_foreign(wi_state_t* state, const char* name, wi_foreign_fn_t fn, int arity) {
-    _def_foreign(state, &state->foreign, name, fn, arity);
+wi_def_foreign(wi_state_t* state, const char* name, wi_foreign_fn_t fn, int arity, bool is_variadic) {
+    _def_foreign(state, &state->foreign, name, fn, arity, is_variadic);
 }
 
 wi_object_t*
@@ -96,20 +97,21 @@ wi_set_field_string(wi_state_t* state, wi_object_t* object, const char* name, ch
 }
 
 void
-wi_set_field_userdata(wi_state_t* state, wi_object_t* object, const char* name, void* userdata,
-                      wi_userdata_finalizer_fn_t finalizer) {
+wi_set_field_userdata(wi_state_t* state, wi_object_t* object, const char* field_name, const char* name,
+                      void* userdata, wi_userdata_finalizer_fn_t finalizer) {
     wi_string_t* name_box = wi_copy_cstring(state->gc, name, (int)strlen(name));
     wi_gc_push_root(state->gc, (wi_box_t*)name_box);
 
     wi_userdata_t* box = wi_new_userdata(state->gc, name_box, userdata, finalizer);
     wi_gc_pop_root(state->gc);
 
-    _set_field(state, object, name, WI_MAKE_BOX_VALUE(box));
+    _set_field(state, object, field_name, WI_MAKE_BOX_VALUE(box));
 }
 
 void
-wi_set_field_foreign(wi_state_t* state, wi_object_t* object, const char* name, wi_foreign_fn_t fn, int arity) {
-    _def_foreign(state, &object->fields, name, fn, arity);
+wi_set_field_foreign(wi_state_t* state, wi_object_t* object, const char* name, wi_foreign_fn_t fn, int arity,
+                     bool is_variadic) {
+    _def_foreign(state, &object->fields, name, fn, arity, is_variadic);
 }
 
 static void

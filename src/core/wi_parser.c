@@ -77,13 +77,13 @@ _parser_print_token_line(wi_parser_t* parser, wi_token_t token) {
         line_end++;
     }
 
-    int ln_width = _digit_count(token.line);
+    int line_with = _digit_count(token.line);
 
-    fprintf(stderr, " %*s | \n", ln_width, "");
-    fprintf(stderr, " %*i | ", ln_width, token.line);
+    fprintf(stderr, " %*s | \n", line_with, "");
+    fprintf(stderr, " %*i | ", line_with, token.line);
     fwrite(line_start, 1, (size_t)(line_end - line_start), stderr);
     fprintf(stderr, "\n");
-    fprintf(stderr, " %*s | ", ln_width, "");
+    fprintf(stderr, " %*s | ", line_with, "");
 
     for (int i = 0; i < token.col - 1; i++) {
         fprintf(stderr, " ");
@@ -154,11 +154,11 @@ wi_parser_advance(wi_parser_t* parser) {
     parser->curr = parser->next;
     parser->next = wi_lexer_next(parser->lexer);
 
-    if (parser->next.kind != WI_TOKEN_ERROR) {
+    if (parser->curr.kind != WI_TOKEN_ERROR) {
         return;
     }
 
-    wi_parser_error_at(parser, parser->next, "%s", parser->next.start);
+    wi_parser_error_at(parser, parser->curr, "%s", parser->curr.start);
 }
 
 bool

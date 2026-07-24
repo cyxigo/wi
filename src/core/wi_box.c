@@ -95,6 +95,7 @@ wi_new_prototype(wi_gc_t* gc, const char* file_path) {
     wi_int_buf_init(&prototype->lines, gc);
     wi_value_buf_init(&prototype->constants, gc);
     prototype->is_main       = false;
+    prototype->is_variadic   = false;
     prototype->arity         = 0;
     prototype->upvalue_count = 0;
 
@@ -141,12 +142,13 @@ wi_prototype_instr_size(wi_prototype_t* prototype, int offset) {
 }
 
 wi_foreign_t*
-wi_new_foreign(wi_gc_t* gc, wi_foreign_fn_t fn, wi_string_t* name, int arity) {
+wi_new_foreign(wi_gc_t* gc, wi_foreign_fn_t fn, wi_string_t* name, int arity, bool is_variadic) {
     wi_foreign_t* foreign = WI_NEW_BOX(gc, wi_foreign_t, WI_BOX_FOREIGN);
 
-    foreign->fn    = fn;
-    foreign->name  = name;
-    foreign->arity = arity;
+    foreign->fn          = fn;
+    foreign->name        = name;
+    foreign->arity       = arity;
+    foreign->is_variadic = is_variadic;
 
     return foreign;
 }

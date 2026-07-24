@@ -45,6 +45,8 @@ wi_token_kind_to_string(wi_token_kind_t kind) {
             return ".";
         case WI_TOKEN_DOT_DOT:
             return "..";
+        case WI_TOKEN_DOT_DOT_DOT:
+            return "...";
         case WI_TOKEN_HASH:
             return "#";
         case WI_TOKEN_ARROW:
@@ -446,7 +448,15 @@ wi_lexer_next(wi_lexer_t* lexer) {
         case ',':
             return _lexer_make_token(lexer, WI_TOKEN_COMMA);
         case '.':
-            return _lexer_make_token(lexer, _lexer_match(lexer, '.') ? WI_TOKEN_DOT_DOT : WI_TOKEN_DOT);
+            if (_lexer_match(lexer, '.')) {
+                if (_lexer_match(lexer, '.')) {
+                    return _lexer_make_token(lexer, WI_TOKEN_DOT_DOT_DOT);
+                }
+
+                return _lexer_make_token(lexer, WI_TOKEN_DOT_DOT);
+            }
+
+            return _lexer_make_token(lexer, WI_TOKEN_DOT);
         case '#':
             return _lexer_make_token(lexer, WI_TOKEN_HASH);
         case '%':

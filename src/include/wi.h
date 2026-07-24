@@ -65,10 +65,11 @@ wi_def_std(wi_state_t* state);
  * @param state Wi state instance
  * @param name Function name
  * @param fn Pointer to the C function implementation
- * @param arity Function's arity (number of arguments it expects), use `-1` for variable arguments
+ * @param arity Function's arity (number of arguments it expects)
+ * @param is_variadic Whether function is variadic or not
  */
 WI_API void
-wi_def_foreign(wi_state_t* state, const char* name, wi_foreign_fn_t fn, int arity);
+wi_def_foreign(wi_state_t* state, const char* name, wi_foreign_fn_t fn, int arity, bool is_variadic);
 
 /**
  * Define an object in the state (global)
@@ -118,13 +119,14 @@ wi_set_field_string(wi_state_t* state, wi_object_t* object, const char* name, ch
  *
  * @param state Wi state instance
  * @param object Target object
- * @param name Field name
+ * @param field_name Field name
+ * @param name Userdata name, used for type checking
  * @param userdata Pointer to userdata
  * @param finalizer Userdata finalizer
  */
 WI_API void
-wi_set_field_userdata(wi_state_t* state, wi_object_t* object, const char* name, void* userdata,
-                      wi_userdata_finalizer_fn_t finalizer);
+wi_set_field_userdata(wi_state_t* state, wi_object_t* object, const char* field_name, const char* name,
+                      void* userdata, wi_userdata_finalizer_fn_t finalizer);
 
 /**
  * Set a foreign (C) function as a field on an object
@@ -134,9 +136,11 @@ wi_set_field_userdata(wi_state_t* state, wi_object_t* object, const char* name, 
  * @param name Field name
  * @param fn Pointer to the C function implementation
  * @param arity Function's arity (number of arguments it expects)
+ * @param is_variadic Whether function is variadic or not
  */
 WI_API void
-wi_set_field_foreign(wi_state_t* state, wi_object_t* object, const char* name, wi_foreign_fn_t fn, int arity);
+wi_set_field_foreign(wi_state_t* state, wi_object_t* object, const char* name, wi_foreign_fn_t fn, int arity,
+                     bool is_variadic);
 
 /**
  * Create a new Wi state instance

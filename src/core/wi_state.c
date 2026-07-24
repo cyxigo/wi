@@ -15,15 +15,17 @@
 #include "wi_compiler.h"
 #include "wi_gc.h"
 #include "wi_table.h"
+#include "wi_util.h"
 #include "wi_value.h"
 
 static void
 _state_reset_stack(wi_state_t* state) {
-    state->stack_top     = state->stack;
-    state->api_stack     = NULL;
-    state->frame_count   = 0;
-    state->c_call_depth  = 0;
-    state->open_upvalues = NULL;
+    state->recovery_count = 0;
+    state->stack_top      = state->stack;
+    state->api_stack      = NULL;
+    state->frame_count    = 0;
+    state->c_call_depth   = 0;
+    state->open_upvalues  = NULL;
 }
 
 wi_state_t*
@@ -55,6 +57,14 @@ wi_new_state(wi_conf_t conf) {
     state->string_obj = NULL;
     state->array_obj  = NULL;
     state->map_obj    = NULL;
+
+    state->ok_str    = NULL;
+    state->value_str = NULL;
+    state->error_str = NULL;
+
+    state->ok_str    = wi_copy_cstring(state->gc, "ok", 2);
+    state->value_str = wi_copy_cstring(state->gc, "value", 5);
+    state->error_str = wi_copy_cstring(state->gc, "error", 5);
 
     return state;
 }
@@ -117,6 +127,24 @@ wi_state_add_foreign_handle(wi_state_t* state, wi_lib_handle_t lib) {
     return true;
 }
 
+wi_recovery_t*
+wi_state_push_recovery(wi_state_t* state) {
+    if (state->recovery_count >= WI_C_CALL_STACK_MAX) {
+        wi_state_error(state, "too many error buffers (limit is %i)", WI_C_CALL_STACK_MAX);
+    }
+
+    wi_recovery_t* recovery = &state->recoveries[state->recovery_count++];
+
+    recovery->frame_count     = state->frame_count;
+    recovery->c_call_depth    = state->c_call_depth;
+    recovery->stack_top       = state->stack_top;
+    recovery->api_stack       = state->api_stack;
+    recovery->temp_root_count = state->gc->temp_root_count;
+    recovery->error           = NULL;
+
+    return recovery;
+}
+
 void
 wi_state_print_backtrace(wi_state_t* state) {
     for (int i = state->frame_count - 1; i >= 0; i--) {
@@ -135,8 +163,38 @@ wi_state_print_backtrace(wi_state_t* state) {
     }
 }
 
+static void
+_state_close_upvalues(wi_state_t* state, wi_value_t* last);
+
 void
 wi_state_error(wi_state_t* state, const char* format, ...) {
+    if (state->recovery_count > 0) {
+        wi_recovery_t* recovery = &state->recoveries[--state->recovery_count];
+        _state_close_upvalues(state, recovery->stack_top);
+
+        state->frame_count         = recovery->frame_count;
+        state->c_call_depth        = recovery->c_call_depth;
+        state->stack_top           = recovery->stack_top;
+        state->api_stack           = recovery->api_stack;
+        state->gc->temp_root_count = recovery->temp_root_count;
+
+        char* error;
+
+        va_list args;
+        va_start(args, format);
+        int len = vsnprintf(NULL, 0, format, args);
+        va_end(args);
+
+        error = WI_GC_ALLOC(state->gc, char, len + 1);
+
+        va_start(args, format);
+        vsnprintf(error, (size_t)(len + 1), format, args);
+        va_end(args);
+
+        recovery->error = wi_take_cstring(state->gc, error, len);
+        longjmp(recovery->jmp, WI_JMP_ERROR);
+    }
+
     va_list args;
     va_start(args, format);
 
@@ -149,14 +207,25 @@ wi_state_error(wi_state_t* state, const char* format, ...) {
 
     _state_reset_stack(state);
     wi_gc_reset_roots(state->gc);
-    longjmp(state->jmp, WI_STATE_JMP_ERROR);
+    longjmp(state->jmp, WI_JMP_ERROR);
+}
+
+void
+wi_state_check_arity(wi_state_t* state, int arity, uint8_t arg_count, bool is_variadic) {
+    if (is_variadic) {
+        if (arg_count < arity) {
+            wi_state_error(state, "expected at least %i arguments but got %hhu", arity, arg_count);
+        }
+    } else if (arg_count != arity) {
+        wi_state_error(state, "expected %i arguments but got %hhu", arity, arg_count);
+    }
 }
 
 void
 wi_state_abort(wi_state_t* state) {
     _state_reset_stack(state);
     wi_gc_reset_roots(state->gc);
-    longjmp(state->jmp, WI_STATE_JMP_ABORT);
+    longjmp(state->jmp, WI_JMP_ABORT);
 }
 
 void
@@ -216,6 +285,24 @@ _state_concat(wi_state_t* state) {
     wi_state_drop(state);
     wi_state_drop(state);
     wi_state_push(state, WI_MAKE_BOX_VALUE(result));
+}
+
+static void
+_state_push_array(wi_state_t* state, int item_count) {
+    wi_array_t* array = wi_new_array(state->gc);
+    wi_gc_push_root(state->gc, (wi_box_t*)array);
+    wi_value_buf_reserve(&array->items, item_count);
+
+    wi_value_t* item_start = state->stack_top - item_count;
+
+    if (item_count > 0) {
+        memcpy(array->items.data, item_start, sizeof(wi_value_t) * (size_t)item_count);
+    }
+
+    array->items.count = item_count;
+    state->stack_top   = item_start;
+    wi_state_push(state, WI_MAKE_BOX_VALUE(array));
+    wi_gc_pop_root(state->gc);
 }
 
 static int
@@ -326,9 +413,7 @@ _state_close_upvalues(wi_state_t* state, wi_value_t* last) {
 
 static void
 _state_call_foreign(wi_state_t* state, wi_foreign_t* foreign, uint8_t arg_count) {
-    if (foreign->arity != -1 && arg_count != foreign->arity) {
-        wi_state_error(state, "expected %i arguments but got %hhu", foreign->arity, arg_count);
-    }
+    wi_state_check_arity(state, foreign->arity, arg_count, foreign->is_variadic);
 
     state->api_stack = state->stack_top - arg_count - 1;
     foreign->fn(state, arg_count);
@@ -339,34 +424,47 @@ _state_call_foreign(wi_state_t* state, wi_foreign_t* foreign, uint8_t arg_count)
 
 static void
 _state_call(wi_state_t* state, wi_closure_t* closure, uint8_t arg_count) {
-    if (arg_count != closure->prototype->arity) {
-        wi_state_error(state, "expected %i arguments but got %hhu", closure->prototype->arity, arg_count);
-    }
+    wi_prototype_t* prototype = closure->prototype;
+    wi_state_check_arity(state, prototype->arity, arg_count, prototype->is_variadic);
 
     if (state->frame_count == WI_CALL_FRAMES_COUNT) {
-        wi_state_error(state, "stack overflow");
+        // we try to provide at least *some* context about where the overflow has happened
+        state->frames[0]   = state->frames[state->frame_count - 1];
+        state->frame_count = 1;
+        wi_state_error(state, "stack overflow (limit is %i)", WI_CALL_FRAMES_COUNT);
     }
 
     wi_call_frame_t* frame = &state->frames[state->frame_count++];
     frame->closure         = closure;
-    frame->ip              = closure->prototype->bytes.data;
-    frame->slots           = state->stack_top - arg_count - 1;
+    frame->ip              = prototype->bytes.data;
+
+    if (prototype->is_variadic) {
+        _state_push_array(state, arg_count - prototype->arity);
+        frame->slots = state->stack_top - prototype->arity - 2;
+    } else {
+        frame->slots = state->stack_top - arg_count - 1;
+    }
 }
 
 static void
 _state_tail_call(wi_state_t* state, wi_call_frame_t* frame, wi_closure_t* closure, uint8_t arg_count) {
-    if (arg_count != closure->prototype->arity) {
-        wi_state_error(state, "expected %i arguments but got %hhu", closure->prototype->arity, arg_count);
+    wi_prototype_t* prototype = closure->prototype;
+    wi_state_check_arity(state, prototype->arity, arg_count, prototype->is_variadic);
+    _state_close_upvalues(state, frame->slots);
+
+    if (prototype->is_variadic) {
+        _state_push_array(state, arg_count - prototype->arity);
+        wi_value_t* callee_slots = state->stack_top - prototype->arity - 2;
+        memmove(frame->slots, callee_slots, sizeof(wi_value_t) * (size_t)(prototype->arity + 2));
+        state->stack_top = frame->slots + prototype->arity + 2;
+    } else {
+        wi_value_t* callee_slots = state->stack_top - arg_count - 1;
+        memmove(frame->slots, callee_slots, sizeof(wi_value_t) * (size_t)(arg_count + 1));
+        state->stack_top = frame->slots + arg_count + 1;
     }
 
-    _state_close_upvalues(state, frame->slots);
-    wi_value_t* callee_slots = state->stack_top - arg_count - 1;
-
-    memmove(frame->slots, callee_slots, sizeof(wi_value_t) * (size_t)(arg_count + 1));
-
-    state->stack_top = frame->slots + arg_count + 1;
-    frame->closure   = closure;
-    frame->ip        = closure->prototype->bytes.data;
+    frame->closure = closure;
+    frame->ip      = prototype->bytes.data;
 }
 
 static void
@@ -450,8 +548,10 @@ _state_read_file(wi_state_t* state, const char* file_path) {
 }
 
 static wi_closure_t*
-_state_require(wi_state_t* state, char* path, wi_value_t name_value, wi_string_t* name) {
+_state_require(wi_state_t* state, wi_value_t path_value, wi_value_t name_value) {
     wi_call_frame_t* frame = wi_state_frame(state);
+    wi_string_t*     name  = wi_value_as_string(name_value);
+    char*            path  = wi_value_as_cstring(path_value);
     char*            src   = _state_read_file(state, path);
 
     if (wi_table_get(frame->closure->globals, name_value, NULL)) {
@@ -469,7 +569,7 @@ _state_require(wi_state_t* state, char* path, wi_value_t name_value, wi_string_t
     wi_object_t* object = wi_new_object(state->gc, name);
     wi_gc_push_root(state->gc, (wi_box_t*)object);
 
-    wi_table_set(&state->required, name_value, WI_MAKE_BOX_VALUE(object));
+    wi_table_set(&state->required, path_value, WI_MAKE_BOX_VALUE(object));
     wi_table_set(frame->closure->globals, name_value, WI_MAKE_BOX_VALUE(object));
 
     wi_gc_pop_root(state->gc);
@@ -482,10 +582,12 @@ _state_require(wi_state_t* state, char* path, wi_value_t name_value, wi_string_t
 }
 
 static wi_run_result_t
-_state_interpreter_loop(wi_state_t* state, int base_frame_count) {
-    wi_call_frame_t*  frame = wi_state_frame(state);
-    register uint8_t* ip    = frame->ip;
-    wi_opcode_t       opcode;
+_state_interpreter_loop(wi_state_t* state, int base_frame_count, bool drop_result) {
+    wi_call_frame_t* frame = wi_state_frame(state);
+    wi_opcode_t      opcode;
+
+    register wi_value_t* constants = frame->closure->prototype->constants.data;
+    register uint8_t*    ip        = frame->ip;
 
     static void* dispatch_table[] = {
 #define WI_OPCODE(name, _) &&LABEL_##name,
@@ -493,27 +595,28 @@ _state_interpreter_loop(wi_state_t* state, int base_frame_count) {
 #undef WI_OPCODE
     };
 
-#define _UPDATE_FRAME(void)        \
-    frame = wi_state_frame(state); \
-    ip    = frame->ip
+#define _UPDATE_FRAME(void)                                \
+    frame     = wi_state_frame(state);                     \
+    constants = frame->closure->prototype->constants.data; \
+    ip        = frame->ip
 
 #define _ERROR(...) \
     frame->ip = ip; \
     wi_state_error(state, __VA_ARGS__)
 
-#define _DISPATCH(void)                            \
-    if (__builtin_expect(state->interrupted, 0)) { \
-        state->interrupted = 0;                    \
-        frame->ip          = ip;                   \
-        wi_state_abort(state);                     \
-    }                                              \
-                                                   \
+#define _DISPATCH(void)                    \
+    if (WI_UNLIKELY(state->interrupted)) { \
+        state->interrupted = 0;            \
+        frame->ip          = ip;           \
+        wi_state_abort(state);             \
+    }                                      \
+                                           \
     goto* dispatch_table[(opcode = _READ_BYTE())];
 #define _OPCODE_LABEL(name) LABEL_##name
 
 #define _READ_BYTE(void) *ip++
 #define _READ_SHORT(void) (ip += 2, (uint16_t)(ip[-2] << 8 | ip[-1]))
-#define _READ_CONSTANT(void) frame->closure->prototype->constants.data[_READ_SHORT()]
+#define _READ_CONSTANT(void) constants[_READ_SHORT()]
 
 #define _BINARY_OP(op, maker)                                                                     \
     do {                                                                                          \
@@ -751,6 +854,12 @@ _state_interpreter_loop(wi_state_t* state, int base_frame_count) {
                 _DISPATCH();
             }
 
+            if (wi_value_is_map(a)) {
+                wi_table_t* table = &wi_value_as_map(a)->items;
+                wi_state_push(state, wi_make_real_value(wi_table_count(table)));
+                _DISPATCH();
+            }
+
             _ERROR("cannot use operator '#' on a value of type '%s'", wi_value_type(a));
             _DISPATCH();
         }
@@ -781,21 +890,8 @@ _state_interpreter_loop(wi_state_t* state, int base_frame_count) {
             _ERROR("invalid opcode");
         }
         _OPCODE_LABEL(PUSH_ARRAY) : {
-            uint16_t    count = _READ_SHORT();
-            wi_array_t* array = wi_new_array(state->gc);
-            wi_gc_push_root(state->gc, (wi_box_t*)array);
-            wi_value_buf_reserve(&array->items, count);
-
-            wi_value_t* item_start = state->stack_top - count;
-
-            if (count > 0) {
-                memcpy(array->items.data, item_start, sizeof(wi_value_t) * (size_t)count);
-            }
-
-            array->items.count = count;
-            state->stack_top   = item_start;
-            wi_state_push(state, WI_MAKE_BOX_VALUE(array));
-            wi_gc_pop_root(state->gc);
+            uint16_t count = _READ_SHORT();
+            _state_push_array(state, (int)count);
             _DISPATCH();
         }
         _OPCODE_LABEL(PUSH_MAP) : {
@@ -957,15 +1053,18 @@ _state_interpreter_loop(wi_state_t* state, int base_frame_count) {
             state->frame_count--;
             _state_close_upvalues(state, frame->slots);
 
-            if (state->frame_count == base_frame_count) {
-                wi_state_drop(state);
-                return WI_RUN_OK;
-            }
-
             state->stack_top = frame->slots;
 
             if (!frame->closure->is_required) {
                 wi_state_push(state, result);
+            }
+
+            if (state->frame_count == base_frame_count) {
+                if (drop_result) {
+                    wi_state_drop(state);
+                }
+
+                return WI_RUN_OK;
             }
 
             _UPDATE_FRAME();
@@ -1054,18 +1153,21 @@ _state_interpreter_loop(wi_state_t* state, int base_frame_count) {
             _DISPATCH();
         }
         _OPCODE_LABEL(REQUIRE) : {
-            char*        path       = wi_value_as_cstring(_READ_CONSTANT());
-            wi_value_t   name_value = _READ_CONSTANT();
-            wi_string_t* name       = wi_value_as_string(name_value);
-
+            wi_value_t path_value = _READ_CONSTANT();
+            wi_value_t name_value = _READ_CONSTANT();
             wi_value_t loaded;
 
-            if (wi_table_get(&state->required, name_value, &loaded)) {
+            if (wi_table_get(&state->required, path_value, &loaded)) {
+                if (wi_table_get(frame->closure->globals, name_value, NULL)) {
+                    _ERROR("variable %s is already defined", wi_value_as_cstring(name_value));
+                }
+
+                wi_table_set(frame->closure->globals, name_value, loaded);
                 _DISPATCH();
             }
 
             frame->ip             = ip;
-            wi_closure_t* closure = _state_require(state, path, name_value, name);
+            wi_closure_t* closure = _state_require(state, path_value, name_value);
             wi_state_push(state, WI_MAKE_BOX_VALUE(closure));
             _state_call(state, closure, 0);
 
@@ -1090,7 +1192,7 @@ _state_interpreter_loop(wi_state_t* state, int base_frame_count) {
 }
 
 wi_run_result_t
-wi_state_call(wi_state_t* state, wi_closure_t* closure, uint8_t arg_count) {
+wi_state_call(wi_state_t* state, wi_closure_t* closure, uint8_t arg_count, bool drop_result) {
     if (state->c_call_depth >= WI_C_CALL_STACK_MAX) {
         wi_state_error(state, "C call stack overflow (limit is %i)", WI_C_CALL_STACK_MAX);
     }
@@ -1101,7 +1203,7 @@ wi_state_call(wi_state_t* state, wi_closure_t* closure, uint8_t arg_count) {
     _state_call(state, closure, arg_count);
 
     state->c_call_depth++;
-    wi_run_result_t result = _state_interpreter_loop(state, base_frame_count);
+    wi_run_result_t result = _state_interpreter_loop(state, base_frame_count, drop_result);
     state->c_call_depth--;
 
     state->api_stack = api_stack;
@@ -1127,11 +1229,12 @@ wi_state_run(wi_state_t* state, const char* file_path, const char* src) {
 
     int jmp_result = setjmp(state->jmp);
 
-    if (jmp_result == WI_STATE_JMP_OK) {
-        return _state_interpreter_loop(state, 0);
+    if (jmp_result == WI_JMP_OK) {
+        wi_run_result_t result = _state_interpreter_loop(state, 0, true);
+        return result;
     }
 
-    if (jmp_result == WI_STATE_JMP_ABORT) {
+    if (jmp_result == WI_JMP_ABORT) {
         return WI_RUN_ABORT;
     }
 

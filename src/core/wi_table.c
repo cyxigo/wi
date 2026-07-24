@@ -121,7 +121,7 @@ wi_table_set(wi_table_t* table, wi_value_t key, wi_value_t value) {
     wi_entry_t* entry      = _find_entry(table->entries, table->capacity, key);
     bool        is_new_key = wi_value_is_empty(entry->key);
 
-    if (is_new_key) {
+    if (is_new_key && wi_value_is_null(entry->value)) {
         table->count++;
     }
 

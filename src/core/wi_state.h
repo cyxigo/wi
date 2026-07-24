@@ -5,6 +5,7 @@
 #include <signal.h>
 #include <stdbool.h>
 #include <stdint.h>
+
 #ifdef _WIN32
 #include <windows.h>
 typedef HMODULE wi_lib_handle_t;
@@ -46,10 +47,20 @@ typedef struct {
 } wi_call_frame_t;
 
 enum {
-    WI_STATE_JMP_OK    = 0,
-    WI_STATE_JMP_ERROR = 1,
-    WI_STATE_JMP_ABORT = 2,
+    WI_JMP_OK    = 0,
+    WI_JMP_ERROR = 1,
+    WI_JMP_ABORT = 2,
 };
+
+typedef struct {
+    jmp_buf      jmp;
+    int          frame_count;
+    int          c_call_depth;
+    wi_value_t*  stack_top;
+    wi_value_t*  api_stack;
+    int          temp_root_count;
+    wi_string_t* error;
+} wi_recovery_t;
 
 typedef struct wi_state {
     wi_conf_t conf;
@@ -57,6 +68,9 @@ typedef struct wi_state {
 
     jmp_buf               jmp;
     volatile sig_atomic_t interrupted;
+
+    wi_recovery_t recoveries[WI_C_CALL_STACK_MAX];
+    int           recovery_count;
 
     wi_call_frame_t frames[WI_CALL_FRAMES_COUNT];
     int             frame_count;
@@ -76,6 +90,10 @@ typedef struct wi_state {
     wi_object_t* string_obj;
     wi_object_t* array_obj;
     wi_object_t* map_obj;
+
+    wi_string_t* ok_str;
+    wi_string_t* value_str;
+    wi_string_t* error_str;
 } wi_state_t;
 
 static inline void
@@ -115,6 +133,13 @@ wi_delete_state(wi_state_t* state);
 
 bool
 wi_state_add_foreign_handle(wi_state_t* state, wi_lib_handle_t lib);
+wi_recovery_t*
+wi_state_push_recovery(wi_state_t* state);
+
+static inline void
+wi_state_pop_recovery(wi_state_t* state) {
+    state->recovery_count--;
+}
 
 void
 wi_state_print_backtrace(wi_state_t* state);
@@ -122,12 +147,15 @@ void
 wi_state_error(wi_state_t* state, const char* format, ...);
 
 void
+wi_state_check_arity(wi_state_t* state, int arity, uint8_t arg_count, bool is_variadic);
+
+void
 wi_state_abort(wi_state_t* state);
 void
 wi_state_interrupt(wi_state_t* state);
 
 wi_run_result_t
-wi_state_call(wi_state_t* state, wi_closure_t* closure, uint8_t arg_count);
+wi_state_call(wi_state_t* state, wi_closure_t* closure, uint8_t arg_count, bool drop_result);
 wi_run_result_t
 wi_state_run(wi_state_t* state, const char* file_path, const char* src);
 
