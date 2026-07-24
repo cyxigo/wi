@@ -94,10 +94,11 @@ wi_new_prototype(wi_gc_t* gc, const char* file_path) {
     wi_byte_buf_init(&prototype->bytes, gc);
     wi_int_buf_init(&prototype->lines, gc);
     wi_value_buf_init(&prototype->constants, gc);
-    prototype->is_main       = false;
-    prototype->is_variadic   = false;
-    prototype->arity         = 0;
-    prototype->upvalue_count = 0;
+    prototype->is_main        = false;
+    prototype->is_variadic    = false;
+    prototype->arity          = 0;
+    prototype->upvalue_count  = 0;
+    prototype->max_slot_count = 0;
 
     return prototype;
 }
@@ -117,8 +118,8 @@ wi_prototype_add_constant(wi_prototype_t* prototype, wi_value_t value) {
 int
 wi_prototype_instr_size(wi_prototype_t* prototype, int offset) {
     static const int opcode_sizes[] = {
-#define WI_OPCODE(name, size) size,
-#include "wi_opcodes.h"
+#define WI_OPCODE(name, size, __) size,
+#include "wi_opcode.h"
 #undef WI_OPCODE
     };
 

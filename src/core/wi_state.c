@@ -21,6 +21,7 @@
 static void
 _state_reset_stack(wi_state_t* state) {
     state->recovery_count = 0;
+    state->stack_end      = state->stack + WI_STACK_COUNT;
     state->stack_top      = state->stack;
     state->api_stack      = NULL;
     state->frame_count    = 0;
@@ -423,15 +424,28 @@ _state_call_foreign(wi_state_t* state, wi_foreign_t* foreign, uint8_t arg_count)
 }
 
 static void
+_state_capture_overflow_ctx(wi_state_t* state) {
+    if (state->frame_count > 0) {
+        state->frames[0]   = state->frames[state->frame_count - 1];
+        state->frame_count = 1;
+    } else {
+        state->frame_count = 0;
+    }
+}
+
+static void
 _state_call(wi_state_t* state, wi_closure_t* closure, uint8_t arg_count) {
     wi_prototype_t* prototype = closure->prototype;
     wi_state_check_arity(state, prototype->arity, arg_count, prototype->is_variadic);
 
     if (state->frame_count == WI_CALL_FRAMES_COUNT) {
-        // we try to provide at least *some* context about where the overflow has happened
-        state->frames[0]   = state->frames[state->frame_count - 1];
-        state->frame_count = 1;
-        wi_state_error(state, "stack overflow (limit is %i)", WI_CALL_FRAMES_COUNT);
+        _state_capture_overflow_ctx(state);
+        wi_state_error(state, "call stack overflow (limit is %i)", WI_CALL_FRAMES_COUNT);
+    }
+
+    if (state->stack_top + prototype->max_slot_count >= state->stack_end) {
+        _state_capture_overflow_ctx(state);
+        wi_state_error(state, "stack overflow (limit is %i)", WI_STACK_COUNT);
     }
 
     wi_call_frame_t* frame = &state->frames[state->frame_count++];
@@ -590,8 +604,8 @@ _state_interpreter_loop(wi_state_t* state, int base_frame_count, bool drop_resul
     register uint8_t*    ip        = frame->ip;
 
     static void* dispatch_table[] = {
-#define WI_OPCODE(name, _) &&LABEL_##name,
-#include "wi_opcodes.h"
+#define WI_OPCODE(name, _, __) &&LABEL_##name,
+#include "wi_opcode.h"
 #undef WI_OPCODE
     };
 
