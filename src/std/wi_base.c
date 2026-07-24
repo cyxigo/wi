@@ -1,16 +1,16 @@
-#include <setjmp.h>
-#include <stdint.h>
 #ifndef _WIN32
 #define _POSIX_C_SOURCE 200809L
 #endif
 
+#include "wi_base.h"
+
 #include <limits.h>
+#include <setjmp.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-
-#include "wi_base.h"
 
 #ifdef _WIN32
 #include <windows.h>
