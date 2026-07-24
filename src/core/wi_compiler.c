@@ -48,6 +48,7 @@ wi_compiler_init(wi_compiler_t* compiler, wi_compiler_t* outer, wi_state_t* stat
     compiler->constants          = NULL;
     compiler->prototype          = wi_new_prototype(compiler->state->gc, compiler->parser->lexer->file_path);
     compiler->prototype->is_main = compiler->outer == NULL;
+    compiler->slot_count         = 0;
     compiler->constants          = wi_new_map(compiler->state->gc);
 
     compiler->local_count = 0;
@@ -63,9 +64,31 @@ wi_compiler_init(wi_compiler_t* compiler, wi_compiler_t* outer, wi_state_t* stat
     local->is_captured         = false;
 }
 
+static const int _opcode_effects[] = {
+#define WI_OPCODE(_, __, effect) effect,
+#include "wi_opcode.h"
+#undef WI_OPCODE
+};
+
 static void
 _compiler_emit_byte(wi_compiler_t* compiler, uint8_t byte) {
     wi_prototype_add_byte(compiler->prototype, byte, compiler->parser->curr.line);
+}
+
+static void
+_compiler_emit_opcode(wi_compiler_t* compiler, wi_opcode_t opcode) {
+    _compiler_emit_byte(compiler, opcode);
+    compiler->slot_count += _opcode_effects[opcode];
+
+    if (compiler->slot_count > compiler->prototype->max_slot_count) {
+        compiler->prototype->max_slot_count = compiler->slot_count;
+    }
+}
+
+static void
+_compiler_emit_opcode_byte(wi_compiler_t* compiler, wi_opcode_t opcode, uint8_t byte) {
+    _compiler_emit_opcode(compiler, opcode);
+    _compiler_emit_byte(compiler, byte);
 }
 
 static void
@@ -80,8 +103,8 @@ _compiler_emit_short(wi_compiler_t* compiler, uint16_t sh) {
 }
 
 static void
-_compiler_emit_byte_short(wi_compiler_t* compiler, uint8_t byte, uint16_t sh) {
-    _compiler_emit_byte(compiler, byte);
+_compiler_emit_opcode_short(wi_compiler_t* compiler, wi_opcode_t opcode, uint16_t sh) {
+    _compiler_emit_opcode(compiler, opcode);
     _compiler_emit_short(compiler, sh);
 }
 
@@ -108,7 +131,7 @@ _compiler_patch_jump(wi_compiler_t* compiler, int offset) {
 
 static void
 _compiler_emit_loop(wi_compiler_t* compiler, int loop_start) {
-    _compiler_emit_byte(compiler, WI_OP_LOOP);
+    _compiler_emit_opcode(compiler, WI_OP_LOOP);
     int offset = compiler->prototype->bytes.count - loop_start + 2;
 
     if (offset > WI_LOOP_MAX) {
@@ -140,17 +163,17 @@ _compiler_pop_loop_locals(wi_compiler_t* compiler) {
     for (int i = compiler->local_count - 1;
          i >= 0 && compiler->locals[i].depth > compiler->innermost_loop_scope_depth; i--) {
         if (compiler->locals[i].is_captured) {
-            _compiler_emit_byte(compiler, WI_OP_CLOSE_UPVALUE);
+            _compiler_emit_opcode(compiler, WI_OP_CLOSE_UPVALUE);
         } else {
-            _compiler_emit_byte(compiler, WI_OP_POP);
+            _compiler_emit_opcode(compiler, WI_OP_POP);
         }
     }
 }
 
 static void
 _compiler_emit_return(wi_compiler_t* compiler) {
-    _compiler_emit_byte(compiler, WI_OP_PUSH_NULL);
-    _compiler_emit_byte(compiler, WI_OP_RETURN);
+    _compiler_emit_opcode(compiler, WI_OP_PUSH_NULL);
+    _compiler_emit_opcode(compiler, WI_OP_RETURN);
 }
 
 static uint16_t
@@ -193,7 +216,7 @@ _compiler_name_constant(wi_compiler_t* compiler, wi_token_t name) {
 
 static void
 _compiler_emit_push(wi_compiler_t* compiler, wi_value_t value) {
-    _compiler_emit_byte_short(compiler, WI_OP_PUSH, _compiler_make_constant(compiler, value));
+    _compiler_emit_opcode_short(compiler, WI_OP_PUSH, _compiler_make_constant(compiler, value));
 }
 
 static wi_prototype_t*
@@ -261,7 +284,7 @@ _compiler_def_var(wi_compiler_t* compiler, wi_token_t name) {
     }
 
     uint16_t constant = _compiler_name_constant(compiler, name);
-    _compiler_emit_byte_short(compiler, WI_OP_DEF_GLOBAL, constant);
+    _compiler_emit_opcode_short(compiler, WI_OP_DEF_GLOBAL, constant);
 }
 
 static void
@@ -276,9 +299,9 @@ _compiler_end_scope(wi_compiler_t* compiler) {
     while (compiler->local_count > 0 &&
            compiler->locals[compiler->local_count - 1].depth > compiler->scope_depth) {
         if (compiler->locals[compiler->local_count - 1].is_captured) {
-            _compiler_emit_byte(compiler, WI_OP_CLOSE_UPVALUE);
+            _compiler_emit_opcode(compiler, WI_OP_CLOSE_UPVALUE);
         } else {
-            _compiler_emit_byte(compiler, WI_OP_POP);
+            _compiler_emit_opcode(compiler, WI_OP_POP);
         }
 
         compiler->local_count--;
@@ -388,7 +411,7 @@ _compiler_var(wi_compiler_t* compiler, wi_token_t name) {
         _compiler_expr(compiler);
         compiler->var_name = WI_BLANK_TOKEN;
 
-        _compiler_emit_byte(compiler, set_op);
+        _compiler_emit_opcode(compiler, set_op);
 
         if (byte_arg) {
             _compiler_emit_byte(compiler, (uint8_t)arg);
@@ -399,7 +422,7 @@ _compiler_var(wi_compiler_t* compiler, wi_token_t name) {
         return;
     }
 
-    _compiler_emit_byte(compiler, get_op);
+    _compiler_emit_opcode(compiler, get_op);
 
     if (byte_arg) {
         if (get_op == WI_OP_LOAD_LOCAL || get_op == WI_OP_LOAD_UPVALUE) {
@@ -499,7 +522,7 @@ _compiler_array_expr(wi_compiler_t* compiler) {
     }
 
     wi_parser_expect(compiler->parser, WI_TOKEN_CLOSE_BRACKET);
-    _compiler_emit_byte_short(compiler, WI_OP_PUSH_ARRAY, count);
+    _compiler_emit_opcode_short(compiler, WI_OP_PUSH_ARRAY, count);
 }
 
 static void
@@ -522,18 +545,18 @@ _compiler_map_expr(wi_compiler_t* compiler) {
     }
 
     wi_parser_expect(compiler->parser, WI_TOKEN_CLOSE_BRACE);
-    _compiler_emit_byte_short(compiler, WI_OP_PUSH_MAP, count);
+    _compiler_emit_opcode_short(compiler, WI_OP_PUSH_MAP, count);
 }
 
 static void
 _compiler_null_expr(wi_compiler_t* compiler) {
-    _compiler_emit_byte(compiler, WI_OP_PUSH_NULL);
+    _compiler_emit_opcode(compiler, WI_OP_PUSH_NULL);
 }
 
 static void
 _compiler_bool_expr(wi_compiler_t* compiler) {
     wi_opcode_t opcode = compiler->parser->prev.kind == WI_TOKEN_KW_TRUE ? WI_OP_PUSH_TRUE : WI_OP_PUSH_FALSE;
-    _compiler_emit_byte(compiler, opcode);
+    _compiler_emit_opcode(compiler, opcode);
 }
 
 static void
@@ -584,7 +607,7 @@ _compiler_function_expr(wi_compiler_t* outer) {
 
     wi_prototype_t* prototype = _compiler_end(&compiler);
     uint16_t        constant  = _compiler_make_constant(outer, WI_MAKE_BOX_VALUE(prototype));
-    _compiler_emit_byte_short(outer, WI_OP_PUSH_CLOSURE, constant);
+    _compiler_emit_opcode_short(outer, WI_OP_PUSH_CLOSURE, constant);
 
     for (int i = 0; i < prototype->upvalue_count; i++) {
         wi_compiler_upvalue_t* upvalue = &compiler.upvalues[i];
@@ -620,7 +643,7 @@ static void
 _compiler_new_expr(wi_compiler_t* compiler) {
     wi_parser_expect(compiler->parser, WI_TOKEN_NAME);
     _compiler_var_expr(compiler);
-    _compiler_emit_byte(compiler, WI_OP_NEW);
+    _compiler_emit_opcode(compiler, WI_OP_NEW);
 
     if (!wi_parser_match(compiler->parser, WI_TOKEN_OPEN_BRACE)) {
         return;
@@ -634,7 +657,7 @@ _compiler_new_expr(wi_compiler_t* compiler) {
         _compiler_expr(compiler);
         wi_parser_expect(compiler->parser, WI_TOKEN_SEMICOLON);
 
-        _compiler_emit_byte_short(compiler, WI_OP_INIT_FIELD, name_constant);
+        _compiler_emit_opcode_short(compiler, WI_OP_INIT_FIELD, name_constant);
     }
 
     wi_parser_expect(compiler->parser, WI_TOKEN_CLOSE_BRACE);
@@ -649,7 +672,6 @@ _compiler_object_expr(wi_compiler_t* compiler) {
     }
 
     uint16_t field_count = 0;
-
     wi_parser_expect(compiler->parser, WI_TOKEN_OPEN_BRACE);
 
     while (!wi_parser_check(compiler->parser, WI_TOKEN_CLOSE_BRACE) && !wi_parser_is_at_end(compiler->parser)) {
@@ -664,7 +686,7 @@ _compiler_object_expr(wi_compiler_t* compiler) {
         wi_parser_expect(compiler->parser, WI_TOKEN_EQUAL);
 
         uint16_t constant = _compiler_name_constant(compiler, field_name);
-        _compiler_emit_byte_short(compiler, WI_OP_PUSH, constant);
+        _compiler_emit_opcode_short(compiler, WI_OP_PUSH, constant);
         _compiler_expr(compiler);
 
         wi_parser_expect(compiler->parser, WI_TOKEN_SEMICOLON);
@@ -674,7 +696,7 @@ _compiler_object_expr(wi_compiler_t* compiler) {
 
     wi_parser_expect(compiler->parser, WI_TOKEN_CLOSE_BRACE);
 
-    _compiler_emit_byte_short(compiler, WI_OP_PUSH_OBJECT, field_count);
+    _compiler_emit_opcode_short(compiler, WI_OP_PUSH_OBJECT, field_count);
     _compiler_emit_byte(compiler, name ? 1 : 0);
 
     if (name) {
@@ -731,7 +753,7 @@ _compiler_primary_expr(wi_compiler_t* compiler) {
 static void
 _compiler_call(wi_compiler_t* compiler) {
     uint8_t arg_count = _compiler_arg_list(compiler, 0);
-    _compiler_emit_bytes(compiler, WI_OP_CALL, arg_count);
+    _compiler_emit_opcode_byte(compiler, WI_OP_CALL, arg_count);
     compiler->last_call_offset = compiler->prototype->bytes.count - 2;
 }
 
@@ -741,12 +763,12 @@ _compiler_subscript(wi_compiler_t* compiler) {
     wi_parser_expect(compiler->parser, WI_TOKEN_CLOSE_BRACKET);
 
     if (!wi_parser_match(compiler->parser, WI_TOKEN_EQUAL)) {
-        _compiler_emit_byte(compiler, WI_OP_SUBSCRIPT_GET);
+        _compiler_emit_opcode(compiler, WI_OP_SUBSCRIPT_GET);
         return;
     }
 
     _compiler_expr(compiler);
-    _compiler_emit_byte(compiler, WI_OP_SUBSCRIPT_SET);
+    _compiler_emit_opcode(compiler, WI_OP_SUBSCRIPT_SET);
 }
 
 static void
@@ -755,12 +777,12 @@ _compiler_field(wi_compiler_t* compiler) {
     uint16_t   name_constant = _compiler_name_constant(compiler, name);
 
     if (!wi_parser_match(compiler->parser, WI_TOKEN_EQUAL)) {
-        _compiler_emit_byte_short(compiler, WI_OP_GET_FIELD, name_constant);
+        _compiler_emit_opcode_short(compiler, WI_OP_GET_FIELD, name_constant);
         return;
     }
 
     _compiler_expr(compiler);
-    _compiler_emit_byte_short(compiler, WI_OP_SET_FIELD, name_constant);
+    _compiler_emit_opcode_short(compiler, WI_OP_SET_FIELD, name_constant);
 }
 
 static void
@@ -771,7 +793,7 @@ _compiler_invoke(wi_compiler_t* compiler) {
     wi_parser_expect(compiler->parser, WI_TOKEN_OPEN_PAREN);
     uint8_t arg_count = _compiler_arg_list(compiler, 1);
 
-    _compiler_emit_byte_short(compiler, WI_OP_INVOKE, name_constant);
+    _compiler_emit_opcode_short(compiler, WI_OP_INVOKE, name_constant);
     _compiler_emit_byte(compiler, arg_count);
     compiler->last_call_offset = compiler->prototype->bytes.count - 4;
 }
@@ -799,25 +821,25 @@ static void
 _compiler_unary_expr(wi_compiler_t* compiler) {
     if (wi_parser_match(compiler->parser, WI_TOKEN_HASH)) {
         _compiler_unary_expr(compiler);
-        _compiler_emit_byte(compiler, WI_OP_LEN);
+        _compiler_emit_opcode(compiler, WI_OP_LEN);
         return;
     }
 
     if (wi_parser_match(compiler->parser, WI_TOKEN_MINUS)) {
         _compiler_unary_expr(compiler);
-        _compiler_emit_byte(compiler, WI_OP_NEGATE);
+        _compiler_emit_opcode(compiler, WI_OP_NEGATE);
         return;
     }
 
     if (wi_parser_match(compiler->parser, WI_TOKEN_TILDE)) {
         _compiler_unary_expr(compiler);
-        _compiler_emit_byte(compiler, WI_OP_BIT_NOT);
+        _compiler_emit_opcode(compiler, WI_OP_BIT_NOT);
         return;
     }
 
     if (wi_parser_match(compiler->parser, WI_TOKEN_BANG)) {
         _compiler_unary_expr(compiler);
-        _compiler_emit_byte(compiler, WI_OP_LOG_NOT);
+        _compiler_emit_opcode(compiler, WI_OP_LOG_NOT);
         return;
     }
 
@@ -830,7 +852,7 @@ _compiler_power_expr(wi_compiler_t* compiler) {
 
     if (wi_parser_match(compiler->parser, WI_TOKEN_STAR_STAR)) {
         _compiler_power_expr(compiler);
-        _compiler_emit_byte(compiler, WI_OP_POWER);
+        _compiler_emit_opcode(compiler, WI_OP_POWER);
     }
 }
 
@@ -855,7 +877,7 @@ _compiler_factor_expr(wi_compiler_t* compiler) {
         }
 
         _compiler_power_expr(compiler);
-        _compiler_emit_byte(compiler, opcode);
+        _compiler_emit_opcode(compiler, opcode);
     }
 }
 
@@ -866,7 +888,7 @@ _compiler_term_expr(wi_compiler_t* compiler) {
     while (wi_parser_match(compiler->parser, WI_TOKEN_PLUS) || wi_parser_match(compiler->parser, WI_TOKEN_MINUS)) {
         wi_opcode_t opcode = compiler->parser->prev.kind == WI_TOKEN_PLUS ? WI_OP_ADD : WI_OP_SUBTRACT;
         _compiler_factor_expr(compiler);
-        _compiler_emit_byte(compiler, opcode);
+        _compiler_emit_opcode(compiler, opcode);
     }
 }
 
@@ -878,7 +900,7 @@ _compiler_shift_expr(wi_compiler_t* compiler) {
            wi_parser_match(compiler->parser, WI_TOKEN_LESS_LESS)) {
         wi_opcode_t opcode = compiler->parser->prev.kind == WI_TOKEN_LESS_LESS ? WI_OP_BIT_SHL : WI_OP_BIT_SHR;
         _compiler_term_expr(compiler);
-        _compiler_emit_byte(compiler, opcode);
+        _compiler_emit_opcode(compiler, opcode);
     }
 }
 
@@ -888,7 +910,7 @@ _compiler_bit_and_expr(wi_compiler_t* compiler) {
 
     while (wi_parser_match(compiler->parser, WI_TOKEN_AMPER)) {
         _compiler_shift_expr(compiler);
-        _compiler_emit_byte(compiler, WI_OP_BIT_AND);
+        _compiler_emit_opcode(compiler, WI_OP_BIT_AND);
     }
 }
 
@@ -898,7 +920,7 @@ _compiler_bit_xor_expr(wi_compiler_t* compiler) {
 
     while (wi_parser_match(compiler->parser, WI_TOKEN_CARET)) {
         _compiler_bit_and_expr(compiler);
-        _compiler_emit_byte(compiler, WI_OP_BIT_XOR);
+        _compiler_emit_opcode(compiler, WI_OP_BIT_XOR);
     }
 }
 
@@ -908,7 +930,7 @@ _compiler_bit_or_expr(wi_compiler_t* compiler) {
 
     while (wi_parser_match(compiler->parser, WI_TOKEN_PIPE)) {
         _compiler_bit_xor_expr(compiler);
-        _compiler_emit_byte(compiler, WI_OP_BIT_OR);
+        _compiler_emit_opcode(compiler, WI_OP_BIT_OR);
     }
 }
 
@@ -938,7 +960,7 @@ _compiler_comparison_expr(wi_compiler_t* compiler) {
         }
 
         _compiler_bit_or_expr(compiler);
-        _compiler_emit_byte(compiler, opcode);
+        _compiler_emit_opcode(compiler, opcode);
     }
 }
 
@@ -950,7 +972,7 @@ _compiler_equality_expr(wi_compiler_t* compiler) {
            wi_parser_match(compiler->parser, WI_TOKEN_BANG_EQUAL)) {
         wi_opcode_t opcode = compiler->parser->prev.kind == WI_TOKEN_EQUAL_EQUAL ? WI_OP_EQUAL : WI_OP_NOT_EQUAL;
         _compiler_comparison_expr(compiler);
-        _compiler_emit_byte(compiler, opcode);
+        _compiler_emit_opcode(compiler, opcode);
     }
 }
 
@@ -961,7 +983,7 @@ _compiler_log_and_expr(wi_compiler_t* compiler) {
     while (wi_parser_match(compiler->parser, WI_TOKEN_AMPER_AMPER)) {
         int end_jump = _compiler_emit_jump(compiler, WI_OP_JUMP_IF_FALSE);
 
-        _compiler_emit_byte(compiler, WI_OP_POP);
+        _compiler_emit_opcode(compiler, WI_OP_POP);
         _compiler_equality_expr(compiler);
         _compiler_patch_jump(compiler, end_jump);
     }
@@ -976,7 +998,7 @@ _compiler_log_or_expr(wi_compiler_t* compiler) {
         int end_jump  = _compiler_emit_jump(compiler, WI_OP_JUMP);
 
         _compiler_patch_jump(compiler, else_jump);
-        _compiler_emit_byte(compiler, WI_OP_POP);
+        _compiler_emit_opcode(compiler, WI_OP_POP);
 
         _compiler_log_and_expr(compiler);
         _compiler_patch_jump(compiler, end_jump);
@@ -989,7 +1011,7 @@ _compiler_concat_expr(wi_compiler_t* compiler) {
 
     while (wi_parser_match(compiler->parser, WI_TOKEN_DOT_DOT)) {
         _compiler_log_or_expr(compiler);
-        _compiler_emit_byte(compiler, WI_OP_CONCAT);
+        _compiler_emit_opcode(compiler, WI_OP_CONCAT);
     }
 }
 
@@ -1012,7 +1034,7 @@ _compiler_expr(wi_compiler_t* compiler) {
 static void
 _compiler_expr_stmt(wi_compiler_t* compiler) {
     _compiler_expr(compiler);
-    _compiler_emit_byte(compiler, WI_OP_POP);
+    _compiler_emit_opcode(compiler, WI_OP_POP);
     wi_parser_expect(compiler->parser, WI_TOKEN_SEMICOLON);
 }
 
@@ -1045,13 +1067,13 @@ _compiler_if_stmt(wi_compiler_t* compiler) {
 
     int then_jump = _compiler_emit_jump(compiler, WI_OP_JUMP_IF_FALSE);
 
-    _compiler_emit_byte(compiler, WI_OP_POP);
+    _compiler_emit_opcode(compiler, WI_OP_POP);
     _compiler_stmt(compiler);
 
     int else_jump = _compiler_emit_jump(compiler, WI_OP_JUMP);
 
     _compiler_patch_jump(compiler, then_jump);
-    _compiler_emit_byte(compiler, WI_OP_POP);
+    _compiler_emit_opcode(compiler, WI_OP_POP);
 
     if (wi_parser_match(compiler->parser, WI_TOKEN_KW_ELSE)) {
         _compiler_stmt(compiler);
@@ -1074,12 +1096,12 @@ _compiler_while_stmt(wi_compiler_t* compiler) {
 
     int exit_jump = _compiler_emit_jump(compiler, WI_OP_JUMP_IF_FALSE);
 
-    _compiler_emit_byte(compiler, WI_OP_POP);
+    _compiler_emit_opcode(compiler, WI_OP_POP);
     _compiler_stmt(compiler);
     _compiler_emit_loop(compiler, compiler->innermost_loop_start);
 
     _compiler_patch_jump(compiler, exit_jump);
-    _compiler_emit_byte(compiler, WI_OP_POP);
+    _compiler_emit_opcode(compiler, WI_OP_POP);
     _compiler_end_loop(compiler);
 
     compiler->innermost_loop_start       = enclosing_start;
@@ -1108,7 +1130,7 @@ _compiler_for_cond(wi_compiler_t* compiler) {
     _compiler_expr(compiler);
     wi_parser_expect(compiler->parser, WI_TOKEN_SEMICOLON);
     int exit_jump = _compiler_emit_jump(compiler, WI_OP_JUMP_IF_FALSE);
-    _compiler_emit_byte(compiler, WI_OP_POP);
+    _compiler_emit_opcode(compiler, WI_OP_POP);
 
     return exit_jump;
 }
@@ -1123,7 +1145,7 @@ _compiler_for_incr(wi_compiler_t* compiler) {
     int incr_start = compiler->prototype->bytes.count;
 
     _compiler_expr(compiler);
-    _compiler_emit_byte(compiler, WI_OP_POP);
+    _compiler_emit_opcode(compiler, WI_OP_POP);
     wi_parser_expect(compiler->parser, WI_TOKEN_CLOSE_PAREN);
 
     _compiler_emit_loop(compiler, compiler->innermost_loop_start);
@@ -1152,7 +1174,7 @@ _compiler_for_stmt(wi_compiler_t* compiler) {
 
     if (exit_jump != -1) {
         _compiler_patch_jump(compiler, exit_jump);
-        _compiler_emit_byte(compiler, WI_OP_POP);
+        _compiler_emit_opcode(compiler, WI_OP_POP);
     }
 
     _compiler_end_scope(compiler);
@@ -1212,7 +1234,7 @@ _compiler_return_stmt(wi_compiler_t* compiler) {
         return;
     }
 
-    _compiler_emit_byte(compiler, WI_OP_RETURN);
+    _compiler_emit_opcode(compiler, WI_OP_RETURN);
 }
 
 static void
@@ -1237,7 +1259,7 @@ _compiler_require_stmt(wi_compiler_t* compiler) {
     uint16_t path_constant = _compiler_make_constant(compiler, WI_MAKE_BOX_VALUE(path_box));
     uint16_t name_constant = _compiler_name_constant(compiler, name);
 
-    _compiler_emit_byte_short(compiler, WI_OP_REQUIRE, path_constant);
+    _compiler_emit_opcode_short(compiler, WI_OP_REQUIRE, path_constant);
     _compiler_emit_short(compiler, name_constant);
 }
 

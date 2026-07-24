@@ -30,8 +30,8 @@ wi_lib_handle_close(wi_lib_handle_t lib) {
 }
 
 typedef enum {
-#define WI_OPCODE(name, _) WI_OP_##name,
-#include "wi_opcodes.h"
+#define WI_OPCODE(name, _, __) WI_OP_##name,
+#include "wi_opcode.h"
 #undef WI_OPCODE
 } wi_opcode_t;
 
@@ -77,6 +77,7 @@ typedef struct wi_state {
     int             c_call_depth;
 
     wi_value_t  stack[WI_STACK_COUNT];
+    wi_value_t* stack_end;
     wi_value_t* stack_top;
     wi_value_t* api_stack;
 
@@ -91,6 +92,7 @@ typedef struct wi_state {
     wi_object_t* array_obj;
     wi_object_t* map_obj;
 
+    // these are used in `base.try` so we don't need to push 3 gc roots every time we need to call it
     wi_string_t* ok_str;
     wi_string_t* value_str;
     wi_string_t* error_str;

@@ -10,30 +10,30 @@
 #include "wi_state.h"
 #include "wi_util.h"
 
-static wi_state_t* g_state = NULL;
+static wi_state_t* _g_state = NULL;
 
 static bool
 _init_g_state(wi_conf_t conf) {
-    g_state = wi_new_state(conf);
+    _g_state = wi_new_state(conf);
 
-    if (!g_state) {
+    if (!_g_state) {
         return false;
     }
 
-    wi_def_std(g_state);
+    wi_def_std(_g_state);
     return true;
 }
 
 static void
 _delete_g_state(void) {
-    wi_delete_state(g_state);
-    g_state = NULL;
+    wi_delete_state(_g_state);
+    _g_state = NULL;
 }
 
 static void
 _sigint_handler(int sig) {
-    if (g_state) {
-        wi_state_interrupt(g_state);
+    if (_g_state) {
+        wi_state_interrupt(_g_state);
     }
 }
 
@@ -61,7 +61,7 @@ _repl(void) {
             break;
         }
 
-        wi_run_result_t result = wi_state_run(g_state, "<stdin>", line);
+        wi_run_result_t result = wi_state_run(_g_state, "<stdin>", line);
 
         if (result == WI_RUN_ABORT) {
             break;
@@ -197,7 +197,7 @@ main(int argc, const char* argv[]) {
         return EXIT_FAILURE;
     }
 
-    wi_run_result_t result = wi_state_run(g_state, file_path, src);
+    wi_run_result_t result = wi_state_run(_g_state, file_path, src);
     free(src);
     _delete_g_state();
 

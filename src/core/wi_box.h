@@ -114,6 +114,7 @@ typedef struct {
     bool           is_variadic;
     int            arity;
     int            upvalue_count;
+    int            max_slot_count;
 } wi_prototype_t;
 
 static inline bool

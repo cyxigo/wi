@@ -277,7 +277,7 @@ _base_to_real(wi_state_t* state, int arg_count) {
         char*        end    = NULL;
         wi_real_t    real   = wi_string_to_real(string->chars, string->len, &end);
 
-        if (end == string->chars) {
+        if (end != string->chars + string->len) {
             wi_state_error(state, "invalid real format %s", string->chars);
         }
 

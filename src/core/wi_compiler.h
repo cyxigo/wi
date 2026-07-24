@@ -23,6 +23,7 @@ typedef struct wi_compiler {
     wi_token_t          var_name;
 
     wi_prototype_t* prototype;
+    int             slot_count;
     wi_map_t*       constants;
 
     wi_compiler_local_t   locals[WI_LOCALS_MAX];
