@@ -169,17 +169,21 @@ _array_remove_at(wi_state_t* state, int arg_count) {
 }
 
 static void
+_array_pop(wi_state_t* state, int arg_count) {
+    wi_array_t* array = _check_arg1_array(state);
+
+    if (array->items.count == 0) {
+        wi_state_error(state, "cannot pop from an empty array");
+    }
+
+    state->api_stack[0] = array->items.data[array->items.count - 1];
+    array->items.count--;
+}
+
+static void
 _array_concat(wi_state_t* state, int arg_count) {
     wi_array_t* result  = wi_new_array(state->gc);
     state->api_stack[0] = WI_MAKE_BOX_VALUE(result);
-
-    int total = 0;
-
-    for (int i = 0; i < arg_count; i++) {
-        total += _check_arg_array(state, i + 1)->items.count;
-    }
-
-    wi_value_buf_reserve(&result->items, total);
 
     for (int i = 0; i < arg_count; i++) {
         wi_array_t* array = _check_arg_array(state, i + 1);
@@ -215,12 +219,9 @@ _array_each(wi_state_t* state, int arg_count) {
     wi_array_t*   array   = _check_arg1_array(state);
     wi_closure_t* closure = wi_slot_check_function(state, 2, 1);
 
-    int count = array->items.count;
-
-    for (int i = 0; i < count; i++) {
+    for (int i = 0; i < array->items.count; i++) {
         wi_state_push(state, WI_MAKE_BOX_VALUE(closure));
         wi_state_push(state, array->items.data[i]);
-
         wi_state_call(state, closure, 1, true);
     }
 
@@ -242,6 +243,7 @@ wi_state_def_array_foreign(wi_state_t* state) {
     wi_set_field_foreign(state, object, "has", _array_has, 2, false);
     wi_set_field_foreign(state, object, "remove", _array_remove, 2, false);
     wi_set_field_foreign(state, object, "remove_at", _array_remove_at, 2, false);
+    wi_set_field_foreign(state, object, "pop", _array_pop, 1, false);
     wi_set_field_foreign(state, object, "concat", _array_concat, 0, true);
     wi_set_field_foreign(state, object, "slice", _array_slice, 3, false);
     wi_set_field_foreign(state, object, "each", _array_each, 2, false);

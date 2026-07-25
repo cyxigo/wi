@@ -89,7 +89,7 @@ static void
 _math_max(wi_state_t* state, int arg_count) {
     wi_real_t max = wi_slot_check_real(state, 1);
 
-    for (int i = 0; i < arg_count; i++) {
+    for (int i = 1; i < arg_count; i++) {
         wi_real_t arg = wi_slot_check_real(state, i + 1);
 
         if (arg > max) {
@@ -104,7 +104,7 @@ static void
 _math_min(wi_state_t* state, int arg_count) {
     wi_real_t min = wi_slot_check_real(state, 1);
 
-    for (int i = 0; i < arg_count; i++) {
+    for (int i = 1; i < arg_count; i++) {
         wi_real_t arg = wi_slot_check_real(state, i + 1);
 
         if (arg < min) {

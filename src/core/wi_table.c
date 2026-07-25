@@ -35,10 +35,11 @@ _init_entries(wi_entry_t* entries, int capacity) {
 
 void
 wi_table_init(wi_table_t* table, wi_gc_t* gc) {
-    table->gc       = gc;
-    table->entries  = NULL;
-    table->capacity = 0;
-    table->count    = 0;
+    table->gc         = gc;
+    table->entries    = NULL;
+    table->capacity   = 0;
+    table->count      = 0;
+    table->live_count = 0;
 }
 
 void
@@ -94,23 +95,6 @@ _table_adjust_capacity(wi_table_t* table, int capacity) {
     table->entries  = entries;
 }
 
-int
-wi_table_count(wi_table_t* table) {
-    int count = 0;
-
-    for (int i = 0; i < table->capacity; i++) {
-        wi_entry_t* entry = &table->entries[i];
-
-        if (wi_value_is_empty(entry->key)) {
-            continue;
-        }
-
-        count++;
-    }
-
-    return count;
-}
-
 bool
 wi_table_set(wi_table_t* table, wi_value_t key, wi_value_t value) {
     if (table->count + 1 > table->capacity * WI_TABLE_MAX_LOAD) {
@@ -121,8 +105,12 @@ wi_table_set(wi_table_t* table, wi_value_t key, wi_value_t value) {
     wi_entry_t* entry      = _find_entry(table->entries, table->capacity, key);
     bool        is_new_key = wi_value_is_empty(entry->key);
 
-    if (is_new_key && wi_value_is_null(entry->value)) {
-        table->count++;
+    if (is_new_key) {
+        if (wi_value_is_null(entry->value)) {
+            table->count++;
+        }
+
+        table->live_count++;
     }
 
     entry->key   = key;
@@ -164,6 +152,7 @@ wi_table_delete(wi_table_t* table, wi_value_t key) {
 
     entry->key   = wi_make_empty_value();
     entry->value = wi_make_true_value();
+    table->live_count--;
 
     return true;
 }
@@ -246,7 +235,8 @@ wi_table_copy(wi_table_t* src, wi_table_t* dest) {
     wi_entry_t* entries = WI_GC_ALLOC(dest->gc, wi_entry_t, src->capacity);
     memcpy(entries, src->entries, sizeof(wi_entry_t) * (size_t)src->capacity);
 
-    dest->entries  = entries;
-    dest->capacity = src->capacity;
-    dest->count    = src->count;
+    dest->entries    = entries;
+    dest->capacity   = src->capacity;
+    dest->count      = src->count;
+    dest->live_count = src->live_count;
 }

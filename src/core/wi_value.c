@@ -82,7 +82,7 @@ wi_value_print(wi_value_t value) {
 
             printed++;
 
-            if (printed != table->count) {
+            if (printed != table->live_count) {
                 printf(", ");
             }
         }

@@ -47,7 +47,7 @@ _map_capacity(wi_state_t* state, int arg_count) {
 static void
 _map_count(wi_state_t* state, int arg_count) {
     wi_map_t* map = _check_arg1_map(state);
-    wi_slot_set_real(state, 0, wi_table_count(&map->items));
+    wi_slot_set_real(state, 0, map->items.live_count);
 }
 
 static void
@@ -56,8 +56,8 @@ _map_equals(wi_state_t* state, int arg_count) {
     wi_map_t* b      = _check_arg2_map(state);
     bool      equals = false;
 
-    int a_count = wi_table_count(&a->items);
-    int b_count = wi_table_count(&b->items);
+    int a_count = a->items.live_count;
+    int b_count = b->items.live_count;
 
     if (a_count != b_count) {
         goto end;
@@ -147,9 +147,7 @@ _map_each(wi_state_t* state, int arg_count) {
     wi_map_t*     map     = _check_arg1_map(state);
     wi_closure_t* closure = wi_slot_check_function(state, 2, 2);
 
-    int capacity = map->items.capacity;
-
-    for (int i = 0; i < capacity; i++) {
+    for (int i = 0; i < map->items.capacity; i++) {
         wi_entry_t* entry = &map->items.entries[i];
 
         if (wi_value_is_empty(entry->key)) {
@@ -159,7 +157,6 @@ _map_each(wi_state_t* state, int arg_count) {
         wi_state_push(state, WI_MAKE_BOX_VALUE(closure));
         wi_state_push(state, entry->key);
         wi_state_push(state, entry->value);
-
         wi_state_call(state, closure, 2, true);
     }
 

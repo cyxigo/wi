@@ -870,7 +870,7 @@ _state_interpreter_loop(wi_state_t* state, int base_frame_count, bool drop_resul
 
             if (wi_value_is_map(a)) {
                 wi_table_t* table = &wi_value_as_map(a)->items;
-                wi_state_push(state, wi_make_real_value(wi_table_count(table)));
+                wi_state_push(state, wi_make_real_value(table->live_count));
                 _DISPATCH();
             }
 
