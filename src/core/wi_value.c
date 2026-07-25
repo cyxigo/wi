@@ -230,7 +230,7 @@ _format(const char* format, ...) {
     return buf;
 }
 
-char*
+static char*
 _function_to_string(wi_prototype_t* prototype) {
     if (prototype->is_main) {
         return _format("<main function in %s at %p>", prototype->file_path, (void*)prototype);

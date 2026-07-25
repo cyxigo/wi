@@ -147,7 +147,9 @@ _map_each(wi_state_t* state, int arg_count) {
     wi_map_t*     map     = _check_arg1_map(state);
     wi_closure_t* closure = wi_slot_check_function(state, 2, 2);
 
-    for (int i = 0; i < map->items.capacity; i++) {
+    int capacity = map->items.capacity;
+
+    for (int i = 0; i < capacity; i++) {
         wi_entry_t* entry = &map->items.entries[i];
 
         if (wi_value_is_empty(entry->key)) {

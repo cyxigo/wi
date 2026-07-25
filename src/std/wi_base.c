@@ -297,7 +297,7 @@ _base_to_bool(wi_state_t* state, int arg_count) {
 static void
 _base_to_string(wi_state_t* state, int arg_count) {
     char*        string     = wi_value_to_string(state->api_stack[1]);
-    wi_string_t* string_box = wi_copy_cstring(state->gc, string, (int)strlen(string));
+    wi_string_t* string_box = wi_take_cstring(state->gc, string, (int)strlen(string));
     state->api_stack[0]     = WI_MAKE_BOX_VALUE(string_box);
 }
 

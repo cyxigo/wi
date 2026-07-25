@@ -1239,7 +1239,7 @@ _compiler_return_stmt(wi_compiler_t* compiler) {
 
 static void
 _compiler_require_stmt(wi_compiler_t* compiler) {
-    if (compiler->outer) {
+    if (compiler->outer || compiler->scope_depth > 0) {
         wi_parser_error_at_prev(compiler->parser, "can only require files from top-level code");
     }
 

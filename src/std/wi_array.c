@@ -215,7 +215,9 @@ _array_each(wi_state_t* state, int arg_count) {
     wi_array_t*   array   = _check_arg1_array(state);
     wi_closure_t* closure = wi_slot_check_function(state, 2, 1);
 
-    for (int i = 0; i < array->items.count; i++) {
+    int count = array->items.count;
+
+    for (int i = 0; i < count; i++) {
         wi_state_push(state, WI_MAKE_BOX_VALUE(closure));
         wi_state_push(state, array->items.data[i]);
 

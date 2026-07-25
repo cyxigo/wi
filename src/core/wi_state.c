@@ -1238,14 +1238,12 @@ wi_state_run(wi_state_t* state, const char* file_path, const char* src) {
     wi_closure_t* closure = wi_new_closure(state->gc, prototype, &state->globals);
     wi_gc_pop_root(state->gc);
 
-    wi_state_push(state, WI_MAKE_BOX_VALUE(closure));
-    _state_call(state, closure, 0);
-
     int jmp_result = setjmp(state->jmp);
 
     if (jmp_result == WI_JMP_OK) {
-        wi_run_result_t result = _state_interpreter_loop(state, 0, true);
-        return result;
+        wi_state_push(state, WI_MAKE_BOX_VALUE(closure));
+        _state_call(state, closure, 0);
+        return _state_interpreter_loop(state, 0, true);
     }
 
     if (jmp_result == WI_JMP_ABORT) {
