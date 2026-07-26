@@ -60,6 +60,16 @@ WI_API void
 wi_def_std(wi_state_t* state);
 
 /**
+ * Set the command line arguments that will be available to Wi scripts via os.args
+ *
+ * @param state Wi state instance
+ * @param argc Number of arguments
+ * @param argv Array of argument strings
+ */
+WI_API void
+wi_state_set_args(wi_state_t* state, int argc, const char** argv);
+
+/**
  * Define a foreign (C) function in the state
  *
  * @param state Wi state instance
