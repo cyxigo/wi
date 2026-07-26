@@ -314,6 +314,7 @@ _check_arg1_object(wi_state_t* state) {
 static void
 _base_has_field(wi_state_t* state, int arg_count) {
     wi_object_t* object = _check_arg1_object(state);
+    wi_slot_check_string(state, 2);
     wi_slot_set_bool(state, 0, wi_table_get(&object->fields, state->api_stack[2], NULL));
 }
 
