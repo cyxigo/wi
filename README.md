@@ -9,14 +9,14 @@
 </div>
 
 ```js
-var person = object {
+var obj_person = object {
     name = "";
     greet = function(self) {
         print("Hello, " .. self.name .. "!");
     };
 };
 
-var slava = new person {
+var slava = new obj_person {
     name = "Slava";
 };
 
