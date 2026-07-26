@@ -1,4 +1,4 @@
-var toggle = object {
+var obj_toggle = object {
     state = false;
     value = function(self) {
         return self.state;
@@ -10,19 +10,19 @@ var toggle = object {
 };
 
 var new_toggle = function(start_state) {
-    return new toggle { 
+    return new obj_toggle { 
         state = start_state; 
     };
 };  
 
-var nth_toggle = new toggle {
+var obj_nth_toggle = new obj_toggle {
     count_max = 0;
     count = 0;
     activate = function(self) {
         self.count = self.count + 1;
 
         if (self.count >= self.count_max) {
-            toggle.activate(self);
+            obj_toggle.activate(self);
             self.count = 0;
         }
 
@@ -31,7 +31,7 @@ var nth_toggle = new toggle {
 };
 
 var new_nth_toggle = function(start_state, max_counter) {
-    return new nth_toggle {
+    return new obj_nth_toggle {
         state = start_state;
         count_max = max_counter;
     };
