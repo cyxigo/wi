@@ -112,6 +112,7 @@ _help(const char* exec_path) {
     printf("    -pc   --print-code        print bytecode after compilation\n");
     printf("    -sgc  --stress-gc         run garbage collection on every allocation\n");
     printf("    -lgc  --log-gc            log garbage collection\n");
+    printf("    --                        treat all remaining arguments as script arguments\n");
 }
 
 static void
@@ -129,9 +130,23 @@ _flag_parse_error(const char* exec_path, const char* format, ...) {
 }
 
 static void
-_parse_flags(int argc, const char* argv[], wi_conf_t* conf, const char** file_path) {
+_parse_flags(int argc, const char* argv[], wi_conf_t* conf, const char** file_path, int* script_argc,
+             const char*** script_argv) {
+    bool script_args = false;
+
     for (int i = 1; i < argc; i++) {
         const char* arg = argv[i];
+
+        if (script_args) {
+            *script_argc = argc - i;
+            *script_argv = argv + i;
+            break;
+        }
+
+        if (strcmp(arg, "--") == 0) {
+            script_args = true;
+            continue;
+        }
 
         if (arg[0] != '-') {
             if (*file_path) {
@@ -185,9 +200,11 @@ main(int argc, const char* argv[]) {
         return EXIT_SUCCESS;
     }
 
-    wi_conf_t   conf      = WI_DEFAULT_CONF;
-    const char* file_path = NULL;
-    _parse_flags(argc, argv, &conf, &file_path);
+    wi_conf_t    conf        = WI_DEFAULT_CONF;
+    const char*  file_path   = NULL;
+    int          script_argc = 0;
+    const char** script_argv = NULL;
+    _parse_flags(argc, argv, &conf, &file_path, &script_argc, &script_argv);
 
     char* src = _read_file(file_path);
 
@@ -197,7 +214,9 @@ main(int argc, const char* argv[]) {
         return EXIT_FAILURE;
     }
 
+    wi_state_set_args(_g_state, script_argc, script_argv);
     wi_run_result_t result = wi_state_run(_g_state, file_path, src);
+
     free(src);
     _delete_g_state();
 

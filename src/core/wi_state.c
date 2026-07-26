@@ -44,9 +44,12 @@ wi_new_state(wi_conf_t conf) {
         return NULL;
     }
 
-    state->gc->state   = state;
-    state->interrupted = 0;
+    state->gc->state = state;
 
+    state->script_argc = 0;
+    state->script_argv = NULL;
+
+    state->interrupted = 0;
     _state_reset_stack(state);
 
     wi_table_init(&state->globals, state->gc);
@@ -98,6 +101,12 @@ wi_delete_state(wi_state_t* state) {
 
     _state_free_foreign_handles(state);
     free(state);
+}
+
+void
+wi_state_set_args(wi_state_t* state, int argc, const char** argv) {
+    state->script_argc = argc;
+    state->script_argv = argv;
 }
 
 bool

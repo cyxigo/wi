@@ -66,6 +66,9 @@ typedef struct wi_state {
     wi_conf_t conf;
     wi_gc_t*  gc;
 
+    int          script_argc;
+    const char** script_argv;
+
     jmp_buf               jmp;
     volatile sig_atomic_t interrupted;
 
@@ -132,6 +135,9 @@ wi_state_t*
 wi_new_state(wi_conf_t conf);
 void
 wi_delete_state(wi_state_t* state);
+
+void
+wi_state_set_args(wi_state_t* state, int argc, const char** argv);
 
 bool
 wi_state_add_foreign_handle(wi_state_t* state, wi_lib_handle_t lib);
