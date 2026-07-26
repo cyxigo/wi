@@ -256,7 +256,7 @@ _compiler_decl_var(wi_compiler_t* compiler, wi_token_t name) {
         }
 
         if (wi_token_lexemes_equal(name, local->name)) {
-            wi_parser_error_at(compiler->parser, name, "variable is already defined");
+            wi_parser_error_at(compiler->parser, name, "variable is %.*s already defined", name.len, name.start);
             return;
         }
     }
