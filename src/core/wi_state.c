@@ -896,9 +896,34 @@ _state_interpreter_loop(wi_state_t* state, int base_frame_count, bool drop_resul
             _DISPATCH();
         }
         _OPCODE_LABEL(JUMP_IF_FALSE) : {
-            uint16_t offset = _READ_SHORT();
+            uint16_t   offset = _READ_SHORT();
+            wi_value_t cond   = wi_state_pop(state);
 
-            if (wi_value_is_falsy(wi_state_top(state))) {
+            if (wi_value_is_falsy(cond)) {
+                ip += offset;
+            }
+
+            _DISPATCH();
+        }
+        _OPCODE_LABEL(AND) : {
+            uint16_t   offset = _READ_SHORT();
+            wi_value_t cond   = wi_state_top(state);
+
+            if (wi_value_is_falsy(cond)) {
+                ip += offset;
+            } else {
+                wi_state_drop(state);
+            }
+
+            _DISPATCH();
+        }
+        _OPCODE_LABEL(OR) : {
+            uint16_t   offset = _READ_SHORT();
+            wi_value_t cond   = wi_state_top(state);
+
+            if (wi_value_is_falsy(cond)) {
+                wi_state_drop(state);
+            } else {
                 ip += offset;
             }
 

@@ -981,11 +981,9 @@ _compiler_log_and_expr(wi_compiler_t* compiler) {
     _compiler_equality_expr(compiler);
 
     while (wi_parser_match(compiler->parser, WI_TOKEN_AMPER_AMPER)) {
-        int end_jump = _compiler_emit_jump(compiler, WI_OP_JUMP_IF_FALSE);
-
-        _compiler_emit_opcode(compiler, WI_OP_POP);
+        int jump = _compiler_emit_jump(compiler, WI_OP_AND);
         _compiler_equality_expr(compiler);
-        _compiler_patch_jump(compiler, end_jump);
+        _compiler_patch_jump(compiler, jump);
     }
 }
 
@@ -994,14 +992,9 @@ _compiler_log_or_expr(wi_compiler_t* compiler) {
     _compiler_log_and_expr(compiler);
 
     while (wi_parser_match(compiler->parser, WI_TOKEN_PIPE_PIPE)) {
-        int else_jump = _compiler_emit_jump(compiler, WI_OP_JUMP_IF_FALSE);
-        int end_jump  = _compiler_emit_jump(compiler, WI_OP_JUMP);
-
-        _compiler_patch_jump(compiler, else_jump);
-        _compiler_emit_opcode(compiler, WI_OP_POP);
-
+        int jump = _compiler_emit_jump(compiler, WI_OP_OR);
         _compiler_log_and_expr(compiler);
-        _compiler_patch_jump(compiler, end_jump);
+        _compiler_patch_jump(compiler, jump);
     }
 }
 
@@ -1066,14 +1059,10 @@ _compiler_if_stmt(wi_compiler_t* compiler) {
     wi_parser_expect(compiler->parser, WI_TOKEN_CLOSE_PAREN);
 
     int then_jump = _compiler_emit_jump(compiler, WI_OP_JUMP_IF_FALSE);
-
-    _compiler_emit_opcode(compiler, WI_OP_POP);
     _compiler_stmt(compiler);
 
     int else_jump = _compiler_emit_jump(compiler, WI_OP_JUMP);
-
     _compiler_patch_jump(compiler, then_jump);
-    _compiler_emit_opcode(compiler, WI_OP_POP);
 
     if (wi_parser_match(compiler->parser, WI_TOKEN_KW_ELSE)) {
         _compiler_stmt(compiler);
@@ -1095,13 +1084,10 @@ _compiler_while_stmt(wi_compiler_t* compiler) {
     wi_parser_expect(compiler->parser, WI_TOKEN_CLOSE_PAREN);
 
     int exit_jump = _compiler_emit_jump(compiler, WI_OP_JUMP_IF_FALSE);
-
-    _compiler_emit_opcode(compiler, WI_OP_POP);
     _compiler_stmt(compiler);
     _compiler_emit_loop(compiler, compiler->innermost_loop_start);
 
     _compiler_patch_jump(compiler, exit_jump);
-    _compiler_emit_opcode(compiler, WI_OP_POP);
     _compiler_end_loop(compiler);
 
     compiler->innermost_loop_start       = enclosing_start;
@@ -1129,10 +1115,8 @@ _compiler_for_cond(wi_compiler_t* compiler) {
 
     _compiler_expr(compiler);
     wi_parser_expect(compiler->parser, WI_TOKEN_SEMICOLON);
-    int exit_jump = _compiler_emit_jump(compiler, WI_OP_JUMP_IF_FALSE);
-    _compiler_emit_opcode(compiler, WI_OP_POP);
 
-    return exit_jump;
+    return _compiler_emit_jump(compiler, WI_OP_JUMP_IF_FALSE);
 }
 
 static void
@@ -1174,7 +1158,6 @@ _compiler_for_stmt(wi_compiler_t* compiler) {
 
     if (exit_jump != -1) {
         _compiler_patch_jump(compiler, exit_jump);
-        _compiler_emit_opcode(compiler, WI_OP_POP);
     }
 
     _compiler_end_scope(compiler);

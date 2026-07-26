@@ -148,6 +148,10 @@ wi_prototype_disasm_instr(wi_prototype_t* prototype, int offset) {
             return _jump_instr("jump", 1, prototype, offset);
         case WI_OP_JUMP_IF_FALSE:
             return _jump_instr("jump_if_false", 1, prototype, offset);
+        case WI_OP_AND:
+            return _jump_instr("and", 1, prototype, offset);
+        case WI_OP_OR:
+            return _jump_instr("or", 1, prototype, offset);
         case WI_OP_LOOP:
             return _jump_instr("loop", -1, prototype, offset);
         case WI_OP_LOOP_END:
