@@ -4,8 +4,14 @@
    
    ## Wi is a small, fast, prototype-based scripting language.
    
-   ![GitHub Tag](https://img.shields.io/github/tag-date/cyxigo/wi)
+   ![GitHub release](https://img.shields.io/github/v/release/cyxigo/wi)
+   ![Docs](https://img.shields.io/badge/docs-wiki-blue)
    ![GitHub License](https://img.shields.io/github/license/cyxigo/wi)
+   ![GitHub last commit](https://img.shields.io/github/last-commit/cyxigo/wi)
+   ![Language](https://img.shields.io/github/languages/top/cyxigo/wi)
+   ![Platform](https://img.shields.io/badge/platform-linux%20%7C%20windows-lightgrey)
+   ![Code size](https://img.shields.io/github/languages/code-size/cyxigo/wi)
+   ![Downloads](https://img.shields.io/github/downloads/cyxigo/wi/total)
 </div>
 
 ```js
