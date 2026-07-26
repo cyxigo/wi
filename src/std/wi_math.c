@@ -158,9 +158,9 @@ wi_state_def_math_foreign(wi_state_t* state) {
     srand((unsigned)time(NULL));
     wi_object_t* object = wi_def_object(state, "math");
 
-    wi_set_field_real(state, object, "e", M_E);
-    wi_set_field_real(state, object, "pi", M_PI);
-    wi_set_field_real(state, object, "huge", HUGE_VAL);
+    wi_set_field_real(state, object, "E", M_E);
+    wi_set_field_real(state, object, "PI", M_PI);
+    wi_set_field_real(state, object, "HUGE", HUGE_VAL);
 
     wi_set_field_foreign(state, object, "abs", _math_abs, 1, false);
     wi_set_field_foreign(state, object, "acos", _math_acos, 1, false);
