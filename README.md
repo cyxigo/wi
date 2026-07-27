@@ -26,7 +26,7 @@ var slava = new obj_person {
 slava->greet(); // Hello, Slava!
 ```
 
-- **Wi is small**. The [entire implementation](https://github.com/cyxigo/wi/tree/main/src) takes less than 8k lines of code.
+- **Wi is small**. The [entire implementation](https://github.com/cyxigo/wi/tree/main/src) takes less than 10k lines of code.
 - **Wi is fast**. Check out [benchmarks](https://github.com/cyxigo/wi/tree/main/test/benchmark).
 - **Wi is purely prototype-based**. Many languages use classes - Wi uses [objects](https://github.com/cyxigo/wi/wiki/Objects). You clone these objects and create whatever you want.
 - **Wi is simple**. You can learn its syntax in less than a week using its [documentation](https://github.com/cyxigo/wi/wiki).
