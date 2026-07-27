@@ -582,13 +582,13 @@ _state_require(wi_state_t* state, wi_value_t path_value, wi_value_t name_value) 
     }
 
     wi_prototype_t* prototype = wi_compile(state, path, src);
-    wi_gc_push_root(state->gc, (wi_box_t*)prototype);
     free(src);
 
     if (!prototype) {
         wi_state_error(state, "failed to compile module %s", path);
     }
 
+    wi_gc_push_root(state->gc, (wi_box_t*)prototype);
     wi_object_t* object = wi_new_object(state->gc, name);
     wi_gc_push_root(state->gc, (wi_box_t*)object);
 

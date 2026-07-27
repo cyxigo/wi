@@ -313,7 +313,14 @@ _lexer_non_dec_real(wi_lexer_t* lexer) {
         is_digit_fn = wi_is_hex_digit;
     }
 
+    int line = lexer->line;
+    int col  = lexer->col;
+
     _lexer_advance(lexer);
+
+    if (!is_digit_fn(_lexer_peek(lexer))) {
+        return _lexer_error(lexer, "expected at least one digit after base", line, col);
+    }
 
     while (is_digit_fn(_lexer_peek(lexer))) {
         _lexer_advance(lexer);
