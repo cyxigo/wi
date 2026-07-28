@@ -627,15 +627,15 @@ _state_interpreter_loop(wi_state_t* state, int base_frame_count, bool drop_resul
     frame->ip = ip; \
     wi_state_error(state, __VA_ARGS__)
 
-#define _DISPATCH(void)                    \
+#define _DISPATCH(void) goto* dispatch_table[(opcode = _READ_BYTE())];
+#define _OPCODE_LABEL(name) LABEL_##name
+#define _CHECK_INTERRUPT(void)             \
+                                           \
     if (WI_UNLIKELY(state->interrupted)) { \
         state->interrupted = 0;            \
         frame->ip          = ip;           \
         wi_state_abort(state);             \
-    }                                      \
-                                           \
-    goto* dispatch_table[(opcode = _READ_BYTE())];
-#define _OPCODE_LABEL(name) LABEL_##name
+    }
 
 #define _READ_BYTE(void) *ip++
 #define _READ_SHORT(void) (ip += 2, (uint16_t)(ip[-2] << 8 | ip[-1]))
@@ -932,6 +932,7 @@ _state_interpreter_loop(wi_state_t* state, int base_frame_count, bool drop_resul
         _OPCODE_LABEL(LOOP) : {
             uint16_t offset = _READ_SHORT();
             ip -= offset;
+            _CHECK_INTERRUPT();
             _DISPATCH();
         }
         _OPCODE_LABEL(LOOP_END) : {
@@ -1032,6 +1033,7 @@ _state_interpreter_loop(wi_state_t* state, int base_frame_count, bool drop_resul
 
             _state_call(state, wi_value_as_closure(value), arg_count);
             _UPDATE_FRAME();
+            _CHECK_INTERRUPT();
             _DISPATCH();
         }
         _OPCODE_LABEL(TAIL_CALL) : {
@@ -1050,6 +1052,7 @@ _state_interpreter_loop(wi_state_t* state, int base_frame_count, bool drop_resul
 
             _state_tail_call(state, frame, wi_value_as_closure(value), arg_count);
             _UPDATE_FRAME();
+            _CHECK_INTERRUPT();
             _DISPATCH();
         }
         _OPCODE_LABEL(INVOKE) : {
@@ -1072,6 +1075,7 @@ _state_interpreter_loop(wi_state_t* state, int base_frame_count, bool drop_resul
 
             _state_call(state, wi_value_as_closure(function), arg_count);
             _UPDATE_FRAME();
+            _CHECK_INTERRUPT();
             _DISPATCH();
         }
         _OPCODE_LABEL(TAIL_INVOKE) : {
@@ -1094,6 +1098,7 @@ _state_interpreter_loop(wi_state_t* state, int base_frame_count, bool drop_resul
 
             _state_tail_call(state, frame, wi_value_as_closure(function), arg_count);
             _UPDATE_FRAME();
+            _CHECK_INTERRUPT();
             _DISPATCH();
         }
         _OPCODE_LABEL(RETURN) : {
@@ -1230,6 +1235,7 @@ _state_interpreter_loop(wi_state_t* state, int base_frame_count, bool drop_resul
 
 #undef _DISPATCH
 #undef _OPCODE_LABEL
+#undef _CHECK_INTERRUPT
 
 #undef _READ_BYTE
 #undef _READ_SHORT

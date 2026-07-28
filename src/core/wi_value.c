@@ -16,6 +16,98 @@
 #include "wi_table.h"
 
 static void
+_print_chars(char* chars, int len) {
+    char* ptr = chars;
+    char* end = chars + len;
+
+    while (ptr < end) {
+        char* nul = memchr(ptr, '\0', (size_t)(end - ptr));
+
+        if (!nul) {
+            fwrite(ptr, 1, (size_t)(end - ptr), stdout);
+            return;
+        }
+
+        if (nul > ptr) {
+            fwrite(ptr, 1, (size_t)(nul - ptr), stdout);
+        }
+
+        printf(" ");
+        ptr = nul + 1;
+    }
+}
+
+static void
+_print_string(wi_string_t* string) {
+    _print_chars(string->chars, string->len);
+}
+
+static void
+_print_string_quoted(wi_string_t* string) {
+    printf("\"");
+    _print_string(string);
+    printf("\"");
+}
+
+static void
+_print_array(wi_array_t* array) {
+    wi_value_buf_t items = array->items;
+    printf("[");
+
+    for (int i = 0; i < items.count; i++) {
+        if (i > 0) {
+            printf(", ");
+        }
+
+        wi_value_t value = items.data[i];
+
+        if (wi_value_is_string(value)) {
+            _print_string_quoted(wi_value_as_string(value));
+        } else {
+            wi_value_print(value);
+        }
+    }
+
+    printf("]");
+}
+
+static void
+_print_map(wi_map_t* map) {
+    printf("{ ");
+    wi_table_t* table   = &map->items;
+    int         printed = 0;
+
+    for (int i = 0; i < table->capacity; i++) {
+        wi_entry_t* entry = &table->entries[i];
+
+        if (wi_value_is_empty(entry->key)) {
+            continue;
+        }
+
+        if (wi_value_is_string(entry->key)) {
+            _print_string_quoted(wi_value_as_string(entry->key));
+        } else {
+            wi_value_print(entry->key);
+            printf(": ");
+        }
+
+        if (wi_value_is_string(entry->value)) {
+            _print_string_quoted(wi_value_as_string(entry->value));
+        } else {
+            wi_value_print(entry->value);
+        }
+
+        printed++;
+
+        if (printed != table->live_count) {
+            printf(", ");
+        }
+    }
+
+    printf(" }");
+}
+
+static void
 _print_function(wi_prototype_t* prototype) {
     if (prototype->is_main) {
         printf("<main function in %s at %p>", prototype->file_path, (void*)prototype);
@@ -35,59 +127,11 @@ wi_value_print(wi_value_t value) {
     } else if (wi_value_is_bool(value)) {
         printf(wi_value_as_bool(value) ? "true" : "false");
     } else if (wi_value_is_string(value)) {
-        printf("%s", wi_value_as_cstring(value));
+        _print_string(wi_value_as_string(value));
     } else if (wi_value_is_array(value)) {
-        wi_value_buf_t items = wi_value_as_array(value)->items;
-        printf("[");
-
-        for (int i = 0; i < items.count; i++) {
-            if (i > 0) {
-                printf(", ");
-            }
-
-            wi_value_t value = items.data[i];
-
-            if (wi_value_is_string(value)) {
-                printf("\"%s\"", wi_value_as_cstring(value));
-            } else {
-                wi_value_print(value);
-            }
-        }
-
-        printf("]");
+        _print_array(wi_value_as_array(value));
     } else if (wi_value_is_map(value)) {
-        printf("{ ");
-        wi_table_t* table   = &wi_value_as_map(value)->items;
-        int         printed = 0;
-
-        for (int i = 0; i < table->capacity; i++) {
-            wi_entry_t* entry = &table->entries[i];
-
-            if (wi_value_is_empty(entry->key)) {
-                continue;
-            }
-
-            if (wi_value_is_string(entry->key)) {
-                printf("\"%s\": ", wi_value_as_cstring(entry->key));
-            } else {
-                wi_value_print(entry->key);
-                printf(": ");
-            }
-
-            if (wi_value_is_string(entry->value)) {
-                printf("\"%s\"", wi_value_as_cstring(entry->value));
-            } else {
-                wi_value_print(entry->value);
-            }
-
-            printed++;
-
-            if (printed != table->live_count) {
-                printf(", ");
-            }
-        }
-
-        printf(" }");
+        _print_map(wi_value_as_map(value));
     } else if (wi_value_is_prototype(value)) {
         _print_function(wi_value_as_prototype(value));
     } else if (wi_value_is_foreign(value)) {
