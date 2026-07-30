@@ -473,6 +473,12 @@ static void
 _state_tail_call(wi_state_t* state, wi_call_frame_t* frame, wi_closure_t* closure, uint8_t arg_count) {
     wi_prototype_t* prototype = closure->prototype;
     wi_state_check_arity(state, prototype->arity, arg_count, prototype->is_variadic);
+
+    if (frame->slots + prototype->max_slot_count >= state->stack_end) {
+        _state_capture_overflow_ctx(state);
+        wi_state_error(state, "stack overflow (limit is %i)", WI_STACK_COUNT);
+    }
+
     _state_close_upvalues(state, frame->slots);
 
     if (prototype->is_variadic) {
@@ -581,24 +587,24 @@ _state_require(wi_state_t* state, wi_value_t path_value, wi_value_t name_value) 
         wi_state_error(state, "variable %s is already defined", name->chars);
     }
 
-    wi_prototype_t* prototype = wi_compile(state, path, src);
-    free(src);
-
-    if (!prototype) {
-        wi_state_error(state, "failed to compile module %s", path);
-    }
-
-    wi_gc_push_root(state->gc, (wi_box_t*)prototype);
     wi_object_t* object = wi_new_object(state->gc, name);
     wi_gc_push_root(state->gc, (wi_box_t*)object);
 
+    wi_prototype_t* prototype = wi_compile(state, path, src, &object->fields);
+    free(src);
+
+    if (!prototype) {
+        wi_state_error(state, "failed to compile script %s", path);
+    }
+
+    wi_gc_push_root(state->gc, (wi_box_t*)prototype);
     wi_table_set(&state->required, path_value, WI_MAKE_BOX_VALUE(object));
     wi_table_set(frame->closure->globals, name_value, WI_MAKE_BOX_VALUE(object));
 
-    wi_gc_pop_root(state->gc);
-
     wi_closure_t* closure = wi_new_closure(state->gc, prototype, &object->fields);
     closure->is_required  = true;
+
+    wi_gc_pop_root(state->gc);
     wi_gc_pop_root(state->gc);
 
     return closure;
@@ -695,24 +701,12 @@ _state_interpreter_loop(wi_state_t* state, int base_frame_count, bool drop_resul
             _DISPATCH();
         }
         _OPCODE_LABEL(DEF_GLOBAL) : {
-            wi_value_t name = _READ_CONSTANT();
-
-            if (wi_table_get(frame->closure->globals, name, NULL)) {
-                _ERROR("variable %s is already defined", wi_value_as_cstring(name));
-            }
-
-            wi_table_set(frame->closure->globals, name, wi_state_top(state));
+            wi_table_set(frame->closure->globals, _READ_CONSTANT(), wi_state_top(state));
             wi_state_drop(state);
             _DISPATCH();
         }
         _OPCODE_LABEL(SET_GLOBAL) : {
-            wi_value_t name = _READ_CONSTANT();
-
-            if (wi_table_set(frame->closure->globals, name, wi_state_top(state))) {
-                wi_table_delete(frame->closure->globals, name);
-                _ERROR("variable %s is used but not defined", wi_value_as_cstring(name));
-            }
-
+            wi_table_set(frame->closure->globals, _READ_CONSTANT(), wi_state_top(state));
             _DISPATCH();
         }
         _OPCODE_LABEL(GET_GLOBAL) : {
@@ -724,12 +718,9 @@ _state_interpreter_loop(wi_state_t* state, int base_frame_count, bool drop_resul
                 _DISPATCH();
             }
 
-            if (wi_table_get(&state->foreign, name, &value)) {
-                wi_state_push(state, value);
-                _DISPATCH();
-            }
-
-            _ERROR("variable %s is used but not defined", wi_value_as_cstring(name));
+            wi_table_get(&state->foreign, name, &value);
+            wi_state_push(state, value);
+            _DISPATCH();
         }
         _OPCODE_LABEL(STORE_LOCAL) : {
             frame->slots[_READ_BYTE()] = wi_state_top(state);
@@ -1268,7 +1259,7 @@ wi_state_call(wi_state_t* state, wi_closure_t* closure, uint8_t arg_count, bool 
 wi_run_result_t
 wi_state_run(wi_state_t* state, const char* file_path, const char* src) {
     state->interrupted        = 0;
-    wi_prototype_t* prototype = wi_compile(state, file_path, src);
+    wi_prototype_t* prototype = wi_compile(state, file_path, src, &state->globals);
 
     if (!prototype) {
         return WI_RUN_ERROR;

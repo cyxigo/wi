@@ -4,6 +4,7 @@
 #include "../include/wi_conf.h"
 #include "wi_box.h"
 #include "wi_parser.h"
+#include "wi_table.h"
 
 typedef struct {
     wi_token_t name;
@@ -22,6 +23,7 @@ typedef struct wi_compiler {
     wi_parser_t*        parser;
     wi_token_t          var_name;
 
+    wi_table_t*     globals;
     wi_prototype_t* prototype;
     int             slot_count;
     wi_map_t*       constants;
@@ -37,12 +39,13 @@ typedef struct wi_compiler {
 } wi_compiler_t;
 
 wi_compiler_t*
-wi_new_compiler(wi_compiler_t* outer, wi_state_t* state, wi_parser_t* parser);
+wi_new_compiler(wi_compiler_t* outer, wi_state_t* state, wi_parser_t* parser, wi_table_t* globals);
 void
 wi_delete_compiler(wi_compiler_t* compiler);
 void
-wi_compiler_init(wi_compiler_t* compiler, wi_compiler_t* outer, wi_state_t* state, wi_parser_t* parser);
+wi_compiler_init(wi_compiler_t* compiler, wi_compiler_t* outer, wi_state_t* state, wi_parser_t* parser,
+                 wi_table_t* globals);
 wi_prototype_t*
-wi_compile(wi_state_t* state, const char* file_path, const char* src);
+wi_compile(wi_state_t* state, const char* file_path, const char* src, wi_table_t* globals);
 
 #endif

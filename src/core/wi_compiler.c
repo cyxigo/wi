@@ -20,14 +20,14 @@
 #include "wi_value.h"
 
 wi_compiler_t*
-wi_new_compiler(wi_compiler_t* outer, wi_state_t* state, wi_parser_t* parser) {
+wi_new_compiler(wi_compiler_t* outer, wi_state_t* state, wi_parser_t* parser, wi_table_t* globals) {
     wi_compiler_t* compiler = malloc(sizeof(wi_compiler_t));
 
     if (!compiler) {
         return NULL;
     }
 
-    wi_compiler_init(compiler, outer, state, parser);
+    wi_compiler_init(compiler, outer, state, parser, globals);
     return compiler;
 }
 
@@ -37,13 +37,15 @@ wi_delete_compiler(wi_compiler_t* compiler) {
 }
 
 void
-wi_compiler_init(wi_compiler_t* compiler, wi_compiler_t* outer, wi_state_t* state, wi_parser_t* parser) {
+wi_compiler_init(wi_compiler_t* compiler, wi_compiler_t* outer, wi_state_t* state, wi_parser_t* parser,
+                 wi_table_t* globals) {
     compiler->outer               = outer;
     compiler->state               = state;
     compiler->state->gc->compiler = compiler;
     compiler->parser              = parser;
     compiler->var_name            = WI_BLANK_TOKEN;
 
+    compiler->globals            = globals;
     compiler->prototype          = NULL;
     compiler->constants          = NULL;
     compiler->prototype          = wi_new_prototype(compiler->state->gc, compiler->parser->lexer->file_path);
@@ -122,7 +124,6 @@ _compiler_patch_jump(wi_compiler_t* compiler, int offset) {
 
     if (jump > WI_JUMP_MAX) {
         wi_parser_error_at_curr(compiler->parser, "too much code to jump over (limit is %i)", WI_JUMP_MAX);
-        return;
     }
 
     bytes[offset]     = (uint8_t)(jump >> 8);
@@ -136,7 +137,6 @@ _compiler_emit_loop(wi_compiler_t* compiler, int loop_start) {
 
     if (offset > WI_LOOP_MAX) {
         wi_parser_error_at_curr(compiler->parser, "too much code to loop (limit is %i)", WI_LOOP_MAX);
-        return;
     }
 
     _compiler_emit_short(compiler, (uint16_t)offset);
@@ -283,7 +283,13 @@ _compiler_def_var(wi_compiler_t* compiler, wi_token_t name) {
         return;
     }
 
-    uint16_t constant = _compiler_name_constant(compiler, name);
+    wi_string_t* name_box = wi_copy_cstring(compiler->state->gc, name.start, name.len);
+
+    if (!wi_table_set(compiler->globals, WI_MAKE_BOX_VALUE(name_box), wi_make_null_value())) {
+        wi_parser_error_at(compiler->parser, name, "variable %s is already defined", name_box->chars);
+    }
+
+    uint16_t constant = _compiler_make_constant(compiler, WI_MAKE_BOX_VALUE(name_box));
     _compiler_emit_opcode_short(compiler, WI_OP_DEF_GLOBAL, constant);
 }
 
@@ -324,8 +330,7 @@ _compiler_resolve_local(wi_compiler_t* compiler, wi_token_t name) {
 
         if (wi_token_lexemes_equal(name, local->name)) {
             if (local->depth == -1) {
-                wi_parser_error_at(compiler->parser, name,
-                                   "cannot read local variable inside its own initializer");
+                wi_parser_error_at(compiler->parser, name, "cannot use local variable inside its own initializer");
                 return -1;
             }
 
@@ -383,10 +388,10 @@ _compiler_resolve_upvalue(wi_compiler_t* compiler, wi_token_t name) {
 
 static void
 _compiler_var(wi_compiler_t* compiler, wi_token_t name) {
-    int         arg      = _compiler_resolve_local(compiler, name);
-    bool        byte_arg = arg != -1;
-    wi_opcode_t set_op;
-    wi_opcode_t get_op;
+    int          arg         = _compiler_resolve_local(compiler, name);
+    wi_string_t* global_name = NULL;
+    wi_opcode_t  set_op;
+    wi_opcode_t  get_op;
 
     if (arg != -1) {
         set_op = WI_OP_STORE_LOCAL;
@@ -397,13 +402,22 @@ _compiler_var(wi_compiler_t* compiler, wi_token_t name) {
             get_op = WI_OP_LOAD_LOCAL;
         }
     } else if ((arg = _compiler_resolve_upvalue(compiler, name)) != -1) {
-        set_op   = WI_OP_STORE_UPVALUE;
-        get_op   = WI_OP_LOAD_UPVALUE;
-        byte_arg = true;
+        set_op = WI_OP_STORE_UPVALUE;
+        get_op = WI_OP_LOAD_UPVALUE;
     } else {
-        set_op = WI_OP_SET_GLOBAL;
-        get_op = WI_OP_GET_GLOBAL;
-        arg    = (int)_compiler_name_constant(compiler, name);
+        set_op      = WI_OP_SET_GLOBAL;
+        get_op      = WI_OP_GET_GLOBAL;
+        global_name = wi_copy_cstring(compiler->state->gc, name.start, name.len);
+        arg         = (int)_compiler_make_constant(compiler, WI_MAKE_BOX_VALUE(global_name));
+    }
+
+    if (global_name) {
+        wi_value_t value = WI_MAKE_BOX_VALUE(global_name);
+
+        if (!wi_table_get(compiler->globals, value, NULL) &&
+            !wi_table_get(&compiler->state->foreign, value, NULL)) {
+            wi_parser_error_at(compiler->parser, name, "variable %s is used but not defined", global_name->chars);
+        }
     }
 
     if (wi_parser_match(compiler->parser, WI_TOKEN_EQUAL)) {
@@ -413,7 +427,7 @@ _compiler_var(wi_compiler_t* compiler, wi_token_t name) {
 
         _compiler_emit_opcode(compiler, set_op);
 
-        if (byte_arg) {
+        if (!global_name) {
             _compiler_emit_byte(compiler, (uint8_t)arg);
         } else {
             _compiler_emit_short(compiler, (uint16_t)arg);
@@ -424,7 +438,7 @@ _compiler_var(wi_compiler_t* compiler, wi_token_t name) {
 
     _compiler_emit_opcode(compiler, get_op);
 
-    if (byte_arg) {
+    if (!global_name) {
         if (get_op == WI_OP_LOAD_LOCAL || get_op == WI_OP_LOAD_UPVALUE) {
             _compiler_emit_byte(compiler, (uint8_t)arg);
         }
@@ -562,7 +576,7 @@ _compiler_bool_expr(wi_compiler_t* compiler) {
 static void
 _compiler_function_expr(wi_compiler_t* outer) {
     wi_compiler_t compiler;
-    wi_compiler_init(&compiler, outer, outer->state, outer->parser);
+    wi_compiler_init(&compiler, outer, outer->state, outer->parser, outer->globals);
     _compiler_init_local(&compiler);
 
     compiler.prototype->name = _compiler_get_name(compiler.outer);
@@ -1292,7 +1306,7 @@ _compiler_stmt(wi_compiler_t* compiler) {
 }
 
 wi_prototype_t*
-wi_compile(wi_state_t* state, const char* file_path, const char* src) {
+wi_compile(wi_state_t* state, const char* file_path, const char* src, wi_table_t* globals) {
     wi_lexer_t lexer;
     wi_lexer_init(&lexer, file_path, src);
 
@@ -1302,7 +1316,7 @@ wi_compile(wi_state_t* state, const char* file_path, const char* src) {
         return NULL;
     }
 
-    wi_compiler_t* compiler = wi_new_compiler(NULL, state, parser);
+    wi_compiler_t* compiler = wi_new_compiler(NULL, state, parser, globals);
 
     if (!compiler) {
         return NULL;
@@ -1323,6 +1337,6 @@ wi_compile(wi_state_t* state, const char* file_path, const char* src) {
 
     wi_delete_parser(parser);
     wi_delete_compiler(compiler);
-
+    state->gc->compiler = NULL;
     return NULL;
 }

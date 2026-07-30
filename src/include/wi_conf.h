@@ -30,8 +30,8 @@ enum {
     /**
      * Garbage Collector settings
      */
-    WI_GC_MIN_HEAP         = 1048576,  // Initial heap size before first collection
-    WI_GC_HEAP_GROW_FACTOR = 2,        // Heap growth factor per garbage collection run
+    WI_GC_MIN_HEAP         = 10485760,  // Initial heap size before first collection (10 MB)
+    WI_GC_HEAP_GROW_FACTOR = 2,         // Heap growth factor per garbage collection run
 
     /**
      * VM limits

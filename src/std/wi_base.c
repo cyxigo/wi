@@ -184,8 +184,6 @@ _base_try(wi_state_t* state, int arg_count) {
         wi_state_call(state, closure, (uint8_t)(arg_count - 1), false);
         wi_value_t call_value = wi_state_pop(state);
 
-        wi_state_pop_recovery(state);
-
         wi_table_set(&result->fields, WI_MAKE_BOX_VALUE(state->ok_str), wi_make_true_value());
         wi_table_set(&result->fields, WI_MAKE_BOX_VALUE(state->value_str), call_value);
         wi_table_set(&result->fields, WI_MAKE_BOX_VALUE(state->error_str), wi_make_null_value());
@@ -194,6 +192,8 @@ _base_try(wi_state_t* state, int arg_count) {
         wi_table_set(&result->fields, WI_MAKE_BOX_VALUE(state->value_str), wi_make_null_value());
         wi_table_set(&result->fields, WI_MAKE_BOX_VALUE(state->error_str), WI_MAKE_BOX_VALUE(recovery->error));
     }
+
+    wi_state_pop_recovery(state);
 }
 
 static void

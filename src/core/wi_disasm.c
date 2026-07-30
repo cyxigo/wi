@@ -176,11 +176,9 @@ wi_prototype_disasm_instr(wi_prototype_t* prototype, int offset) {
 
             offset += 2;
 
-            wi_prototype_t* closure_prototype = wi_value_as_prototype(prototype_value);
-
-            for (int i = 0; i < closure_prototype->upvalue_count; i++) {
-                uint8_t index    = closure_prototype->bytes.data[offset++];
-                uint8_t is_local = closure_prototype->bytes.data[offset++];
+            for (int i = 0; i < wi_value_as_prototype(prototype_value)->upvalue_count; i++) {
+                uint8_t index    = prototype->bytes.data[offset++];
+                uint8_t is_local = prototype->bytes.data[offset++];
                 printf("    %04i    | %-16s at %hhu\n", offset - 2, is_local ? "local" : "upvalue", index);
             }
 

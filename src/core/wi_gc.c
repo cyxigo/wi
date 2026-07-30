@@ -242,6 +242,7 @@ _gc_mark_compiler(wi_gc_t* gc) {
     wi_compiler_t* compiler = gc->compiler;
 
     while (compiler) {
+        _gc_mark_table(gc, compiler->globals);
         _gc_mark_box(gc, (wi_box_t*)compiler->prototype);
         _gc_mark_box(gc, (wi_box_t*)compiler->constants);
         compiler = compiler->outer;
