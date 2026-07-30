@@ -179,7 +179,7 @@ _state_close_upvalues(wi_state_t* state, wi_value_t* last);
 void
 wi_state_error(wi_state_t* state, const char* format, ...) {
     if (state->recovery_count > 0) {
-        wi_recovery_t* recovery = &state->recoveries[--state->recovery_count];
+        wi_recovery_t* recovery = &state->recoveries[state->recovery_count - 1];
         _state_close_upvalues(state, recovery->stack_top);
 
         state->frame_count         = recovery->frame_count;
