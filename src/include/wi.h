@@ -47,7 +47,7 @@ typedef struct wi_state wi_state_t;
  */
 typedef void (*wi_foreign_fn_t)(wi_state_t* state, int arg_count);
 /**
- * Userdata finalizer - function called when the state is deleted (freed)
+ * Userdata finalizer - function called when the userdata gets collected by GC
  */
 typedef void (*wi_userdata_finalizer_fn_t)(void* data);
 
