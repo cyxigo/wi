@@ -167,7 +167,7 @@ WI_API void
 wi_delete_state(wi_state_t* state);
 
 /**
- * Set the `require` load callback in the Wi state
+ * Set the `require` load callback
  *
  * @param state Wi state instance
  * @param fn Load callback function
