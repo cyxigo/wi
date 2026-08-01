@@ -603,11 +603,11 @@ _compiler_function_expr(wi_compiler_t* outer) {
                 break;
             }
 
-            compiler.prototype->arity++;
-
-            if (compiler.prototype->arity > WI_PARAMETER_MAX) {
+            if (compiler.prototype->arity == WI_PARAMETER_MAX) {
                 wi_parser_error_at_curr(compiler.parser, "cannot have more than 255 parameters");
             }
+
+            compiler.prototype->arity++;
 
             wi_token_t name = wi_parser_expect(compiler.parser, WI_TOKEN_NAME);
             _compiler_decl_var(&compiler, name);

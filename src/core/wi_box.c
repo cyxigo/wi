@@ -158,7 +158,7 @@ wi_closure_t*
 wi_new_closure(wi_gc_t* gc, wi_prototype_t* prototype, wi_table_t* globals) {
     wi_upvalue_t** upvalues = WI_GC_ALLOC(gc, wi_upvalue_t*, prototype->upvalue_count);
 
-    for (int i = 0; i < prototype->upvalue_count; i++) {
+    for (uint8_t i = 0; i < prototype->upvalue_count; i++) {
         upvalues[i] = NULL;
     }
 

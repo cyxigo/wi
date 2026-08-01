@@ -182,20 +182,22 @@ wi_value_hash(wi_value_t value) {
         return _real_hash(wi_value_as_real(value));
     }
 
+    if (wi_value_is_box(value)) {
+        wi_box_t* box = wi_value_as_box(value);
+
+        if (box->kind == WI_BOX_STRING) {
+            return ((wi_string_t*)box)->hash;
+        }
+
+        return (uint32_t)((uintptr_t)box >> 2);
+    }
+
     if (wi_value_is_null(value)) {
         return WI_NULL_HASH;
     }
 
     if (wi_value_is_bool(value)) {
         return wi_value_as_bool(value) ? WI_TRUE_HASH : WI_FALSE_HASH;
-    }
-
-    if (wi_value_is_string(value)) {
-        return wi_value_as_string(value)->hash;
-    }
-
-    if (wi_value_is_box(value)) {
-        return (uint32_t)((uintptr_t)wi_value_as_box(value) >> 2);
     }
 
     return 0;

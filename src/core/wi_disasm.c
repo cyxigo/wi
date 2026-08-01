@@ -27,6 +27,13 @@ _byte_instr(const char* name, const char* arg_name, wi_prototype_t* prototype, i
 }
 
 static int
+_short_instr(const char* name, const char* arg_name, wi_prototype_t* prototype, int offset) {
+    uint16_t arg = prototype->bytes.data[offset + 1] << 8 | prototype->bytes.data[offset + 2];
+    printf("%-16s %hu (%s)\n", name, arg, arg_name);
+    return offset + 3;
+}
+
+static int
 _constant_instr(const char* name, const char* arg_name, wi_prototype_t* prototype, int offset) {
     uint16_t   constant = prototype->bytes.data[offset + 1] << 8 | prototype->bytes.data[offset + 2];
     wi_value_t value    = prototype->constants.data[constant];
@@ -157,9 +164,9 @@ wi_prototype_disasm_instr(wi_prototype_t* prototype, int offset) {
         case WI_OP_LOOP_END:
             return _simple_instr(offset, "invalid opcode");
         case WI_OP_PUSH_ARRAY:
-            return _constant_instr("push_array", "item count", prototype, offset);
+            return _short_instr("push_array", "item count", prototype, offset);
         case WI_OP_PUSH_MAP:
-            return _constant_instr("push_map", "item count", prototype, offset);
+            return _short_instr("push_map", "item count", prototype, offset);
         case WI_OP_SUBSCRIPT_SET:
             return _simple_instr(offset, "subscript_set");
         case WI_OP_SUBSCRIPT_GET:

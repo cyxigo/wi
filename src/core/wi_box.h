@@ -112,8 +112,8 @@ typedef struct {
     wi_value_buf_t constants;
     bool           is_main;
     bool           is_variadic;
-    int            arity;
-    int            upvalue_count;
+    uint8_t        arity;
+    uint8_t        upvalue_count;
     int            max_slot_count;
 } wi_prototype_t;
 
@@ -163,7 +163,7 @@ typedef struct {
     wi_box_t        box;
     wi_prototype_t* prototype;
     wi_upvalue_t**  upvalues;
-    int             upvalue_count;
+    uint8_t         upvalue_count;
     wi_table_t*     globals;
     bool            is_required;
 } wi_closure_t;
