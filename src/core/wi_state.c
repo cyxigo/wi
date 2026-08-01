@@ -29,6 +29,24 @@ _state_reset_stack(wi_state_t* state) {
     state->open_upvalues  = NULL;
 }
 
+static char*
+_state_read_file(wi_state_t* state, const char* file_path) {
+    FILE* file = fopen(file_path, "rb");
+
+    if (!file) {
+        wi_state_error(state, "failed to open file %s", file_path);
+    }
+
+    char* buf = wi_read_stream(file);
+    fclose(file);
+
+    if (!buf) {
+        wi_state_error(state, "failed to read file %s", file_path);
+    }
+
+    return buf;
+}
+
 wi_state_t*
 wi_new_state(wi_conf_t conf) {
     wi_state_t* state = malloc(sizeof(wi_state_t));
@@ -46,8 +64,9 @@ wi_new_state(wi_conf_t conf) {
 
     state->gc->state = state;
 
-    state->script_argc = 0;
-    state->script_argv = NULL;
+    state->load_require = _state_read_file;
+    state->script_argc  = 0;
+    state->script_argv  = NULL;
 
     state->interrupted = 0;
     _state_reset_stack(state);
@@ -101,6 +120,11 @@ wi_delete_state(wi_state_t* state) {
 
     _state_free_foreign_handles(state);
     free(state);
+}
+
+void
+wi_state_set_require_load_fn(wi_state_t* state, wi_load_require_fn_t fn) {
+    state->load_require = fn;
 }
 
 void
@@ -550,30 +574,12 @@ _state_set_field(wi_state_t* state, wi_value_t name, wi_value_t target) {
     wi_table_set(&object->fields, name, wi_state_top(state));
 }
 
-static char*
-_state_read_file(wi_state_t* state, const char* file_path) {
-    FILE* file = fopen(file_path, "rb");
-
-    if (!file) {
-        wi_state_error(state, "failed to open file %s", file_path);
-    }
-
-    char* buf = wi_read_stream(file);
-    fclose(file);
-
-    if (!buf) {
-        wi_state_error(state, "failed to read file %s", file_path);
-    }
-
-    return buf;
-}
-
 static wi_closure_t*
 _state_require(wi_state_t* state, wi_value_t path_value, wi_value_t name_value) {
     wi_call_frame_t* frame = wi_state_frame(state);
     wi_string_t*     name  = wi_value_as_string(name_value);
     char*            path  = wi_value_as_cstring(path_value);
-    char*            src   = _state_read_file(state, path);
+    char*            src   = state->load_require(state, path);
 
     if (wi_table_get(frame->closure->globals, name_value, NULL)) {
         wi_state_error(state, "variable %s is already defined", name->chars);

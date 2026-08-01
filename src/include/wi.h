@@ -52,6 +52,12 @@ typedef void (*wi_foreign_fn_t)(wi_state_t* state, int arg_count);
 typedef void (*wi_userdata_finalizer_fn_t)(void* data);
 
 /**
+ * Function called in the `require` statement. Use this in a custom virtual filesystem (your app, for example).
+ * Must return Wi code
+ */
+typedef char* (*wi_load_require_fn_t)(wi_state_t* state, const char* path);
+
+/**
  * Define the standard library in a state
  *
  * @param state Wi state instance
@@ -159,6 +165,15 @@ wi_new_state(wi_conf_t conf);
  */
 WI_API void
 wi_delete_state(wi_state_t* state);
+
+/**
+ * Set the `require` load callback in the Wi state
+ *
+ * @param state Wi state instance
+ * @param fn Load callback function
+ */
+WI_API void
+wi_state_set_require_load_fn(wi_state_t* state, wi_load_require_fn_t fn);
 
 /**
  * Set the command line arguments that will be available to Wi scripts via os.args
