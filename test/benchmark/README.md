@@ -22,8 +22,8 @@ I don't have many interpreted languages installed: Wi, Lua (5.5.0), Python (3.12
 
 - Ruby: 0.200s
 - Wren: 0.370s
+- Wi: 0.399s
 - Lua: 0.400s
-- Wi: 0.404s
 - Python: 0.500s
 
 ## For
