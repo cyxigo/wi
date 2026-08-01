@@ -7,15 +7,15 @@
 /**
  * Wi version as a string
  */
-#define WI_VERSION_STRING "4.1.2-beta"
+#define WI_VERSION_STRING "4.2.0-beta"
 
 enum {
     /**
      * Version numbers
      */
     WI_VERSION_MAJOR = 4,
-    WI_VERSION_MINOR = 1,
-    WI_VERSION_PATCH = 2,
+    WI_VERSION_MINOR = 2,
+    WI_VERSION_PATCH = 0,
 
     /**
      * Compiler limits
