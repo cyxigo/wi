@@ -3,11 +3,11 @@
 
    
    ## Wi is a small, fast, prototype-based scripting language.
-   ![GitHub release](https://img.shields.io/github/v/release/cyxigo/wi)
-   ![GitHub last commit](https://img.shields.io/github/last-commit/cyxigo/wi)
+   [![GitHub release](https://img.shields.io/github/v/release/cyxigo/wi)](https://github.com/cyxigo/wi/releases/latest)
+   [![GitHub last commit](https://img.shields.io/github/last-commit/cyxigo/wi)](https://github.com/cyxigo/wi/commits)
    [![CodeQL Advanced](https://github.com/cyxigo/wi/actions/workflows/codeql.yml/badge.svg)](https://github.com/cyxigo/wi/actions/workflows/codeql.yml)
-   ![GitHub License](https://img.shields.io/github/license/cyxigo/wi)
-   ![Docs](https://img.shields.io/badge/docs-wiki-blue)
+   [![GitHub License](https://img.shields.io/github/license/cyxigo/wi)](https://github.com/cyxigo/wi/blob/main/LICENSE)
+   [![Docs](https://img.shields.io/badge/docs-wiki-blue)](https://github.com/cyxigo/wi/wiki)
    ![Code size](https://img.shields.io/github/languages/code-size/cyxigo/wi)
    ![Platform](https://img.shields.io/badge/platform-linux%20%7C%20windows-lightgrey)
 </div>
