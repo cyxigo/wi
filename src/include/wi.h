@@ -351,6 +351,17 @@ WI_API char*
 wi_slot_get_string(wi_state_t* state, int slot);
 
 /**
+ * Get the string length from a string slot.
+ * This exists because Wi strings support the `\0` escape sequence; `strlen()` will give the wrong length
+ *
+ * @param state Wi state instance
+ * @param slot Slot index (0-[arg_count])
+ * @return String length
+ */
+WI_API int
+wi_slot_get_string_len(wi_state_t* state, int slot);
+
+/**
  * Get userdata from a slot
  *
  * @param state Wi state instance
@@ -389,6 +400,16 @@ wi_slot_check_bool(wi_state_t* state, int slot);
  */
 WI_API char*
 wi_slot_check_string(wi_state_t* state, int slot);
+
+/**
+ * Get the string length from a slot with type-checking
+ *
+ * @param state Wi state instance
+ * @param slot Slot index (0-[arg_count])
+ * @return String length
+ */
+WI_API int
+wi_slot_check_string_len(wi_state_t* state, int slot);
 
 /**
  * Get userdata from a slot with type-checking

@@ -192,6 +192,11 @@ wi_slot_get_string(wi_state_t* state, int slot) {
     return wi_value_as_cstring(state->api_stack[slot]);
 }
 
+int
+wi_slot_get_string_len(wi_state_t* state, int slot) {
+    return wi_value_as_string(state->api_stack[slot])->len;
+}
+
 void*
 wi_slot_get_userdata(wi_state_t* state, int slot) {
     return wi_value_as_userdata(state->api_stack[slot])->data;
@@ -217,14 +222,24 @@ wi_slot_check_bool(wi_state_t* state, int slot) {
     return wi_slot_get_bool(state, slot);
 }
 
-char*
-wi_slot_check_string(wi_state_t* state, int slot) {
+wi_string_t*
+_slot_check_string(wi_state_t* state, int slot) {
     if (!wi_slot_is_string(state, slot)) {
         wi_state_error(state, "bad argument %i - expected a value of type string but got %s", slot,
                        wi_value_type(state->api_stack[slot]));
     }
 
-    return wi_slot_get_string(state, slot);
+    return wi_value_as_string(state->api_stack[slot]);
+}
+
+char*
+wi_slot_check_string(wi_state_t* state, int slot) {
+    return _slot_check_string(state, slot)->chars;
+}
+
+int
+wi_slot_check_string_len(wi_state_t* state, int slot) {
+    return _slot_check_string(state, slot)->len;
 }
 
 void*
