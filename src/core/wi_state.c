@@ -500,7 +500,7 @@ static void
 _state_resolve_field(wi_state_t* state, wi_object_t* object, wi_value_t name, wi_value_t* value);
 
 static wi_value_t
-_state_resolve_invoke(wi_state_t* state, wi_value_t receiver, wi_value_t name) {
+_state_resolve_method(wi_state_t* state, wi_value_t receiver, wi_value_t name) {
     wi_value_t function;
 
     if (wi_value_is_object(receiver)) {
@@ -524,14 +524,6 @@ _state_resolve_invoke(wi_state_t* state, wi_value_t receiver, wi_value_t name) {
 
     _state_resolve_field(state, object, name, &function);
     return function;
-}
-
-static void
-_state_shift_receiver(wi_state_t* state, wi_value_t function, uint8_t arg_count) {
-    wi_value_t* args = state->stack_top - arg_count;
-    memmove(args + 1, args, sizeof(wi_value_t) * arg_count);
-    args[0] = function;
-    state->stack_top++;
 }
 
 static void
@@ -1046,52 +1038,6 @@ _state_interpreter_loop(wi_state_t* state, int base_frame_count, bool drop_resul
             _CHECK_INTERRUPT();
             _DISPATCH();
         }
-        _OPCODE_LABEL(INVOKE) : {
-            wi_value_t name      = _READ_CONSTANT();
-            uint8_t    arg_count = _READ_BYTE();
-            wi_value_t receiver  = state->stack_top[-(int)arg_count];
-            frame->ip            = ip;
-
-            wi_value_t function = _state_resolve_invoke(state, receiver, name);
-            _state_shift_receiver(state, function, arg_count);
-
-            if (wi_value_is_foreign(function)) {
-                _state_call_foreign(state, wi_value_as_foreign(function), arg_count);
-                _DISPATCH();
-            }
-
-            if (!wi_value_is_closure(function)) {
-                _ERROR("cannot call a value of type %s", wi_value_type(function));
-            }
-
-            _state_call(state, wi_value_as_closure(function), arg_count);
-            _UPDATE_FRAME();
-            _CHECK_INTERRUPT();
-            _DISPATCH();
-        }
-        _OPCODE_LABEL(TAIL_INVOKE) : {
-            wi_value_t name      = _READ_CONSTANT();
-            uint8_t    arg_count = _READ_BYTE();
-            wi_value_t receiver  = state->stack_top[-(int)arg_count];
-            frame->ip            = ip;
-
-            wi_value_t function = _state_resolve_invoke(state, receiver, name);
-            _state_shift_receiver(state, function, arg_count);
-
-            if (wi_value_is_foreign(function)) {
-                _state_call_foreign(state, wi_value_as_foreign(function), arg_count);
-                goto _OPCODE_LABEL(RETURN);
-            }
-
-            if (!wi_value_is_closure(function)) {
-                _ERROR("cannot call a value of type %s", wi_value_type(function));
-            }
-
-            _state_tail_call(state, frame, wi_value_as_closure(function), arg_count);
-            _UPDATE_FRAME();
-            _CHECK_INTERRUPT();
-            _DISPATCH();
-        }
         _OPCODE_LABEL(RETURN) : {
             wi_value_t result = wi_state_pop(state);
             state->frame_count--;
@@ -1176,6 +1122,17 @@ _state_interpreter_loop(wi_state_t* state, int base_frame_count, bool drop_resul
 
             wi_state_drop(state);
             wi_state_push(state, value);
+            _DISPATCH();
+        }
+        _OPCODE_LABEL(LOAD_METHOD) : {
+            wi_value_t name     = _READ_CONSTANT();
+            wi_value_t receiver = wi_state_pop(state);
+            frame->ip           = ip;
+
+            wi_value_t function = _state_resolve_method(state, receiver, name);
+
+            wi_state_push(state, function);
+            wi_state_push(state, receiver);
             _DISPATCH();
         }
         _OPCODE_LABEL(NEW) : {

@@ -15,7 +15,7 @@ I don't have many interpreted languages installed: Wi, Lua (5.5.0), Python (3.12
 - Wren: 0.140s
 - Ruby: 0.144s
 - Python: 0.156s
-- Wi: 0.161s
+- Wi: 0.160s
 - Lua: 0.200s
 
 ## Binary trees

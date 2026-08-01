@@ -53,16 +53,6 @@ _jump_instr(const char* name, int sign, wi_prototype_t* prototype, int offset) {
     return offset + 3;
 }
 
-static int
-_invoke_instr(const char* name, wi_prototype_t* prototype, int offset) {
-    uint16_t     name_constant = prototype->bytes.data[offset + 1] << 8 | prototype->bytes.data[offset + 2];
-    uint8_t      arg_count     = prototype->bytes.data[offset + 3];
-    wi_string_t* name_box      = wi_value_as_string(prototype->constants.data[name_constant]);
-
-    printf("%-16s C%05hu %s (%hhu args, including receiver)\n", name, name_constant, name_box->chars, arg_count);
-    return offset + 4;
-}
-
 int
 wi_prototype_disasm_instr(wi_prototype_t* prototype, int offset) {
     printf("%04i ", offset);
@@ -201,10 +191,6 @@ wi_prototype_disasm_instr(wi_prototype_t* prototype, int offset) {
             return _byte_instr("call", "argument count", prototype, offset);
         case WI_OP_TAIL_CALL:
             return _byte_instr("tail_call", "argument count", prototype, offset);
-        case WI_OP_INVOKE:
-            return _invoke_instr("invoke", prototype, offset);
-        case WI_OP_TAIL_INVOKE:
-            return _invoke_instr("tail_invoke", prototype, offset);
         case WI_OP_RETURN:
             return _simple_instr(offset, "return");
         case WI_OP_PUSH_OBJECT: {
@@ -250,6 +236,8 @@ wi_prototype_disasm_instr(wi_prototype_t* prototype, int offset) {
             return _constant_instr("set_field", "field name", prototype, offset);
         case WI_OP_GET_FIELD:
             return _constant_instr("get_field", "field name", prototype, offset);
+        case WI_OP_LOAD_METHOD:
+            return _constant_instr("load_method", "method name", prototype, offset);
         case WI_OP_NEW:
             return _simple_instr(offset, "new");
     }
