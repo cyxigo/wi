@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "../include/wi_conf.h"
 #include "wi_box.h"
@@ -47,6 +48,11 @@ _state_read_file(wi_state_t* state, const char* file_path) {
     return buf;
 }
 
+static bool
+_state_require_exists(wi_state_t* state, const char* path) {
+    return access(path, F_OK) == 0;
+}
+
 wi_state_t*
 wi_new_state(wi_conf_t conf) {
     wi_state_t* state = malloc(sizeof(wi_state_t));
@@ -64,9 +70,11 @@ wi_new_state(wi_conf_t conf) {
 
     state->gc->state = state;
 
-    state->load_require = _state_read_file;
-    state->script_argc  = 0;
-    state->script_argv  = NULL;
+    state->load_require   = _state_read_file;
+    state->require_exists = _state_require_exists;
+
+    state->script_argc = 0;
+    state->script_argv = NULL;
 
     state->interrupted = 0;
     _state_reset_stack(state);
@@ -125,6 +133,11 @@ wi_delete_state(wi_state_t* state) {
 void
 wi_state_set_require_load_fn(wi_state_t* state, wi_load_require_fn_t fn) {
     state->load_require = fn;
+}
+
+void
+wi_state_set_require_exists_fn(wi_state_t* state, wi_require_exists_fn_t fn) {
+    state->require_exists = fn;
 }
 
 void

@@ -66,9 +66,11 @@ typedef struct wi_state {
     wi_conf_t conf;
     wi_gc_t*  gc;
 
-    wi_load_require_fn_t load_require;
-    int                  script_argc;
-    const char**         script_argv;
+    wi_load_require_fn_t   load_require;
+    wi_require_exists_fn_t require_exists;
+
+    int          script_argc;
+    const char** script_argv;
 
     jmp_buf               jmp;
     volatile sig_atomic_t interrupted;
@@ -139,6 +141,9 @@ wi_delete_state(wi_state_t* state);
 
 void
 wi_state_set_require_load_fn(wi_state_t* state, wi_load_require_fn_t fn);
+void
+wi_state_set_require_exists_fn(wi_state_t* state, wi_require_exists_fn_t fn);
+
 void
 wi_state_set_args(wi_state_t* state, int argc, const char** argv);
 

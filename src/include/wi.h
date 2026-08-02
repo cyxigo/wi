@@ -58,6 +58,12 @@ typedef void (*wi_userdata_finalizer_fn_t)(void* data);
 typedef char* (*wi_load_require_fn_t)(wi_state_t* state, const char* path);
 
 /**
+ * Function used to check whether a `require`d file exists, called at compile time.
+ * Must return whether a file exists
+ */
+typedef bool (*wi_require_exists_fn_t)(wi_state_t* state, const char* path);
+
+/**
  * Define the standard library in a state
  *
  * @param state Wi state instance
@@ -174,6 +180,15 @@ wi_delete_state(wi_state_t* state);
  */
 WI_API void
 wi_state_set_require_load_fn(wi_state_t* state, wi_load_require_fn_t fn);
+
+/**
+ * Set the `require` existence check callback
+ *
+ * @param state Wi state instance
+ * @param fn Existence check callback function
+ */
+WI_API void
+wi_state_set_require_exists_fn(wi_state_t* state, wi_require_exists_fn_t fn);
 
 /**
  * Set the command line arguments that will be available to Wi scripts via os.args
