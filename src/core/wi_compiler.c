@@ -1239,7 +1239,7 @@ _compiler_require_stmt(wi_compiler_t* compiler) {
     wi_token_t   path     = wi_parser_expect(compiler->parser, WI_TOKEN_LIT_STRING);
     wi_string_t* path_box = wi_copy_cstring(compiler->state->gc, path.start + 1, path.len - 2);
 
-    if (compiler->state->require_exists(compiler->state, path_box->chars)) {
+    if (!compiler->state->require_exists(compiler->state, path_box->chars)) {
         wi_parser_error_at(compiler->parser, path, "file %s does not exist", path_box->chars);
     }
 
