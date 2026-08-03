@@ -33,7 +33,7 @@ typedef struct wi_object wi_object_t;
  */
 typedef enum {
     WI_RUN_OK,     // No errors occurred
-    WI_RUN_ERROR,  // A runtime error or a compile error occurred
+    WI_RUN_ERROR,  // A runtime error or a compile error occurred, also used when out of memory
     WI_RUN_ABORT,  // Execution was aborted early via `wi_state_abort`
 } wi_run_result_t;
 
@@ -102,7 +102,7 @@ wi_def_object(wi_state_t* state, const char* name);
  * @param real Value to set
  */
 WI_API void
-wi_set_field_real(wi_state_t* state, wi_object_t* object, const char* name, wi_real_t real);
+wi_object_set_field_real(wi_state_t* state, wi_object_t* object, const char* name, wi_real_t real);
 
 /**
  * Set a boolean field on an object
@@ -113,7 +113,7 @@ wi_set_field_real(wi_state_t* state, wi_object_t* object, const char* name, wi_r
  * @param boolean Value to set
  */
 WI_API void
-wi_set_field_bool(wi_state_t* state, wi_object_t* object, const char* name, bool boolean);
+wi_object_set_field_bool(wi_state_t* state, wi_object_t* object, const char* name, bool boolean);
 
 /**
  * Set a string field on an object
@@ -124,7 +124,7 @@ wi_set_field_bool(wi_state_t* state, wi_object_t* object, const char* name, bool
  * @param string Value to set
  */
 WI_API void
-wi_set_field_string(wi_state_t* state, wi_object_t* object, const char* name, char* string);
+wi_object_set_field_string(wi_state_t* state, wi_object_t* object, const char* name, char* string);
 
 /**
  * Set userdata as a field on an object
@@ -137,8 +137,8 @@ wi_set_field_string(wi_state_t* state, wi_object_t* object, const char* name, ch
  * @param finalizer Userdata finalizer
  */
 WI_API void
-wi_set_field_userdata(wi_state_t* state, wi_object_t* object, const char* field_name, const char* name,
-                      void* userdata, wi_userdata_finalizer_fn_t finalizer);
+wi_object_set_field_userdata(wi_state_t* state, wi_object_t* object, const char* field_name, const char* name,
+                             void* userdata, wi_userdata_finalizer_fn_t finalizer);
 
 /**
  * Set a foreign (C) function as a field on an object
@@ -151,8 +151,8 @@ wi_set_field_userdata(wi_state_t* state, wi_object_t* object, const char* field_
  * @param is_variadic Whether function is variadic or not
  */
 WI_API void
-wi_set_field_foreign(wi_state_t* state, wi_object_t* object, const char* name, wi_foreign_fn_t fn, int arity,
-                     bool is_variadic);
+wi_object_set_field_foreign(wi_state_t* state, wi_object_t* object, const char* name, wi_foreign_fn_t fn,
+                            int arity, bool is_variadic);
 
 /**
  * Create a new Wi state instance
@@ -171,6 +171,15 @@ wi_new_state(wi_conf_t conf);
  */
 WI_API void
 wi_delete_state(wi_state_t* state);
+
+/**
+ * Get the error message from the last compile or runtime error
+ *
+ * @param state Wi state instance
+ * @return Error message, `NULL` if none occurred
+ */
+WI_API const char*
+wi_state_get_error(wi_state_t* state);
 
 /**
  * Set the `require` load callback
@@ -199,14 +208,6 @@ wi_state_set_require_exists_fn(wi_state_t* state, wi_require_exists_fn_t fn);
  */
 WI_API void
 wi_state_set_args(wi_state_t* state, int argc, const char** argv);
-
-/**
- * Print the current call stack backtrace to `stderr`
- *
- * @param state Wi state instance
- */
-WI_API void
-wi_state_print_backtrace(wi_state_t* state);
 
 /**
  * Throw a runtime error in the state

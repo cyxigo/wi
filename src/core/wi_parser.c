@@ -3,13 +3,12 @@
 #include <setjmp.h>
 #include <stdarg.h>
 #include <stddef.h>
-#include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
 #include "wi_buf.h"
 #include "wi_gc.h"
 #include "wi_lexer.h"
+#include "wi_state.h"
 
 wi_parser_t*
 wi_new_parser(wi_lexer_t* lexer, wi_gc_t* gc) {
@@ -52,19 +51,20 @@ _digit_count(int n) {
 }
 
 static void
-_parser_print_token_line(wi_parser_t* parser, wi_token_t token) {
+_parser_append_token_line(wi_parser_t* parser, wi_token_t token) {
     if (token.kind == WI_TOKEN_BLANK) {
         return;
     }
 
+    wi_state_t* state      = parser->gc->state;
     const char* src        = parser->lexer->src;
     const char* line_start = src;
-    int         curr_line  = 1;
+    int         line       = 1;
     const char* ptr        = src;
 
-    while (*ptr && curr_line < token.line) {
+    while (*ptr && line < token.line) {
         if (*ptr == '\n') {
-            curr_line++;
+            line++;
             line_start = ptr + 1;
         }
 
@@ -77,45 +77,37 @@ _parser_print_token_line(wi_parser_t* parser, wi_token_t token) {
         line_end++;
     }
 
-    int line_with = _digit_count(token.line);
+    int line_width = _digit_count(token.line);
 
-    fprintf(stderr, " %*s | \n", line_with, "");
-    fprintf(stderr, " %*i | ", line_with, token.line);
-    fwrite(line_start, 1, (size_t)(line_end - line_start), stderr);
-    fprintf(stderr, "\n");
-    fprintf(stderr, " %*s | ", line_with, "");
+    wi_state_append_error(state, " %*s | \n", line_width, "");
+    wi_state_append_error(state, " %*i | %.*s\n", line_width, token.line, (int)(line_end - line_start),
+                          line_start);
+    wi_state_append_error(state, " %*s | %*s", line_width, "", token.col - 1, "");
 
-    for (int i = 0; i < token.col - 1; i++) {
-        fprintf(stderr, " ");
+    for (int i = 0; i < token.len; i++) {
+        wi_state_append_error(state, "^");
     }
 
-    fprintf(stderr, "^");
-
-    for (int i = 0; i < token.len - 1; i++) {
-        fprintf(stderr, "^");
-    }
-
-    fprintf(stderr, "\n");
+    wi_state_append_error(state, "\n");
 }
 
 static void
 _parser_error_va(wi_parser_t* parser, wi_token_t token, const char* format, va_list args) {
-    fprintf(stderr, "compile error: ");
+    wi_state_t* state = parser->gc->state;
+
+    wi_state_reset_error(state);
+    wi_state_append_error(state, "compile error: ");
 
     if (token.kind == WI_TOKEN_ERROR) {
-        fprintf(stderr, "%s\n", token.start);
-        _parser_print_token_line(parser, token);
-    } else if (token.kind == WI_TOKEN_EOF) {
-        vfprintf(stderr, format, args);
-        fprintf(stderr, "\n");
-        _parser_print_token_line(parser, parser->last);
+        wi_state_append_error(state, "%s\n", token.start);
     } else {
-        vfprintf(stderr, format, args);
-        fprintf(stderr, "\n");
-        _parser_print_token_line(parser, token);
+        wi_state_append_error_va(state, format, args);
+        wi_state_append_error(state, "\n");
     }
 
-    fprintf(stderr, "   --> %s:%i:%i\n", parser->lexer->file_path, token.line, token.col);
+    _parser_append_token_line(parser, token.kind == WI_TOKEN_EOF ? parser->last : token);
+    wi_state_append_error(state, "   --> %s:%i:%i\n", parser->lexer->file_path, token.line, token.col);
+
     wi_gc_reset_roots(parser->gc);
     longjmp(parser->error_jmp, 1);
 }

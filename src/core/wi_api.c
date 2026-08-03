@@ -81,24 +81,24 @@ _set_field(wi_state_t* state, wi_object_t* object, const char* name, wi_value_t 
 }
 
 void
-wi_set_field_real(wi_state_t* state, wi_object_t* object, const char* name, wi_real_t real) {
+wi_object_set_field_real(wi_state_t* state, wi_object_t* object, const char* name, wi_real_t real) {
     _set_field(state, object, name, wi_make_real_value(real));
 }
 
 void
-wi_set_field_bool(wi_state_t* state, wi_object_t* object, const char* name, bool boolean) {
+wi_object_set_field_bool(wi_state_t* state, wi_object_t* object, const char* name, bool boolean) {
     _set_field(state, object, name, wi_make_bool_value(boolean));
 }
 
 void
-wi_set_field_string(wi_state_t* state, wi_object_t* object, const char* name, char* string) {
+wi_object_set_field_string(wi_state_t* state, wi_object_t* object, const char* name, char* string) {
     wi_string_t* box = wi_copy_cstring(state->gc, string, (int)strlen(string));
     _set_field(state, object, name, WI_MAKE_BOX_VALUE(box));
 }
 
 void
-wi_set_field_userdata(wi_state_t* state, wi_object_t* object, const char* field_name, const char* name,
-                      void* userdata, wi_userdata_finalizer_fn_t finalizer) {
+wi_object_set_field_userdata(wi_state_t* state, wi_object_t* object, const char* field_name, const char* name,
+                             void* userdata, wi_userdata_finalizer_fn_t finalizer) {
     wi_string_t* name_box = wi_copy_cstring(state->gc, name, (int)strlen(name));
     wi_gc_push_root(state->gc, (wi_box_t*)name_box);
 
@@ -109,8 +109,8 @@ wi_set_field_userdata(wi_state_t* state, wi_object_t* object, const char* field_
 }
 
 void
-wi_set_field_foreign(wi_state_t* state, wi_object_t* object, const char* name, wi_foreign_fn_t fn, int arity,
-                     bool is_variadic) {
+wi_object_set_field_foreign(wi_state_t* state, wi_object_t* object, const char* name, wi_foreign_fn_t fn,
+                            int arity, bool is_variadic) {
     _def_foreign(state, &object->fields, name, fn, arity, is_variadic);
 }
 

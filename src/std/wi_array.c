@@ -232,21 +232,21 @@ void
 wi_state_def_array_foreign(wi_state_t* state) {
     wi_object_t* object = wi_def_object(state, "array");
 
-    wi_set_field_foreign(state, object, "copy", _array_copy, 1, false);
-    wi_set_field_foreign(state, object, "clear", _array_clear, 1, false);
-    wi_set_field_foreign(state, object, "capacity", _array_capacity, 1, false);
-    wi_set_field_foreign(state, object, "count", _array_count, 1, false);
-    wi_set_field_foreign(state, object, "equals", _array_equals, 2, false);
-    wi_set_field_foreign(state, object, "reverse", _array_reverse, 1, false);
-    wi_set_field_foreign(state, object, "reversed", _array_reversed, 1, false);
-    wi_set_field_foreign(state, object, "add", _array_add, 2, false);
-    wi_set_field_foreign(state, object, "has", _array_has, 2, false);
-    wi_set_field_foreign(state, object, "remove", _array_remove, 2, false);
-    wi_set_field_foreign(state, object, "remove_at", _array_remove_at, 2, false);
-    wi_set_field_foreign(state, object, "pop", _array_pop, 1, false);
-    wi_set_field_foreign(state, object, "concat", _array_concat, 0, true);
-    wi_set_field_foreign(state, object, "slice", _array_slice, 3, false);
-    wi_set_field_foreign(state, object, "each", _array_each, 2, false);
+    wi_object_set_field_foreign(state, object, "copy", _array_copy, 1, false);
+    wi_object_set_field_foreign(state, object, "clear", _array_clear, 1, false);
+    wi_object_set_field_foreign(state, object, "capacity", _array_capacity, 1, false);
+    wi_object_set_field_foreign(state, object, "count", _array_count, 1, false);
+    wi_object_set_field_foreign(state, object, "equals", _array_equals, 2, false);
+    wi_object_set_field_foreign(state, object, "reverse", _array_reverse, 1, false);
+    wi_object_set_field_foreign(state, object, "reversed", _array_reversed, 1, false);
+    wi_object_set_field_foreign(state, object, "add", _array_add, 2, false);
+    wi_object_set_field_foreign(state, object, "has", _array_has, 2, false);
+    wi_object_set_field_foreign(state, object, "remove", _array_remove, 2, false);
+    wi_object_set_field_foreign(state, object, "remove_at", _array_remove_at, 2, false);
+    wi_object_set_field_foreign(state, object, "pop", _array_pop, 1, false);
+    wi_object_set_field_foreign(state, object, "concat", _array_concat, 0, true);
+    wi_object_set_field_foreign(state, object, "slice", _array_slice, 3, false);
+    wi_object_set_field_foreign(state, object, "each", _array_each, 2, false);
 
     state->array_obj = object;
 }

@@ -63,6 +63,11 @@ typedef struct {
 } wi_recovery_t;
 
 typedef struct wi_state {
+    char* error;
+    // this is separated because... we are out of memory, what would we do? allocate MORE memory?
+    // no, instead we use this little static string thingy
+    const char* oom;
+
     wi_conf_t conf;
     wi_gc_t*  gc;
 
@@ -139,6 +144,27 @@ wi_new_state(wi_conf_t conf);
 void
 wi_delete_state(wi_state_t* state);
 
+static inline void
+wi_state_reset_error(wi_state_t* state) {
+    free(state->error);
+    state->error = NULL;
+    state->oom   = NULL;
+}
+
+void
+wi_state_append_error_va(wi_state_t* state, const char* format, va_list args);
+
+static inline void
+wi_state_append_error(wi_state_t* state, const char* format, ...) {
+    va_list args;
+    va_start(args, format);
+    wi_state_append_error_va(state, format, args);
+    va_end(args);
+}
+
+const char*
+wi_state_get_error(wi_state_t* state);
+
 void
 wi_state_set_require_load_fn(wi_state_t* state, wi_load_require_fn_t fn);
 void
@@ -158,20 +184,20 @@ wi_state_pop_recovery(wi_state_t* state) {
 }
 
 void
-wi_state_print_backtrace(wi_state_t* state);
-void
 wi_state_error(wi_state_t* state, const char* format, ...);
-
 void
-wi_state_check_arity(wi_state_t* state, int arity, uint8_t arg_count, bool is_variadic);
+wi_state_oom(wi_state_t* state, const char* what);
 
 void
 wi_state_abort(wi_state_t* state);
 void
 wi_state_interrupt(wi_state_t* state);
 
+void
+wi_state_check_arity(wi_state_t* state, int arity, uint8_t arg_count, bool is_variadic);
 wi_run_result_t
 wi_state_call(wi_state_t* state, wi_closure_t* closure, uint8_t arg_count, bool drop_result);
+
 wi_run_result_t
 wi_state_run(wi_state_t* state, const char* file_path, const char* src);
 

@@ -31,6 +31,11 @@ _delete_g_state(void) {
 }
 
 static void
+_print_error(void) {
+    printf("%s", wi_state_get_error(_g_state));
+}
+
+static void
 _sigint_handler(int sig) {
     if (_g_state) {
         wi_state_interrupt(_g_state);
@@ -45,13 +50,7 @@ _version(void) {
 static void
 _repl(void) {
     _version();
-
     char line[2048];
-
-    if (!_init_g_state(WI_DEFAULT_CONF)) {
-        fprintf(stderr, "memory error: failed to allocate a state\n");
-        return;
-    }
 
     for (;;) {
         printf("> ");
@@ -62,6 +61,10 @@ _repl(void) {
         }
 
         wi_run_result_t result = wi_state_run(_g_state, "<stdin>", line);
+
+        if (result == WI_RUN_ERROR) {
+            _print_error();
+        }
 
         if (result == WI_RUN_ABORT) {
             break;
@@ -185,37 +188,35 @@ _parse_flags(int argc, const char* argv[], wi_conf_t* conf, const char** file_pa
 
         _flag_parse_error(argv[0], "unknown option");
     }
-
-    if (!*file_path) {
-        _flag_parse_error(argv[0], "no script file specified");
-    }
 }
 
 extern int
 main(int argc, const char* argv[]) {
     signal(SIGINT, _sigint_handler);
-
-    if (argc == 1) {
-        _repl();
-        return EXIT_SUCCESS;
-    }
-
     wi_conf_t    conf        = WI_DEFAULT_CONF;
     const char*  file_path   = NULL;
     int          script_argc = 0;
     const char** script_argv = NULL;
     _parse_flags(argc, argv, &conf, &file_path, &script_argc, &script_argv);
 
-    char* src = _read_file(file_path);
-
     if (!_init_g_state(conf)) {
-        free(src);
         fprintf(stderr, "memory error: failed to allocate a state\n");
         return EXIT_FAILURE;
     }
 
+    if (!file_path) {
+        _repl();
+        return EXIT_SUCCESS;
+    }
+
+    char* src = _read_file(file_path);
+
     wi_state_set_args(_g_state, script_argc, script_argv);
     wi_run_result_t result = wi_state_run(_g_state, file_path, src);
+
+    if (result == WI_RUN_ERROR) {
+        _print_error();
+    }
 
     free(src);
     _delete_g_state();

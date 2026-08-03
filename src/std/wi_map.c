@@ -167,17 +167,17 @@ void
 wi_state_def_map_foreign(wi_state_t* state) {
     wi_object_t* object = wi_def_object(state, "map");
 
-    wi_set_field_foreign(state, object, "copy", _map_copy, 1, false);
-    wi_set_field_foreign(state, object, "clear", _map_clear, 1, false);
-    wi_set_field_foreign(state, object, "capacity", _map_capacity, 1, false);
-    wi_set_field_foreign(state, object, "count", _map_count, 1, false);
-    wi_set_field_foreign(state, object, "equals", _map_equals, 2, false);
-    wi_set_field_foreign(state, object, "keys", _map_keys, 1, false);
-    wi_set_field_foreign(state, object, "values", _map_values, 1, false);
-    wi_set_field_foreign(state, object, "has", _map_has, 2, false);
-    wi_set_field_foreign(state, object, "get_or_default", _map_get_or_default, 3, false);
-    wi_set_field_foreign(state, object, "remove", _map_remove, 2, false);
-    wi_set_field_foreign(state, object, "each", _map_each, 2, false);
+    wi_object_set_field_foreign(state, object, "copy", _map_copy, 1, false);
+    wi_object_set_field_foreign(state, object, "clear", _map_clear, 1, false);
+    wi_object_set_field_foreign(state, object, "capacity", _map_capacity, 1, false);
+    wi_object_set_field_foreign(state, object, "count", _map_count, 1, false);
+    wi_object_set_field_foreign(state, object, "equals", _map_equals, 2, false);
+    wi_object_set_field_foreign(state, object, "keys", _map_keys, 1, false);
+    wi_object_set_field_foreign(state, object, "values", _map_values, 1, false);
+    wi_object_set_field_foreign(state, object, "has", _map_has, 2, false);
+    wi_object_set_field_foreign(state, object, "get_or_default", _map_get_or_default, 3, false);
+    wi_object_set_field_foreign(state, object, "remove", _map_remove, 2, false);
+    wi_object_set_field_foreign(state, object, "each", _map_each, 2, false);
 
     state->map_obj = object;
 }

@@ -69,8 +69,7 @@ wi_gc_push_root(wi_gc_t* gc, wi_box_t* root) {
         gc->temp_roots         = realloc(gc->temp_roots, sizeof(wi_box_t*) * (size_t)gc->temp_root_capacity);
 
         if (!gc->temp_roots) {
-            fprintf(stderr, "memory error: failed to allocate memory for the garbage collector temp roots\n");
-            exit(EXIT_FAILURE);
+            wi_state_oom(gc->state, "out of memory: failed to allocate garbage collector temp roots");
         }
     }
 
@@ -79,11 +78,6 @@ wi_gc_push_root(wi_gc_t* gc, wi_box_t* root) {
 
 void*
 wi_gc_realloc(wi_gc_t* gc, void* ptr, size_t old_size, size_t new_size) {
-    if (!gc->state) {
-        fprintf(stderr, "memory error: garbage collector does not have a reference to a state\n");
-        exit(EXIT_FAILURE);
-    }
-
     gc->bytes_allocated += new_size - old_size;
 
     if (new_size > old_size) {
@@ -100,8 +94,7 @@ wi_gc_realloc(wi_gc_t* gc, void* ptr, size_t old_size, size_t new_size) {
     void* result = realloc(ptr, new_size);
 
     if (!result) {
-        fprintf(stderr, "memory error: not enough memory to allocate %zu bytes\n", new_size - old_size);
-        exit(EXIT_FAILURE);
+        wi_state_oom(gc->state, "out of memory: failed to allocate memory in the garbage collector");
     }
 
     return result;
@@ -200,8 +193,7 @@ _gc_mark_box(wi_gc_t* gc, wi_box_t* box) {
         gc->gray_stack    = realloc(gc->gray_stack, sizeof(wi_box_t*) * (size_t)gc->gray_capacity);
 
         if (!gc->gray_stack) {
-            fprintf(stderr, "memory error: failed to allocate memory for the garbage collector gray stack\n");
-            exit(EXIT_FAILURE);
+            wi_state_oom(gc->state, "out of memory: failed to allocate garbage collector gray stack");
         }
     }
 

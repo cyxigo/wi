@@ -1,6 +1,10 @@
 #include "wi_util.h"
 
+#include <stdarg.h>
+#include <stdio.h>
 #include <stdlib.h>
+
+#include "../include/wi.h"
 
 char*
 wi_read_stream(FILE* stream) {

@@ -1309,13 +1309,14 @@ wi_compile(wi_state_t* state, const char* file_path, const char* src, wi_table_t
     wi_parser_t* parser = wi_new_parser(&lexer, state->gc);
 
     if (!parser) {
-        return NULL;
+        wi_state_oom(state, "out of memory: failed to allocate the parser");
     }
 
     wi_compiler_t* compiler = wi_new_compiler(NULL, state, parser, globals);
 
     if (!compiler) {
-        return NULL;
+        wi_delete_parser(parser);
+        wi_state_oom(state, "out of memory: failed to allocate the compiler");
     }
 
     if (setjmp(compiler->parser->error_jmp) == 0) {

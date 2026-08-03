@@ -61,6 +61,9 @@ wi_new_state(wi_conf_t conf) {
         return NULL;
     }
 
+    state->error = NULL;
+    state->oom   = NULL;
+
     state->conf = conf;
     state->gc   = wi_new_gc(state->conf);
 
@@ -77,6 +80,7 @@ wi_new_state(wi_conf_t conf) {
     state->script_argv = NULL;
 
     state->interrupted = 0;
+
     _state_reset_stack(state);
 
     wi_table_init(&state->globals, state->gc);
@@ -120,6 +124,8 @@ _state_free_foreign_handles(wi_state_t* state) {
 
 void
 wi_delete_state(wi_state_t* state) {
+    wi_state_reset_error(state);
+
     wi_table_free(&state->globals);
     wi_table_free(&state->foreign);
     wi_table_free(&state->required);
@@ -128,6 +134,29 @@ wi_delete_state(wi_state_t* state) {
 
     _state_free_foreign_handles(state);
     free(state);
+}
+
+void
+wi_state_append_error_va(wi_state_t* state, const char* format, va_list args) {
+    va_list args_copy;
+    va_copy(args_copy, args);
+    int add_len = vsnprintf(NULL, 0, format, args_copy);
+    va_end(args_copy);
+
+    size_t len = state->error ? strlen(state->error) : 0;
+    char*  buf = realloc(state->error, len + (size_t)add_len + 1);
+
+    if (!buf) {
+        wi_state_oom(state, "out of memory: failed to allocate error message");
+    }
+
+    state->error = buf;
+    vsnprintf(state->error + len, (size_t)add_len + 1, format, args);
+}
+
+const char*
+wi_state_get_error(wi_state_t* state) {
+    return state->oom ? state->oom : state->error;
 }
 
 void
@@ -192,29 +221,19 @@ wi_state_push_recovery(wi_state_t* state) {
     return recovery;
 }
 
-void
-wi_state_print_backtrace(wi_state_t* state) {
-    for (int i = state->frame_count - 1; i >= 0; i--) {
-        wi_call_frame_t* frame     = &state->frames[i];
-        wi_prototype_t*  prototype = frame->closure->prototype;
-        int              line      = prototype->lines.data[frame->ip - prototype->bytes.data - 1];
-        fprintf(stderr, "   --> %s:%i", prototype->file_path, line);
-
-        if (prototype->is_main) {
-            fprintf(stderr, " in main function\n");
-        } else if (prototype->name) {
-            fprintf(stderr, " in %s()\n", prototype->name->chars);
-        } else {
-            fprintf(stderr, " in anonymous function\n");
-        }
-    }
-}
-
 static void
 _state_close_upvalues(wi_state_t* state, wi_value_t* last);
 
 void
 wi_state_error(wi_state_t* state, const char* format, ...) {
+#define _APPEND_FORMAT(void)                       \
+    va_list args;                                  \
+    va_start(args, format);                        \
+    wi_state_append_error_va(state, format, args); \
+    va_end(args)
+
+    wi_state_reset_error(state);
+
     if (state->recovery_count > 0) {
         wi_recovery_t* recovery = &state->recoveries[state->recovery_count - 1];
         _state_close_upvalues(state, recovery->stack_top);
@@ -225,47 +244,44 @@ wi_state_error(wi_state_t* state, const char* format, ...) {
         state->api_stack           = recovery->api_stack;
         state->gc->temp_root_count = recovery->temp_root_count;
 
-        char* error;
+        _APPEND_FORMAT();
+        recovery->error = wi_copy_cstring(state->gc, state->error, (int)strlen(state->error));
 
-        va_list args;
-        va_start(args, format);
-        int len = vsnprintf(NULL, 0, format, args);
-        va_end(args);
-
-        error = WI_GC_ALLOC(state->gc, char, len + 1);
-
-        va_start(args, format);
-        vsnprintf(error, (size_t)(len + 1), format, args);
-        va_end(args);
-
-        recovery->error = wi_take_cstring(state->gc, error, len);
         longjmp(recovery->jmp, WI_JMP_ERROR);
     }
 
-    va_list args;
-    va_start(args, format);
+    wi_state_append_error(state, "runtime error: ");
+    _APPEND_FORMAT();
+    wi_state_append_error(state, "\n");
 
-    fprintf(stderr, "runtime error: ");
-    vfprintf(stderr, format, args);
-    fprintf(stderr, "\n");
+    for (int i = state->frame_count - 1; i >= 0; i--) {
+        wi_call_frame_t* frame     = &state->frames[i];
+        wi_prototype_t*  prototype = frame->closure->prototype;
+        int              line      = prototype->lines.data[frame->ip - prototype->bytes.data - 1];
+        wi_state_append_error(state, "   --> %s:%i", prototype->file_path, line);
 
-    va_end(args);
-    wi_state_print_backtrace(state);
+        if (prototype->is_main) {
+            wi_state_append_error(state, " in main function\n");
+        } else if (prototype->name) {
+            wi_state_append_error(state, " in %s()\n", prototype->name->chars);
+        } else {
+            wi_state_append_error(state, " in anonymous function\n");
+        }
+    }
 
     _state_reset_stack(state);
     wi_gc_reset_roots(state->gc);
     longjmp(state->jmp, WI_JMP_ERROR);
+
+#undef _APPEND_FORMAT
 }
 
 void
-wi_state_check_arity(wi_state_t* state, int arity, uint8_t arg_count, bool is_variadic) {
-    if (is_variadic) {
-        if (arg_count < arity) {
-            wi_state_error(state, "expected at least %i arguments but got %hhu", arity, arg_count);
-        }
-    } else if (arg_count != arity) {
-        wi_state_error(state, "expected %i arguments but got %hhu", arity, arg_count);
-    }
+wi_state_oom(wi_state_t* state, const char* what) {
+    state->oom = what;
+    _state_reset_stack(state);
+    wi_gc_reset_roots(state->gc);
+    longjmp(state->jmp, WI_JMP_ERROR);
 }
 
 void
@@ -595,28 +611,37 @@ _state_require(wi_state_t* state, wi_value_t path_value, wi_value_t name_value) 
     char*            src   = state->load_require(state, path);
 
     if (wi_table_get(frame->closure->globals, name_value, NULL)) {
+        free(src);
         wi_state_error(state, "variable %s is already defined", name->chars);
     }
 
     wi_object_t* object = wi_new_object(state->gc, name);
     wi_gc_push_root(state->gc, (wi_box_t*)object);
 
-    wi_prototype_t* prototype = wi_compile(state, path, src, &object->fields);
-    free(src);
+    // we wrap `src` in a box in case `wi_compile` fails and causes oom error
+    // gc will have a reference to `src` and will be able to free it
+    wi_string_t* src_box = wi_take_cstring(state->gc, src, (int)strlen(src));
+    wi_gc_push_root(state->gc, (wi_box_t*)src_box);
+
+    wi_prototype_t* prototype = wi_compile(state, path, src_box->chars, &object->fields);
 
     if (!prototype) {
+        wi_gc_pop_root(state->gc);  // src_box
+        wi_gc_pop_root(state->gc);  // object
         wi_state_error(state, "failed to compile script %s", path);
     }
 
+    wi_gc_pop_root(state->gc);  // src_box
     wi_gc_push_root(state->gc, (wi_box_t*)prototype);
+
     wi_table_set(&state->required, path_value, WI_MAKE_BOX_VALUE(object));
     wi_table_set(frame->closure->globals, name_value, WI_MAKE_BOX_VALUE(object));
 
     wi_closure_t* closure = wi_new_closure(state->gc, prototype, &object->fields);
     closure->is_required  = true;
 
-    wi_gc_pop_root(state->gc);
-    wi_gc_pop_root(state->gc);
+    wi_gc_pop_root(state->gc);  // prototype
+    wi_gc_pop_root(state->gc);  // object
 
     return closure;
 }
@@ -1212,6 +1237,17 @@ _state_interpreter_loop(wi_state_t* state, int base_frame_count, bool drop_resul
 #undef _BIT_OP
 }
 
+void
+wi_state_check_arity(wi_state_t* state, int arity, uint8_t arg_count, bool is_variadic) {
+    if (is_variadic) {
+        if (arg_count < arity) {
+            wi_state_error(state, "expected at least %i arguments but got %hhu", arity, arg_count);
+        }
+    } else if (arg_count != arity) {
+        wi_state_error(state, "expected %i arguments but got %hhu", arity, arg_count);
+    }
+}
+
 wi_run_result_t
 wi_state_call(wi_state_t* state, wi_closure_t* closure, uint8_t arg_count, bool drop_result) {
     if (state->c_call_depth >= WI_C_CALL_STACK_MAX) {
@@ -1234,7 +1270,18 @@ wi_state_call(wi_state_t* state, wi_closure_t* closure, uint8_t arg_count, bool 
 
 wi_run_result_t
 wi_state_run(wi_state_t* state, const char* file_path, const char* src) {
-    state->interrupted        = 0;
+    wi_state_reset_error(state);
+    state->interrupted = 0;
+    int jmp_result     = setjmp(state->jmp);
+
+    if (jmp_result == WI_JMP_ABORT) {
+        return WI_RUN_ABORT;
+    }
+
+    if (jmp_result != WI_JMP_OK) {
+        return WI_RUN_ERROR;
+    }
+
     wi_prototype_t* prototype = wi_compile(state, file_path, src, &state->globals);
 
     if (!prototype) {
@@ -1245,19 +1292,9 @@ wi_state_run(wi_state_t* state, const char* file_path, const char* src) {
     wi_closure_t* closure = wi_new_closure(state->gc, prototype, &state->globals);
     wi_gc_pop_root(state->gc);
 
-    int jmp_result = setjmp(state->jmp);
-
-    if (jmp_result == WI_JMP_OK) {
-        wi_state_push(state, WI_MAKE_BOX_VALUE(closure));
-        _state_call(state, closure, 0);
-        return _state_interpreter_loop(state, 0, true);
-    }
-
-    if (jmp_result == WI_JMP_ABORT) {
-        return WI_RUN_ABORT;
-    }
-
-    return WI_RUN_ERROR;
+    wi_state_push(state, WI_MAKE_BOX_VALUE(closure));
+    _state_call(state, closure, 0);
+    return _state_interpreter_loop(state, 0, true);
 }
 
 wi_closure_t*
