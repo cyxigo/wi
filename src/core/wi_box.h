@@ -67,6 +67,11 @@ wi_copy_cstring(wi_gc_t* gc, const char* chars, int len);
 wi_string_t*
 wi_take_cstring(wi_gc_t* gc, char* chars, int len);
 
+static inline wi_string_t*
+wi_make_string(wi_gc_t* gc, const char* string) {
+    return wi_copy_cstring(gc, string, (int)strlen(string));
+}
+
 typedef struct {
     wi_box_t       box;
     wi_value_buf_t items;

@@ -35,7 +35,7 @@ _os_args(wi_state_t* state, int arg_count) {
 
     for (int i = 0; i < state->script_argc; i++) {
         const char*  arg     = state->script_argv[i];
-        wi_string_t* arg_box = wi_copy_cstring(state->gc, arg, (int)strlen(arg));
+        wi_string_t* arg_box = wi_make_string(state->gc, arg);
 
         wi_gc_push_root(state->gc, (wi_box_t*)arg_box);
         wi_value_buf_add(&result->items, WI_MAKE_BOX_VALUE(arg_box));

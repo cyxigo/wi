@@ -28,7 +28,7 @@ wi_def_std(wi_state_t* state) {
 static void
 _def_foreign(wi_state_t* state, wi_table_t* table, const char* name, wi_foreign_fn_t fn, int arity,
              bool is_variadic) {
-    wi_string_t* name_box = wi_copy_cstring(state->gc, name, (int)strlen(name));
+    wi_string_t* name_box = wi_make_string(state->gc, name);
     wi_gc_push_root(state->gc, (wi_box_t*)name_box);
 
     wi_foreign_t* foreign = wi_new_foreign(state->gc, fn, name_box, arity, is_variadic);
@@ -47,7 +47,7 @@ wi_def_foreign(wi_state_t* state, const char* name, wi_foreign_fn_t fn, int arit
 
 wi_object_t*
 wi_def_object(wi_state_t* state, const char* name) {
-    wi_string_t* name_box = wi_copy_cstring(state->gc, name, (int)strlen(name));
+    wi_string_t* name_box = wi_make_string(state->gc, name);
     wi_gc_push_root(state->gc, (wi_box_t*)name_box);
 
     wi_object_t* object = wi_new_object(state->gc, name_box);
@@ -69,7 +69,7 @@ _set_field(wi_state_t* state, wi_object_t* object, const char* name, wi_value_t 
         wi_gc_push_root(state->gc, wi_value_as_box(value));
     }
 
-    wi_string_t* name_box = wi_copy_cstring(state->gc, name, (int)strlen(name));
+    wi_string_t* name_box = wi_make_string(state->gc, name);
     wi_gc_push_root(state->gc, (wi_box_t*)name_box);
     wi_table_set(&object->fields, WI_MAKE_BOX_VALUE(name_box), value);
 
@@ -92,14 +92,14 @@ wi_object_set_field_bool(wi_state_t* state, wi_object_t* object, const char* nam
 
 void
 wi_object_set_field_string(wi_state_t* state, wi_object_t* object, const char* name, char* string) {
-    wi_string_t* box = wi_copy_cstring(state->gc, string, (int)strlen(string));
+    wi_string_t* box = wi_make_string(state->gc, string);
     _set_field(state, object, name, WI_MAKE_BOX_VALUE(box));
 }
 
 void
 wi_object_set_field_userdata(wi_state_t* state, wi_object_t* object, const char* field_name, const char* name,
                              void* userdata, wi_userdata_finalizer_fn_t finalizer) {
-    wi_string_t* name_box = wi_copy_cstring(state->gc, name, (int)strlen(name));
+    wi_string_t* name_box = wi_make_string(state->gc, name);
     wi_gc_push_root(state->gc, (wi_box_t*)name_box);
 
     wi_userdata_t* box = wi_new_userdata(state->gc, name_box, userdata, finalizer);
@@ -161,14 +161,14 @@ wi_slot_set_bool(wi_state_t* state, int slot, bool boolean) {
 
 void
 wi_slot_set_string(wi_state_t* state, int slot, const char* string) {
-    wi_string_t* box = wi_copy_cstring(state->gc, string, (int)strlen(string));
+    wi_string_t* box = wi_make_string(state->gc, string);
     _slot_set(state, slot, WI_MAKE_BOX_VALUE(box));
 }
 
 void
 wi_slot_set_userdata(wi_state_t* state, int slot, const char* name, void* userdata,
                      wi_userdata_finalizer_fn_t finalizer) {
-    wi_string_t* name_box = wi_copy_cstring(state->gc, name, (int)strlen(name));
+    wi_string_t* name_box = wi_make_string(state->gc, name);
     wi_gc_push_root(state->gc, (wi_box_t*)name_box);
 
     wi_userdata_t* box = wi_new_userdata(state->gc, name_box, userdata, finalizer);

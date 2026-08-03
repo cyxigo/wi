@@ -42,7 +42,7 @@ _base_input(wi_state_t* state, int arg_count) {
     }
 
     buf[strcspn(buf, "\n")] = 0;
-    state->api_stack[0]     = WI_MAKE_BOX_VALUE(wi_copy_cstring(state->gc, buf, (int)strlen(buf)));
+    state->api_stack[0]     = WI_MAKE_BOX_VALUE(wi_make_string(state->gc, buf));
 }
 
 static void

@@ -245,7 +245,7 @@ wi_state_error(wi_state_t* state, const char* format, ...) {
         state->gc->temp_root_count = recovery->temp_root_count;
 
         _APPEND_FORMAT();
-        recovery->error = wi_copy_cstring(state->gc, state->error, (int)strlen(state->error));
+        recovery->error = wi_make_string(state->gc, state->error);
 
         longjmp(recovery->jmp, WI_JMP_ERROR);
     }
