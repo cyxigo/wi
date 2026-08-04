@@ -132,7 +132,7 @@ wi_object_set_field_string(wi_state* state, wi_object* object, const char* name,
  * @param state Wi state instance
  * @param object Target object
  * @param field_name Field name
- * @param name Userdata name, used for type checking
+ * @param name Userdata name, used for type-checking
  * @param userdata Pointer to userdata
  * @param finalizer Userdata finalizer
  */
@@ -261,7 +261,7 @@ wi_state_run(wi_state* state, const char* file_path, const char* src);
  * wi_push_real(state, 20); - Push argument 2
  * wi_call(state, 2); - Call function with `2` arguments, is protected
  *
- * wi_real sum = wi_check_real(state); - Get the function result, with type checking
+ * wi_real sum = wi_check_real(state); - Get the function result, with type-checking
  * printf("%g\n", sum); - Print it
  * ```
  */
@@ -311,6 +311,7 @@ wi_is_string(wi_state* state);
  * Check if the value at the stack top is userdata
  *
  * @param state Wi state instance
+ * @param name Userdata name, used for type-checking
  */
 WI_API bool
 wi_is_userdata(wi_state* state, const char* name);
@@ -345,7 +346,7 @@ wi_push_bool(wi_state* state, bool boolean);
  * Push a string value onto the stack
  *
  * @param state Wi state instance
- * @param string string
+ * @param string String
  */
 WI_API void
 wi_push_string(wi_state* state, const char* string);
@@ -354,7 +355,7 @@ wi_push_string(wi_state* state, const char* string);
  * Push userdata onto the stack
  *
  * @param state Wi state instance
- * @param name Userdata name, used for type checking
+ * @param name Userdata name, used for type-checking
  * @param userdata Pointer to userdata
  * @param finalizer Userdata finalizer
  */
@@ -431,7 +432,7 @@ wi_check_string(wi_state* state, int* len);
  * Pop userdata from the stack with type-checking
  *
  * @param state Wi state instance
- * @param name Userdata name, used for type checking
+ * @param name Userdata name, used for type-checking
  */
 WI_API void*
 wi_check_userdata(wi_state* state, const char* name);
@@ -540,7 +541,7 @@ wi_slot_set_string(wi_state* state, int slot, const char* string);
  *
  * @param state Wi state instance
  * @param slot Slot index (0-[arg_count])
- * @param name Userdata name, used for type checking
+ * @param name Userdata name, used for type-checking
  * @param userdata Pointer to userdata
  * @param finalizer Userdata finalizer
  */
@@ -625,7 +626,7 @@ wi_slot_check_string(wi_state* state, int slot, int* len);
  *
  * @param state Wi state instance
  * @param slot Slot index (0-[arg_count])
- * @param name Userdata name, used for type checking
+ * @param name Userdata name, used for type-checking
  * @return Userdata stored in a slot
  */
 WI_API void*
