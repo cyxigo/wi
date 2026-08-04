@@ -67,7 +67,7 @@ struct wi_recovery {
 
 struct wi_state {
     char* error;
-    /**
+    /*
      * this is separated because... we are out of memory, what would we do? allocate MORE memory?
      * no, instead we use this little static string thingy
      */
