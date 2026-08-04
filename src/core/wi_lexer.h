@@ -34,7 +34,7 @@ wi_is_alnum(char c) {
     return wi_is_digit(c) || wi_is_alpha(c);
 }
 
-typedef enum {
+enum wi_token_kind {
     WI_TOKEN_BLANK,
     WI_TOKEN_NAME,
 
@@ -99,26 +99,26 @@ typedef enum {
 
     WI_TOKEN_EOF,
     WI_TOKEN_ERROR,
-} wi_token_kind_t;
+};
 
-typedef struct {
-    wi_token_kind_t kind;
-    const char*     start;
-    int             len;
-    int             line;
-    int             col;
-} wi_token_t;
+struct wi_token {
+    enum wi_token_kind kind;
+    const char*        start;
+    int                len;
+    int                line;
+    int                col;
+};
 
-extern const wi_token_t WI_BLANK_TOKEN;
+extern const struct wi_token WI_BLANK_TOKEN;
 
 static inline bool
-wi_token_lexemes_equal(wi_token_t a, wi_token_t b) {
+wi_token_lexemes_equal(struct wi_token a, struct wi_token b) {
     return a.len == b.len && memcmp(a.start, b.start, (size_t)a.len) == 0;
 }
 
-static inline wi_token_t
+static inline struct wi_token
 wi_token_from_string(const char* string) {
-    return (wi_token_t){
+    return (struct wi_token){
         .kind  = WI_TOKEN_NAME,
         .start = string,
         .len   = (int)strlen(string),
@@ -127,20 +127,20 @@ wi_token_from_string(const char* string) {
 }
 
 const char*
-wi_token_kind_to_string(wi_token_kind_t kind);
+wi_token_kind_to_string(enum wi_token_kind kind);
 
-typedef struct {
+struct wi_lexer {
     const char* file_path;
     const char* src;
     const char* start;
     const char* curr;
     int         line;
     int         col;
-} wi_lexer_t;
+};
 
 void
-wi_lexer_init(wi_lexer_t* lexer, const char* file_path, const char* src);
-wi_token_t
-wi_lexer_next(wi_lexer_t* lexer);
+wi_lexer_init(struct wi_lexer* lexer, const char* file_path, const char* src);
+struct wi_token
+wi_lexer_next(struct wi_lexer* lexer);
 
 #endif

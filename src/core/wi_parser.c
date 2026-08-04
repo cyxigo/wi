@@ -11,9 +11,9 @@
 #include "wi_state.h"
 #include "wi_util.h"
 
-wi_parser_t*
-wi_new_parser(wi_lexer_t* lexer, wi_gc_t* gc) {
-    wi_parser_t* parser = malloc(sizeof(wi_parser_t));
+struct wi_parser*
+wi_new_parser(struct wi_lexer* lexer, struct wi_gc* gc) {
+    struct wi_parser* parser = malloc(sizeof(struct wi_parser));
 
     if (!parser) {
         return NULL;
@@ -31,7 +31,7 @@ wi_new_parser(wi_lexer_t* lexer, wi_gc_t* gc) {
 }
 
 void
-wi_delete_parser(wi_parser_t* parser) {
+wi_delete_parser(struct wi_parser* parser) {
     free(parser);
 }
 
@@ -52,16 +52,16 @@ _digit_count(int n) {
 }
 
 static void
-_parser_append_token_line(wi_parser_t* parser, wi_token_t token) {
+_parser_append_token_line(struct wi_parser* parser, struct wi_token token) {
     if (token.kind == WI_TOKEN_BLANK) {
         return;
     }
 
-    wi_state_t* state      = parser->gc->state;
-    const char* src        = parser->lexer->src;
-    const char* line_start = src;
-    int         line       = 1;
-    const char* ptr        = src;
+    struct wi_state* state      = parser->gc->state;
+    const char*      src        = parser->lexer->src;
+    const char*      line_start = src;
+    int              line       = 1;
+    const char*      ptr        = src;
 
     while (*ptr && line < token.line) {
         if (*ptr == '\n') {
@@ -93,8 +93,8 @@ _parser_append_token_line(wi_parser_t* parser, wi_token_t token) {
 }
 
 static void
-_parser_error_va(wi_parser_t* parser, wi_token_t token, const char* format, va_list args) {
-    wi_state_t* state = parser->gc->state;
+_parser_error_va(struct wi_parser* parser, struct wi_token token, const char* format, va_list args) {
+    struct wi_state* state = parser->gc->state;
 
     wi_state_reset_error(state);
     wi_state_append_error(state, "compile error: ");
@@ -113,7 +113,7 @@ _parser_error_va(wi_parser_t* parser, wi_token_t token, const char* format, va_l
 }
 
 WI_NORETURN void
-wi_parser_error_at(wi_parser_t* parser, wi_token_t token, const char* format, ...) {
+wi_parser_error_at(struct wi_parser* parser, struct wi_token token, const char* format, ...) {
     va_list args;
     va_start(args, format);
     _parser_error_va(parser, token, format, args);
@@ -122,7 +122,7 @@ wi_parser_error_at(wi_parser_t* parser, wi_token_t token, const char* format, ..
 }
 
 WI_NORETURN void
-wi_parser_error_at_prev(wi_parser_t* parser, const char* format, ...) {
+wi_parser_error_at_prev(struct wi_parser* parser, const char* format, ...) {
     va_list args;
     va_start(args, format);
     _parser_error_va(parser, parser->prev, format, args);
@@ -131,7 +131,7 @@ wi_parser_error_at_prev(wi_parser_t* parser, const char* format, ...) {
 }
 
 WI_NORETURN void
-wi_parser_error_at_curr(wi_parser_t* parser, const char* format, ...) {
+wi_parser_error_at_curr(struct wi_parser* parser, const char* format, ...) {
     va_list args;
     va_start(args, format);
     _parser_error_va(parser, parser->curr, format, args);
@@ -140,7 +140,7 @@ wi_parser_error_at_curr(wi_parser_t* parser, const char* format, ...) {
 }
 
 void
-wi_parser_advance(wi_parser_t* parser) {
+wi_parser_advance(struct wi_parser* parser) {
     if (parser->curr.kind != WI_TOKEN_EOF && parser->curr.kind != WI_TOKEN_ERROR) {
         parser->last = parser->curr;
     }
@@ -157,12 +157,12 @@ wi_parser_advance(wi_parser_t* parser) {
 }
 
 bool
-wi_parser_check(wi_parser_t* parser, wi_token_kind_t kind) {
+wi_parser_check(struct wi_parser* parser, enum wi_token_kind kind) {
     return parser->curr.kind == kind;
 }
 
 bool
-wi_parser_match(wi_parser_t* parser, wi_token_kind_t kind) {
+wi_parser_match(struct wi_parser* parser, enum wi_token_kind kind) {
     if (!wi_parser_check(parser, kind)) {
         return false;
     }
@@ -172,17 +172,17 @@ wi_parser_match(wi_parser_t* parser, wi_token_kind_t kind) {
 }
 
 bool
-wi_parser_is_at_end(wi_parser_t* parser) {
+wi_parser_is_at_end(struct wi_parser* parser) {
     return wi_parser_check(parser, WI_TOKEN_EOF);
 }
 
-wi_token_t
-wi_parser_expect(wi_parser_t* parser, wi_token_kind_t kind) {
+struct wi_token
+wi_parser_expect(struct wi_parser* parser, enum wi_token_kind kind) {
     if (wi_parser_match(parser, kind)) {
         return parser->prev;
     }
 
-    wi_token_t* prev = &parser->prev;
+    struct wi_token* prev = &parser->prev;
     prev->col += prev->len;
     prev->len = 1;
     wi_parser_error_at_prev(parser, "expected %s", wi_token_kind_to_string(kind));

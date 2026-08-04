@@ -4,7 +4,7 @@ set_version("1.0.0")
 set_description("The Wi programming language")
 
 function defaults()
-    add_languages("c11")
+    add_languages("gnu99")
     add_cflags("-flto -fno-stack-protector -fno-common -Wconversion -Wsign-conversion -Wfloat-conversion")
     set_optimize("fastest")
     set_warnings("all", "error")

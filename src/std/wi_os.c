@@ -6,17 +6,17 @@
 #include "time.h"
 
 static void
-_os_clock(wi_state_t* state, int arg_count) {
-    wi_slot_set_real(state, 0, (wi_real_t)clock() / (wi_real_t)CLOCKS_PER_SEC);
+_os_clock(struct wi_state* state, int arg_count) {
+    wi_slot_set_real(state, 0, (wi_real)clock() / (wi_real)CLOCKS_PER_SEC);
 }
 
 static void
-_os_time(wi_state_t* state, int arg_count) {
-    wi_slot_set_real(state, 0, (wi_real_t)time(NULL));
+_os_time(struct wi_state* state, int arg_count) {
+    wi_slot_set_real(state, 0, (wi_real)time(NULL));
 }
 
 static void
-_os_get_env(wi_state_t* state, int arg_count) {
+_os_get_env(struct wi_state* state, int arg_count) {
     char* value = getenv(wi_slot_check_string(state, 1, NULL));
 
     if (!value) {
@@ -28,24 +28,24 @@ _os_get_env(wi_state_t* state, int arg_count) {
 }
 
 static void
-_os_args(wi_state_t* state, int arg_count) {
-    wi_array_t* result  = wi_new_array(state->gc);
-    state->ffi_stack[0] = WI_MAKE_BOX_VALUE(result);
+_os_args(struct wi_state* state, int arg_count) {
+    struct wi_array* result = wi_new_array(state->gc);
+    state->ffi_stack[0]     = WI_MAKE_BOX_VALUE(result);
     wi_value_buf_reserve(&result->items, state->script_argc);
 
     for (int i = 0; i < state->script_argc; i++) {
-        const char*  arg     = state->script_argv[i];
-        wi_string_t* arg_box = wi_make_string(state->gc, arg);
+        const char*       arg     = state->script_argv[i];
+        struct wi_string* arg_box = wi_make_string(state->gc, arg);
 
-        wi_gc_push_root(state->gc, (wi_box_t*)arg_box);
+        WI_GC_PUSH_ROOT(state->gc, arg_box);
         wi_value_buf_add(&result->items, WI_MAKE_BOX_VALUE(arg_box));
         wi_gc_pop_root(state->gc);
     }
 }
 
 void
-wi_state_def_os_foreign(wi_state_t* state) {
-    wi_object_t* object = wi_def_object(state, "os");
+wi_state_def_os_foreign(struct wi_state* state) {
+    struct wi_object* object = wi_def_object(state, "os");
 
     wi_object_set_field_foreign(state, object, "clock", _os_clock, 0, false);
     wi_object_set_field_foreign(state, object, "time", _os_time, 0, false);

@@ -23,7 +23,7 @@
 #include "../include/wi.h"
 
 static void
-_base_print(wi_state_t* state, int arg_count) {
+_base_print(struct wi_state* state, int arg_count) {
     for (int i = 0; i < arg_count; i++) {
         wi_value_print(state->ffi_stack[i + 1]);
         printf("\n");
@@ -33,7 +33,7 @@ _base_print(wi_state_t* state, int arg_count) {
 }
 
 static void
-_base_input(wi_state_t* state, int arg_count) {
+_base_input(struct wi_state* state, int arg_count) {
     char buf[2048];
 
     if (!fgets(buf, sizeof(buf), stdin)) {
@@ -46,8 +46,8 @@ _base_input(wi_state_t* state, int arg_count) {
 }
 
 static void
-_base_load_foreign(wi_state_t* state, int arg_count) {
-    wi_call_frame_t* frame = wi_state_frame(state);
+_base_load_foreign(struct wi_state* state, int arg_count) {
+    struct wi_call_frame* frame = wi_state_frame(state);
 
     if (frame->closure->is_required) {
         wi_state_error(state, "can only use load_foreign from the main script");
@@ -115,12 +115,12 @@ _base_load_foreign(wi_state_t* state, int arg_count) {
         wi_state_error(state, "failed to load foreign %s\nattempted path: %s", raw_path, path);
     }
 
-    typedef void (*_foreign_init_fn_t)(wi_state_t* state);
+    typedef void (*_foreign_init_fn)(struct wi_state* state);
 
 #ifdef _WIN32
-    _foreign_init_fn_t init = (_foreign_init_fn_t)GetProcAddress(lib, "wi_foreign_init");
+    _foreign_init_fn init = (_foreign_init_fn)GetProcAddress(lib, "wi_foreign_init");
 #else
-    _foreign_init_fn_t init = (_foreign_init_fn_t)dlsym(lib, "wi_foreign_init");
+    _foreign_init_fn init = (_foreign_init_fn)dlsym(lib, "wi_foreign_init");
 #endif
 
     if (!init) {
@@ -136,23 +136,23 @@ _base_load_foreign(wi_state_t* state, int arg_count) {
 }
 
 static void
-_base_is_main(wi_state_t* state, int arg_count) {
-    wi_call_frame_t* frame = wi_state_frame(state);
+_base_is_main(struct wi_state* state, int arg_count) {
+    struct wi_call_frame* frame = wi_state_frame(state);
     wi_slot_set_bool(state, 0, !frame->closure->is_required);
 }
 
 static void
-_base_exit(wi_state_t* state, int arg_count) {
+_base_exit(struct wi_state* state, int arg_count) {
     wi_state_abort(state);
 }
 
 static void
-_base_error(wi_state_t* state, int arg_count) {
+_base_error(struct wi_state* state, int arg_count) {
     wi_state_error(state, "%s", wi_slot_check_string(state, 1, NULL));
 }
 
 static void
-_base_assert(wi_state_t* state, int arg_count) {
+_base_assert(struct wi_state* state, int arg_count) {
     bool is_falsy = wi_value_is_falsy(state->ffi_stack[1]);
 
     if (is_falsy) {
@@ -163,16 +163,16 @@ _base_assert(wi_state_t* state, int arg_count) {
 }
 
 static void
-_base_try(wi_state_t* state, int arg_count) {
-    wi_closure_t*   closure   = wi_slot_check_function(state, 1, -1);
-    wi_prototype_t* prototype = closure->prototype;
+_base_try(struct wi_state* state, int arg_count) {
+    struct wi_closure*   closure   = wi_slot_check_function(state, 1, -1);
+    struct wi_prototype* prototype = closure->prototype;
     wi_state_check_arity(state, prototype->arity, (uint8_t)(arg_count - 1), prototype->is_variadic);
 
-    wi_object_t* result = wi_new_object(state->gc, NULL);
-    state->ffi_stack[0] = WI_MAKE_BOX_VALUE(result);
+    struct wi_object* result = wi_new_object(state->gc, NULL);
+    state->ffi_stack[0]      = WI_MAKE_BOX_VALUE(result);
     wi_table_reserve(&result->fields, 3);
 
-    wi_recovery_t* recovery = wi_state_push_recovery(state);
+    struct wi_recovery* recovery = wi_state_push_recovery(state);
 
     if (setjmp(recovery->jmp) == WI_JMP_OK) {
         wi_state_push(state, WI_MAKE_BOX_VALUE(closure));
@@ -182,7 +182,7 @@ _base_try(wi_state_t* state, int arg_count) {
         }
 
         wi_state_call(state, closure, (uint8_t)(arg_count - 1), false);
-        wi_value_t call_value = wi_state_pop(state);
+        wi_value call_value = wi_state_pop(state);
 
         wi_table_set(&result->fields, WI_MAKE_BOX_VALUE(state->ok_str), wi_make_true_value());
         wi_table_set(&result->fields, WI_MAKE_BOX_VALUE(state->value_str), call_value);
@@ -197,74 +197,74 @@ _base_try(wi_state_t* state, int arg_count) {
 }
 
 static void
-_base_type(wi_state_t* state, int arg_count) {
+_base_type(struct wi_state* state, int arg_count) {
     wi_slot_set_string(state, 0, wi_value_type(state->ffi_stack[1]));
 }
 
 static void
-_is_type_function(wi_state_t* state, bool (*fn)(wi_value_t value)) {
+_is_type_function(struct wi_state* state, bool (*fn)(wi_value value)) {
     wi_slot_set_bool(state, 0, fn(state->ffi_stack[1]));
 }
 
 static void
-_base_is_real(wi_state_t* state, int arg_count) {
+_base_is_real(struct wi_state* state, int arg_count) {
     _is_type_function(state, wi_value_is_real);
 }
 
 static void
-_base_is_null(wi_state_t* state, int arg_count) {
+_base_is_null(struct wi_state* state, int arg_count) {
     _is_type_function(state, wi_value_is_null);
 }
 
 static void
-_base_is_bool(wi_state_t* state, int arg_count) {
+_base_is_bool(struct wi_state* state, int arg_count) {
     _is_type_function(state, wi_value_is_bool);
 }
 
 static void
-_base_is_string(wi_state_t* state, int arg_count) {
+_base_is_string(struct wi_state* state, int arg_count) {
     _is_type_function(state, wi_value_is_string);
 }
 
 static void
-_base_is_array(wi_state_t* state, int arg_count) {
+_base_is_array(struct wi_state* state, int arg_count) {
     _is_type_function(state, wi_value_is_array);
 }
 
 static void
-_base_is_map(wi_state_t* state, int arg_count) {
+_base_is_map(struct wi_state* state, int arg_count) {
     _is_type_function(state, wi_value_is_map);
 }
 
 static void
-_base_is_foreign(wi_state_t* state, int arg_count) {
+_base_is_foreign(struct wi_state* state, int arg_count) {
     _is_type_function(state, wi_value_is_foreign);
 }
 
 static void
-_base_is_function(wi_state_t* state, int arg_count) {
+_base_is_function(struct wi_state* state, int arg_count) {
     _is_type_function(state, wi_value_is_closure);
 }
 
 static void
-_base_is_object(wi_state_t* state, int arg_count) {
+_base_is_object(struct wi_state* state, int arg_count) {
     _is_type_function(state, wi_value_is_object);
 }
 
 static void
-_base_is_userdata(wi_state_t* state, int arg_count) {
+_base_is_userdata(struct wi_state* state, int arg_count) {
     _is_type_function(state, wi_value_is_userdata);
 }
 
 static void
-_base_is_falsy(wi_state_t* state, int arg_count) {
+_base_is_falsy(struct wi_state* state, int arg_count) {
     _is_type_function(state, wi_value_is_falsy);
 }
 
 static void
-_base_to_real(wi_state_t* state, int arg_count) {
-    wi_value_t value = state->ffi_stack[1];
-    wi_value_t result;
+_base_to_real(struct wi_state* state, int arg_count) {
+    wi_value value = state->ffi_stack[1];
+    wi_value result;
 
     if (wi_value_is_real(value)) {
         result = value;
@@ -273,9 +273,9 @@ _base_to_real(wi_state_t* state, int arg_count) {
     } else if (wi_value_is_bool(value)) {
         result = wi_make_real_value(wi_value_as_bool(value) ? 1 : 0);
     } else if (wi_value_is_string(value)) {
-        wi_string_t* string = wi_value_as_string(state->ffi_stack[1]);
-        char*        end    = NULL;
-        wi_real_t    real   = wi_string_to_real(string->chars, string->len, &end);
+        struct wi_string* string = wi_value_as_string(state->ffi_stack[1]);
+        char*             end    = NULL;
+        wi_real           real   = wi_string_to_real(string->chars, string->len, &end);
 
         if (end != string->chars + string->len) {
             wi_state_error(state, "invalid real format %s", string->chars);
@@ -290,24 +290,24 @@ _base_to_real(wi_state_t* state, int arg_count) {
 }
 
 static void
-_base_to_bool(wi_state_t* state, int arg_count) {
+_base_to_bool(struct wi_state* state, int arg_count) {
     wi_slot_set_bool(state, 0, !wi_value_is_falsy(state->ffi_stack[1]));
 }
 
 static void
-_base_to_string(wi_state_t* state, int arg_count) {
+_base_to_string(struct wi_state* state, int arg_count) {
     if (wi_slot_is_string(state, 1)) {
         state->ffi_stack[0] = state->ffi_stack[1];
         return;
     }
 
-    char*        string     = wi_value_to_string(state->ffi_stack[1]);
-    wi_string_t* string_box = wi_take_cstring(state->gc, string, (int)strlen(string));
-    state->ffi_stack[0]     = WI_MAKE_BOX_VALUE(string_box);
+    char*             string     = wi_value_to_string(state->ffi_stack[1]);
+    struct wi_string* string_box = wi_take_cstring(state->gc, string, (int)strlen(string));
+    state->ffi_stack[0]          = WI_MAKE_BOX_VALUE(string_box);
 }
 
-static wi_object_t*
-_check_arg1_object(wi_state_t* state) {
+static struct wi_object*
+_check_arg1_object(struct wi_state* state) {
     if (!wi_value_is_object(state->ffi_stack[1])) {
         wi_state_error(state, "bad argument 1 - expected a value of type object but got %s",
                        wi_value_type(state->ffi_stack[1]));
@@ -317,22 +317,22 @@ _check_arg1_object(wi_state_t* state) {
 }
 
 static void
-_base_has_field(wi_state_t* state, int arg_count) {
-    wi_object_t* object = _check_arg1_object(state);
+_base_has_field(struct wi_state* state, int arg_count) {
+    struct wi_object* object = _check_arg1_object(state);
     wi_slot_check_string(state, 2, NULL);
     wi_slot_set_bool(state, 0, wi_table_get(&object->fields, state->ffi_stack[2], NULL));
 }
 
 static void
-_base_fields(wi_state_t* state, int arg_count) {
-    wi_object_t* object = _check_arg1_object(state);
-    wi_map_t*    fields = wi_new_map(state->gc);
-    state->ffi_stack[0] = WI_MAKE_BOX_VALUE(fields);
+_base_fields(struct wi_state* state, int arg_count) {
+    struct wi_object* object = _check_arg1_object(state);
+    struct wi_map*    fields = wi_new_map(state->gc);
+    state->ffi_stack[0]      = WI_MAKE_BOX_VALUE(fields);
     wi_table_copy(&object->fields, &fields->items);
 }
 
 void
-wi_state_def_base_foreign(wi_state_t* state) {
+wi_state_def_base_foreign(struct wi_state* state) {
     wi_def_foreign(state, "print", _base_print, 0, true);
     wi_def_foreign(state, "input", _base_input, 0, false);
     wi_def_foreign(state, "load_foreign", _base_load_foreign, 1, false);

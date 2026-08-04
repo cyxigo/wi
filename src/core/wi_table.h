@@ -5,44 +5,44 @@
 
 #include "wi_value.h"
 
-typedef struct wi_string wi_string_t;
+struct wi_string;
 
 uint32_t
 wi_string_hash(const char* chars, int len);
 
-typedef struct {
-    wi_value_t key;
-    wi_value_t value;
-} wi_entry_t;
+struct wi_entry {
+    wi_value key;
+    wi_value value;
+};
 
 extern const double WI_TABLE_MAX_LOAD;
 
-typedef struct {
-    wi_gc_t*    gc;
-    wi_entry_t* entries;
-    int         capacity;
-    int         count;
-    int         live_count;
-} wi_table_t;
+struct wi_table {
+    struct wi_gc*    gc;
+    struct wi_entry* entries;
+    int              capacity;
+    int              count;
+    int              live_count;
+};
 
 void
-wi_table_init(wi_table_t* table, wi_gc_t* gc);
+wi_table_init(struct wi_table* table, struct wi_gc* gc);
 void
-wi_table_free(wi_table_t* table);
+wi_table_free(struct wi_table* table);
 
 bool
-wi_table_set(wi_table_t* table, wi_value_t key, wi_value_t value);
+wi_table_set(struct wi_table* table, wi_value key, wi_value value);
 bool
-wi_table_get(wi_table_t* table, wi_value_t key, wi_value_t* value);
+wi_table_get(struct wi_table* table, wi_value key, wi_value* value);
 bool
-wi_table_delete(wi_table_t* table, wi_value_t key);
-wi_string_t*
-wi_table_find_string(wi_table_t* table, const char* chars, int len, uint32_t hash);
+wi_table_delete(struct wi_table* table, wi_value key);
+struct wi_string*
+wi_table_find_string(struct wi_table* table, const char* chars, int len, uint32_t hash);
 void
-wi_table_remove_white(wi_table_t* table);
+wi_table_remove_white(struct wi_table* table);
 void
-wi_table_reserve(wi_table_t* table, int count);
+wi_table_reserve(struct wi_table* table, int count);
 void
-wi_table_copy(wi_table_t* src, wi_table_t* dest);
+wi_table_copy(struct wi_table* src, struct wi_table* dest);
 
 #endif

@@ -6,7 +6,7 @@
 #include "../include/wi.h"
 
 static void
-_string_sub(wi_state_t* state, int arg_count) {
+_string_sub(struct wi_state* state, int arg_count) {
     int   len;
     char* string = wi_slot_check_string(state, 1, &len);
     int   start  = (int)wi_slot_check_real(state, 2);
@@ -20,7 +20,7 @@ _string_sub(wi_state_t* state, int arg_count) {
 }
 
 static void
-_string_upper(wi_state_t* state, int arg_count) {
+_string_upper(struct wi_state* state, int arg_count) {
     int   len;
     char* string = wi_slot_check_string(state, 1, &len);
     char* buf    = WI_GC_ALLOC(state->gc, char, len + 1);
@@ -34,7 +34,7 @@ _string_upper(wi_state_t* state, int arg_count) {
 }
 
 static void
-_string_lower(wi_state_t* state, int arg_count) {
+_string_lower(struct wi_state* state, int arg_count) {
     int   len;
     char* string = wi_slot_check_string(state, 1, &len);
     char* buf    = WI_GC_ALLOC(state->gc, char, len + 1);
@@ -48,7 +48,7 @@ _string_lower(wi_state_t* state, int arg_count) {
 }
 
 static void
-_string_trim(wi_state_t* state, int arg_count) {
+_string_trim(struct wi_state* state, int arg_count) {
     int   len;
     char* string = wi_slot_check_string(state, 1, &len);
     int   start  = 0;
@@ -66,7 +66,7 @@ _string_trim(wi_state_t* state, int arg_count) {
 }
 
 static void
-_string_has(wi_state_t* state, int arg_count) {
+_string_has(struct wi_state* state, int arg_count) {
     int   len;
     char* string = wi_slot_check_string(state, 1, &len);
     int   target_len;
@@ -83,7 +83,7 @@ _string_has(wi_state_t* state, int arg_count) {
 }
 
 static void
-_string_starts_with(wi_state_t* state, int arg_count) {
+_string_starts_with(struct wi_state* state, int arg_count) {
     int   len;
     char* string = wi_slot_check_string(state, 1, &len);
     int   prefix_len;
@@ -94,7 +94,7 @@ _string_starts_with(wi_state_t* state, int arg_count) {
 }
 
 static void
-_string_ends_with(wi_state_t* state, int arg_count) {
+_string_ends_with(struct wi_state* state, int arg_count) {
     int   len;
     char* string = wi_slot_check_string(state, 1, &len);
     int   suffix_len;
@@ -105,7 +105,7 @@ _string_ends_with(wi_state_t* state, int arg_count) {
 }
 
 static void
-_string_replace(wi_state_t* state, int arg_count) {
+_string_replace(struct wi_state* state, int arg_count) {
     int   len;
     char* string = wi_slot_check_string(state, 1, &len);
     int   old_len;
@@ -118,7 +118,7 @@ _string_replace(wi_state_t* state, int arg_count) {
         return;
     }
 
-    wi_char_buf_t result;
+    struct wi_char_buf result;
     wi_char_buf_init(&result, state->gc);
 
     int i = 0;
@@ -136,21 +136,21 @@ _string_replace(wi_state_t* state, int arg_count) {
         }
     }
 
-    wi_string_t* replaced = wi_copy_cstring(state->gc, result.data, result.count);
+    struct wi_string* replaced = wi_copy_cstring(state->gc, result.data, result.count);
     wi_char_buf_free(&result);
 
     state->ffi_stack[0] = WI_MAKE_BOX_VALUE(replaced);
 }
 
 static void
-_string_split(wi_state_t* state, int arg_count) {
+_string_split(struct wi_state* state, int arg_count) {
     int   len;
     char* string = wi_slot_check_string(state, 1, &len);
     int   sep_len;
     char* sep = wi_slot_check_string(state, 2, &sep_len);
 
-    wi_array_t* result  = wi_new_array(state->gc);
-    state->ffi_stack[0] = WI_MAKE_BOX_VALUE(result);
+    struct wi_array* result = wi_new_array(state->gc);
+    state->ffi_stack[0]     = WI_MAKE_BOX_VALUE(result);
 
     if (sep_len == 0) {
         wi_value_buf_add(&result->items, state->ffi_stack[1]);
@@ -162,9 +162,9 @@ _string_split(wi_state_t* state, int arg_count) {
 
     while (i + sep_len <= len) {
         if (memcmp(string + i, sep, (size_t)sep_len) == 0) {
-            wi_string_t* part = wi_copy_cstring(state->gc, string + start, i - start);
+            struct wi_string* part = wi_copy_cstring(state->gc, string + start, i - start);
 
-            wi_gc_push_root(state->gc, (wi_box_t*)part);
+            WI_GC_PUSH_ROOT(state->gc, part);
             wi_value_buf_add(&result->items, WI_MAKE_BOX_VALUE(part));
             wi_gc_pop_root(state->gc);
 
@@ -175,15 +175,15 @@ _string_split(wi_state_t* state, int arg_count) {
         }
     }
 
-    wi_string_t* last = wi_copy_cstring(state->gc, string + start, len - start);
+    struct wi_string* last = wi_copy_cstring(state->gc, string + start, len - start);
 
-    wi_gc_push_root(state->gc, (wi_box_t*)last);
+    WI_GC_PUSH_ROOT(state->gc, last);
     wi_value_buf_add(&result->items, WI_MAKE_BOX_VALUE(last));
     wi_gc_pop_root(state->gc);
 }
 
 static void
-_string_reverse(wi_state_t* state, int arg_count) {
+_string_reverse(struct wi_state* state, int arg_count) {
     int   len;
     char* string = wi_slot_check_string(state, 1, &len);
     char* buf    = WI_GC_ALLOC(state->gc, char, len + 1);
@@ -197,8 +197,8 @@ _string_reverse(wi_state_t* state, int arg_count) {
 }
 
 void
-wi_state_def_string_foreign(wi_state_t* state) {
-    wi_object_t* object = wi_def_object(state, "string");
+wi_state_def_string_foreign(struct wi_state* state) {
+    struct wi_object* object = wi_def_object(state, "string");
 
     wi_object_set_field_foreign(state, object, "sub", _string_sub, 3, false);
     wi_object_set_field_foreign(state, object, "upper", _string_upper, 1, false);

@@ -18,10 +18,10 @@
 #include "wi_table.h"
 #include "wi_value.h"
 
-
-wi_compiler_t*
-wi_new_compiler(wi_compiler_t* outer, wi_state_t* state, wi_parser_t* parser, wi_table_t* globals) {
-    wi_compiler_t* compiler = malloc(sizeof(wi_compiler_t));
+struct wi_compiler*
+wi_new_compiler(struct wi_compiler* outer, struct wi_state* state, struct wi_parser* parser,
+                struct wi_table* globals) {
+    struct wi_compiler* compiler = malloc(sizeof(struct wi_compiler));
 
     if (!compiler) {
         return NULL;
@@ -32,13 +32,13 @@ wi_new_compiler(wi_compiler_t* outer, wi_state_t* state, wi_parser_t* parser, wi
 }
 
 void
-wi_delete_compiler(wi_compiler_t* compiler) {
+wi_delete_compiler(struct wi_compiler* compiler) {
     free(compiler);
 }
 
 void
-wi_compiler_init(wi_compiler_t* compiler, wi_compiler_t* outer, wi_state_t* state, wi_parser_t* parser,
-                 wi_table_t* globals) {
+wi_compiler_init(struct wi_compiler* compiler, struct wi_compiler* outer, struct wi_state* state,
+                 struct wi_parser* parser, struct wi_table* globals) {
     compiler->outer               = outer;
     compiler->state               = state;
     compiler->state->gc->compiler = compiler;
@@ -60,10 +60,10 @@ wi_compiler_init(wi_compiler_t* compiler, wi_compiler_t* outer, wi_state_t* stat
     compiler->innermost_loop_scope_depth = 0;
     compiler->last_call_offset           = -1;
 
-    wi_compiler_local_t* local = &compiler->locals[compiler->local_count++];
-    local->name                = WI_BLANK_TOKEN;
-    local->depth               = 0;
-    local->is_captured         = false;
+    struct wi_compiler_local* local = &compiler->locals[compiler->local_count++];
+    local->name                     = WI_BLANK_TOKEN;
+    local->depth                    = 0;
+    local->is_captured              = false;
 }
 
 static const int _opcode_effects[] = {
@@ -73,12 +73,12 @@ static const int _opcode_effects[] = {
 };
 
 static void
-_compiler_emit_byte(wi_compiler_t* compiler, uint8_t byte) {
+_compiler_emit_byte(struct wi_compiler* compiler, uint8_t byte) {
     wi_prototype_add_byte(compiler->prototype, byte, compiler->parser->curr.line);
 }
 
 static void
-_compiler_emit_opcode(wi_compiler_t* compiler, wi_opcode_t opcode) {
+_compiler_emit_opcode(struct wi_compiler* compiler, uint8_t opcode) {
     _compiler_emit_byte(compiler, opcode);
     compiler->slot_count += _opcode_effects[opcode];
 
@@ -88,37 +88,37 @@ _compiler_emit_opcode(wi_compiler_t* compiler, wi_opcode_t opcode) {
 }
 
 static void
-_compiler_emit_opcode_byte(wi_compiler_t* compiler, wi_opcode_t opcode, uint8_t byte) {
+_compiler_emit_opcode_byte(struct wi_compiler* compiler, uint8_t opcode, uint8_t byte) {
     _compiler_emit_opcode(compiler, opcode);
     _compiler_emit_byte(compiler, byte);
 }
 
 static void
-_compiler_emit_bytes(wi_compiler_t* compiler, uint8_t byte1, uint8_t byte2) {
+_compiler_emit_bytes(struct wi_compiler* compiler, uint8_t byte1, uint8_t byte2) {
     _compiler_emit_byte(compiler, byte1);
     _compiler_emit_byte(compiler, byte2);
 }
 
 static void
-_compiler_emit_short(wi_compiler_t* compiler, uint16_t sh) {
+_compiler_emit_short(struct wi_compiler* compiler, uint16_t sh) {
     _compiler_emit_bytes(compiler, (uint8_t)(sh >> 8), (uint8_t)(sh & 0xff));
 }
 
 static void
-_compiler_emit_opcode_short(wi_compiler_t* compiler, wi_opcode_t opcode, uint16_t sh) {
+_compiler_emit_opcode_short(struct wi_compiler* compiler, uint8_t opcode, uint16_t sh) {
     _compiler_emit_opcode(compiler, opcode);
     _compiler_emit_short(compiler, sh);
 }
 
 static int
-_compiler_emit_jump(wi_compiler_t* compiler, wi_opcode_t opcode) {
+_compiler_emit_jump(struct wi_compiler* compiler, uint8_t opcode) {
     _compiler_emit_byte(compiler, opcode);
     _compiler_emit_bytes(compiler, 0xff, 0xff);
     return compiler->prototype->bytes.count - 2;
 }
 
 static void
-_compiler_patch_jump(wi_compiler_t* compiler, int offset) {
+_compiler_patch_jump(struct wi_compiler* compiler, int offset) {
     uint8_t* bytes = compiler->prototype->bytes.data;
     int      jump  = compiler->prototype->bytes.count - offset - 2;
 
@@ -131,7 +131,7 @@ _compiler_patch_jump(wi_compiler_t* compiler, int offset) {
 }
 
 static void
-_compiler_emit_loop(wi_compiler_t* compiler, int loop_start) {
+_compiler_emit_loop(struct wi_compiler* compiler, int loop_start) {
     _compiler_emit_opcode(compiler, WI_OP_LOOP);
     int offset = compiler->prototype->bytes.count - loop_start + 2;
 
@@ -143,7 +143,7 @@ _compiler_emit_loop(wi_compiler_t* compiler, int loop_start) {
 }
 
 static void
-_compiler_end_loop(wi_compiler_t* compiler) {
+_compiler_end_loop(struct wi_compiler* compiler) {
     int      offset = compiler->innermost_loop_start;
     uint8_t* bytes  = compiler->prototype->bytes.data;
 
@@ -159,7 +159,7 @@ _compiler_end_loop(wi_compiler_t* compiler) {
 }
 
 static void
-_compiler_pop_loop_locals(wi_compiler_t* compiler) {
+_compiler_pop_loop_locals(struct wi_compiler* compiler) {
     for (int i = compiler->local_count - 1;
          i >= 0 && compiler->locals[i].depth > compiler->innermost_loop_scope_depth; i--) {
         if (compiler->locals[i].is_captured) {
@@ -171,21 +171,21 @@ _compiler_pop_loop_locals(wi_compiler_t* compiler) {
 }
 
 static void
-_compiler_emit_return(wi_compiler_t* compiler) {
+_compiler_emit_return(struct wi_compiler* compiler) {
     _compiler_emit_opcode(compiler, WI_OP_PUSH_NULL);
     _compiler_emit_opcode(compiler, WI_OP_RETURN);
 }
 
 static uint16_t
-_compiler_make_constant(wi_compiler_t* compiler, wi_value_t value) {
+_compiler_make_constant(struct wi_compiler* compiler, wi_value value) {
     bool is_box = wi_value_is_box(value);
 
     if (is_box) {
-        wi_gc_push_root(compiler->state->gc, wi_value_as_box(value));
+        WI_GC_PUSH_ROOT(compiler->state->gc, wi_value_as_box(value));
     }
 
-    wi_value_t existing;
-    uint16_t   result;
+    wi_value existing;
+    uint16_t result;
 
     if (wi_table_get(&compiler->constants->items, value, &existing)) {
         result = (uint16_t)wi_value_as_real(existing);
@@ -209,20 +209,20 @@ _compiler_make_constant(wi_compiler_t* compiler, wi_value_t value) {
 }
 
 static uint16_t
-_compiler_name_constant(wi_compiler_t* compiler, wi_token_t name) {
-    wi_value_t value = WI_MAKE_BOX_VALUE(wi_copy_cstring(compiler->state->gc, name.start, name.len));
+_compiler_name_constant(struct wi_compiler* compiler, struct wi_token name) {
+    wi_value value = WI_MAKE_BOX_VALUE(wi_copy_cstring(compiler->state->gc, name.start, name.len));
     return _compiler_make_constant(compiler, value);
 }
 
 static void
-_compiler_emit_push(wi_compiler_t* compiler, wi_value_t value) {
+_compiler_emit_push(struct wi_compiler* compiler, wi_value value) {
     _compiler_emit_opcode_short(compiler, WI_OP_PUSH, _compiler_make_constant(compiler, value));
 }
 
-static wi_prototype_t*
-_compiler_end(wi_compiler_t* compiler) {
+static struct wi_prototype*
+_compiler_end(struct wi_compiler* compiler) {
     _compiler_emit_return(compiler);
-    wi_prototype_t* prototype = compiler->prototype;
+    struct wi_prototype* prototype = compiler->prototype;
 
     if (wi_conf_is_set(compiler->state->gc->conf, WI_CONF_PRINT_CODE)) {
         wi_prototype_disasm(prototype);
@@ -233,12 +233,12 @@ _compiler_end(wi_compiler_t* compiler) {
 }
 
 static void
-_compiler_expr(wi_compiler_t* compiler);
+_compiler_expr(struct wi_compiler* compiler);
 static void
-_compiler_stmt(wi_compiler_t* compiler);
+_compiler_stmt(struct wi_compiler* compiler);
 
 static void
-_compiler_decl_var(wi_compiler_t* compiler, wi_token_t name) {
+_compiler_decl_var(struct wi_compiler* compiler, struct wi_token name) {
     if (compiler->scope_depth == 0) {
         return;
     }
@@ -249,7 +249,7 @@ _compiler_decl_var(wi_compiler_t* compiler, wi_token_t name) {
     }
 
     for (int i = compiler->local_count - 1; i >= 0; i--) {
-        wi_compiler_local_t* local = &compiler->locals[i];
+        struct wi_compiler_local* local = &compiler->locals[i];
 
         if (local->depth != -1 && local->depth < compiler->scope_depth) {
             break;
@@ -261,14 +261,14 @@ _compiler_decl_var(wi_compiler_t* compiler, wi_token_t name) {
         }
     }
 
-    wi_compiler_local_t* local = &compiler->locals[compiler->local_count++];
-    local->name                = name;
-    local->depth               = -1;
-    local->is_captured         = false;
+    struct wi_compiler_local* local = &compiler->locals[compiler->local_count++];
+    local->name                     = name;
+    local->depth                    = -1;
+    local->is_captured              = false;
 }
 
 static void
-_compiler_init_local(wi_compiler_t* compiler) {
+_compiler_init_local(struct wi_compiler* compiler) {
     if (compiler->scope_depth == 0) {
         return;
     }
@@ -277,13 +277,13 @@ _compiler_init_local(wi_compiler_t* compiler) {
 }
 
 static void
-_compiler_def_var(wi_compiler_t* compiler, wi_token_t name) {
+_compiler_def_var(struct wi_compiler* compiler, struct wi_token name) {
     if (compiler->scope_depth > 0) {
         _compiler_init_local(compiler);
         return;
     }
 
-    wi_string_t* name_box = wi_copy_cstring(compiler->state->gc, name.start, name.len);
+    struct wi_string* name_box = wi_copy_cstring(compiler->state->gc, name.start, name.len);
 
     if (!wi_table_set(compiler->globals, WI_MAKE_BOX_VALUE(name_box), wi_make_null_value())) {
         wi_parser_error_at(compiler->parser, name, "variable %s is already defined", name_box->chars);
@@ -294,12 +294,12 @@ _compiler_def_var(wi_compiler_t* compiler, wi_token_t name) {
 }
 
 static void
-_compiler_begin_scope(wi_compiler_t* compiler) {
+_compiler_begin_scope(struct wi_compiler* compiler) {
     compiler->scope_depth++;
 }
 
 static void
-_compiler_end_scope(wi_compiler_t* compiler) {
+_compiler_end_scope(struct wi_compiler* compiler) {
     compiler->scope_depth--;
 
     while (compiler->local_count > 0 &&
@@ -315,7 +315,7 @@ _compiler_end_scope(wi_compiler_t* compiler) {
 }
 
 static void
-_compiler_block(wi_compiler_t* compiler) {
+_compiler_block(struct wi_compiler* compiler) {
     while (!wi_parser_check(compiler->parser, WI_TOKEN_CLOSE_BRACE) && !wi_parser_is_at_end(compiler->parser)) {
         _compiler_stmt(compiler);
     }
@@ -324,9 +324,9 @@ _compiler_block(wi_compiler_t* compiler) {
 }
 
 static int
-_compiler_resolve_local(wi_compiler_t* compiler, wi_token_t name) {
+_compiler_resolve_local(struct wi_compiler* compiler, struct wi_token name) {
     for (int i = compiler->local_count - 1; i >= 0; i--) {
-        wi_compiler_local_t* local = &compiler->locals[i];
+        struct wi_compiler_local* local = &compiler->locals[i];
 
         if (wi_token_lexemes_equal(name, local->name)) {
             if (local->depth == -1) {
@@ -342,11 +342,11 @@ _compiler_resolve_local(wi_compiler_t* compiler, wi_token_t name) {
 }
 
 static int
-_compiler_add_upvalue(wi_compiler_t* compiler, uint8_t index, bool is_local) {
+_compiler_add_upvalue(struct wi_compiler* compiler, uint8_t index, bool is_local) {
     int upvalue_count = compiler->prototype->upvalue_count;
 
     for (int i = 0; i < upvalue_count; i++) {
-        wi_compiler_upvalue_t* upvalue = &compiler->upvalues[i];
+        struct wi_compiler_upvalue* upvalue = &compiler->upvalues[i];
 
         if (upvalue->index == index && upvalue->is_local == is_local) {
             return i;
@@ -357,15 +357,15 @@ _compiler_add_upvalue(wi_compiler_t* compiler, uint8_t index, bool is_local) {
         wi_parser_error_at_curr(compiler->parser, "too many upvalues in a closure (limit is %i)", WI_UPVALUES_MAX);
     }
 
-    wi_compiler_upvalue_t* upvalue = &compiler->upvalues[upvalue_count];
-    upvalue->index                 = index;
-    upvalue->is_local              = is_local;
+    struct wi_compiler_upvalue* upvalue = &compiler->upvalues[upvalue_count];
+    upvalue->index                      = index;
+    upvalue->is_local                   = is_local;
 
     return compiler->prototype->upvalue_count++;
 }
 
 static int
-_compiler_resolve_upvalue(wi_compiler_t* compiler, wi_token_t name) {
+_compiler_resolve_upvalue(struct wi_compiler* compiler, struct wi_token name) {
     if (!compiler->outer) {
         return -1;
     }
@@ -387,17 +387,17 @@ _compiler_resolve_upvalue(wi_compiler_t* compiler, wi_token_t name) {
 }
 
 static void
-_compiler_var(wi_compiler_t* compiler, wi_token_t name) {
-    int          arg         = _compiler_resolve_local(compiler, name);
-    wi_string_t* global_name = NULL;
-    wi_opcode_t  set_op;
-    wi_opcode_t  get_op;
+_compiler_var(struct wi_compiler* compiler, struct wi_token name) {
+    int               arg         = _compiler_resolve_local(compiler, name);
+    struct wi_string* global_name = NULL;
+    uint8_t           set_op;
+    uint8_t           get_op;
 
     if (arg != -1) {
         set_op = WI_OP_STORE_LOCAL;
 
         if (arg <= 8) {
-            get_op = WI_OP_LOAD_LOCAL_0 + arg;
+            get_op = (uint8_t)(WI_OP_LOAD_LOCAL_0 + arg);
         } else {
             get_op = WI_OP_LOAD_LOCAL;
         }
@@ -412,7 +412,7 @@ _compiler_var(wi_compiler_t* compiler, wi_token_t name) {
     }
 
     if (global_name) {
-        wi_value_t value = WI_MAKE_BOX_VALUE(global_name);
+        wi_value value = WI_MAKE_BOX_VALUE(global_name);
 
         if (!wi_table_get(compiler->globals, value, NULL) &&
             !wi_table_get(&compiler->state->foreign, value, NULL)) {
@@ -447,8 +447,8 @@ _compiler_var(wi_compiler_t* compiler, wi_token_t name) {
     }
 }
 
-static wi_string_t*
-_compiler_get_name(wi_compiler_t* compiler) {
+static struct wi_string*
+_compiler_get_name(struct wi_compiler* compiler) {
     if (compiler->var_name.kind != WI_TOKEN_NAME) {
         return NULL;
     }
@@ -457,19 +457,19 @@ _compiler_get_name(wi_compiler_t* compiler) {
 }
 
 static void
-_compiler_var_expr(wi_compiler_t* compiler) {
+_compiler_var_expr(struct wi_compiler* compiler) {
     _compiler_var(compiler, compiler->parser->prev);
 }
 
 static void
-_compiler_real_expr(wi_compiler_t* compiler) {
-    wi_token_t token = compiler->parser->prev;
-    wi_real_t  real  = wi_string_to_real(token.start, token.len, NULL);
+_compiler_real_expr(struct wi_compiler* compiler) {
+    struct wi_token token = compiler->parser->prev;
+    wi_real         real  = wi_string_to_real(token.start, token.len, NULL);
     _compiler_emit_push(compiler, wi_make_real_value(real));
 }
 
 static void
-_compiler_add_esc_char(wi_compiler_t* compiler, wi_char_buf_t* chars, char c) {
+_compiler_add_esc_char(struct wi_compiler* compiler, struct wi_char_buf* chars, char c) {
     switch (c) {
         case 'n':
             wi_char_buf_add(chars, '\n');
@@ -493,9 +493,9 @@ _compiler_add_esc_char(wi_compiler_t* compiler, wi_char_buf_t* chars, char c) {
 }
 
 static void
-_compiler_string_expr(wi_compiler_t* compiler) {
-    wi_token_t    token = compiler->parser->prev;
-    wi_char_buf_t chars;
+_compiler_string_expr(struct wi_compiler* compiler) {
+    struct wi_token    token = compiler->parser->prev;
+    struct wi_char_buf chars;
     wi_char_buf_init(&chars, compiler->state->gc);
     wi_char_buf_reserve(&chars, token.len - 2);
 
@@ -507,19 +507,19 @@ _compiler_string_expr(wi_compiler_t* compiler) {
         }
     }
 
-    wi_string_t* string = wi_copy_cstring(compiler->state->gc, chars.data, chars.count);
+    struct wi_string* string = wi_copy_cstring(compiler->state->gc, chars.data, chars.count);
     wi_char_buf_free(&chars);
     _compiler_emit_push(compiler, WI_MAKE_BOX_VALUE(string));
 }
 
 static void
-_compiler_group_expr(wi_compiler_t* compiler) {
+_compiler_group_expr(struct wi_compiler* compiler) {
     _compiler_expr(compiler);
     wi_parser_expect(compiler->parser, WI_TOKEN_CLOSE_PAREN);
 }
 
 static void
-_compiler_array_expr(wi_compiler_t* compiler) {
+_compiler_array_expr(struct wi_compiler* compiler) {
     uint16_t count = 0;
 
     if (!wi_parser_check(compiler->parser, WI_TOKEN_CLOSE_BRACKET)) {
@@ -540,7 +540,7 @@ _compiler_array_expr(wi_compiler_t* compiler) {
 }
 
 static void
-_compiler_map_expr(wi_compiler_t* compiler) {
+_compiler_map_expr(struct wi_compiler* compiler) {
     uint16_t count = 0;
 
     if (!wi_parser_check(compiler->parser, WI_TOKEN_CLOSE_BRACE)) {
@@ -563,26 +563,26 @@ _compiler_map_expr(wi_compiler_t* compiler) {
 }
 
 static void
-_compiler_null_expr(wi_compiler_t* compiler) {
+_compiler_null_expr(struct wi_compiler* compiler) {
     _compiler_emit_opcode(compiler, WI_OP_PUSH_NULL);
 }
 
 static void
-_compiler_bool_expr(wi_compiler_t* compiler) {
-    wi_opcode_t opcode = compiler->parser->prev.kind == WI_TOKEN_KW_TRUE ? WI_OP_PUSH_TRUE : WI_OP_PUSH_FALSE;
+_compiler_bool_expr(struct wi_compiler* compiler) {
+    uint8_t opcode = compiler->parser->prev.kind == WI_TOKEN_KW_TRUE ? WI_OP_PUSH_TRUE : WI_OP_PUSH_FALSE;
     _compiler_emit_opcode(compiler, opcode);
 }
 
 static void
-_compiler_function_expr(wi_compiler_t* outer) {
-    wi_compiler_t compiler;
+_compiler_function_expr(struct wi_compiler* outer) {
+    struct wi_compiler compiler;
     wi_compiler_init(&compiler, outer, outer->state, outer->parser, outer->globals);
     _compiler_init_local(&compiler);
 
     compiler.prototype->name = _compiler_get_name(compiler.outer);
 
     if (compiler.prototype->name) {
-        compiler.locals[0].name = (wi_token_t){
+        compiler.locals[0].name = (struct wi_token){
             .kind  = WI_TOKEN_NAME,
             .start = compiler.prototype->name->chars,
             .len   = compiler.prototype->name->len,
@@ -597,7 +597,7 @@ _compiler_function_expr(wi_compiler_t* outer) {
         do {
             if (wi_parser_match(compiler.parser, WI_TOKEN_DOT_DOT_DOT)) {
                 compiler.prototype->is_variadic = true;
-                wi_token_t name                 = wi_parser_expect(compiler.parser, WI_TOKEN_NAME);
+                struct wi_token name            = wi_parser_expect(compiler.parser, WI_TOKEN_NAME);
                 _compiler_decl_var(&compiler, name);
                 _compiler_def_var(&compiler, name);
                 break;
@@ -609,7 +609,7 @@ _compiler_function_expr(wi_compiler_t* outer) {
 
             compiler.prototype->arity++;
 
-            wi_token_t name = wi_parser_expect(compiler.parser, WI_TOKEN_NAME);
+            struct wi_token name = wi_parser_expect(compiler.parser, WI_TOKEN_NAME);
             _compiler_decl_var(&compiler, name);
             _compiler_def_var(&compiler, name);
         } while (wi_parser_match(compiler.parser, WI_TOKEN_COMMA));
@@ -619,19 +619,19 @@ _compiler_function_expr(wi_compiler_t* outer) {
     wi_parser_expect(compiler.parser, WI_TOKEN_OPEN_BRACE);
     _compiler_block(&compiler);
 
-    wi_prototype_t* prototype = _compiler_end(&compiler);
-    uint16_t        constant  = _compiler_make_constant(outer, WI_MAKE_BOX_VALUE(prototype));
+    struct wi_prototype* prototype = _compiler_end(&compiler);
+    uint16_t             constant  = _compiler_make_constant(outer, WI_MAKE_BOX_VALUE(prototype));
     _compiler_emit_opcode_short(outer, WI_OP_PUSH_CLOSURE, constant);
 
     for (int i = 0; i < prototype->upvalue_count; i++) {
-        wi_compiler_upvalue_t* upvalue = &compiler.upvalues[i];
+        struct wi_compiler_upvalue* upvalue = &compiler.upvalues[i];
         _compiler_emit_byte(outer, upvalue->index);
         _compiler_emit_byte(outer, upvalue->is_local ? 1 : 0);
     }
 }
 
 static uint8_t
-_compiler_arg_list(wi_compiler_t* compiler, uint8_t start) {
+_compiler_arg_list(struct wi_compiler* compiler, uint8_t start) {
     uint8_t arg_count = start;
 
     if (!wi_parser_check(compiler->parser, WI_TOKEN_CLOSE_PAREN)) {
@@ -651,10 +651,10 @@ _compiler_arg_list(wi_compiler_t* compiler, uint8_t start) {
 }
 
 static void
-_compiler_field(wi_compiler_t* compiler);
+_compiler_field(struct wi_compiler* compiler);
 
 static void
-_compiler_new_expr(wi_compiler_t* compiler) {
+_compiler_new_expr(struct wi_compiler* compiler) {
     wi_parser_expect(compiler->parser, WI_TOKEN_NAME);
     _compiler_var_expr(compiler);
     _compiler_emit_opcode(compiler, WI_OP_NEW);
@@ -664,8 +664,8 @@ _compiler_new_expr(wi_compiler_t* compiler) {
     }
 
     while (!wi_parser_check(compiler->parser, WI_TOKEN_CLOSE_BRACE) && !wi_parser_is_at_end(compiler->parser)) {
-        wi_token_t name          = wi_parser_expect(compiler->parser, WI_TOKEN_NAME);
-        uint16_t   name_constant = _compiler_name_constant(compiler, name);
+        struct wi_token name          = wi_parser_expect(compiler->parser, WI_TOKEN_NAME);
+        uint16_t        name_constant = _compiler_name_constant(compiler, name);
 
         wi_parser_expect(compiler->parser, WI_TOKEN_EQUAL);
         _compiler_expr(compiler);
@@ -678,11 +678,11 @@ _compiler_new_expr(wi_compiler_t* compiler) {
 }
 
 static void
-_compiler_object_expr(wi_compiler_t* compiler) {
-    wi_string_t* name = _compiler_get_name(compiler);
+_compiler_object_expr(struct wi_compiler* compiler) {
+    struct wi_string* name = _compiler_get_name(compiler);
 
     if (name) {
-        wi_gc_push_root(compiler->state->gc, (wi_box_t*)name);
+        WI_GC_PUSH_ROOT(compiler->state->gc, name);
     }
 
     uint16_t field_count = 0;
@@ -693,9 +693,9 @@ _compiler_object_expr(wi_compiler_t* compiler) {
             wi_parser_error_at_curr(compiler->parser, "cannot have more than %i fields in an object", UINT16_MAX);
         }
 
-        wi_token_t field_name = wi_parser_expect(compiler->parser, WI_TOKEN_NAME);
-        wi_token_t var_name   = compiler->var_name;
-        compiler->var_name    = field_name;
+        struct wi_token field_name = wi_parser_expect(compiler->parser, WI_TOKEN_NAME);
+        struct wi_token var_name   = compiler->var_name;
+        compiler->var_name         = field_name;
 
         wi_parser_expect(compiler->parser, WI_TOKEN_EQUAL);
 
@@ -720,7 +720,7 @@ _compiler_object_expr(wi_compiler_t* compiler) {
 }
 
 static void
-_compiler_primary_expr(wi_compiler_t* compiler) {
+_compiler_primary_expr(struct wi_compiler* compiler) {
     wi_parser_advance(compiler->parser);
 
     switch (compiler->parser->prev.kind) {
@@ -765,14 +765,14 @@ _compiler_primary_expr(wi_compiler_t* compiler) {
 }
 
 static void
-_compiler_call(wi_compiler_t* compiler) {
+_compiler_call(struct wi_compiler* compiler) {
     uint8_t arg_count = _compiler_arg_list(compiler, 0);
     _compiler_emit_opcode_byte(compiler, WI_OP_CALL, arg_count);
     compiler->last_call_offset = compiler->prototype->bytes.count - 2;
 }
 
 static void
-_compiler_subscript(wi_compiler_t* compiler) {
+_compiler_subscript(struct wi_compiler* compiler) {
     _compiler_expr(compiler);
     wi_parser_expect(compiler->parser, WI_TOKEN_CLOSE_BRACKET);
 
@@ -786,9 +786,9 @@ _compiler_subscript(wi_compiler_t* compiler) {
 }
 
 static void
-_compiler_field(wi_compiler_t* compiler) {
-    wi_token_t name          = wi_parser_expect(compiler->parser, WI_TOKEN_NAME);
-    uint16_t   name_constant = _compiler_name_constant(compiler, name);
+_compiler_field(struct wi_compiler* compiler) {
+    struct wi_token name          = wi_parser_expect(compiler->parser, WI_TOKEN_NAME);
+    uint16_t        name_constant = _compiler_name_constant(compiler, name);
 
     if (!wi_parser_match(compiler->parser, WI_TOKEN_EQUAL)) {
         _compiler_emit_opcode_short(compiler, WI_OP_GET_FIELD, name_constant);
@@ -800,9 +800,9 @@ _compiler_field(wi_compiler_t* compiler) {
 }
 
 static void
-_compiler_invoke(wi_compiler_t* compiler) {
-    wi_token_t name          = wi_parser_expect(compiler->parser, WI_TOKEN_NAME);
-    uint16_t   name_constant = _compiler_name_constant(compiler, name);
+_compiler_invoke(struct wi_compiler* compiler) {
+    struct wi_token name          = wi_parser_expect(compiler->parser, WI_TOKEN_NAME);
+    uint16_t        name_constant = _compiler_name_constant(compiler, name);
 
     _compiler_emit_opcode_short(compiler, WI_OP_LOAD_METHOD, name_constant);
 
@@ -814,7 +814,7 @@ _compiler_invoke(wi_compiler_t* compiler) {
 }
 
 static void
-_compiler_call_expr(wi_compiler_t* compiler) {
+_compiler_call_expr(struct wi_compiler* compiler) {
     _compiler_primary_expr(compiler);
 
     for (;;) {
@@ -833,7 +833,7 @@ _compiler_call_expr(wi_compiler_t* compiler) {
 }
 
 static void
-_compiler_unary_expr(wi_compiler_t* compiler) {
+_compiler_unary_expr(struct wi_compiler* compiler) {
     if (wi_parser_match(compiler->parser, WI_TOKEN_HASH)) {
         _compiler_unary_expr(compiler);
         _compiler_emit_opcode(compiler, WI_OP_LEN);
@@ -862,7 +862,7 @@ _compiler_unary_expr(wi_compiler_t* compiler) {
 }
 
 static void
-_compiler_power_expr(wi_compiler_t* compiler) {
+_compiler_power_expr(struct wi_compiler* compiler) {
     _compiler_unary_expr(compiler);
 
     if (wi_parser_match(compiler->parser, WI_TOKEN_STAR_STAR)) {
@@ -872,12 +872,12 @@ _compiler_power_expr(wi_compiler_t* compiler) {
 }
 
 static void
-_compiler_factor_expr(wi_compiler_t* compiler) {
+_compiler_factor_expr(struct wi_compiler* compiler) {
     _compiler_power_expr(compiler);
 
     while (wi_parser_match(compiler->parser, WI_TOKEN_STAR) || wi_parser_match(compiler->parser, WI_TOKEN_SLASH) ||
            wi_parser_match(compiler->parser, WI_TOKEN_PERCENT)) {
-        wi_opcode_t opcode;
+        uint8_t opcode;
 
         switch (compiler->parser->prev.kind) {
             case WI_TOKEN_STAR:
@@ -897,30 +897,30 @@ _compiler_factor_expr(wi_compiler_t* compiler) {
 }
 
 static void
-_compiler_term_expr(wi_compiler_t* compiler) {
+_compiler_term_expr(struct wi_compiler* compiler) {
     _compiler_factor_expr(compiler);
 
     while (wi_parser_match(compiler->parser, WI_TOKEN_PLUS) || wi_parser_match(compiler->parser, WI_TOKEN_MINUS)) {
-        wi_opcode_t opcode = compiler->parser->prev.kind == WI_TOKEN_PLUS ? WI_OP_ADD : WI_OP_SUBTRACT;
+        uint8_t opcode = compiler->parser->prev.kind == WI_TOKEN_PLUS ? WI_OP_ADD : WI_OP_SUBTRACT;
         _compiler_factor_expr(compiler);
         _compiler_emit_opcode(compiler, opcode);
     }
 }
 
 static void
-_compiler_shift_expr(wi_compiler_t* compiler) {
+_compiler_shift_expr(struct wi_compiler* compiler) {
     _compiler_term_expr(compiler);
 
     while (wi_parser_match(compiler->parser, WI_TOKEN_GREATER_GREATER) ||
            wi_parser_match(compiler->parser, WI_TOKEN_LESS_LESS)) {
-        wi_opcode_t opcode = compiler->parser->prev.kind == WI_TOKEN_LESS_LESS ? WI_OP_BIT_SHL : WI_OP_BIT_SHR;
+        uint8_t opcode = compiler->parser->prev.kind == WI_TOKEN_LESS_LESS ? WI_OP_BIT_SHL : WI_OP_BIT_SHR;
         _compiler_term_expr(compiler);
         _compiler_emit_opcode(compiler, opcode);
     }
 }
 
 static void
-_compiler_bit_and_expr(wi_compiler_t* compiler) {
+_compiler_bit_and_expr(struct wi_compiler* compiler) {
     _compiler_shift_expr(compiler);
 
     while (wi_parser_match(compiler->parser, WI_TOKEN_AMPER)) {
@@ -930,7 +930,7 @@ _compiler_bit_and_expr(wi_compiler_t* compiler) {
 }
 
 static void
-_compiler_bit_xor_expr(wi_compiler_t* compiler) {
+_compiler_bit_xor_expr(struct wi_compiler* compiler) {
     _compiler_bit_and_expr(compiler);
 
     while (wi_parser_match(compiler->parser, WI_TOKEN_CARET)) {
@@ -940,7 +940,7 @@ _compiler_bit_xor_expr(wi_compiler_t* compiler) {
 }
 
 static void
-_compiler_bit_or_expr(wi_compiler_t* compiler) {
+_compiler_bit_or_expr(struct wi_compiler* compiler) {
     _compiler_bit_xor_expr(compiler);
 
     while (wi_parser_match(compiler->parser, WI_TOKEN_PIPE)) {
@@ -950,14 +950,14 @@ _compiler_bit_or_expr(wi_compiler_t* compiler) {
 }
 
 static void
-_compiler_comparison_expr(wi_compiler_t* compiler) {
+_compiler_comparison_expr(struct wi_compiler* compiler) {
     _compiler_bit_or_expr(compiler);
 
     while (wi_parser_match(compiler->parser, WI_TOKEN_GREATER) ||
            wi_parser_match(compiler->parser, WI_TOKEN_GREATER_EQUAL) ||
            wi_parser_match(compiler->parser, WI_TOKEN_LESS) ||
            wi_parser_match(compiler->parser, WI_TOKEN_LESS_EQUAL)) {
-        wi_opcode_t opcode;
+        uint8_t opcode;
 
         switch (compiler->parser->prev.kind) {
             case WI_TOKEN_GREATER:
@@ -980,19 +980,19 @@ _compiler_comparison_expr(wi_compiler_t* compiler) {
 }
 
 static void
-_compiler_equality_expr(wi_compiler_t* compiler) {
+_compiler_equality_expr(struct wi_compiler* compiler) {
     _compiler_comparison_expr(compiler);
 
     while (wi_parser_match(compiler->parser, WI_TOKEN_EQUAL_EQUAL) ||
            wi_parser_match(compiler->parser, WI_TOKEN_BANG_EQUAL)) {
-        wi_opcode_t opcode = compiler->parser->prev.kind == WI_TOKEN_EQUAL_EQUAL ? WI_OP_EQUAL : WI_OP_NOT_EQUAL;
+        uint8_t opcode = compiler->parser->prev.kind == WI_TOKEN_EQUAL_EQUAL ? WI_OP_EQUAL : WI_OP_NOT_EQUAL;
         _compiler_comparison_expr(compiler);
         _compiler_emit_opcode(compiler, opcode);
     }
 }
 
 static void
-_compiler_log_and_expr(wi_compiler_t* compiler) {
+_compiler_log_and_expr(struct wi_compiler* compiler) {
     _compiler_equality_expr(compiler);
 
     while (wi_parser_match(compiler->parser, WI_TOKEN_AMPER_AMPER)) {
@@ -1003,7 +1003,7 @@ _compiler_log_and_expr(wi_compiler_t* compiler) {
 }
 
 static void
-_compiler_log_or_expr(wi_compiler_t* compiler) {
+_compiler_log_or_expr(struct wi_compiler* compiler) {
     _compiler_log_and_expr(compiler);
 
     while (wi_parser_match(compiler->parser, WI_TOKEN_PIPE_PIPE)) {
@@ -1014,7 +1014,7 @@ _compiler_log_or_expr(wi_compiler_t* compiler) {
 }
 
 static void
-_compiler_concat_expr(wi_compiler_t* compiler) {
+_compiler_concat_expr(struct wi_compiler* compiler) {
     _compiler_log_or_expr(compiler);
 
     while (wi_parser_match(compiler->parser, WI_TOKEN_DOT_DOT)) {
@@ -1024,7 +1024,7 @@ _compiler_concat_expr(wi_compiler_t* compiler) {
 }
 
 static void
-_compiler_assignment_expr(wi_compiler_t* compiler) {
+_compiler_assignment_expr(struct wi_compiler* compiler) {
     if (!wi_parser_check(compiler->parser, WI_TOKEN_NAME) || compiler->parser->next.kind != WI_TOKEN_EQUAL) {
         _compiler_concat_expr(compiler);
         return;
@@ -1035,28 +1035,28 @@ _compiler_assignment_expr(wi_compiler_t* compiler) {
 }
 
 static void
-_compiler_expr(wi_compiler_t* compiler) {
+_compiler_expr(struct wi_compiler* compiler) {
     _compiler_assignment_expr(compiler);
 }
 
 static void
-_compiler_expr_stmt(wi_compiler_t* compiler) {
+_compiler_expr_stmt(struct wi_compiler* compiler) {
     _compiler_expr(compiler);
     _compiler_emit_opcode(compiler, WI_OP_POP);
     wi_parser_expect(compiler->parser, WI_TOKEN_SEMICOLON);
 }
 
 static void
-_compiler_block_stmt(wi_compiler_t* compiler) {
+_compiler_block_stmt(struct wi_compiler* compiler) {
     _compiler_begin_scope(compiler);
     _compiler_block(compiler);
     _compiler_end_scope(compiler);
 }
 
 static void
-_compiler_var_stmt(wi_compiler_t* compiler) {
-    wi_token_t name    = wi_parser_expect(compiler->parser, WI_TOKEN_NAME);
-    compiler->var_name = name;
+_compiler_var_stmt(struct wi_compiler* compiler) {
+    struct wi_token name = wi_parser_expect(compiler->parser, WI_TOKEN_NAME);
+    compiler->var_name   = name;
     _compiler_decl_var(compiler, name);
 
     wi_parser_expect(compiler->parser, WI_TOKEN_EQUAL);
@@ -1068,7 +1068,7 @@ _compiler_var_stmt(wi_compiler_t* compiler) {
 }
 
 static void
-_compiler_if_stmt(wi_compiler_t* compiler) {
+_compiler_if_stmt(struct wi_compiler* compiler) {
     wi_parser_expect(compiler->parser, WI_TOKEN_OPEN_PAREN);
     _compiler_expr(compiler);
     wi_parser_expect(compiler->parser, WI_TOKEN_CLOSE_PAREN);
@@ -1087,7 +1087,7 @@ _compiler_if_stmt(wi_compiler_t* compiler) {
 }
 
 static void
-_compiler_while_stmt(wi_compiler_t* compiler) {
+_compiler_while_stmt(struct wi_compiler* compiler) {
     int enclosing_start       = compiler->innermost_loop_start;
     int enclosing_scope_depth = compiler->innermost_loop_scope_depth;
 
@@ -1110,7 +1110,7 @@ _compiler_while_stmt(wi_compiler_t* compiler) {
 }
 
 static void
-_compiler_for_init(wi_compiler_t* compiler) {
+_compiler_for_init(struct wi_compiler* compiler) {
     if (wi_parser_match(compiler->parser, WI_TOKEN_SEMICOLON)) {
         return;
     }
@@ -1123,7 +1123,7 @@ _compiler_for_init(wi_compiler_t* compiler) {
 }
 
 static int
-_compiler_for_cond(wi_compiler_t* compiler) {
+_compiler_for_cond(struct wi_compiler* compiler) {
     if (wi_parser_match(compiler->parser, WI_TOKEN_SEMICOLON)) {
         return -1;
     }
@@ -1135,7 +1135,7 @@ _compiler_for_cond(wi_compiler_t* compiler) {
 }
 
 static void
-_compiler_for_incr(wi_compiler_t* compiler) {
+_compiler_for_incr(struct wi_compiler* compiler) {
     if (wi_parser_match(compiler->parser, WI_TOKEN_CLOSE_PAREN)) {
         return;
     }
@@ -1153,7 +1153,7 @@ _compiler_for_incr(wi_compiler_t* compiler) {
 }
 
 static void
-_compiler_for_stmt(wi_compiler_t* compiler) {
+_compiler_for_stmt(struct wi_compiler* compiler) {
     _compiler_begin_scope(compiler);
     wi_parser_expect(compiler->parser, WI_TOKEN_OPEN_PAREN);
 
@@ -1183,7 +1183,7 @@ _compiler_for_stmt(wi_compiler_t* compiler) {
 }
 
 static void
-_compiler_break_stmt(wi_compiler_t* compiler) {
+_compiler_break_stmt(struct wi_compiler* compiler) {
     if (compiler->innermost_loop_start == -1) {
         wi_parser_error_at_prev(compiler->parser, "cannot use 'break' outside of a loop");
     }
@@ -1194,7 +1194,7 @@ _compiler_break_stmt(wi_compiler_t* compiler) {
 }
 
 static void
-_compiler_continue_stmt(wi_compiler_t* compiler) {
+_compiler_continue_stmt(struct wi_compiler* compiler) {
     if (compiler->innermost_loop_start == -1) {
         wi_parser_error_at_prev(compiler->parser, "cannot use 'continue' outside of a loop");
     }
@@ -1205,7 +1205,7 @@ _compiler_continue_stmt(wi_compiler_t* compiler) {
 }
 
 static void
-_compiler_return_stmt(wi_compiler_t* compiler) {
+_compiler_return_stmt(struct wi_compiler* compiler) {
     if (!compiler->outer) {
         wi_parser_error_at_prev(compiler->parser, "cannot return from top-level code");
     }
@@ -1231,20 +1231,20 @@ _compiler_return_stmt(wi_compiler_t* compiler) {
 }
 
 static void
-_compiler_require_stmt(wi_compiler_t* compiler) {
+_compiler_require_stmt(struct wi_compiler* compiler) {
     if (compiler->outer || compiler->scope_depth > 0) {
         wi_parser_error_at_prev(compiler->parser, "can only require files from top-level code");
     }
 
-    wi_token_t   path     = wi_parser_expect(compiler->parser, WI_TOKEN_LIT_STRING);
-    wi_string_t* path_box = wi_copy_cstring(compiler->state->gc, path.start + 1, path.len - 2);
+    struct wi_token   path     = wi_parser_expect(compiler->parser, WI_TOKEN_LIT_STRING);
+    struct wi_string* path_box = wi_copy_cstring(compiler->state->gc, path.start + 1, path.len - 2);
 
     if (!compiler->state->require_exists(compiler->state, path_box->chars)) {
         wi_parser_error_at(compiler->parser, path, "file %s does not exist", path_box->chars);
     }
 
     wi_parser_expect(compiler->parser, WI_TOKEN_EQUAL);
-    wi_token_t name = wi_parser_expect(compiler->parser, WI_TOKEN_NAME);
+    struct wi_token name = wi_parser_expect(compiler->parser, WI_TOKEN_NAME);
     _compiler_decl_var(compiler, name);
 
     wi_parser_expect(compiler->parser, WI_TOKEN_SEMICOLON);
@@ -1257,7 +1257,7 @@ _compiler_require_stmt(wi_compiler_t* compiler) {
 }
 
 static void
-_compiler_stmt(wi_compiler_t* compiler) {
+_compiler_stmt(struct wi_compiler* compiler) {
     switch (compiler->parser->curr.kind) {
         case WI_TOKEN_OPEN_BRACE:
             wi_parser_advance(compiler->parser);
@@ -1301,18 +1301,18 @@ _compiler_stmt(wi_compiler_t* compiler) {
     }
 }
 
-wi_prototype_t*
-wi_compile(wi_state_t* state, const char* file_path, const char* src, wi_table_t* globals) {
-    wi_lexer_t lexer;
+struct wi_prototype*
+wi_compile(struct wi_state* state, const char* file_path, const char* src, struct wi_table* globals) {
+    struct wi_lexer lexer;
     wi_lexer_init(&lexer, file_path, src);
 
-    wi_parser_t* parser = wi_new_parser(&lexer, state->gc);
+    struct wi_parser* parser = wi_new_parser(&lexer, state->gc);
 
     if (!parser) {
         wi_state_oom(state, "out of memory: failed to allocate the parser");
     }
 
-    wi_compiler_t* compiler = wi_new_compiler(NULL, state, parser, globals);
+    struct wi_compiler* compiler = wi_new_compiler(NULL, state, parser, globals);
 
     if (!compiler) {
         wi_delete_parser(parser);
@@ -1324,7 +1324,7 @@ wi_compile(wi_state_t* state, const char* file_path, const char* src, wi_table_t
             _compiler_stmt(compiler);
         }
 
-        wi_prototype_t* prototype = _compiler_end(compiler);
+        struct wi_prototype* prototype = _compiler_end(compiler);
 
         wi_delete_parser(parser);
         wi_delete_compiler(compiler);

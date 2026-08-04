@@ -14,9 +14,9 @@
 #include "wi_table.h"
 #include "wi_value.h"
 
-wi_gc_t*
-wi_new_gc(wi_conf_t conf) {
-    wi_gc_t* gc = malloc(sizeof(wi_gc_t));
+struct wi_gc*
+wi_new_gc(wi_conf conf) {
+    struct wi_gc* gc = malloc(sizeof(struct wi_gc));
 
     if (!gc) {
         return NULL;
@@ -44,14 +44,14 @@ wi_new_gc(wi_conf_t conf) {
 }
 
 static void
-_gc_free_box(wi_gc_t* gc, wi_box_t* box);
+_gc_free_box(struct wi_gc* gc, struct wi_box* box);
 
 void
-wi_delete_gc(wi_gc_t* gc) {
-    wi_box_t* box = gc->boxes;
+wi_delete_gc(struct wi_gc* gc) {
+    struct wi_box* box = gc->boxes;
 
     while (box) {
-        wi_box_t* next = box->next;
+        struct wi_box* next = box->next;
         _gc_free_box(gc, box);
         box = next;
     }
@@ -63,10 +63,10 @@ wi_delete_gc(wi_gc_t* gc) {
 }
 
 void
-wi_gc_push_root(wi_gc_t* gc, wi_box_t* root) {
+wi_gc_push_root(struct wi_gc* gc, struct wi_box* root) {
     if (gc->temp_root_count + 1 > gc->temp_root_capacity) {
         gc->temp_root_capacity = WI_GROW_CAPACITY(gc->temp_root_capacity);
-        gc->temp_roots         = realloc(gc->temp_roots, sizeof(wi_box_t*) * (size_t)gc->temp_root_capacity);
+        gc->temp_roots         = realloc(gc->temp_roots, sizeof(struct wi_box*) * (size_t)gc->temp_root_capacity);
 
         if (!gc->temp_roots) {
             wi_state_oom(gc->state, "out of memory: failed to allocate garbage collector temp roots");
@@ -77,7 +77,7 @@ wi_gc_push_root(wi_gc_t* gc, wi_box_t* root) {
 }
 
 void*
-wi_gc_realloc(wi_gc_t* gc, void* ptr, size_t old_size, size_t new_size) {
+wi_gc_realloc(struct wi_gc* gc, void* ptr, size_t old_size, size_t new_size) {
     gc->bytes_allocated += new_size - old_size;
 
     if (new_size > old_size) {
@@ -101,73 +101,73 @@ wi_gc_realloc(wi_gc_t* gc, void* ptr, size_t old_size, size_t new_size) {
 }
 
 static void
-_gc_free_box(wi_gc_t* gc, wi_box_t* box) {
+_gc_free_box(struct wi_gc* gc, struct wi_box* box) {
     if (wi_log_gc(gc)) {
         printf("free box at %p of kind %d\n", (void*)box, box->kind);
     }
 
     switch (box->kind) {
         case WI_BOX_STRING: {
-            wi_string_t* string = (wi_string_t*)box;
+            struct wi_string* string = (struct wi_string*)box;
             WI_GC_FREE_ARRAY(gc, char, string->chars, string->len + 1);
-            WI_GC_FREE(gc, wi_string_t, box);
+            WI_GC_FREE(gc, struct wi_string, box);
             break;
         }
         case WI_BOX_ARRAY: {
-            wi_array_t* array = (wi_array_t*)box;
+            struct wi_array* array = (struct wi_array*)box;
             wi_value_buf_free(&array->items);
-            WI_GC_FREE(gc, wi_array_t, box);
+            WI_GC_FREE(gc, struct wi_array, box);
             break;
         }
         case WI_BOX_MAP: {
-            wi_map_t* map = (wi_map_t*)box;
+            struct wi_map* map = (struct wi_map*)box;
             wi_table_free(&map->items);
-            WI_GC_FREE(gc, wi_map_t, box);
+            WI_GC_FREE(gc, struct wi_map, box);
             break;
         }
         case WI_BOX_PROTOTYPE: {
-            wi_prototype_t* prototype = (wi_prototype_t*)box;
+            struct wi_prototype* prototype = (struct wi_prototype*)box;
 
             wi_byte_buf_free(&prototype->bytes);
             wi_int_buf_free(&prototype->lines);
             wi_value_buf_free(&prototype->constants);
-            WI_GC_FREE(gc, wi_prototype_t, box);
+            WI_GC_FREE(gc, struct wi_prototype, box);
 
             break;
         }
         case WI_BOX_FOREIGN:
-            WI_GC_FREE(gc, wi_foreign_t, box);
+            WI_GC_FREE(gc, struct wi_foreign, box);
             break;
         case WI_BOX_CLOSURE: {
-            wi_closure_t* closure = (wi_closure_t*)box;
-            WI_GC_FREE_ARRAY(gc, wi_upvalue_t*, closure->upvalues, closure->upvalue_count);
-            WI_GC_FREE(gc, wi_closure_t, box);
+            struct wi_closure* closure = (struct wi_closure*)box;
+            WI_GC_FREE_ARRAY(gc, struct wi_upvalue*, closure->upvalues, closure->upvalue_count);
+            WI_GC_FREE(gc, struct wi_closure, box);
             break;
         }
         case WI_BOX_UPVALUE:
-            WI_GC_FREE(gc, wi_upvalue_t, box);
+            WI_GC_FREE(gc, struct wi_upvalue, box);
             break;
         case WI_BOX_OBJECT: {
-            wi_object_t* object = (wi_object_t*)box;
+            struct wi_object* object = (struct wi_object*)box;
             wi_table_free(&object->fields);
-            WI_GC_FREE(gc, wi_object_t, box);
+            WI_GC_FREE(gc, struct wi_object, box);
             break;
         }
         case WI_BOX_USERDATA: {
-            wi_userdata_t* userdata = (wi_userdata_t*)box;
+            struct wi_userdata* userdata = (struct wi_userdata*)box;
 
             if (userdata->data && userdata->finalizer) {
                 userdata->finalizer(userdata->data);
             }
 
-            WI_GC_FREE(gc, wi_userdata_t, box);
+            WI_GC_FREE(gc, struct wi_userdata, box);
             break;
         }
     }
 }
 
 static void
-_gc_mark_box(wi_gc_t* gc, wi_box_t* box) {
+_gc_mark_box(struct wi_gc* gc, struct wi_box* box) {
     if (!box) {
         return;
     }
@@ -190,7 +190,7 @@ _gc_mark_box(wi_gc_t* gc, wi_box_t* box) {
 
     if (gc->gray_count + 1 > gc->gray_capacity) {
         gc->gray_capacity = WI_GROW_CAPACITY(gc->gray_capacity);
-        gc->gray_stack    = realloc(gc->gray_stack, sizeof(wi_box_t*) * (size_t)gc->gray_capacity);
+        gc->gray_stack    = realloc(gc->gray_stack, sizeof(struct wi_box*) * (size_t)gc->gray_capacity);
 
         if (!gc->gray_stack) {
             wi_state_oom(gc->state, "out of memory: failed to allocate garbage collector gray stack");
@@ -200,65 +200,67 @@ _gc_mark_box(wi_gc_t* gc, wi_box_t* box) {
     gc->gray_stack[gc->gray_count++] = box;
 }
 
+#define _GC_MARK_BOX(gc, box) _gc_mark_box(gc, (struct wi_box*)box)
+
 static void
-_gc_mark_value(wi_gc_t* gc, wi_value_t value) {
+_gc_mark_value(struct wi_gc* gc, wi_value value) {
     if (!wi_value_is_box(value)) {
         return;
     }
 
-    _gc_mark_box(gc, wi_value_as_box(value));
+    _GC_MARK_BOX(gc, wi_value_as_box(value));
 }
 
 static void
-_gc_mark_value_buf(wi_gc_t* gc, wi_value_buf_t* buf) {
+_gc_mark_value_buf(struct wi_gc* gc, struct wi_value_buf* buf) {
     for (int i = 0; i < buf->count; i++) {
         _gc_mark_value(gc, buf->data[i]);
     }
 }
 
 static void
-_gc_mark_table(wi_gc_t* gc, wi_table_t* table) {
+_gc_mark_table(struct wi_gc* gc, struct wi_table* table) {
     for (int i = 0; i < table->capacity; i++) {
-        wi_entry_t* entry = &table->entries[i];
+        struct wi_entry* entry = &table->entries[i];
         _gc_mark_value(gc, entry->key);
         _gc_mark_value(gc, entry->value);
     }
 }
 
 static void
-_gc_mark_compiler(wi_gc_t* gc) {
+_gc_mark_compiler(struct wi_gc* gc) {
     if (!gc->compiler) {
         return;
     }
 
-    wi_compiler_t* compiler = gc->compiler;
+    struct wi_compiler* compiler = gc->compiler;
 
     while (compiler) {
         _gc_mark_table(gc, compiler->globals);
-        _gc_mark_box(gc, (wi_box_t*)compiler->prototype);
-        _gc_mark_box(gc, (wi_box_t*)compiler->constants);
+        _GC_MARK_BOX(gc, compiler->prototype);
+        _GC_MARK_BOX(gc, compiler->constants);
         compiler = compiler->outer;
     }
 }
 
 static void
-_gc_mark_roots(wi_gc_t* gc) {
+_gc_mark_roots(struct wi_gc* gc) {
     for (int i = 0; i < gc->temp_root_count; i++) {
-        _gc_mark_box(gc, gc->temp_roots[i]);
+        _GC_MARK_BOX(gc, gc->temp_roots[i]);
     }
 
     _gc_mark_compiler(gc);
-    wi_state_t* state = gc->state;
+    struct wi_state* state = gc->state;
 
     for (int i = 0; i < state->recovery_count; i++) {
-        _gc_mark_box(gc, (wi_box_t*)state->recoveries[i].error);
+        _GC_MARK_BOX(gc, state->recoveries[i].error);
     }
 
     for (int i = 0; i < state->frame_count; i++) {
-        _gc_mark_box(gc, (wi_box_t*)state->frames[i].closure);
+        _GC_MARK_BOX(gc, state->frames[i].closure);
     }
 
-    for (wi_value_t* slot = state->stack; slot < state->stack_top; slot++) {
+    for (wi_value* slot = state->stack; slot < state->stack_top; slot++) {
         _gc_mark_value(gc, *slot);
     }
 
@@ -266,17 +268,17 @@ _gc_mark_roots(wi_gc_t* gc) {
     _gc_mark_table(gc, &state->required);
     _gc_mark_table(gc, &state->foreign);
 
-    for (wi_upvalue_t* upvalue = state->open_upvalues; upvalue; upvalue = upvalue->next) {
-        _gc_mark_box(gc, (wi_box_t*)upvalue);
+    for (struct wi_upvalue* upvalue = state->open_upvalues; upvalue; upvalue = upvalue->next) {
+        _GC_MARK_BOX(gc, upvalue);
     }
 
-    _gc_mark_box(gc, (wi_box_t*)state->ok_str);
-    _gc_mark_box(gc, (wi_box_t*)state->value_str);
-    _gc_mark_box(gc, (wi_box_t*)state->error_str);
+    _GC_MARK_BOX(gc, state->ok_str);
+    _GC_MARK_BOX(gc, state->value_str);
+    _GC_MARK_BOX(gc, state->error_str);
 }
 
 static void
-_gc_blacken_box(wi_gc_t* gc, wi_box_t* box) {
+_gc_blacken_box(struct wi_gc* gc, struct wi_box* box) {
     if (wi_log_gc(gc)) {
         printf("blacken box at %p ", (void*)box);
         wi_value_print(WI_MAKE_BOX_VALUE(box));
@@ -287,67 +289,69 @@ _gc_blacken_box(wi_gc_t* gc, wi_box_t* box) {
         case WI_BOX_STRING:
             break;
         case WI_BOX_ARRAY: {
-            wi_array_t* array = (wi_array_t*)box;
+            struct wi_array* array = (struct wi_array*)box;
             _gc_mark_value_buf(gc, &array->items);
             break;
         }
         case WI_BOX_MAP: {
-            wi_map_t* map = (wi_map_t*)box;
+            struct wi_map* map = (struct wi_map*)box;
             _gc_mark_table(gc, &map->items);
             break;
         }
         case WI_BOX_PROTOTYPE: {
-            wi_prototype_t* prototype = (wi_prototype_t*)box;
-            _gc_mark_box(gc, (wi_box_t*)prototype->name);
+            struct wi_prototype* prototype = (struct wi_prototype*)box;
+            _GC_MARK_BOX(gc, prototype->name);
             _gc_mark_value_buf(gc, &prototype->constants);
             break;
         }
         case WI_BOX_FOREIGN: {
-            wi_foreign_t* foreign = (wi_foreign_t*)box;
-            _gc_mark_box(gc, (wi_box_t*)foreign->name);
+            struct wi_foreign* foreign = (struct wi_foreign*)box;
+            _GC_MARK_BOX(gc, foreign->name);
             break;
         }
         case WI_BOX_CLOSURE: {
-            wi_closure_t* closure = (wi_closure_t*)box;
-            _gc_mark_box(gc, (wi_box_t*)closure->prototype);
+            struct wi_closure* closure = (struct wi_closure*)box;
+            _GC_MARK_BOX(gc, closure->prototype);
 
             for (int i = 0; i < closure->upvalue_count; i++) {
-                _gc_mark_box(gc, (wi_box_t*)closure->upvalues[i]);
+                _GC_MARK_BOX(gc, closure->upvalues[i]);
             }
 
             break;
         }
         case WI_BOX_UPVALUE: {
-            wi_upvalue_t* upvalue = (wi_upvalue_t*)box;
+            struct wi_upvalue* upvalue = (struct wi_upvalue*)box;
             _gc_mark_value(gc, upvalue->closed);
             break;
         }
         case WI_BOX_OBJECT: {
-            wi_object_t* object = (wi_object_t*)box;
-            _gc_mark_box(gc, (wi_box_t*)object->name);
+            struct wi_object* object = (struct wi_object*)box;
+            _GC_MARK_BOX(gc, object->name);
             _gc_mark_table(gc, &object->fields);
             break;
         }
         case WI_BOX_USERDATA: {
-            wi_userdata_t* userdata = (wi_userdata_t*)box;
-            _gc_mark_box(gc, (wi_box_t*)userdata->name);
+            struct wi_userdata* userdata = (struct wi_userdata*)box;
+            _GC_MARK_BOX(gc, userdata->name);
             break;
         }
     }
 }
 
+#undef _GC_MARK_BOX
+
 static void
-_gc_trace_refs(wi_gc_t* gc) {
+_gc_trace_refs(struct wi_gc* gc) {
     while (gc->gray_count > 0) {
-        wi_box_t* box = gc->gray_stack[--gc->gray_count];
+        struct wi_box* box = gc->gray_stack[--gc->gray_count];
         _gc_blacken_box(gc, box);
     }
 }
 
 static void
-_gc_sweep(wi_gc_t* gc) {
-    wi_box_t* prev = NULL;
-    wi_box_t* box  = gc->boxes;
+_gc_sweep(struct wi_gc* gc) {
+    struct wi_box* prev = NULL;
+    struct wi_box* box  = gc->boxes;
 
     while (box) {
         if (box->is_marked) {
@@ -355,8 +359,8 @@ _gc_sweep(wi_gc_t* gc) {
             prev           = box;
             box            = box->next;
         } else {
-            wi_box_t* unreached = box;
-            box                 = box->next;
+            struct wi_box* unreached = box;
+            box                      = box->next;
 
             if (prev) {
                 prev->next = box;
@@ -370,7 +374,7 @@ _gc_sweep(wi_gc_t* gc) {
 }
 
 void
-wi_gc_collect_garbage(wi_gc_t* gc) {
+wi_gc_collect_garbage(struct wi_gc* gc) {
     size_t before = gc->bytes_allocated;
 
     if (wi_log_gc(gc)) {

@@ -4,7 +4,6 @@
 #include <stdio.h>
 
 #define WI_NORETURN __attribute__((noreturn))
-
 #define WI_UNLIKELY(x) __builtin_expect(!!(x), 0)
 
 char*

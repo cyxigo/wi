@@ -3,8 +3,8 @@
 #include "../core/wi_state.h"
 #include "../include/wi.h"
 
-static wi_map_t*
-_check_arg_map(wi_state_t* state, int slot) {
+static struct wi_map*
+_check_arg_map(struct wi_state* state, int slot) {
     if (!wi_value_is_map(state->ffi_stack[slot])) {
         wi_state_error(state, "bad argument %i - expected a value of type map but got %s", slot,
                        wi_value_type(state->ffi_stack[slot]));
@@ -13,48 +13,48 @@ _check_arg_map(wi_state_t* state, int slot) {
     return wi_value_as_map(state->ffi_stack[slot]);
 }
 
-static wi_map_t*
-_check_arg1_map(wi_state_t* state) {
+static struct wi_map*
+_check_arg1_map(struct wi_state* state) {
     return _check_arg_map(state, 1);
 }
 
-static wi_map_t*
-_check_arg2_map(wi_state_t* state) {
+static struct wi_map*
+_check_arg2_map(struct wi_state* state) {
     return _check_arg_map(state, 2);
 }
 
 static void
-_map_copy(wi_state_t* state, int arg_count) {
-    wi_map_t* src       = _check_arg1_map(state);
-    wi_map_t* dest      = wi_new_map(state->gc);
+_map_copy(struct wi_state* state, int arg_count) {
+    struct wi_map* src  = _check_arg1_map(state);
+    struct wi_map* dest = wi_new_map(state->gc);
     state->ffi_stack[0] = WI_MAKE_BOX_VALUE(dest);
     wi_table_copy(&src->items, &dest->items);
 }
 
 static void
-_map_clear(wi_state_t* state, int arg_count) {
-    wi_map_t* map = _check_arg1_map(state);
+_map_clear(struct wi_state* state, int arg_count) {
+    struct wi_map* map = _check_arg1_map(state);
     wi_table_free(&map->items);
     wi_slot_set_null(state, 0);
 }
 
 static void
-_map_capacity(wi_state_t* state, int arg_count) {
-    wi_map_t* map = _check_arg1_map(state);
+_map_capacity(struct wi_state* state, int arg_count) {
+    struct wi_map* map = _check_arg1_map(state);
     wi_slot_set_real(state, 0, map->items.capacity);
 }
 
 static void
-_map_count(wi_state_t* state, int arg_count) {
-    wi_map_t* map = _check_arg1_map(state);
+_map_count(struct wi_state* state, int arg_count) {
+    struct wi_map* map = _check_arg1_map(state);
     wi_slot_set_real(state, 0, map->items.live_count);
 }
 
 static void
-_map_equals(wi_state_t* state, int arg_count) {
-    wi_map_t* a      = _check_arg1_map(state);
-    wi_map_t* b      = _check_arg2_map(state);
-    bool      equals = false;
+_map_equals(struct wi_state* state, int arg_count) {
+    struct wi_map* a      = _check_arg1_map(state);
+    struct wi_map* b      = _check_arg2_map(state);
+    bool           equals = false;
 
     int a_count = a->items.live_count;
     int b_count = b->items.live_count;
@@ -64,13 +64,13 @@ _map_equals(wi_state_t* state, int arg_count) {
     }
 
     for (int i = 0; i < a->items.capacity; i++) {
-        wi_entry_t* entry = &a->items.entries[i];
+        struct wi_entry* entry = &a->items.entries[i];
 
         if (wi_value_is_empty(entry->key)) {
             continue;
         }
 
-        wi_value_t b_value;
+        wi_value b_value;
 
         if (!wi_table_get(&b->items, entry->key, &b_value) || !wi_values_equal(entry->value, b_value)) {
             goto end;
@@ -83,15 +83,15 @@ end:
 }
 
 static void
-_map_keys(wi_state_t* state, int arg_count) {
-    wi_map_t*   map     = _check_arg1_map(state);
-    wi_array_t* result  = wi_new_array(state->gc);
-    state->ffi_stack[0] = WI_MAKE_BOX_VALUE(result);
+_map_keys(struct wi_state* state, int arg_count) {
+    struct wi_map*   map    = _check_arg1_map(state);
+    struct wi_array* result = wi_new_array(state->gc);
+    state->ffi_stack[0]     = WI_MAKE_BOX_VALUE(result);
 
     wi_value_buf_reserve(&result->items, map->items.count);
 
     for (int i = 0; i < map->items.capacity; i++) {
-        wi_entry_t* entry = &map->items.entries[i];
+        struct wi_entry* entry = &map->items.entries[i];
 
         if (!wi_value_is_empty(entry->key)) {
             wi_value_buf_add(&result->items, entry->key);
@@ -100,15 +100,15 @@ _map_keys(wi_state_t* state, int arg_count) {
 }
 
 static void
-_map_values(wi_state_t* state, int arg_count) {
-    wi_map_t*   map     = _check_arg1_map(state);
-    wi_array_t* result  = wi_new_array(state->gc);
-    state->ffi_stack[0] = WI_MAKE_BOX_VALUE(result);
+_map_values(struct wi_state* state, int arg_count) {
+    struct wi_map*   map    = _check_arg1_map(state);
+    struct wi_array* result = wi_new_array(state->gc);
+    state->ffi_stack[0]     = WI_MAKE_BOX_VALUE(result);
 
     wi_value_buf_reserve(&result->items, map->items.count);
 
     for (int i = 0; i < map->items.capacity; i++) {
-        wi_entry_t* entry = &map->items.entries[i];
+        struct wi_entry* entry = &map->items.entries[i];
 
         if (!wi_value_is_empty(entry->key)) {
             wi_value_buf_add(&result->items, entry->value);
@@ -117,16 +117,16 @@ _map_values(wi_state_t* state, int arg_count) {
 }
 
 static void
-_map_has(wi_state_t* state, int arg_count) {
-    wi_map_t* map    = _check_arg1_map(state);
-    bool      exists = wi_table_get(&map->items, state->ffi_stack[2], NULL);
+_map_has(struct wi_state* state, int arg_count) {
+    struct wi_map* map    = _check_arg1_map(state);
+    bool           exists = wi_table_get(&map->items, state->ffi_stack[2], NULL);
     wi_slot_set_bool(state, 0, exists);
 }
 
 static void
-_map_get_or_default(wi_state_t* state, int arg_count) {
-    wi_map_t*  map = _check_arg1_map(state);
-    wi_value_t value;
+_map_get_or_default(struct wi_state* state, int arg_count) {
+    struct wi_map* map = _check_arg1_map(state);
+    wi_value       value;
 
     if (wi_table_get(&map->items, state->ffi_stack[2], &value)) {
         state->ffi_stack[0] = value;
@@ -137,18 +137,18 @@ _map_get_or_default(wi_state_t* state, int arg_count) {
 }
 
 static void
-_map_remove(wi_state_t* state, int arg_count) {
-    wi_map_t* map = _check_arg1_map(state);
+_map_remove(struct wi_state* state, int arg_count) {
+    struct wi_map* map = _check_arg1_map(state);
     wi_slot_set_bool(state, 0, wi_table_delete(&map->items, state->ffi_stack[2]));
 }
 
 static void
-_map_each(wi_state_t* state, int arg_count) {
-    wi_map_t*     map     = _check_arg1_map(state);
-    wi_closure_t* closure = wi_slot_check_function(state, 2, 2);
+_map_each(struct wi_state* state, int arg_count) {
+    struct wi_map*     map     = _check_arg1_map(state);
+    struct wi_closure* closure = wi_slot_check_function(state, 2, 2);
 
     for (int i = 0; i < map->items.capacity; i++) {
-        wi_entry_t* entry = &map->items.entries[i];
+        struct wi_entry* entry = &map->items.entries[i];
 
         if (wi_value_is_empty(entry->key)) {
             continue;
@@ -164,8 +164,8 @@ _map_each(wi_state_t* state, int arg_count) {
 }
 
 void
-wi_state_def_map_foreign(wi_state_t* state) {
-    wi_object_t* object = wi_def_object(state, "map");
+wi_state_def_map_foreign(struct wi_state* state) {
+    struct wi_object* object = wi_def_object(state, "map");
 
     wi_object_set_field_foreign(state, object, "copy", _map_copy, 1, false);
     wi_object_set_field_foreign(state, object, "clear", _map_clear, 1, false);

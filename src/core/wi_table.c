@@ -23,9 +23,9 @@ wi_string_hash(const char* chars, int len) {
 const double WI_TABLE_MAX_LOAD = 0.75;
 
 static void
-_init_entries(wi_entry_t* entries, int capacity) {
-    wi_value_t empty = wi_make_empty_value();
-    wi_value_t null  = wi_make_null_value();
+_init_entries(struct wi_entry* entries, int capacity) {
+    wi_value empty = wi_make_empty_value();
+    wi_value null  = wi_make_null_value();
 
     for (int i = 0; i < capacity; i++) {
         entries[i].key   = empty;
@@ -34,7 +34,7 @@ _init_entries(wi_entry_t* entries, int capacity) {
 }
 
 void
-wi_table_init(wi_table_t* table, wi_gc_t* gc) {
+wi_table_init(struct wi_table* table, struct wi_gc* gc) {
     table->gc         = gc;
     table->entries    = NULL;
     table->capacity   = 0;
@@ -43,18 +43,18 @@ wi_table_init(wi_table_t* table, wi_gc_t* gc) {
 }
 
 void
-wi_table_free(wi_table_t* table) {
-    WI_GC_FREE_ARRAY(table->gc, wi_entry_t, table->entries, table->capacity);
+wi_table_free(struct wi_table* table) {
+    WI_GC_FREE_ARRAY(table->gc, struct wi_entry, table->entries, table->capacity);
     wi_table_init(table, table->gc);
 }
 
-static wi_entry_t*
-_find_entry(wi_entry_t* entries, int capacity, wi_value_t key) {
-    uint32_t    index     = wi_value_hash(key) & (uint32_t)(capacity - 1);
-    wi_entry_t* tombstone = NULL;
+static struct wi_entry*
+_find_entry(struct wi_entry* entries, int capacity, wi_value key) {
+    uint32_t         index     = wi_value_hash(key) & (uint32_t)(capacity - 1);
+    struct wi_entry* tombstone = NULL;
 
     for (;;) {
-        wi_entry_t* entry = &entries[index];
+        struct wi_entry* entry = &entries[index];
 
         if (wi_value_is_empty(entry->key)) {
             if (wi_value_is_null(entry->value)) {
@@ -71,39 +71,39 @@ _find_entry(wi_entry_t* entries, int capacity, wi_value_t key) {
 }
 
 static void
-_table_adjust_capacity(wi_table_t* table, int capacity) {
-    wi_entry_t* entries = WI_GC_ALLOC(table->gc, wi_entry_t, capacity);
+_table_adjust_capacity(struct wi_table* table, int capacity) {
+    struct wi_entry* entries = WI_GC_ALLOC(table->gc, struct wi_entry, capacity);
     _init_entries(entries, capacity);
 
     table->count = 0;
 
     for (int i = 0; i < table->capacity; i++) {
-        wi_entry_t* entry = &table->entries[i];
+        struct wi_entry* entry = &table->entries[i];
 
         if (wi_value_is_empty(entry->key)) {
             continue;
         }
 
-        wi_entry_t* new_entry = _find_entry(entries, capacity, entry->key);
-        new_entry->key        = entry->key;
-        new_entry->value      = entry->value;
+        struct wi_entry* new_entry = _find_entry(entries, capacity, entry->key);
+        new_entry->key             = entry->key;
+        new_entry->value           = entry->value;
         table->count++;
     }
 
-    WI_GC_FREE_ARRAY(table->gc, wi_entry_t, table->entries, table->capacity);
+    WI_GC_FREE_ARRAY(table->gc, struct wi_entry, table->entries, table->capacity);
     table->capacity = capacity;
     table->entries  = entries;
 }
 
 bool
-wi_table_set(wi_table_t* table, wi_value_t key, wi_value_t value) {
+wi_table_set(struct wi_table* table, wi_value key, wi_value value) {
     if (table->count + 1 > table->capacity * WI_TABLE_MAX_LOAD) {
         int capacity = WI_GROW_CAPACITY(table->capacity);
         _table_adjust_capacity(table, capacity);
     }
 
-    wi_entry_t* entry      = _find_entry(table->entries, table->capacity, key);
-    bool        is_new_key = wi_value_is_empty(entry->key);
+    struct wi_entry* entry      = _find_entry(table->entries, table->capacity, key);
+    bool             is_new_key = wi_value_is_empty(entry->key);
 
     if (is_new_key) {
         if (wi_value_is_null(entry->value)) {
@@ -120,12 +120,12 @@ wi_table_set(wi_table_t* table, wi_value_t key, wi_value_t value) {
 }
 
 bool
-wi_table_get(wi_table_t* table, wi_value_t key, wi_value_t* value) {
+wi_table_get(struct wi_table* table, wi_value key, wi_value* value) {
     if (table->count == 0) {
         return false;
     }
 
-    wi_entry_t* entry = _find_entry(table->entries, table->capacity, key);
+    struct wi_entry* entry = _find_entry(table->entries, table->capacity, key);
 
     if (wi_value_is_empty(entry->key)) {
         return false;
@@ -139,12 +139,12 @@ wi_table_get(wi_table_t* table, wi_value_t key, wi_value_t* value) {
 }
 
 bool
-wi_table_delete(wi_table_t* table, wi_value_t key) {
+wi_table_delete(struct wi_table* table, wi_value key) {
     if (table->count == 0) {
         return false;
     }
 
-    wi_entry_t* entry = _find_entry(table->entries, table->capacity, key);
+    struct wi_entry* entry = _find_entry(table->entries, table->capacity, key);
 
     if (wi_value_is_empty(entry->key)) {
         return false;
@@ -157,8 +157,8 @@ wi_table_delete(wi_table_t* table, wi_value_t key) {
     return true;
 }
 
-wi_string_t*
-wi_table_find_string(wi_table_t* table, const char* chars, int len, uint32_t hash) {
+struct wi_string*
+wi_table_find_string(struct wi_table* table, const char* chars, int len, uint32_t hash) {
     if (table->count == 0) {
         return NULL;
     }
@@ -166,14 +166,14 @@ wi_table_find_string(wi_table_t* table, const char* chars, int len, uint32_t has
     uint32_t index = hash & (uint32_t)(table->capacity - 1);
 
     for (;;) {
-        wi_entry_t* entry = &table->entries[index];
+        struct wi_entry* entry = &table->entries[index];
 
         if (wi_value_is_empty(entry->key) && wi_value_is_null(entry->value)) {
             return NULL;
         }
 
         if (wi_value_is_string(entry->key)) {
-            wi_string_t* key = wi_value_as_string(entry->key);
+            struct wi_string* key = wi_value_as_string(entry->key);
 
             if (key->len == len && key->hash == hash && memcmp(key->chars, chars, (size_t)len) == 0) {
                 return key;
@@ -185,12 +185,12 @@ wi_table_find_string(wi_table_t* table, const char* chars, int len, uint32_t has
 }
 
 void
-wi_table_remove_white(wi_table_t* table) {
-    wi_value_t empty = wi_make_empty_value();
-    wi_value_t true_ = wi_make_true_value();
+wi_table_remove_white(struct wi_table* table) {
+    wi_value empty = wi_make_empty_value();
+    wi_value true_ = wi_make_true_value();
 
     for (int i = 0; i < table->capacity; i++) {
-        wi_entry_t* entry = &table->entries[i];
+        struct wi_entry* entry = &table->entries[i];
 
         if (wi_value_is_box(entry->key) && !wi_value_as_box(entry->key)->is_marked) {
             entry->key   = empty;
@@ -200,7 +200,7 @@ wi_table_remove_white(wi_table_t* table) {
 }
 
 void
-wi_table_reserve(wi_table_t* table, int count) {
+wi_table_reserve(struct wi_table* table, int count) {
     if (count <= 0) {
         return;
     }
@@ -218,13 +218,13 @@ wi_table_reserve(wi_table_t* table, int count) {
 }
 
 void
-wi_table_copy(wi_table_t* src, wi_table_t* dest) {
+wi_table_copy(struct wi_table* src, struct wi_table* dest) {
     if (src == dest) {
         return;
     }
 
     if (dest->entries) {
-        WI_GC_FREE_ARRAY(dest->gc, wi_entry_t, dest->entries, dest->capacity);
+        WI_GC_FREE_ARRAY(dest->gc, struct wi_entry, dest->entries, dest->capacity);
     }
 
     if (src->capacity == 0) {
@@ -232,8 +232,8 @@ wi_table_copy(wi_table_t* src, wi_table_t* dest) {
         return;
     }
 
-    wi_entry_t* entries = WI_GC_ALLOC(dest->gc, wi_entry_t, src->capacity);
-    memcpy(entries, src->entries, sizeof(wi_entry_t) * (size_t)src->capacity);
+    struct wi_entry* entries = WI_GC_ALLOC(dest->gc, struct wi_entry, src->capacity);
+    memcpy(entries, src->entries, sizeof(struct wi_entry) * (size_t)src->capacity);
 
     dest->entries    = entries;
     dest->capacity   = src->capacity;

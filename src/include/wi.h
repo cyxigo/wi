@@ -22,46 +22,46 @@
 /**
  * Wi's number type
  */
-typedef double wi_real_t;
+typedef double wi_real;
 /**
  * Opaque Wi object handle
  */
-typedef struct wi_object wi_object_t;
+typedef struct wi_object wi_object;
 
 /**
  * The result of running Wi code
  */
-typedef enum {
+typedef enum wi_run_result {
     WI_RUN_OK,    /* No errors occurred */
     WI_RUN_ERROR, /* A runtime error or a compile error occurred, also used when out of memory */
     WI_RUN_ABORT, /* Execution was aborted early via `wi_state_abort` */
-} wi_run_result_t;
+} wi_run_result;
 
 /**
  * Opaque Wi state handle
  */
-typedef struct wi_state wi_state_t;
+typedef struct wi_state wi_state;
 
 /**
  * Foreign (C) function pointer, called from Wi scripts
  */
-typedef void (*wi_foreign_fn_t)(wi_state_t* state, int arg_count);
+typedef void (*wi_foreign_fn)(wi_state* state, int arg_count);
 /**
  * Userdata finalizer - function called when the userdata gets collected by GC
  */
-typedef void (*wi_userdata_finalizer_fn_t)(void* data);
+typedef void (*wi_userdata_finalizer_fn)(void* data);
 
 /**
  * Function called in the `require` statement. Use this in a custom virtual filesystem (your app, for example).
  * Must return Wi code
  */
-typedef char* (*wi_load_require_fn_t)(wi_state_t* state, const char* path);
+typedef char* (*wi_load_require_fn)(wi_state* state, const char* path);
 
 /**
  * Function used to check whether a `require`d file exists, called at compile time.
  * Must return whether a file exists
  */
-typedef bool (*wi_require_exists_fn_t)(wi_state_t* state, const char* path);
+typedef bool (*wi_require_exists_fn)(wi_state* state, const char* path);
 
 /**
  * Define the standard library in a state
@@ -69,7 +69,7 @@ typedef bool (*wi_require_exists_fn_t)(wi_state_t* state, const char* path);
  * @param state Wi state instance
  */
 WI_API void
-wi_def_std(wi_state_t* state);
+wi_def_std(wi_state* state);
 
 /**
  * Define a foreign (C) function in the state
@@ -81,7 +81,7 @@ wi_def_std(wi_state_t* state);
  * @param is_variadic Whether function is variadic or not
  */
 WI_API void
-wi_def_foreign(wi_state_t* state, const char* name, wi_foreign_fn_t fn, int arity, bool is_variadic);
+wi_def_foreign(wi_state* state, const char* name, wi_foreign_fn fn, int arity, bool is_variadic);
 
 /**
  * Define an object in the state (global)
@@ -90,8 +90,8 @@ wi_def_foreign(wi_state_t* state, const char* name, wi_foreign_fn_t fn, int arit
  * @param name Object name
  * @return Pointer to the created object
  */
-WI_API wi_object_t*
-wi_def_object(wi_state_t* state, const char* name);
+WI_API wi_object*
+wi_def_object(wi_state* state, const char* name);
 
 /**
  * Set a real field on an object
@@ -102,7 +102,7 @@ wi_def_object(wi_state_t* state, const char* name);
  * @param real Value to set
  */
 WI_API void
-wi_object_set_field_real(wi_state_t* state, wi_object_t* object, const char* name, wi_real_t real);
+wi_object_set_field_real(wi_state* state, wi_object* object, const char* name, wi_real real);
 
 /**
  * Set a boolean field on an object
@@ -113,7 +113,7 @@ wi_object_set_field_real(wi_state_t* state, wi_object_t* object, const char* nam
  * @param boolean Value to set
  */
 WI_API void
-wi_object_set_field_bool(wi_state_t* state, wi_object_t* object, const char* name, bool boolean);
+wi_object_set_field_bool(wi_state* state, wi_object* object, const char* name, bool boolean);
 
 /**
  * Set a string field on an object
@@ -124,7 +124,7 @@ wi_object_set_field_bool(wi_state_t* state, wi_object_t* object, const char* nam
  * @param string Value to set
  */
 WI_API void
-wi_object_set_field_string(wi_state_t* state, wi_object_t* object, const char* name, char* string);
+wi_object_set_field_string(wi_state* state, wi_object* object, const char* name, char* string);
 
 /**
  * Set userdata as a field on an object
@@ -137,8 +137,8 @@ wi_object_set_field_string(wi_state_t* state, wi_object_t* object, const char* n
  * @param finalizer Userdata finalizer
  */
 WI_API void
-wi_object_set_field_userdata(wi_state_t* state, wi_object_t* object, const char* field_name, const char* name,
-                             void* userdata, wi_userdata_finalizer_fn_t finalizer);
+wi_object_set_field_userdata(wi_state* state, wi_object* object, const char* field_name, const char* name,
+                             void* userdata, wi_userdata_finalizer_fn finalizer);
 
 /**
  * Set a foreign (C) function as a field on an object
@@ -151,8 +151,8 @@ wi_object_set_field_userdata(wi_state_t* state, wi_object_t* object, const char*
  * @param is_variadic Whether function is variadic or not
  */
 WI_API void
-wi_object_set_field_foreign(wi_state_t* state, wi_object_t* object, const char* name, wi_foreign_fn_t fn,
-                            int arity, bool is_variadic);
+wi_object_set_field_foreign(wi_state* state, wi_object* object, const char* name, wi_foreign_fn fn, int arity,
+                            bool is_variadic);
 
 /**
  * Create a new Wi state instance
@@ -161,8 +161,8 @@ wi_object_set_field_foreign(wi_state_t* state, wi_object_t* object, const char* 
  * @return Created Wi state instance
  * @note Must be freed via `wi_delete_state`
  */
-WI_API wi_state_t*
-wi_new_state(wi_conf_t conf);
+WI_API wi_state*
+wi_new_state(wi_conf conf);
 
 /**
  * Delete a Wi state instance and free all associated memory
@@ -170,7 +170,7 @@ wi_new_state(wi_conf_t conf);
  * @param state Wi state instance
  */
 WI_API void
-wi_delete_state(wi_state_t* state);
+wi_delete_state(wi_state* state);
 
 /**
  * Get the error message from the last compile or runtime error
@@ -179,7 +179,7 @@ wi_delete_state(wi_state_t* state);
  * @return Error message, `NULL` if none occurred
  */
 WI_API const char*
-wi_state_get_error(wi_state_t* state);
+wi_state_get_error(wi_state* state);
 
 /**
  * Set the `require` load callback
@@ -188,7 +188,7 @@ wi_state_get_error(wi_state_t* state);
  * @param fn Load callback function
  */
 WI_API void
-wi_state_set_require_load_fn(wi_state_t* state, wi_load_require_fn_t fn);
+wi_state_set_require_load_fn(wi_state* state, wi_load_require_fn fn);
 
 /**
  * Set the `require` existence check callback
@@ -197,7 +197,7 @@ wi_state_set_require_load_fn(wi_state_t* state, wi_load_require_fn_t fn);
  * @param fn Existence check callback function
  */
 WI_API void
-wi_state_set_require_exists_fn(wi_state_t* state, wi_require_exists_fn_t fn);
+wi_state_set_require_exists_fn(wi_state* state, wi_require_exists_fn fn);
 
 /**
  * Set the command line arguments that will be available to Wi scripts via os.args
@@ -207,7 +207,7 @@ wi_state_set_require_exists_fn(wi_state_t* state, wi_require_exists_fn_t fn);
  * @param argv Array of argument strings
  */
 WI_API void
-wi_state_set_args(wi_state_t* state, int argc, const char** argv);
+wi_state_set_args(wi_state* state, int argc, const char** argv);
 
 /**
  * Throw a runtime error in the state
@@ -217,7 +217,7 @@ wi_state_set_args(wi_state_t* state, int argc, const char** argv);
  * @param ... Format arguments
  */
 WI_API void
-wi_state_error(wi_state_t* state, const char* format, ...);
+wi_state_error(wi_state* state, const char* format, ...);
 
 /**
  * Request the state to stop execution, returning `WI_RUN_ABORT` from `wi_state_run`.
@@ -228,7 +228,7 @@ wi_state_error(wi_state_t* state, const char* format, ...);
  * @param state Wi state instance
  */
 WI_API void
-wi_state_abort(wi_state_t* state);
+wi_state_abort(wi_state* state);
 
 /**
  * Request the state to stop execution as soon as possible, returning `WI_RUN_ABORT` from `wi_state_run`.
@@ -239,7 +239,7 @@ wi_state_abort(wi_state_t* state);
  * @param state Wi state instance
  */
 WI_API void
-wi_state_interrupt(wi_state_t* state);
+wi_state_interrupt(wi_state* state);
 
 /**
  * Execute Wi code
@@ -249,8 +249,8 @@ wi_state_interrupt(wi_state_t* state);
  * @param src Code string
  * @return Run result
  */
-WI_API wi_run_result_t
-wi_state_run(wi_state_t* state, const char* file_path, const char* src);
+WI_API wi_run_result
+wi_state_run(wi_state* state, const char* file_path, const char* src);
 
 /**
  * Function calling API. Example:
@@ -261,7 +261,7 @@ wi_state_run(wi_state_t* state, const char* file_path, const char* src);
  * wi_push_real(state, 20); - Push argument 2
  * wi_call(state, 2); - Call function with `2` arguments, is protected
  *
- * wi_real_t sum = wi_check_real(state); - Get the function result, with type checking
+ * wi_real sum = wi_check_real(state); - Get the function result, with type checking
  * printf("%g\n", sum); - Print it
  * ```
  */
@@ -273,7 +273,7 @@ wi_state_run(wi_state_t* state, const char* file_path, const char* src);
  * @param name Function name
  */
 WI_API bool
-wi_find_function(wi_state_t* state, const char* name);
+wi_find_function(wi_state* state, const char* name);
 
 /**
  * Check if the value at the stack top is a real value
@@ -281,7 +281,7 @@ wi_find_function(wi_state_t* state, const char* name);
  * @param state Wi state instance
  */
 WI_API bool
-wi_is_real(wi_state_t* state);
+wi_is_real(wi_state* state);
 
 /**
  * Check if the value at the stack top is a null value
@@ -289,7 +289,7 @@ wi_is_real(wi_state_t* state);
  * @param state Wi state instance
  */
 WI_API bool
-wi_is_null(wi_state_t* state);
+wi_is_null(wi_state* state);
 
 /**
  * Check if the value at the stack top is a boolean value
@@ -297,7 +297,7 @@ wi_is_null(wi_state_t* state);
  * @param state Wi state instance
  */
 WI_API bool
-wi_is_bool(wi_state_t* state);
+wi_is_bool(wi_state* state);
 
 /**
  * Check if the value at the stack top is a string value
@@ -305,7 +305,7 @@ wi_is_bool(wi_state_t* state);
  * @param state Wi state instance
  */
 WI_API bool
-wi_is_string(wi_state_t* state);
+wi_is_string(wi_state* state);
 
 /**
  * Check if the value at the stack top is userdata
@@ -313,7 +313,7 @@ wi_is_string(wi_state_t* state);
  * @param state Wi state instance
  */
 WI_API bool
-wi_is_userdata(wi_state_t* state, const char* name);
+wi_is_userdata(wi_state* state, const char* name);
 
 /**
  * Push a real value onto the stack
@@ -322,7 +322,7 @@ wi_is_userdata(wi_state_t* state, const char* name);
  * @param real Real
  */
 WI_API void
-wi_push_real(wi_state_t* state, wi_real_t real);
+wi_push_real(wi_state* state, wi_real real);
 
 /**
  * Push a null value onto the stack
@@ -330,7 +330,7 @@ wi_push_real(wi_state_t* state, wi_real_t real);
  * @param state Wi state instance
  */
 WI_API void
-wi_push_null(wi_state_t* state);
+wi_push_null(wi_state* state);
 
 /**
  * Push a boolean value onto the stack
@@ -339,7 +339,7 @@ wi_push_null(wi_state_t* state);
  * @param boolean Boolean
  */
 WI_API void
-wi_push_bool(wi_state_t* state, bool boolean);
+wi_push_bool(wi_state* state, bool boolean);
 
 /**
  * Push a string value onto the stack
@@ -348,7 +348,7 @@ wi_push_bool(wi_state_t* state, bool boolean);
  * @param string string
  */
 WI_API void
-wi_push_string(wi_state_t* state, const char* string);
+wi_push_string(wi_state* state, const char* string);
 
 /**
  * Push userdata onto the stack
@@ -359,15 +359,15 @@ wi_push_string(wi_state_t* state, const char* string);
  * @param finalizer Userdata finalizer
  */
 WI_API void
-wi_push_userdata(wi_state_t* state, const char* name, void* userdata, wi_userdata_finalizer_fn_t finalizer);
+wi_push_userdata(wi_state* state, const char* name, void* userdata, wi_userdata_finalizer_fn finalizer);
 
 /**
  * Pop a real value from the stack
  *
  * @param state Wi state instance
  */
-WI_API wi_real_t
-wi_pop_real(wi_state_t* state);
+WI_API wi_real
+wi_pop_real(wi_state* state);
 
 /**
  * Pop a null value from the stack
@@ -375,7 +375,7 @@ wi_pop_real(wi_state_t* state);
  * @param state Wi state instance
  */
 WI_API void
-wi_pop_null(wi_state_t* state);
+wi_pop_null(wi_state* state);
 
 /**
  * Pop a boolean value from the stack
@@ -383,7 +383,7 @@ wi_pop_null(wi_state_t* state);
  * @param state Wi state instance
  */
 WI_API bool
-wi_pop_bool(wi_state_t* state);
+wi_pop_bool(wi_state* state);
 
 /**
  * Pop a string value from the stack
@@ -392,7 +392,7 @@ wi_pop_bool(wi_state_t* state);
  * @param len Optional pointer to store the string length, can be `NULL`
  */
 WI_API char*
-wi_pop_string(wi_state_t* state, int* len);
+wi_pop_string(wi_state* state, int* len);
 
 /**
  * Pop userdata from the stack
@@ -400,15 +400,15 @@ wi_pop_string(wi_state_t* state, int* len);
  * @param state Wi state instance
  */
 WI_API void*
-wi_pop_userdata(wi_state_t* state);
+wi_pop_userdata(wi_state* state);
 
 /**
  * Pop a real value from the stack with type-checking
  *
  * @param state Wi state instance
  */
-WI_API wi_real_t
-wi_check_real(wi_state_t* state);
+WI_API wi_real
+wi_check_real(wi_state* state);
 
 /**
  * Pop a boolean value from the stack with type-checking
@@ -416,7 +416,7 @@ wi_check_real(wi_state_t* state);
  * @param state Wi state instance
  */
 WI_API bool
-wi_check_bool(wi_state_t* state);
+wi_check_bool(wi_state* state);
 
 /**
  * Pop a string value from the stack with type-checking
@@ -425,7 +425,7 @@ wi_check_bool(wi_state_t* state);
  * @param len Optional pointer to store the string length, can be `NULL`
  */
 WI_API char*
-wi_check_string(wi_state_t* state, int* len);
+wi_check_string(wi_state* state, int* len);
 
 /**
  * Pop userdata from the stack with type-checking
@@ -434,7 +434,7 @@ wi_check_string(wi_state_t* state, int* len);
  * @param name Userdata name, used for type checking
  */
 WI_API void*
-wi_check_userdata(wi_state_t* state, const char* name);
+wi_check_userdata(wi_state* state, const char* name);
 
 /**
  * Call a Wi function, is protected.
@@ -447,7 +447,7 @@ wi_check_userdata(wi_state_t* state, const char* name);
  * @param error Optional pointer to store the error message (if any), can be `NULL`, must be freed manually
  */
 WI_API bool
-wi_call(wi_state_t* state, uint8_t arg_count, char** error);
+wi_call(wi_state* state, uint8_t arg_count, char** error);
 
 /**
  * Slot functions are used in C functions to get arguments from the Wi caller
@@ -461,7 +461,7 @@ wi_call(wi_state_t* state, uint8_t arg_count, char** error);
  * @param slot Slot index (0-[arg_count])
  */
 WI_API bool
-wi_slot_is_real(wi_state_t* state, int slot);
+wi_slot_is_real(wi_state* state, int slot);
 
 /**
  * Check if a slot contains a null value
@@ -470,7 +470,7 @@ wi_slot_is_real(wi_state_t* state, int slot);
  * @param slot Slot index (0-[arg_count])
  */
 WI_API bool
-wi_slot_is_null(wi_state_t* state, int slot);
+wi_slot_is_null(wi_state* state, int slot);
 
 /**
  * Check if a slot contains a boolean value
@@ -479,7 +479,7 @@ wi_slot_is_null(wi_state_t* state, int slot);
  * @param slot Slot index (0-[arg_count])
  */
 WI_API bool
-wi_slot_is_bool(wi_state_t* state, int slot);
+wi_slot_is_bool(wi_state* state, int slot);
 
 /**
  * Check if a slot contains a string value
@@ -488,7 +488,7 @@ wi_slot_is_bool(wi_state_t* state, int slot);
  * @param slot Slot index (0-[arg_count])
  */
 WI_API bool
-wi_slot_is_string(wi_state_t* state, int slot);
+wi_slot_is_string(wi_state* state, int slot);
 
 /**
  * Check if a slot contains userdata
@@ -497,7 +497,7 @@ wi_slot_is_string(wi_state_t* state, int slot);
  * @param slot Slot index (0-[arg_count])
  */
 WI_API bool
-wi_slot_is_userdata(wi_state_t* state, int slot);
+wi_slot_is_userdata(wi_state* state, int slot);
 
 /**
  * Store a real value in a slot
@@ -506,7 +506,7 @@ wi_slot_is_userdata(wi_state_t* state, int slot);
  * @param slot Slot index (0-[arg_count])
  */
 WI_API void
-wi_slot_set_real(wi_state_t* state, int slot, wi_real_t real);
+wi_slot_set_real(wi_state* state, int slot, wi_real real);
 
 /**
  * Store a null value in a slot
@@ -515,7 +515,7 @@ wi_slot_set_real(wi_state_t* state, int slot, wi_real_t real);
  * @param slot Slot index (0-[arg_count])
  */
 WI_API void
-wi_slot_set_null(wi_state_t* state, int slot);
+wi_slot_set_null(wi_state* state, int slot);
 
 /**
  * Store a boolean value in a slot
@@ -524,7 +524,7 @@ wi_slot_set_null(wi_state_t* state, int slot);
  * @param slot Slot index (0-[arg_count])
  */
 WI_API void
-wi_slot_set_bool(wi_state_t* state, int slot, bool boolean);
+wi_slot_set_bool(wi_state* state, int slot, bool boolean);
 
 /**
  * Store a string value in a slot
@@ -533,7 +533,7 @@ wi_slot_set_bool(wi_state_t* state, int slot, bool boolean);
  * @param slot Slot index (0-[arg_count])
  */
 WI_API void
-wi_slot_set_string(wi_state_t* state, int slot, const char* string);
+wi_slot_set_string(wi_state* state, int slot, const char* string);
 
 /**
  * Store userdata in a slot
@@ -545,8 +545,8 @@ wi_slot_set_string(wi_state_t* state, int slot, const char* string);
  * @param finalizer Userdata finalizer
  */
 WI_API void
-wi_slot_set_userdata(wi_state_t* state, int slot, const char* name, void* userdata,
-                     wi_userdata_finalizer_fn_t finalizer);
+wi_slot_set_userdata(wi_state* state, int slot, const char* name, void* userdata,
+                     wi_userdata_finalizer_fn finalizer);
 
 /**
  * Get a real value from a slot
@@ -555,8 +555,8 @@ wi_slot_set_userdata(wi_state_t* state, int slot, const char* name, void* userda
  * @param slot Slot index (0-[arg_count])
  * @return Real stored in a slot
  */
-WI_API wi_real_t
-wi_slot_get_real(wi_state_t* state, int slot);
+WI_API wi_real
+wi_slot_get_real(wi_state* state, int slot);
 
 /**
  * Get a boolean value from a slot
@@ -566,7 +566,7 @@ wi_slot_get_real(wi_state_t* state, int slot);
  * @return Boolean stored in a slot
  */
 WI_API bool
-wi_slot_get_bool(wi_state_t* state, int slot);
+wi_slot_get_bool(wi_state* state, int slot);
 
 /**
  * Get a string value and its length from a slot
@@ -577,7 +577,7 @@ wi_slot_get_bool(wi_state_t* state, int slot);
  * @return String stored in a slot
  */
 WI_API char*
-wi_slot_get_string(wi_state_t* state, int slot, int* len);
+wi_slot_get_string(wi_state* state, int slot, int* len);
 
 /**
  * Get userdata from a slot
@@ -587,7 +587,7 @@ wi_slot_get_string(wi_state_t* state, int slot, int* len);
  * @return Userdata stored in a slot
  */
 WI_API void*
-wi_slot_get_userdata(wi_state_t* state, int slot);
+wi_slot_get_userdata(wi_state* state, int slot);
 
 /**
  * Get a real value from a slot with type-checking
@@ -596,8 +596,8 @@ wi_slot_get_userdata(wi_state_t* state, int slot);
  * @param slot Slot index (0-[arg_count])
  * @return Real stored in a slot
  */
-WI_API wi_real_t
-wi_slot_check_real(wi_state_t* state, int slot);
+WI_API wi_real
+wi_slot_check_real(wi_state* state, int slot);
 
 /**
  * Get a boolean value from a slot with type-checking
@@ -607,7 +607,7 @@ wi_slot_check_real(wi_state_t* state, int slot);
  * @return Boolean stored in a slot
  */
 WI_API bool
-wi_slot_check_bool(wi_state_t* state, int slot);
+wi_slot_check_bool(wi_state* state, int slot);
 
 /**
  * Get a string value from a slot with type-checking
@@ -618,7 +618,7 @@ wi_slot_check_bool(wi_state_t* state, int slot);
  * @return String stored in a slot
  */
 WI_API char*
-wi_slot_check_string(wi_state_t* state, int slot, int* len);
+wi_slot_check_string(wi_state* state, int slot, int* len);
 
 /**
  * Get userdata from a slot with type-checking
@@ -629,6 +629,6 @@ wi_slot_check_string(wi_state_t* state, int slot, int* len);
  * @return Userdata stored in a slot
  */
 WI_API void*
-wi_slot_check_userdata(wi_state_t* state, int slot, const char* name);
+wi_slot_check_userdata(wi_state* state, int slot, const char* name);
 
 #endif

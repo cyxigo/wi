@@ -38,20 +38,20 @@ _print_chars(char* chars, int len) {
 }
 
 static void
-_print_string(wi_string_t* string) {
+_print_string(struct wi_string* string) {
     _print_chars(string->chars, string->len);
 }
 
 static void
-_print_string_quoted(wi_string_t* string) {
+_print_string_quoted(struct wi_string* string) {
     printf("\"");
     _print_string(string);
     printf("\"");
 }
 
 static void
-_print_array(wi_array_t* array) {
-    wi_value_buf_t items = array->items;
+_print_array(struct wi_array* array) {
+    struct wi_value_buf items = array->items;
     printf("[");
 
     for (int i = 0; i < items.count; i++) {
@@ -59,7 +59,7 @@ _print_array(wi_array_t* array) {
             printf(", ");
         }
 
-        wi_value_t value = items.data[i];
+        wi_value value = items.data[i];
 
         if (wi_value_is_string(value)) {
             _print_string_quoted(wi_value_as_string(value));
@@ -72,13 +72,13 @@ _print_array(wi_array_t* array) {
 }
 
 static void
-_print_map(wi_map_t* map) {
+_print_map(struct wi_map* map) {
     printf("{ ");
-    wi_table_t* table   = &map->items;
-    int         printed = 0;
+    struct wi_table* table   = &map->items;
+    int              printed = 0;
 
     for (int i = 0; i < table->capacity; i++) {
-        wi_entry_t* entry = &table->entries[i];
+        struct wi_entry* entry = &table->entries[i];
 
         if (wi_value_is_empty(entry->key)) {
             continue;
@@ -108,7 +108,7 @@ _print_map(wi_map_t* map) {
 }
 
 static void
-_print_function(wi_prototype_t* prototype) {
+_print_function(struct wi_prototype* prototype) {
     if (prototype->is_main) {
         printf("<main function in %s at %p>", prototype->file_path, (void*)prototype);
     } else if (prototype->name) {
@@ -119,7 +119,7 @@ _print_function(wi_prototype_t* prototype) {
 }
 
 void
-wi_value_print(wi_value_t value) {
+wi_value_print(wi_value value) {
     if (wi_value_is_real(value)) {
         printf(WI_REAL_FORMAT, wi_value_as_real(value));
     } else if (wi_value_is_null(value)) {
@@ -135,14 +135,14 @@ wi_value_print(wi_value_t value) {
     } else if (wi_value_is_prototype(value)) {
         _print_function(wi_value_as_prototype(value));
     } else if (wi_value_is_foreign(value)) {
-        wi_foreign_t* foreign = wi_value_as_foreign(value);
+        struct wi_foreign* foreign = wi_value_as_foreign(value);
         printf("<foreign %s at %p>", foreign->name->chars, (void*)foreign);
     } else if (wi_value_is_closure(value)) {
         _print_function(wi_value_as_closure(value)->prototype);
     } else if (wi_value_is_upvalue(value)) {
         printf("<upvalue at %p>", (void*)wi_value_as_upvalue(value));
     } else if (wi_value_is_object(value)) {
-        wi_object_t* object = wi_value_as_object(value);
+        struct wi_object* object = wi_value_as_object(value);
 
         if (object->name) {
             printf("<object %s at %p> ", object->name->chars, (void*)object);
@@ -150,7 +150,7 @@ wi_value_print(wi_value_t value) {
             printf("<anonymous object at %p> ", (void*)object);
         }
     } else if (wi_value_is_userdata(value)) {
-        wi_userdata_t* userdata = wi_value_as_userdata(value);
+        struct wi_userdata* userdata = wi_value_as_userdata(value);
         printf("<userdata %s at %p>", userdata->name->chars, (void*)userdata);
     } else {
         printf("<unknown>");
@@ -158,7 +158,7 @@ wi_value_print(wi_value_t value) {
 }
 
 static uint32_t
-_real_hash(wi_real_t real) {
+_real_hash(wi_real real) {
     uint64_t bits;
     memcpy(&bits, &real, sizeof(bits));
 
@@ -177,16 +177,16 @@ _real_hash(wi_real_t real) {
 }
 
 uint32_t
-wi_value_hash(wi_value_t value) {
+wi_value_hash(wi_value value) {
     if (wi_value_is_real(value)) {
         return _real_hash(wi_value_as_real(value));
     }
 
     if (wi_value_is_box(value)) {
-        wi_box_t* box = wi_value_as_box(value);
+        struct wi_box* box = wi_value_as_box(value);
 
         if (box->kind == WI_BOX_STRING) {
-            return ((wi_string_t*)box)->hash;
+            return ((struct wi_string*)box)->hash;
         }
 
         return (uint32_t)((uintptr_t)box >> 2);
@@ -204,7 +204,7 @@ wi_value_hash(wi_value_t value) {
 }
 
 const char*
-wi_value_type(wi_value_t value) {
+wi_value_type(wi_value value) {
     if (wi_value_is_real(value)) {
         return "real";
     }
@@ -277,7 +277,7 @@ _format(const char* format, ...) {
 }
 
 static char*
-_function_to_string(wi_prototype_t* prototype) {
+_function_to_string(struct wi_prototype* prototype) {
     if (prototype->is_main) {
         return _format("<main function in %s at %p>", prototype->file_path, (void*)prototype);
     }
@@ -290,7 +290,7 @@ _function_to_string(wi_prototype_t* prototype) {
 }
 
 char*
-wi_value_to_string(wi_value_t value) {
+wi_value_to_string(wi_value value) {
     if (wi_value_is_real(value)) {
         return _format(WI_REAL_FORMAT, wi_value_as_real(value));
     }
@@ -320,7 +320,7 @@ wi_value_to_string(wi_value_t value) {
     }
 
     if (wi_value_is_foreign(value)) {
-        wi_foreign_t* foreign = wi_value_as_foreign(value);
+        struct wi_foreign* foreign = wi_value_as_foreign(value);
         return _format("<foreign %s at %p>", foreign->name->chars, (void*)foreign);
     }
 
@@ -333,7 +333,7 @@ wi_value_to_string(wi_value_t value) {
     }
 
     if (wi_value_is_object(value)) {
-        wi_object_t* object = wi_value_as_object(value);
+        struct wi_object* object = wi_value_as_object(value);
 
         if (object->name) {
             return _format("<object %s at %p>", object->name->chars, (void*)object);
@@ -343,30 +343,30 @@ wi_value_to_string(wi_value_t value) {
     }
 
     if (wi_value_is_userdata(value)) {
-        wi_userdata_t* userdata = wi_value_as_userdata(value);
+        struct wi_userdata* userdata = wi_value_as_userdata(value);
         return _format("<userdata %s at %p>", userdata->name->chars, (void*)userdata);
     }
 
     return strdup("<unknown>");
 }
 
-WI_DEF_BUF(wi_value_t, value)
+WI_DEF_BUF(wi_value, value)
 
-wi_real_t
+wi_real
 wi_string_to_real(const char* string, int len, char** end_ptr) {
     if (len > 2 && string[0] == '0') {
         char c = string[1];
 
         if (c == 'x' || c == 'X') {
-            return (wi_real_t)strtoll(string + 2, end_ptr, 16);
+            return (wi_real)strtoll(string + 2, end_ptr, 16);
         }
 
         if (c == 'o' || c == 'O') {
-            return (wi_real_t)strtoll(string + 2, end_ptr, 8);
+            return (wi_real)strtoll(string + 2, end_ptr, 8);
         }
 
         if (c == 'b' || c == 'B') {
-            return (wi_real_t)strtoll(string + 2, end_ptr, 2);
+            return (wi_real)strtoll(string + 2, end_ptr, 2);
         }
     }
 

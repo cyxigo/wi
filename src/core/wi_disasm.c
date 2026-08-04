@@ -21,22 +21,22 @@ _simple_instr(int offset, const char* format, ...) {
 }
 
 static int
-_byte_instr(const char* name, const char* arg_name, wi_prototype_t* prototype, int offset) {
+_byte_instr(const char* name, const char* arg_name, struct wi_prototype* prototype, int offset) {
     printf("%-16s %hhu (%s)\n", name, prototype->bytes.data[offset + 1], arg_name);
     return offset + 2;
 }
 
 static int
-_short_instr(const char* name, const char* arg_name, wi_prototype_t* prototype, int offset) {
+_short_instr(const char* name, const char* arg_name, struct wi_prototype* prototype, int offset) {
     uint16_t arg = prototype->bytes.data[offset + 1] << 8 | prototype->bytes.data[offset + 2];
     printf("%-16s %hu (%s)\n", name, arg, arg_name);
     return offset + 3;
 }
 
 static int
-_constant_instr(const char* name, const char* arg_name, wi_prototype_t* prototype, int offset) {
-    uint16_t   constant = prototype->bytes.data[offset + 1] << 8 | prototype->bytes.data[offset + 2];
-    wi_value_t value    = prototype->constants.data[constant];
+_constant_instr(const char* name, const char* arg_name, struct wi_prototype* prototype, int offset) {
+    uint16_t constant = prototype->bytes.data[offset + 1] << 8 | prototype->bytes.data[offset + 2];
+    wi_value value    = prototype->constants.data[constant];
 
     printf("%-16s ", name);
     printf("C:%05hu ", constant);
@@ -47,14 +47,14 @@ _constant_instr(const char* name, const char* arg_name, wi_prototype_t* prototyp
 }
 
 static int
-_jump_instr(const char* name, int sign, wi_prototype_t* prototype, int offset) {
+_jump_instr(const char* name, int sign, struct wi_prototype* prototype, int offset) {
     uint16_t jump = prototype->bytes.data[offset + 1] << 8 | prototype->bytes.data[offset + 2];
     printf("%-16s O:%03i -> O:%03i\n", name, offset, offset + 3 + sign * jump);
     return offset + 3;
 }
 
 int
-wi_prototype_disasm_instr(wi_prototype_t* prototype, int offset) {
+wi_prototype_disasm_instr(struct wi_prototype* prototype, int offset) {
     printf("%04i ", offset);
     int line = prototype->lines.data[offset];
 
@@ -64,7 +64,7 @@ wi_prototype_disasm_instr(wi_prototype_t* prototype, int offset) {
         printf("%4i ", line);
     }
 
-    wi_opcode_t opcode = prototype->bytes.data[offset];
+    uint8_t opcode = prototype->bytes.data[offset];
 
     switch (opcode) {
         case WI_OP_PUSH:
@@ -164,8 +164,8 @@ wi_prototype_disasm_instr(wi_prototype_t* prototype, int offset) {
         case WI_OP_PUSH_CLOSURE: {
             offset++;
 
-            uint16_t   constant        = prototype->bytes.data[offset] << 8 | prototype->bytes.data[offset + 1];
-            wi_value_t prototype_value = prototype->constants.data[constant];
+            uint16_t constant        = prototype->bytes.data[offset] << 8 | prototype->bytes.data[offset + 1];
+            wi_value prototype_value = prototype->constants.data[constant];
 
             printf("%-16s ", "push_closure");
             wi_value_print(prototype_value);
@@ -203,8 +203,8 @@ wi_prototype_disasm_instr(wi_prototype_t* prototype, int offset) {
             printf("%-16s ", "push_object");
 
             if (has_name) {
-                uint16_t     constant = prototype->bytes.data[offset] << 8 | prototype->bytes.data[offset + 1];
-                wi_string_t* name     = wi_value_as_string(prototype->constants.data[constant]);
+                uint16_t constant      = prototype->bytes.data[offset] << 8 | prototype->bytes.data[offset + 1];
+                struct wi_string* name = wi_value_as_string(prototype->constants.data[constant]);
 
                 printf("C:%05hu %s (name)", constant, name->chars);
 
@@ -247,7 +247,7 @@ wi_prototype_disasm_instr(wi_prototype_t* prototype, int offset) {
 }
 
 void
-wi_prototype_disasm(wi_prototype_t* prototype) {
+wi_prototype_disasm(struct wi_prototype* prototype) {
     if (prototype->is_main) {
         printf("--- main function (%s) ---\n", prototype->file_path);
     } else if (prototype->name) {
@@ -260,7 +260,7 @@ wi_prototype_disasm(wi_prototype_t* prototype) {
     printf("constants: %i\n", prototype->constants.count);
 
     for (int i = 0; i < prototype->constants.count; i++) {
-        wi_value_t value = prototype->constants.data[i];
+        wi_value value = prototype->constants.data[i];
 
         printf("    C:%05i ", i);
         wi_value_print(value);

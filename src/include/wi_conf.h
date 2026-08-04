@@ -44,16 +44,16 @@ enum {
 /**
  * Configuration flags for the Wi state
  */
-typedef enum {
+typedef enum wi_conf_flag {
     WI_CONF_PRINT_CODE, /* Print bytecode after compilation */
     WI_CONF_STRESS_GC,  /* Run garbage collection on every allocation */
     WI_CONF_LOG_GC,     /* Log garbage collection */
-} wi_conf_flag_t;
+} wi_conf_flag;
 
 /**
  * Configuration bitmask type
  */
-typedef uint64_t wi_conf_t;
+typedef uint64_t wi_conf;
 
 /**
  * Default configuration (all flags disabled)
@@ -67,8 +67,8 @@ typedef uint64_t wi_conf_t;
  * @param flag Configuration flag
  */
 static inline void
-wi_conf_set(wi_conf_t* conf, wi_conf_flag_t flag) {
-    *conf |= (wi_conf_t)1 << flag;
+wi_conf_set(wi_conf* conf, wi_conf_flag flag) {
+    *conf |= (wi_conf)1 << flag;
 }
 
 /**
@@ -79,8 +79,8 @@ wi_conf_set(wi_conf_t* conf, wi_conf_flag_t flag) {
  * @return `true` if the flag is set, `false` otherwise
  */
 static inline bool
-wi_conf_is_set(wi_conf_t conf, wi_conf_flag_t flag) {
-    return conf & ((wi_conf_t)1 << flag);
+wi_conf_is_set(wi_conf conf, wi_conf_flag flag) {
+    return conf & ((wi_conf)1 << flag);
 }
 
 #endif

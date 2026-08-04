@@ -5,15 +5,14 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "../include/wi.h"
 #include "../include/wi_conf.h"
-#include "wi_gc.h"
-#include "wi_state.h"
 #include "wi_util.h"
 
-static wi_state_t* _g_state = NULL;
+static struct wi_state* _g_state = NULL;
 
 static bool
-_init_g_state(wi_conf_t conf) {
+_init_g_state(wi_conf conf) {
     _g_state = wi_new_state(conf);
 
     if (!_g_state) {
@@ -60,7 +59,7 @@ _repl(void) {
             break;
         }
 
-        wi_run_result_t result = wi_state_run(_g_state, "<stdin>", line);
+        wi_run_result result = wi_state_run(_g_state, "<stdin>", line);
 
         if (result == WI_RUN_ERROR) {
             _print_error();
@@ -133,7 +132,7 @@ _flag_parse_error(const char* exec_path, const char* format, ...) {
 }
 
 static void
-_parse_flags(int argc, const char* argv[], wi_conf_t* conf, const char** file_path, int* script_argc,
+_parse_flags(int argc, const char* argv[], wi_conf* conf, const char** file_path, int* script_argc,
              const char*** script_argv) {
     bool script_args = false;
 
@@ -193,7 +192,7 @@ _parse_flags(int argc, const char* argv[], wi_conf_t* conf, const char** file_pa
 extern int
 main(int argc, const char* argv[]) {
     signal(SIGINT, _sigint_handler);
-    wi_conf_t    conf        = WI_DEFAULT_CONF;
+    wi_conf      conf        = WI_DEFAULT_CONF;
     const char*  file_path   = NULL;
     int          script_argc = 0;
     const char** script_argv = NULL;
@@ -212,7 +211,7 @@ main(int argc, const char* argv[]) {
     char* src = _read_file(file_path);
 
     wi_state_set_args(_g_state, script_argc, script_argv);
-    wi_run_result_t result = wi_state_run(_g_state, file_path, src);
+    wi_run_result result = wi_state_run(_g_state, file_path, src);
 
     if (result == WI_RUN_ERROR) {
         _print_error();

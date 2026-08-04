@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 
-const wi_token_t WI_BLANK_TOKEN = {
+const struct wi_token WI_BLANK_TOKEN = {
     .kind  = WI_TOKEN_BLANK,
     .start = "",
     .len   = 0,
@@ -13,7 +13,7 @@ const wi_token_t WI_BLANK_TOKEN = {
 };
 
 const char*
-wi_token_kind_to_string(wi_token_kind_t kind) {
+wi_token_kind_to_string(enum wi_token_kind kind) {
     switch (kind) {
         case WI_TOKEN_BLANK:
             return "";
@@ -135,7 +135,7 @@ wi_token_kind_to_string(wi_token_kind_t kind) {
 }
 
 void
-wi_lexer_init(wi_lexer_t* lexer, const char* file_path, const char* src) {
+wi_lexer_init(struct wi_lexer* lexer, const char* file_path, const char* src) {
     lexer->file_path = file_path;
     lexer->src       = src;
     lexer->start     = src;
@@ -144,9 +144,9 @@ wi_lexer_init(wi_lexer_t* lexer, const char* file_path, const char* src) {
     lexer->col       = 1;
 }
 
-static wi_token_t
-_lexer_make_token(wi_lexer_t* lexer, wi_token_kind_t kind) {
-    wi_token_t token = {
+static struct wi_token
+_lexer_make_token(struct wi_lexer* lexer, enum wi_token_kind kind) {
+    struct wi_token token = {
         .kind = kind,
         .line = lexer->line,
     };
@@ -164,9 +164,9 @@ _lexer_make_token(wi_lexer_t* lexer, wi_token_kind_t kind) {
     return token;
 }
 
-static wi_token_t
-_lexer_error(wi_lexer_t* lexer, const char* msg, int line, int col) {
-    return (wi_token_t){
+static struct wi_token
+_lexer_error(struct wi_lexer* lexer, const char* msg, int line, int col) {
+    return (struct wi_token){
         .kind  = WI_TOKEN_ERROR,
         .start = msg,
         .len   = 1,
@@ -176,12 +176,12 @@ _lexer_error(wi_lexer_t* lexer, const char* msg, int line, int col) {
 }
 
 static char
-_lexer_peek(wi_lexer_t* lexer) {
+_lexer_peek(struct wi_lexer* lexer) {
     return *lexer->curr;
 }
 
 static char
-_lexer_advance(wi_lexer_t* lexer) {
+_lexer_advance(struct wi_lexer* lexer) {
     char c = *lexer->curr++;
 
     if (c == '\n') {
@@ -195,17 +195,17 @@ _lexer_advance(wi_lexer_t* lexer) {
 }
 
 static bool
-_lexer_check(wi_lexer_t* lexer, char c) {
+_lexer_check(struct wi_lexer* lexer, char c) {
     return _lexer_peek(lexer) == c;
 }
 
 static bool
-_lexer_is_at_end(wi_lexer_t* lexer) {
+_lexer_is_at_end(struct wi_lexer* lexer) {
     return _lexer_check(lexer, '\0');
 }
 
 static char
-_lexer_peek_next(wi_lexer_t* lexer) {
+_lexer_peek_next(struct wi_lexer* lexer) {
     if (_lexer_is_at_end(lexer)) {
         return '\0';
     }
@@ -214,7 +214,7 @@ _lexer_peek_next(wi_lexer_t* lexer) {
 }
 
 static bool
-_lexer_match(wi_lexer_t* lexer, char c) {
+_lexer_match(struct wi_lexer* lexer, char c) {
     if (!_lexer_check(lexer, c)) {
         return false;
     }
@@ -223,8 +223,8 @@ _lexer_match(wi_lexer_t* lexer, char c) {
     return true;
 }
 
-static wi_token_kind_t
-_lexer_check_kw(wi_lexer_t* lexer, int start, int len, const char* rest, wi_token_kind_t kind) {
+static enum wi_token_kind
+_lexer_check_kw(struct wi_lexer* lexer, int start, int len, const char* rest, enum wi_token_kind kind) {
     if (lexer->curr - lexer->start == start + len && memcmp(lexer->start + start, rest, (size_t)len) == 0) {
         return kind;
     }
@@ -232,8 +232,8 @@ _lexer_check_kw(wi_lexer_t* lexer, int start, int len, const char* rest, wi_toke
     return WI_TOKEN_NAME;
 }
 
-static wi_token_kind_t
-_lexer_name_kind(wi_lexer_t* lexer) {
+static enum wi_token_kind
+_lexer_name_kind(struct wi_lexer* lexer) {
     switch (lexer->start[0]) {
         case 'v':
             return _lexer_check_kw(lexer, 1, 2, "ar", WI_TOKEN_KW_VAR);
@@ -291,8 +291,8 @@ _lexer_name_kind(wi_lexer_t* lexer) {
     return WI_TOKEN_NAME;
 }
 
-static wi_token_t
-_lexer_name(wi_lexer_t* ls) {
+static struct wi_token
+_lexer_name(struct wi_lexer* ls) {
     while (wi_is_alnum(_lexer_peek(ls))) {
         _lexer_advance(ls);
     }
@@ -300,8 +300,8 @@ _lexer_name(wi_lexer_t* ls) {
     return _lexer_make_token(ls, _lexer_name_kind(ls));
 }
 
-static wi_token_t
-_lexer_non_dec_real(wi_lexer_t* lexer) {
+static struct wi_token
+_lexer_non_dec_real(struct wi_lexer* lexer) {
     char prefix               = _lexer_peek(lexer);
     bool (*is_digit_fn)(char) = NULL;
 
@@ -329,8 +329,8 @@ _lexer_non_dec_real(wi_lexer_t* lexer) {
     return _lexer_make_token(lexer, WI_TOKEN_LIT_REAL);
 }
 
-static wi_token_t
-_lexer_real(wi_lexer_t* lexer) {
+static struct wi_token
+_lexer_real(struct wi_lexer* lexer) {
     if (lexer->start[0] == '0') {
         char next = _lexer_peek(lexer);
 
@@ -352,8 +352,8 @@ _lexer_real(wi_lexer_t* lexer) {
     return _lexer_make_token(lexer, WI_TOKEN_LIT_REAL);
 }
 
-static wi_token_t
-_lexer_string(wi_lexer_t* lexer) {
+static struct wi_token
+_lexer_string(struct wi_lexer* lexer) {
     int line = lexer->line;
     int col  = lexer->col - 1;
 
@@ -374,7 +374,7 @@ _lexer_string(wi_lexer_t* lexer) {
 }
 
 static void
-_lexer_skip_whitespace(wi_lexer_t* lexer) {
+_lexer_skip_whitespace(struct wi_lexer* lexer) {
     for (;;) {
         char c = _lexer_peek(lexer);
 
@@ -414,8 +414,8 @@ _lexer_skip_whitespace(wi_lexer_t* lexer) {
     }
 }
 
-wi_token_t
-wi_lexer_next(wi_lexer_t* lexer) {
+struct wi_token
+wi_lexer_next(struct wi_lexer* lexer) {
     _lexer_skip_whitespace(lexer);
     lexer->start = lexer->curr;
 

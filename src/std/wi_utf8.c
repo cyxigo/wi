@@ -5,7 +5,7 @@
 #include "../include/wi.h"
 
 static void
-_utf8_len(wi_state_t* state, int arg_count) {
+_utf8_len(struct wi_state* state, int arg_count) {
     int   len;
     char* string   = wi_slot_check_string(state, 1, &len);
     int   utf8_len = 0;
@@ -20,7 +20,7 @@ _utf8_len(wi_state_t* state, int arg_count) {
 }
 
 static void
-_utf8_at(wi_state_t* state, int arg_count) {
+_utf8_at(struct wi_state* state, int arg_count) {
     int   len;
     char* string = wi_slot_check_string(state, 1, &len);
     int   index  = (int)wi_slot_check_real(state, 2);
@@ -66,8 +66,8 @@ _utf8_at(wi_state_t* state, int arg_count) {
 }
 
 void
-wi_state_def_utf8_foreign(wi_state_t* state) {
-    wi_object_t* object = wi_def_object(state, "utf8");
+wi_state_def_utf8_foreign(struct wi_state* state) {
+    struct wi_object* object = wi_def_object(state, "utf8");
 
     wi_object_set_field_foreign(state, object, "len", _utf8_len, 1, false);
     wi_object_set_field_foreign(state, object, "at", _utf8_at, 2, false);

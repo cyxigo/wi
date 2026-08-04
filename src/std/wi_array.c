@@ -3,8 +3,8 @@
 #include "../core/wi_state.h"
 #include "../include/wi.h"
 
-static wi_array_t*
-_check_arg_array(wi_state_t* state, int arg) {
+static struct wi_array*
+_check_arg_array(struct wi_state* state, int arg) {
     if (!wi_value_is_array(state->ffi_stack[arg])) {
         wi_state_error(state, "bad argument %i - expected a value of type array but got %s", arg,
                        wi_value_type(state->ffi_stack[arg]));
@@ -13,53 +13,53 @@ _check_arg_array(wi_state_t* state, int arg) {
     return wi_value_as_array(state->ffi_stack[arg]);
 }
 
-static wi_array_t*
-_check_arg1_array(wi_state_t* state) {
+static struct wi_array*
+_check_arg1_array(struct wi_state* state) {
     return _check_arg_array(state, 1);
 }
 
-static wi_array_t*
-_check_arg2_array(wi_state_t* state) {
+static struct wi_array*
+_check_arg2_array(struct wi_state* state) {
     return _check_arg_array(state, 2);
 }
 
 static void
-_array_copy(wi_state_t* state, int arg_count) {
-    wi_array_t* array     = _check_arg1_array(state);
-    wi_array_t* new_array = wi_new_array(state->gc);
-    state->ffi_stack[0]   = WI_MAKE_BOX_VALUE(new_array);
+_array_copy(struct wi_state* state, int arg_count) {
+    struct wi_array* array     = _check_arg1_array(state);
+    struct wi_array* new_array = wi_new_array(state->gc);
+    state->ffi_stack[0]        = WI_MAKE_BOX_VALUE(new_array);
 
     if (array->items.count > 0) {
         wi_value_buf_reserve(&new_array->items, array->items.count);
-        memcpy(new_array->items.data, array->items.data, sizeof(wi_value_t) * (size_t)array->items.count);
+        memcpy(new_array->items.data, array->items.data, sizeof(wi_value) * (size_t)array->items.count);
         new_array->items.count = array->items.count;
     }
 }
 
 static void
-_array_clear(wi_state_t* state, int arg_count) {
-    wi_array_t* array = _check_arg1_array(state);
+_array_clear(struct wi_state* state, int arg_count) {
+    struct wi_array* array = _check_arg1_array(state);
     wi_value_buf_free(&array->items);
     wi_slot_set_null(state, 0);
 }
 
 static void
-_array_capacity(wi_state_t* state, int arg_count) {
-    wi_array_t* array = _check_arg1_array(state);
+_array_capacity(struct wi_state* state, int arg_count) {
+    struct wi_array* array = _check_arg1_array(state);
     wi_slot_set_real(state, 0, array->items.capacity);
 }
 
 static void
-_array_count(wi_state_t* state, int arg_count) {
-    wi_array_t* array = _check_arg1_array(state);
+_array_count(struct wi_state* state, int arg_count) {
+    struct wi_array* array = _check_arg1_array(state);
     wi_slot_set_real(state, 0, array->items.count);
 }
 
 static void
-_array_equals(wi_state_t* state, int arg_count) {
-    wi_array_t* a      = _check_arg1_array(state);
-    wi_array_t* b      = _check_arg2_array(state);
-    bool        equals = false;
+_array_equals(struct wi_state* state, int arg_count) {
+    struct wi_array* a      = _check_arg1_array(state);
+    struct wi_array* b      = _check_arg2_array(state);
+    bool             equals = false;
 
     if (a->items.count != b->items.count) {
         goto end;
@@ -78,22 +78,22 @@ end:
 }
 
 static void
-_array_reverse(wi_state_t* state, int arg_count) {
-    wi_array_t* array   = _check_arg1_array(state);
-    state->ffi_stack[0] = WI_MAKE_BOX_VALUE(array);
+_array_reverse(struct wi_state* state, int arg_count) {
+    struct wi_array* array = _check_arg1_array(state);
+    state->ffi_stack[0]    = WI_MAKE_BOX_VALUE(array);
 
     for (int i = 0, j = array->items.count - 1; i < j; i++, j--) {
-        wi_value_t temp      = array->items.data[i];
+        wi_value temp        = array->items.data[i];
         array->items.data[i] = array->items.data[j];
         array->items.data[j] = temp;
     }
 }
 
 static void
-_array_reversed(wi_state_t* state, int arg_count) {
-    wi_array_t* array     = _check_arg1_array(state);
-    wi_array_t* new_array = wi_new_array(state->gc);
-    state->ffi_stack[0]   = WI_MAKE_BOX_VALUE(new_array);
+_array_reversed(struct wi_state* state, int arg_count) {
+    struct wi_array* array     = _check_arg1_array(state);
+    struct wi_array* new_array = wi_new_array(state->gc);
+    state->ffi_stack[0]        = WI_MAKE_BOX_VALUE(new_array);
 
     int count = array->items.count;
     wi_value_buf_reserve(&new_array->items, count);
@@ -106,16 +106,16 @@ _array_reversed(wi_state_t* state, int arg_count) {
 }
 
 static void
-_array_add(wi_state_t* state, int arg_count) {
-    wi_array_t* array = _check_arg1_array(state);
+_array_add(struct wi_state* state, int arg_count) {
+    struct wi_array* array = _check_arg1_array(state);
     wi_value_buf_add(&array->items, state->ffi_stack[2]);
     state->ffi_stack[0] = state->ffi_stack[2];
 }
 
 static void
-_array_has(wi_state_t* state, int arg_count) {
-    wi_array_t* array = _check_arg1_array(state);
-    bool        found = false;
+_array_has(struct wi_state* state, int arg_count) {
+    struct wi_array* array = _check_arg1_array(state);
+    bool             found = false;
 
     for (int i = 0; i < array->items.count; i++) {
         if (wi_values_equal(array->items.data[i], state->ffi_stack[2])) {
@@ -128,9 +128,9 @@ _array_has(wi_state_t* state, int arg_count) {
 }
 
 static void
-_array_remove(wi_state_t* state, int arg_count) {
-    wi_array_t* array = _check_arg1_array(state);
-    bool        found = false;
+_array_remove(struct wi_state* state, int arg_count) {
+    struct wi_array* array = _check_arg1_array(state);
+    bool             found = false;
 
     for (int i = 0; i < array->items.count; i++) {
         if (!wi_values_equal(array->items.data[i], state->ffi_stack[2])) {
@@ -150,15 +150,15 @@ _array_remove(wi_state_t* state, int arg_count) {
 }
 
 static void
-_array_remove_at(wi_state_t* state, int arg_count) {
-    wi_array_t* array = _check_arg1_array(state);
-    int         index = (int)wi_slot_check_real(state, 2);
+_array_remove_at(struct wi_state* state, int arg_count) {
+    struct wi_array* array = _check_arg1_array(state);
+    int              index = (int)wi_slot_check_real(state, 2);
 
     if (index < 0 || index >= array->items.count) {
         wi_state_error(state, "array index out of range: %i", index);
     }
 
-    wi_value_t removed = array->items.data[index];
+    wi_value removed = array->items.data[index];
 
     for (int i = index; i < array->items.count - 1; i++) {
         array->items.data[i] = array->items.data[i + 1];
@@ -169,8 +169,8 @@ _array_remove_at(wi_state_t* state, int arg_count) {
 }
 
 static void
-_array_pop(wi_state_t* state, int arg_count) {
-    wi_array_t* array = _check_arg1_array(state);
+_array_pop(struct wi_state* state, int arg_count) {
+    struct wi_array* array = _check_arg1_array(state);
 
     if (array->items.count == 0) {
         wi_state_error(state, "cannot pop from an empty array");
@@ -181,12 +181,12 @@ _array_pop(wi_state_t* state, int arg_count) {
 }
 
 static void
-_array_concat(wi_state_t* state, int arg_count) {
-    wi_array_t* result  = wi_new_array(state->gc);
-    state->ffi_stack[0] = WI_MAKE_BOX_VALUE(result);
+_array_concat(struct wi_state* state, int arg_count) {
+    struct wi_array* result = wi_new_array(state->gc);
+    state->ffi_stack[0]     = WI_MAKE_BOX_VALUE(result);
 
     for (int i = 0; i < arg_count; i++) {
-        wi_array_t* array = _check_arg_array(state, i + 1);
+        struct wi_array* array = _check_arg_array(state, i + 1);
 
         for (int j = 0; j < array->items.count; j++) {
             wi_value_buf_add(&result->items, array->items.data[j]);
@@ -195,29 +195,29 @@ _array_concat(wi_state_t* state, int arg_count) {
 }
 
 static void
-_array_slice(wi_state_t* state, int arg_count) {
-    wi_array_t* array = _check_arg1_array(state);
-    int         start = (int)wi_slot_check_real(state, 2);
-    int         end   = (int)wi_slot_check_real(state, 3);
+_array_slice(struct wi_state* state, int arg_count) {
+    struct wi_array* array = _check_arg1_array(state);
+    int              start = (int)wi_slot_check_real(state, 2);
+    int              end   = (int)wi_slot_check_real(state, 3);
 
     if (start < 0 || start > array->items.count || end < 0 || end > array->items.count || start > end) {
         wi_state_error(state, "array slice bounds out of range: %i to %i", start, end);
     }
 
-    wi_array_t* result  = wi_new_array(state->gc);
-    state->ffi_stack[0] = WI_MAKE_BOX_VALUE(result);
+    struct wi_array* result = wi_new_array(state->gc);
+    state->ffi_stack[0]     = WI_MAKE_BOX_VALUE(result);
 
     int count = end - start;
 
     wi_value_buf_reserve(&result->items, count);
-    memcpy(result->items.data, array->items.data + start, sizeof(wi_value_t) * (size_t)count);
+    memcpy(result->items.data, array->items.data + start, sizeof(wi_value) * (size_t)count);
     result->items.count = count;
 }
 
 static void
-_array_each(wi_state_t* state, int arg_count) {
-    wi_array_t*   array   = _check_arg1_array(state);
-    wi_closure_t* closure = wi_slot_check_function(state, 2, 1);
+_array_each(struct wi_state* state, int arg_count) {
+    struct wi_array*   array   = _check_arg1_array(state);
+    struct wi_closure* closure = wi_slot_check_function(state, 2, 1);
 
     for (int i = 0; i < array->items.count; i++) {
         wi_state_push(state, WI_MAKE_BOX_VALUE(closure));
@@ -229,8 +229,8 @@ _array_each(wi_state_t* state, int arg_count) {
 }
 
 void
-wi_state_def_array_foreign(wi_state_t* state) {
-    wi_object_t* object = wi_def_object(state, "array");
+wi_state_def_array_foreign(struct wi_state* state) {
+    struct wi_object* object = wi_def_object(state, "array");
 
     wi_object_set_field_foreign(state, object, "copy", _array_copy, 1, false);
     wi_object_set_field_foreign(state, object, "clear", _array_clear, 1, false);

@@ -8,8 +8,7 @@
 #include "../include/wi.h"
 #include "wi_buf.h"
 
-typedef struct wi_gc  wi_gc_t;
-typedef struct wi_box wi_box_t;
+struct wi_box;
 
 #define WI_REAL_FORMAT "%.15g"
 #define WI_QNAN 0x7ffc000000000000
@@ -26,97 +25,97 @@ enum {
     WI_FALSE_HASH = 11,
 };
 
-typedef uint64_t wi_value_t;
+typedef uint64_t wi_value;
 
-static inline wi_value_t
-wi_make_real_value(wi_real_t real) {
-    wi_value_t value;
-    memcpy(&value, &real, sizeof(wi_real_t));
+static inline wi_value
+wi_make_real_value(wi_real real) {
+    wi_value value;
+    memcpy(&value, &real, sizeof(wi_real));
     return value;
 }
 
-static inline wi_value_t
+static inline wi_value
 wi_make_empty_value(void) {
     return WI_QNAN | WI_TAG_EMPTY;
 }
 
-static inline wi_value_t
+static inline wi_value
 wi_make_null_value(void) {
     return WI_QNAN | WI_TAG_NULL;
 }
 
-static inline wi_value_t
+static inline wi_value
 wi_make_true_value(void) {
     return WI_QNAN | WI_TAG_TRUE;
 }
 
-static inline wi_value_t
+static inline wi_value
 wi_make_false_value(void) {
     return WI_QNAN | WI_TAG_FALSE;
 }
 
-static inline wi_value_t
+static inline wi_value
 wi_make_bool_value(bool boolean) {
     return boolean ? wi_make_true_value() : wi_make_false_value();
 }
 
-static inline wi_value_t
-wi_make_box_value(wi_box_t* box) {
+static inline wi_value
+wi_make_box_value(struct wi_box* box) {
     return WI_SIGN_BIT | WI_QNAN | (uintptr_t)box;
 }
 
-#define WI_MAKE_BOX_VALUE(box) wi_make_box_value((wi_box_t*)box)
+#define WI_MAKE_BOX_VALUE(box) wi_make_box_value((struct wi_box*)box)
 
 static inline bool
-wi_value_is_real(wi_value_t value) {
+wi_value_is_real(wi_value value) {
     return (value & WI_QNAN) != WI_QNAN;
 }
 
 static inline bool
-wi_value_is_empty(wi_value_t value) {
+wi_value_is_empty(wi_value value) {
     return value == wi_make_empty_value();
 }
 
 static inline bool
-wi_value_is_null(wi_value_t value) {
+wi_value_is_null(wi_value value) {
     return value == wi_make_null_value();
 }
 
 static inline bool
-wi_value_is_bool(wi_value_t value) {
+wi_value_is_bool(wi_value value) {
     return value == wi_make_true_value() || value == wi_make_false_value();
 }
 
 static inline bool
-wi_value_is_box(wi_value_t value) {
+wi_value_is_box(wi_value value) {
     return (value & (WI_QNAN | WI_SIGN_BIT)) == (WI_QNAN | WI_SIGN_BIT);
 }
 
-static inline wi_real_t
-wi_value_as_real(wi_value_t value) {
-    wi_real_t real;
-    memcpy(&real, &value, sizeof(wi_value_t));
+static inline wi_real
+wi_value_as_real(wi_value value) {
+    wi_real real;
+    memcpy(&real, &value, sizeof(wi_value));
     return real;
 }
 
 static inline bool
-wi_value_as_bool(wi_value_t value) {
+wi_value_as_bool(wi_value value) {
     return value == wi_make_true_value();
 }
 
-static inline wi_box_t*
-wi_value_as_box(wi_value_t value) {
-    return (wi_box_t*)(value & ~(WI_SIGN_BIT | WI_QNAN));
+static inline struct wi_box*
+wi_value_as_box(wi_value value) {
+    return (struct wi_box*)(value & ~(WI_SIGN_BIT | WI_QNAN));
 }
 
 static inline bool
-wi_value_is_falsy(wi_value_t value) {
+wi_value_is_falsy(wi_value value) {
     return wi_value_is_null(value) || (wi_value_is_bool(value) && !wi_value_as_bool(value)) ||
            (wi_value_is_real(value) && wi_value_as_real(value) == 0.0);
 }
 
 static inline bool
-wi_values_equal(wi_value_t a, wi_value_t b) {
+wi_values_equal(wi_value a, wi_value b) {
     if (wi_value_is_real(a) && wi_value_is_real(b)) {
         return wi_value_as_real(a) == wi_value_as_real(b);
     }
@@ -125,17 +124,17 @@ wi_values_equal(wi_value_t a, wi_value_t b) {
 }
 
 void
-wi_value_print(wi_value_t value);
+wi_value_print(wi_value value);
 uint32_t
-wi_value_hash(wi_value_t value);
+wi_value_hash(wi_value value);
 const char*
-wi_value_type(wi_value_t value);
+wi_value_type(wi_value value);
 char*
-wi_value_to_string(wi_value_t value);
+wi_value_to_string(wi_value value);
 
-WI_DECL_BUF(wi_value_t, value)
+WI_DECL_BUF(wi_value, value)
 
-wi_real_t
+wi_real
 wi_string_to_real(const char* string, int len, char** end_ptr);
 
 #endif
