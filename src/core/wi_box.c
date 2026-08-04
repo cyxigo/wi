@@ -137,7 +137,7 @@ wi_prototype_instr_size(wi_prototype_t* prototype, int offset) {
         return 3 + closure_prototype->upvalue_count * 2;
     }
 
-    // WI_OP_PUSH_OBJECT
+    /* WI_OP_PUSH_OBJECT */
     uint8_t has_name = bytes[offset + 3];
     return 4 + (has_name ? 2 : 0);
 }

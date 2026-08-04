@@ -1,4 +1,4 @@
-// name, size, stack effect
+/* name, size, stack effect */
 WI_OPCODE(PUSH, 3, 1)
 WI_OPCODE(PUSH_NULL, 1, 1)
 WI_OPCODE(PUSH_TRUE, 1, 1)

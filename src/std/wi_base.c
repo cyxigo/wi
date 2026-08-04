@@ -25,7 +25,7 @@
 static void
 _base_print(wi_state_t* state, int arg_count) {
     for (int i = 0; i < arg_count; i++) {
-        wi_value_print(state->api_stack[i + 1]);
+        wi_value_print(state->ffi_stack[i + 1]);
         printf("\n");
     }
 
@@ -42,7 +42,7 @@ _base_input(wi_state_t* state, int arg_count) {
     }
 
     buf[strcspn(buf, "\n")] = 0;
-    state->api_stack[0]     = WI_MAKE_BOX_VALUE(wi_make_string(state->gc, buf));
+    state->ffi_stack[0]     = WI_MAKE_BOX_VALUE(wi_make_string(state->gc, buf));
 }
 
 static void
@@ -53,12 +53,12 @@ _base_load_foreign(wi_state_t* state, int arg_count) {
         wi_state_error(state, "can only use load_foreign from the main script");
     }
 
-    char*  raw_path     = wi_slot_check_string(state, 1);
-    size_t raw_path_len = strlen(raw_path);
-    char   path[4096];  // i assume 4kb is enough for this mess.
+    int    raw_path_len;
+    char*  raw_path = wi_slot_check_string(state, 1, &raw_path_len);
+    char   path[4096]; /* i assume 4kb is enough for this mess */
     size_t path_size = sizeof(path);
 
-    // platform specific code is a legitimate way of torturing.
+    /* platform specific code is a legitimate way of torturing */
 #ifdef _WIN32
     DWORD len = GetModuleFileName(NULL, path, (DWORD)path_size);
 
@@ -75,7 +75,7 @@ _base_load_foreign(wi_state_t* state, int arg_count) {
     size_t path_len  = strlen(path);
     size_t remaining = path_size - path_len;
 
-    // 14: '\foreign\' + '.dll' + '\0'
+    /* 14: '\foreign\' + '.dll' + '\0' */
     if (remaining < 14 || raw_path_len > (remaining - 14)) {
         wi_state_error(state, "foreign path too long for fallback directory");
     }
@@ -100,7 +100,7 @@ _base_load_foreign(wi_state_t* state, int arg_count) {
     size_t path_len  = strlen(path);
     size_t remaining = path_size - path_len;
 
-    // 13: '/foreign/' + '.so' + '\0'
+    /* 13: '/foreign/' + '.so' + '\0' */
     if (remaining < 13 || raw_path_len > (remaining - 13)) {
         wi_state_error(state, "foreign path too long for fallback directory");
     }
@@ -148,15 +148,15 @@ _base_exit(wi_state_t* state, int arg_count) {
 
 static void
 _base_error(wi_state_t* state, int arg_count) {
-    wi_state_error(state, "%s", wi_slot_check_string(state, 1));
+    wi_state_error(state, "%s", wi_slot_check_string(state, 1, NULL));
 }
 
 static void
 _base_assert(wi_state_t* state, int arg_count) {
-    bool is_falsy = wi_value_is_falsy(state->api_stack[1]);
+    bool is_falsy = wi_value_is_falsy(state->ffi_stack[1]);
 
     if (is_falsy) {
-        wi_state_error(state, "%s", wi_slot_check_string(state, 2));
+        wi_state_error(state, "%s", wi_slot_check_string(state, 2, NULL));
     }
 
     wi_slot_set_bool(state, 0, !is_falsy);
@@ -169,7 +169,7 @@ _base_try(wi_state_t* state, int arg_count) {
     wi_state_check_arity(state, prototype->arity, (uint8_t)(arg_count - 1), prototype->is_variadic);
 
     wi_object_t* result = wi_new_object(state->gc, NULL);
-    state->api_stack[0] = WI_MAKE_BOX_VALUE(result);
+    state->ffi_stack[0] = WI_MAKE_BOX_VALUE(result);
     wi_table_reserve(&result->fields, 3);
 
     wi_recovery_t* recovery = wi_state_push_recovery(state);
@@ -178,7 +178,7 @@ _base_try(wi_state_t* state, int arg_count) {
         wi_state_push(state, WI_MAKE_BOX_VALUE(closure));
 
         for (int i = 0; i < arg_count - 1; i++) {
-            wi_state_push(state, state->api_stack[i + 2]);
+            wi_state_push(state, state->ffi_stack[i + 2]);
         }
 
         wi_state_call(state, closure, (uint8_t)(arg_count - 1), false);
@@ -198,12 +198,12 @@ _base_try(wi_state_t* state, int arg_count) {
 
 static void
 _base_type(wi_state_t* state, int arg_count) {
-    wi_slot_set_string(state, 0, wi_value_type(state->api_stack[1]));
+    wi_slot_set_string(state, 0, wi_value_type(state->ffi_stack[1]));
 }
 
 static void
 _is_type_function(wi_state_t* state, bool (*fn)(wi_value_t value)) {
-    wi_slot_set_bool(state, 0, fn(state->api_stack[1]));
+    wi_slot_set_bool(state, 0, fn(state->ffi_stack[1]));
 }
 
 static void
@@ -263,7 +263,7 @@ _base_is_falsy(wi_state_t* state, int arg_count) {
 
 static void
 _base_to_real(wi_state_t* state, int arg_count) {
-    wi_value_t value = state->api_stack[1];
+    wi_value_t value = state->ffi_stack[1];
     wi_value_t result;
 
     if (wi_value_is_real(value)) {
@@ -273,7 +273,7 @@ _base_to_real(wi_state_t* state, int arg_count) {
     } else if (wi_value_is_bool(value)) {
         result = wi_make_real_value(wi_value_as_bool(value) ? 1 : 0);
     } else if (wi_value_is_string(value)) {
-        wi_string_t* string = wi_value_as_string(state->api_stack[1]);
+        wi_string_t* string = wi_value_as_string(state->ffi_stack[1]);
         char*        end    = NULL;
         wi_real_t    real   = wi_string_to_real(string->chars, string->len, &end);
 
@@ -286,48 +286,48 @@ _base_to_real(wi_state_t* state, int arg_count) {
         wi_state_error(state, "bad argument 1 - cannot convert a value of type %s to real", wi_value_type(value));
     }
 
-    state->api_stack[0] = result;
+    state->ffi_stack[0] = result;
 }
 
 static void
 _base_to_bool(wi_state_t* state, int arg_count) {
-    wi_slot_set_bool(state, 0, !wi_value_is_falsy(state->api_stack[1]));
+    wi_slot_set_bool(state, 0, !wi_value_is_falsy(state->ffi_stack[1]));
 }
 
 static void
 _base_to_string(wi_state_t* state, int arg_count) {
     if (wi_slot_is_string(state, 1)) {
-        state->api_stack[0] = state->api_stack[1];
+        state->ffi_stack[0] = state->ffi_stack[1];
         return;
     }
 
-    char*        string     = wi_value_to_string(state->api_stack[1]);
+    char*        string     = wi_value_to_string(state->ffi_stack[1]);
     wi_string_t* string_box = wi_take_cstring(state->gc, string, (int)strlen(string));
-    state->api_stack[0]     = WI_MAKE_BOX_VALUE(string_box);
+    state->ffi_stack[0]     = WI_MAKE_BOX_VALUE(string_box);
 }
 
 static wi_object_t*
 _check_arg1_object(wi_state_t* state) {
-    if (!wi_value_is_object(state->api_stack[1])) {
+    if (!wi_value_is_object(state->ffi_stack[1])) {
         wi_state_error(state, "bad argument 1 - expected a value of type object but got %s",
-                       wi_value_type(state->api_stack[1]));
+                       wi_value_type(state->ffi_stack[1]));
     }
 
-    return wi_value_as_object(state->api_stack[1]);
+    return wi_value_as_object(state->ffi_stack[1]);
 }
 
 static void
 _base_has_field(wi_state_t* state, int arg_count) {
     wi_object_t* object = _check_arg1_object(state);
-    wi_slot_check_string(state, 2);
-    wi_slot_set_bool(state, 0, wi_table_get(&object->fields, state->api_stack[2], NULL));
+    wi_slot_check_string(state, 2, NULL);
+    wi_slot_set_bool(state, 0, wi_table_get(&object->fields, state->ffi_stack[2], NULL));
 }
 
 static void
 _base_fields(wi_state_t* state, int arg_count) {
     wi_object_t* object = _check_arg1_object(state);
     wi_map_t*    fields = wi_new_map(state->gc);
-    state->api_stack[0] = WI_MAKE_BOX_VALUE(fields);
+    state->ffi_stack[0] = WI_MAKE_BOX_VALUE(fields);
     wi_table_copy(&object->fields, &fields->items);
 }
 

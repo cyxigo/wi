@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 #include <stdio.h>
-#include <stdlib.h>  // IWYU pragma: keep
+#include <stdlib.h> /* IWYU pragma: export */
 
 typedef struct wi_gc wi_gc_t;
 

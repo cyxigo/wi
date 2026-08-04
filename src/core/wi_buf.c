@@ -1,6 +1,6 @@
 #include "wi_buf.h"
 
-#include "wi_gc.h"  // IWYU pragma: keep
+#include "wi_gc.h" /* IWYU pragma: keep */
 
 WI_DEF_BUF(int, int)
 WI_DEF_BUF(char, char)

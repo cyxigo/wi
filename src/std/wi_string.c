@@ -5,95 +5,76 @@
 
 #include "../include/wi.h"
 
-static wi_string_t*
-_check_arg_string(wi_state_t* state, int arg) {
-    if (!wi_value_is_string(state->api_stack[arg])) {
-        wi_state_error(state, "bad argument %i - expected a value of type string but got %s", arg,
-                       wi_value_type(state->api_stack[arg]));
-    }
-
-    return wi_value_as_string(state->api_stack[arg]);
-}
-
-static wi_string_t*
-_check_arg1_string(wi_state_t* state) {
-    return _check_arg_string(state, 1);
-}
-
-static wi_string_t*
-_check_arg2_string(wi_state_t* state) {
-    return _check_arg_string(state, 2);
-}
-
-static wi_string_t*
-_check_arg3_string(wi_state_t* state) {
-    return _check_arg_string(state, 3);
-}
-
 static void
 _string_sub(wi_state_t* state, int arg_count) {
-    wi_string_t* string = _check_arg1_string(state);
-    int          start  = (int)wi_slot_check_real(state, 2);
-    int          end    = (int)wi_slot_check_real(state, 3);
+    int   len;
+    char* string = wi_slot_check_string(state, 1, &len);
+    int   start  = (int)wi_slot_check_real(state, 2);
+    int   end    = (int)wi_slot_check_real(state, 3);
 
-    if (start < 0 || start > string->len || end < 0 || end > string->len || start > end) {
+    if (start < 0 || start > len || end < 0 || end > len || start > end) {
         wi_state_error(state, "string sub bounds out of range: %i to %i", start, end);
     }
 
-    state->api_stack[0] = WI_MAKE_BOX_VALUE(wi_copy_cstring(state->gc, string->chars + start, end - start));
+    state->ffi_stack[0] = WI_MAKE_BOX_VALUE(wi_copy_cstring(state->gc, string + start, end - start));
 }
 
 static void
 _string_upper(wi_state_t* state, int arg_count) {
-    wi_string_t* string = _check_arg1_string(state);
-    char*        buf    = WI_GC_ALLOC(state->gc, char, string->len + 1);
+    int   len;
+    char* string = wi_slot_check_string(state, 1, &len);
+    char* buf    = WI_GC_ALLOC(state->gc, char, len + 1);
 
-    for (int i = 0; i < string->len; i++) {
-        buf[i] = (char)toupper(string->chars[i]);
+    for (int i = 0; i < len; i++) {
+        buf[i] = (char)toupper(string[i]);
     }
 
-    buf[string->len]    = '\0';
-    state->api_stack[0] = WI_MAKE_BOX_VALUE(wi_take_cstring(state->gc, buf, string->len));
+    buf[len]            = '\0';
+    state->ffi_stack[0] = WI_MAKE_BOX_VALUE(wi_take_cstring(state->gc, buf, len));
 }
 
 static void
 _string_lower(wi_state_t* state, int arg_count) {
-    wi_string_t* string = _check_arg1_string(state);
-    char*        buf    = WI_GC_ALLOC(state->gc, char, string->len + 1);
+    int   len;
+    char* string = wi_slot_check_string(state, 1, &len);
+    char* buf    = WI_GC_ALLOC(state->gc, char, len + 1);
 
-    for (int i = 0; i < string->len; i++) {
-        buf[i] = (char)tolower(string->chars[i]);
+    for (int i = 0; i < len; i++) {
+        buf[i] = (char)tolower(string[i]);
     }
 
-    buf[string->len]    = '\0';
-    state->api_stack[0] = WI_MAKE_BOX_VALUE(wi_take_cstring(state->gc, buf, string->len));
+    buf[len]            = '\0';
+    state->ffi_stack[0] = WI_MAKE_BOX_VALUE(wi_take_cstring(state->gc, buf, len));
 }
 
 static void
 _string_trim(wi_state_t* state, int arg_count) {
-    wi_string_t* string = _check_arg1_string(state);
-    int          start  = 0;
-    int          end    = string->len;
+    int   len;
+    char* string = wi_slot_check_string(state, 1, &len);
+    int   start  = 0;
+    int   end    = len;
 
-    while (start < end && isspace(string->chars[start])) {
+    while (start < end && isspace(string[start])) {
         start++;
     }
 
-    while (end > start && isspace(string->chars[end - 1])) {
+    while (end > start && isspace(string[end - 1])) {
         end--;
     }
 
-    state->api_stack[0] = WI_MAKE_BOX_VALUE(wi_copy_cstring(state->gc, string->chars + start, end - start));
+    state->ffi_stack[0] = WI_MAKE_BOX_VALUE(wi_copy_cstring(state->gc, string + start, end - start));
 }
 
 static void
 _string_has(wi_state_t* state, int arg_count) {
-    wi_string_t* string = _check_arg1_string(state);
-    wi_string_t* target = _check_arg2_string(state);
-    bool         found  = target->len == 0;
+    int   len;
+    char* string = wi_slot_check_string(state, 1, &len);
+    int   target_len;
+    char* target = wi_slot_check_string(state, 2, &target_len);
+    bool  found  = target_len == 0;
 
-    for (int i = 0; !found && i + target->len <= string->len; i++) {
-        if (memcmp(string->chars + i, target->chars, (size_t)target->len) == 0) {
+    for (int i = 0; !found && i + target_len <= len; i++) {
+        if (memcmp(string + i, target, (size_t)target_len) == 0) {
             found = true;
         }
     }
@@ -103,31 +84,37 @@ _string_has(wi_state_t* state, int arg_count) {
 
 static void
 _string_starts_with(wi_state_t* state, int arg_count) {
-    wi_string_t* string = _check_arg1_string(state);
-    wi_string_t* prefix = _check_arg2_string(state);
-    bool result = prefix->len <= string->len && memcmp(string->chars, prefix->chars, (size_t)prefix->len) == 0;
+    int   len;
+    char* string = wi_slot_check_string(state, 1, &len);
+    int   prefix_len;
+    char* prefix = wi_slot_check_string(state, 2, &prefix_len);
+    bool  result = prefix_len <= len && memcmp(string, prefix, (size_t)prefix_len) == 0;
 
     wi_slot_set_bool(state, 0, result);
 }
 
 static void
 _string_ends_with(wi_state_t* state, int arg_count) {
-    wi_string_t* string = _check_arg1_string(state);
-    wi_string_t* suffix = _check_arg2_string(state);
-    bool         result = suffix->len <= string->len &&
-                  memcmp(string->chars + (string->len - suffix->len), suffix->chars, (size_t)suffix->len) == 0;
+    int   len;
+    char* string = wi_slot_check_string(state, 1, &len);
+    int   suffix_len;
+    char* suffix = wi_slot_check_string(state, 2, &suffix_len);
+    bool  result = suffix_len <= len && memcmp(string + (len - suffix_len), suffix, (size_t)suffix_len) == 0;
 
     wi_slot_set_bool(state, 0, result);
 }
 
 static void
 _string_replace(wi_state_t* state, int arg_count) {
-    wi_string_t* string = _check_arg1_string(state);
-    wi_string_t* old    = _check_arg2_string(state);
-    wi_string_t* new    = _check_arg3_string(state);
+    int   len;
+    char* string = wi_slot_check_string(state, 1, &len);
+    int   old_len;
+    char* old = wi_slot_check_string(state, 2, &old_len);
+    int   new_len;
+    char* new = wi_slot_check_string(state, 3, &new_len);
 
-    if (old->len == 0) {
-        state->api_stack[0] = WI_MAKE_BOX_VALUE(string);
+    if (old_len == 0) {
+        state->ffi_stack[0] = state->ffi_stack[1];
         return;
     }
 
@@ -136,15 +123,15 @@ _string_replace(wi_state_t* state, int arg_count) {
 
     int i = 0;
 
-    while (i < string->len) {
-        if (i + old->len <= string->len && memcmp(string->chars + i, old->chars, (size_t)old->len) == 0) {
-            for (int j = 0; j < new->len; j++) {
-                wi_char_buf_add(&result, new->chars[j]);
+    while (i < len) {
+        if (i + old_len <= len && memcmp(string + i, old, (size_t)old_len) == 0) {
+            for (int j = 0; j < new_len; j++) {
+                wi_char_buf_add(&result, new[j]);
             }
 
-            i += old->len;
+            i += old_len;
         } else {
-            wi_char_buf_add(&result, string->chars[i]);
+            wi_char_buf_add(&result, string[i]);
             i++;
         }
     }
@@ -152,41 +139,43 @@ _string_replace(wi_state_t* state, int arg_count) {
     wi_string_t* replaced = wi_copy_cstring(state->gc, result.data, result.count);
     wi_char_buf_free(&result);
 
-    state->api_stack[0] = WI_MAKE_BOX_VALUE(replaced);
+    state->ffi_stack[0] = WI_MAKE_BOX_VALUE(replaced);
 }
 
 static void
 _string_split(wi_state_t* state, int arg_count) {
-    wi_string_t* string = _check_arg1_string(state);
-    wi_string_t* sep    = _check_arg2_string(state);
+    int   len;
+    char* string = wi_slot_check_string(state, 1, &len);
+    int   sep_len;
+    char* sep = wi_slot_check_string(state, 2, &sep_len);
 
     wi_array_t* result  = wi_new_array(state->gc);
-    state->api_stack[0] = WI_MAKE_BOX_VALUE(result);
+    state->ffi_stack[0] = WI_MAKE_BOX_VALUE(result);
 
-    if (sep->len == 0) {
-        wi_value_buf_add(&result->items, WI_MAKE_BOX_VALUE(string));
+    if (sep_len == 0) {
+        wi_value_buf_add(&result->items, state->ffi_stack[1]);
         return;
     }
 
     int start = 0;
     int i     = 0;
 
-    while (i + sep->len <= string->len) {
-        if (memcmp(string->chars + i, sep->chars, (size_t)sep->len) == 0) {
-            wi_string_t* part = wi_copy_cstring(state->gc, string->chars + start, i - start);
+    while (i + sep_len <= len) {
+        if (memcmp(string + i, sep, (size_t)sep_len) == 0) {
+            wi_string_t* part = wi_copy_cstring(state->gc, string + start, i - start);
 
             wi_gc_push_root(state->gc, (wi_box_t*)part);
             wi_value_buf_add(&result->items, WI_MAKE_BOX_VALUE(part));
             wi_gc_pop_root(state->gc);
 
-            i += sep->len;
+            i += sep_len;
             start = i;
         } else {
             i++;
         }
     }
 
-    wi_string_t* last = wi_copy_cstring(state->gc, string->chars + start, string->len - start);
+    wi_string_t* last = wi_copy_cstring(state->gc, string + start, len - start);
 
     wi_gc_push_root(state->gc, (wi_box_t*)last);
     wi_value_buf_add(&result->items, WI_MAKE_BOX_VALUE(last));
@@ -195,15 +184,16 @@ _string_split(wi_state_t* state, int arg_count) {
 
 static void
 _string_reverse(wi_state_t* state, int arg_count) {
-    wi_string_t* string = _check_arg1_string(state);
-    char*        buf    = WI_GC_ALLOC(state->gc, char, string->len + 1);
+    int   len;
+    char* string = wi_slot_check_string(state, 1, &len);
+    char* buf    = WI_GC_ALLOC(state->gc, char, len + 1);
 
-    for (int i = 0; i < string->len; i++) {
-        buf[i] = string->chars[string->len - 1 - i];
+    for (int i = 0; i < len; i++) {
+        buf[i] = string[len - 1 - i];
     }
 
-    buf[string->len]    = '\0';
-    state->api_stack[0] = WI_MAKE_BOX_VALUE(wi_take_cstring(state->gc, buf, string->len));
+    buf[len]            = '\0';
+    state->ffi_stack[0] = WI_MAKE_BOX_VALUE(wi_take_cstring(state->gc, buf, len));
 }
 
 void

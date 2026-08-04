@@ -24,7 +24,7 @@ _state_reset_stack(wi_state_t* state) {
     state->recovery_count = 0;
     state->stack_end      = state->stack + WI_STACK_COUNT;
     state->stack_top      = state->stack;
-    state->api_stack      = NULL;
+    state->ffi_stack      = NULL;
     state->frame_count    = 0;
     state->c_call_depth   = 0;
     state->open_upvalues  = NULL;
@@ -214,7 +214,7 @@ wi_state_push_recovery(wi_state_t* state) {
     recovery->frame_count     = state->frame_count;
     recovery->c_call_depth    = state->c_call_depth;
     recovery->stack_top       = state->stack_top;
-    recovery->api_stack       = state->api_stack;
+    recovery->ffi_stack       = state->ffi_stack;
     recovery->temp_root_count = state->gc->temp_root_count;
     recovery->error           = NULL;
 
@@ -224,7 +224,7 @@ wi_state_push_recovery(wi_state_t* state) {
 static void
 _state_close_upvalues(wi_state_t* state, wi_value_t* last);
 
-void
+WI_NORETURN void
 wi_state_error(wi_state_t* state, const char* format, ...) {
 #define _APPEND_FORMAT(void)                       \
     va_list args;                                  \
@@ -241,7 +241,7 @@ wi_state_error(wi_state_t* state, const char* format, ...) {
         state->frame_count         = recovery->frame_count;
         state->c_call_depth        = recovery->c_call_depth;
         state->stack_top           = recovery->stack_top;
-        state->api_stack           = recovery->api_stack;
+        state->ffi_stack           = recovery->ffi_stack;
         state->gc->temp_root_count = recovery->temp_root_count;
 
         _APPEND_FORMAT();
@@ -276,7 +276,7 @@ wi_state_error(wi_state_t* state, const char* format, ...) {
 #undef _APPEND_FORMAT
 }
 
-void
+WI_NORETURN void
 wi_state_oom(wi_state_t* state, const char* what) {
     state->oom = what;
     _state_reset_stack(state);
@@ -284,7 +284,7 @@ wi_state_oom(wi_state_t* state, const char* what) {
     longjmp(state->jmp, WI_JMP_ERROR);
 }
 
-void
+WI_NORETURN void
 wi_state_abort(wi_state_t* state) {
     _state_reset_stack(state);
     wi_gc_reset_roots(state->gc);
@@ -478,11 +478,11 @@ static void
 _state_call_foreign(wi_state_t* state, wi_foreign_t* foreign, uint8_t arg_count) {
     wi_state_check_arity(state, foreign->arity, arg_count, foreign->is_variadic);
 
-    state->api_stack = state->stack_top - arg_count - 1;
+    state->ffi_stack = state->stack_top - arg_count - 1;
     foreign->fn(state, arg_count);
 
-    state->stack_top = state->api_stack + 1;
-    state->api_stack = NULL;
+    state->stack_top = state->ffi_stack + 1;
+    state->ffi_stack = NULL;
 }
 
 static void
@@ -618,20 +618,20 @@ _state_require(wi_state_t* state, wi_value_t path_value, wi_value_t name_value) 
     wi_object_t* object = wi_new_object(state->gc, name);
     wi_gc_push_root(state->gc, (wi_box_t*)object);
 
-    // we wrap `src` in a box in case `wi_compile` fails and causes oom error
-    // gc will have a reference to `src` and will be able to free it
+    /* we wrap `src` in a box in case `wi_compile` fails and causes oom error */
+    /* gc will have a reference to `src` and will be able to free it */
     wi_string_t* src_box = wi_take_cstring(state->gc, src, (int)strlen(src));
     wi_gc_push_root(state->gc, (wi_box_t*)src_box);
 
     wi_prototype_t* prototype = wi_compile(state, path, src_box->chars, &object->fields);
 
     if (!prototype) {
-        wi_gc_pop_root(state->gc);  // src_box
-        wi_gc_pop_root(state->gc);  // object
+        wi_gc_pop_root(state->gc); /* src_box */
+        wi_gc_pop_root(state->gc); /* object */
         wi_state_error(state, "failed to compile script %s", path);
     }
 
-    wi_gc_pop_root(state->gc);  // src_box
+    wi_gc_pop_root(state->gc); /* src_box */
     wi_gc_push_root(state->gc, (wi_box_t*)prototype);
 
     wi_table_set(&state->required, path_value, WI_MAKE_BOX_VALUE(object));
@@ -640,8 +640,8 @@ _state_require(wi_state_t* state, wi_value_t path_value, wi_value_t name_value) 
     wi_closure_t* closure = wi_new_closure(state->gc, prototype, &object->fields);
     closure->is_required  = true;
 
-    wi_gc_pop_root(state->gc);  // prototype
-    wi_gc_pop_root(state->gc);  // object
+    wi_gc_pop_root(state->gc); /* prototype */
+    wi_gc_pop_root(state->gc); /* object */
 
     return closure;
 }
@@ -766,7 +766,7 @@ _state_interpreter_loop(wi_state_t* state, int base_frame_count, bool drop_resul
             wi_state_push(state, frame->slots[_READ_BYTE()]);
             _DISPATCH();
         }
-        // clang-format off
+        /* clang-format off */
         _OPCODE_LABEL(LOAD_LOCAL_0) :
         _OPCODE_LABEL(LOAD_LOCAL_1) :
         _OPCODE_LABEL(LOAD_LOCAL_2) :
@@ -779,7 +779,7 @@ _state_interpreter_loop(wi_state_t* state, int base_frame_count, bool drop_resul
             wi_state_push(state, frame->slots[opcode - WI_OP_LOAD_LOCAL_0]);
             _DISPATCH();
         }
-        // clang-format on
+        /* clang-format on */
         _OPCODE_LABEL(ADD) : {
             _BINARY_OP(+, wi_make_real_value);
             _DISPATCH();
@@ -1254,7 +1254,7 @@ wi_state_call(wi_state_t* state, wi_closure_t* closure, uint8_t arg_count, bool 
         wi_state_error(state, "C call stack overflow (limit is %i)", WI_C_CALL_STACK_MAX);
     }
 
-    wi_value_t* api_stack = state->api_stack;
+    wi_value_t* ffi_stack = state->ffi_stack;
 
     int base_frame_count = state->frame_count;
     _state_call(state, closure, arg_count);
@@ -1263,7 +1263,7 @@ wi_state_call(wi_state_t* state, wi_closure_t* closure, uint8_t arg_count, bool 
     wi_run_result_t result = _state_interpreter_loop(state, base_frame_count, drop_result);
     state->c_call_depth--;
 
-    state->api_stack = api_stack;
+    state->ffi_stack = ffi_stack;
 
     return result;
 }
@@ -1299,12 +1299,12 @@ wi_state_run(wi_state_t* state, const char* file_path, const char* src) {
 
 wi_closure_t*
 wi_slot_check_function(wi_state_t* state, int slot, int arity) {
-    if (!wi_value_is_closure(state->api_stack[slot])) {
+    if (!wi_value_is_closure(state->ffi_stack[slot])) {
         wi_state_error(state, "bad argument %i - cannot use a value of type %s as a callback", slot,
-                       wi_value_type(state->api_stack[slot]));
+                       wi_value_type(state->ffi_stack[slot]));
     }
 
-    wi_closure_t* closure = wi_value_as_closure(state->api_stack[slot]);
+    wi_closure_t* closure = wi_value_as_closure(state->ffi_stack[slot]);
 
     if (arity != -1 && closure->prototype->arity != arity) {
         wi_state_error(state, "callback must take %i arguments but takes %i", arity, closure->prototype->arity);

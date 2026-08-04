@@ -17,7 +17,7 @@ _os_time(wi_state_t* state, int arg_count) {
 
 static void
 _os_get_env(wi_state_t* state, int arg_count) {
-    char* value = getenv(wi_slot_check_string(state, 1));
+    char* value = getenv(wi_slot_check_string(state, 1, NULL));
 
     if (!value) {
         wi_slot_set_null(state, 0);
@@ -30,7 +30,7 @@ _os_get_env(wi_state_t* state, int arg_count) {
 static void
 _os_args(wi_state_t* state, int arg_count) {
     wi_array_t* result  = wi_new_array(state->gc);
-    state->api_stack[0] = WI_MAKE_BOX_VALUE(result);
+    state->ffi_stack[0] = WI_MAKE_BOX_VALUE(result);
     wi_value_buf_reserve(&result->items, state->script_argc);
 
     for (int i = 0; i < state->script_argc; i++) {

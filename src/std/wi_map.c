@@ -5,12 +5,12 @@
 
 static wi_map_t*
 _check_arg_map(wi_state_t* state, int slot) {
-    if (!wi_value_is_map(state->api_stack[slot])) {
+    if (!wi_value_is_map(state->ffi_stack[slot])) {
         wi_state_error(state, "bad argument %i - expected a value of type map but got %s", slot,
-                       wi_value_type(state->api_stack[slot]));
+                       wi_value_type(state->ffi_stack[slot]));
     }
 
-    return wi_value_as_map(state->api_stack[slot]);
+    return wi_value_as_map(state->ffi_stack[slot]);
 }
 
 static wi_map_t*
@@ -27,7 +27,7 @@ static void
 _map_copy(wi_state_t* state, int arg_count) {
     wi_map_t* src       = _check_arg1_map(state);
     wi_map_t* dest      = wi_new_map(state->gc);
-    state->api_stack[0] = WI_MAKE_BOX_VALUE(dest);
+    state->ffi_stack[0] = WI_MAKE_BOX_VALUE(dest);
     wi_table_copy(&src->items, &dest->items);
 }
 
@@ -86,7 +86,7 @@ static void
 _map_keys(wi_state_t* state, int arg_count) {
     wi_map_t*   map     = _check_arg1_map(state);
     wi_array_t* result  = wi_new_array(state->gc);
-    state->api_stack[0] = WI_MAKE_BOX_VALUE(result);
+    state->ffi_stack[0] = WI_MAKE_BOX_VALUE(result);
 
     wi_value_buf_reserve(&result->items, map->items.count);
 
@@ -103,7 +103,7 @@ static void
 _map_values(wi_state_t* state, int arg_count) {
     wi_map_t*   map     = _check_arg1_map(state);
     wi_array_t* result  = wi_new_array(state->gc);
-    state->api_stack[0] = WI_MAKE_BOX_VALUE(result);
+    state->ffi_stack[0] = WI_MAKE_BOX_VALUE(result);
 
     wi_value_buf_reserve(&result->items, map->items.count);
 
@@ -119,7 +119,7 @@ _map_values(wi_state_t* state, int arg_count) {
 static void
 _map_has(wi_state_t* state, int arg_count) {
     wi_map_t* map    = _check_arg1_map(state);
-    bool      exists = wi_table_get(&map->items, state->api_stack[2], NULL);
+    bool      exists = wi_table_get(&map->items, state->ffi_stack[2], NULL);
     wi_slot_set_bool(state, 0, exists);
 }
 
@@ -128,18 +128,18 @@ _map_get_or_default(wi_state_t* state, int arg_count) {
     wi_map_t*  map = _check_arg1_map(state);
     wi_value_t value;
 
-    if (wi_table_get(&map->items, state->api_stack[2], &value)) {
-        state->api_stack[0] = value;
+    if (wi_table_get(&map->items, state->ffi_stack[2], &value)) {
+        state->ffi_stack[0] = value;
         return;
     }
 
-    state->api_stack[0] = state->api_stack[3];
+    state->ffi_stack[0] = state->ffi_stack[3];
 }
 
 static void
 _map_remove(wi_state_t* state, int arg_count) {
     wi_map_t* map = _check_arg1_map(state);
-    wi_slot_set_bool(state, 0, wi_table_delete(&map->items, state->api_stack[2]));
+    wi_slot_set_bool(state, 0, wi_table_delete(&map->items, state->ffi_stack[2]));
 }
 
 static void

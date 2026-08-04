@@ -162,7 +162,7 @@ _real_hash(wi_real_t real) {
     uint64_t bits;
     memcpy(&bits, &real, sizeof(bits));
 
-    // -0.0 -> 0.0
+    /* -0.0 -> 0.0 */
     if (bits == 0x8000000000000000ull) {
         bits = 0;
     }

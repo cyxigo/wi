@@ -5,12 +5,12 @@
 
 static wi_array_t*
 _check_arg_array(wi_state_t* state, int arg) {
-    if (!wi_value_is_array(state->api_stack[arg])) {
+    if (!wi_value_is_array(state->ffi_stack[arg])) {
         wi_state_error(state, "bad argument %i - expected a value of type array but got %s", arg,
-                       wi_value_type(state->api_stack[arg]));
+                       wi_value_type(state->ffi_stack[arg]));
     }
 
-    return wi_value_as_array(state->api_stack[arg]);
+    return wi_value_as_array(state->ffi_stack[arg]);
 }
 
 static wi_array_t*
@@ -27,7 +27,7 @@ static void
 _array_copy(wi_state_t* state, int arg_count) {
     wi_array_t* array     = _check_arg1_array(state);
     wi_array_t* new_array = wi_new_array(state->gc);
-    state->api_stack[0]   = WI_MAKE_BOX_VALUE(new_array);
+    state->ffi_stack[0]   = WI_MAKE_BOX_VALUE(new_array);
 
     if (array->items.count > 0) {
         wi_value_buf_reserve(&new_array->items, array->items.count);
@@ -80,7 +80,7 @@ end:
 static void
 _array_reverse(wi_state_t* state, int arg_count) {
     wi_array_t* array   = _check_arg1_array(state);
-    state->api_stack[0] = WI_MAKE_BOX_VALUE(array);
+    state->ffi_stack[0] = WI_MAKE_BOX_VALUE(array);
 
     for (int i = 0, j = array->items.count - 1; i < j; i++, j--) {
         wi_value_t temp      = array->items.data[i];
@@ -93,7 +93,7 @@ static void
 _array_reversed(wi_state_t* state, int arg_count) {
     wi_array_t* array     = _check_arg1_array(state);
     wi_array_t* new_array = wi_new_array(state->gc);
-    state->api_stack[0]   = WI_MAKE_BOX_VALUE(new_array);
+    state->ffi_stack[0]   = WI_MAKE_BOX_VALUE(new_array);
 
     int count = array->items.count;
     wi_value_buf_reserve(&new_array->items, count);
@@ -108,8 +108,8 @@ _array_reversed(wi_state_t* state, int arg_count) {
 static void
 _array_add(wi_state_t* state, int arg_count) {
     wi_array_t* array = _check_arg1_array(state);
-    wi_value_buf_add(&array->items, state->api_stack[2]);
-    state->api_stack[0] = state->api_stack[2];
+    wi_value_buf_add(&array->items, state->ffi_stack[2]);
+    state->ffi_stack[0] = state->ffi_stack[2];
 }
 
 static void
@@ -118,7 +118,7 @@ _array_has(wi_state_t* state, int arg_count) {
     bool        found = false;
 
     for (int i = 0; i < array->items.count; i++) {
-        if (wi_values_equal(array->items.data[i], state->api_stack[2])) {
+        if (wi_values_equal(array->items.data[i], state->ffi_stack[2])) {
             found = true;
             break;
         }
@@ -133,7 +133,7 @@ _array_remove(wi_state_t* state, int arg_count) {
     bool        found = false;
 
     for (int i = 0; i < array->items.count; i++) {
-        if (!wi_values_equal(array->items.data[i], state->api_stack[2])) {
+        if (!wi_values_equal(array->items.data[i], state->ffi_stack[2])) {
             continue;
         }
 
@@ -165,7 +165,7 @@ _array_remove_at(wi_state_t* state, int arg_count) {
     }
 
     array->items.count--;
-    state->api_stack[0] = removed;
+    state->ffi_stack[0] = removed;
 }
 
 static void
@@ -176,14 +176,14 @@ _array_pop(wi_state_t* state, int arg_count) {
         wi_state_error(state, "cannot pop from an empty array");
     }
 
-    state->api_stack[0] = array->items.data[array->items.count - 1];
+    state->ffi_stack[0] = array->items.data[array->items.count - 1];
     array->items.count--;
 }
 
 static void
 _array_concat(wi_state_t* state, int arg_count) {
     wi_array_t* result  = wi_new_array(state->gc);
-    state->api_stack[0] = WI_MAKE_BOX_VALUE(result);
+    state->ffi_stack[0] = WI_MAKE_BOX_VALUE(result);
 
     for (int i = 0; i < arg_count; i++) {
         wi_array_t* array = _check_arg_array(state, i + 1);
@@ -205,7 +205,7 @@ _array_slice(wi_state_t* state, int arg_count) {
     }
 
     wi_array_t* result  = wi_new_array(state->gc);
-    state->api_stack[0] = WI_MAKE_BOX_VALUE(result);
+    state->ffi_stack[0] = WI_MAKE_BOX_VALUE(result);
 
     int count = end - start;
 

@@ -5,6 +5,7 @@
 
 #include "wi_buf.h"
 #include "wi_lexer.h"
+#include "wi_util.h"
 
 typedef struct {
     wi_lexer_t* lexer;
@@ -22,11 +23,11 @@ wi_new_parser(wi_lexer_t* lexer, wi_gc_t* gc);
 void
 wi_delete_parser(wi_parser_t* parser);
 
-void
+WI_NORETURN void
 wi_parser_error_at(wi_parser_t* parser, wi_token_t token, const char* format, ...);
-void
+WI_NORETURN void
 wi_parser_error_at_prev(wi_parser_t* parser, const char* format, ...);
-void
+WI_NORETURN void
 wi_parser_error_at_curr(wi_parser_t* parser, const char* format, ...);
 
 void

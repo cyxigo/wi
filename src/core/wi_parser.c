@@ -9,6 +9,7 @@
 #include "wi_gc.h"
 #include "wi_lexer.h"
 #include "wi_state.h"
+#include "wi_util.h"
 
 wi_parser_t*
 wi_new_parser(wi_lexer_t* lexer, wi_gc_t* gc) {
@@ -109,31 +110,33 @@ _parser_error_va(wi_parser_t* parser, wi_token_t token, const char* format, va_l
     wi_state_append_error(state, "   --> %s:%i:%i\n", parser->lexer->file_path, token.line, token.col);
 
     wi_gc_reset_roots(parser->gc);
-    longjmp(parser->error_jmp, 1);
 }
 
-void
+WI_NORETURN void
 wi_parser_error_at(wi_parser_t* parser, wi_token_t token, const char* format, ...) {
     va_list args;
     va_start(args, format);
     _parser_error_va(parser, token, format, args);
     va_end(args);
+    longjmp(parser->error_jmp, 1);
 }
 
-void
+WI_NORETURN void
 wi_parser_error_at_prev(wi_parser_t* parser, const char* format, ...) {
     va_list args;
     va_start(args, format);
     _parser_error_va(parser, parser->prev, format, args);
     va_end(args);
+    longjmp(parser->error_jmp, 1);
 }
 
-void
+WI_NORETURN void
 wi_parser_error_at_curr(wi_parser_t* parser, const char* format, ...) {
     va_list args;
     va_start(args, format);
     _parser_error_va(parser, parser->curr, format, args);
     va_end(args);
+    longjmp(parser->error_jmp, 1);
 }
 
 void

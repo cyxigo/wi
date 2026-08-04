@@ -6,6 +6,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "wi_util.h"
+
 #ifdef _WIN32
 #include <windows.h>
 typedef HMODULE wi_lib_handle_t;
@@ -57,15 +59,17 @@ typedef struct {
     int          frame_count;
     int          c_call_depth;
     wi_value_t*  stack_top;
-    wi_value_t*  api_stack;
+    wi_value_t*  ffi_stack;
     int          temp_root_count;
     wi_string_t* error;
 } wi_recovery_t;
 
 typedef struct wi_state {
     char* error;
-    // this is separated because... we are out of memory, what would we do? allocate MORE memory?
-    // no, instead we use this little static string thingy
+    /**
+     * this is separated because... we are out of memory, what would we do? allocate MORE memory?
+     * no, instead we use this little static string thingy
+     */
     const char* oom;
 
     wi_conf_t conf;
@@ -90,7 +94,7 @@ typedef struct wi_state {
     wi_value_t  stack[WI_STACK_COUNT];
     wi_value_t* stack_end;
     wi_value_t* stack_top;
-    wi_value_t* api_stack;
+    wi_value_t* ffi_stack;
 
     wi_table_t    globals;
     wi_table_t    foreign;
@@ -103,7 +107,7 @@ typedef struct wi_state {
     wi_object_t* array_obj;
     wi_object_t* map_obj;
 
-    // these are used in `base.try` so we don't need to push 3 gc roots every time we need to call it
+    /* these are used in `base.try` so we don't need to push 3 gc roots every time we need to call it */
     wi_string_t* ok_str;
     wi_string_t* value_str;
     wi_string_t* error_str;
@@ -183,12 +187,12 @@ wi_state_pop_recovery(wi_state_t* state) {
     state->recovery_count--;
 }
 
-void
+WI_NORETURN void
 wi_state_error(wi_state_t* state, const char* format, ...);
-void
+WI_NORETURN void
 wi_state_oom(wi_state_t* state, const char* what);
 
-void
+WI_NORETURN void
 wi_state_abort(wi_state_t* state);
 void
 wi_state_interrupt(wi_state_t* state);
@@ -201,7 +205,7 @@ wi_state_call(wi_state_t* state, wi_closure_t* closure, uint8_t arg_count, bool 
 wi_run_result_t
 wi_state_run(wi_state_t* state, const char* file_path, const char* src);
 
-// we cannot really expose this to the public API, so.. it stays here.
+/* we cannot really expose this to the public API, so.. it stays here. */
 wi_closure_t*
 wi_slot_check_function(wi_state_t* state, int slot, int arity);
 

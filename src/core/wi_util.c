@@ -4,8 +4,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "../include/wi.h"
-
 char*
 wi_read_stream(FILE* stream) {
     fseek(stream, 0L, SEEK_END);

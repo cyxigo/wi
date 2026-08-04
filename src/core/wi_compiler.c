@@ -6,7 +6,6 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <unistd.h>
 
 #include "../include/wi_conf.h"
 #include "wi_box.h"
@@ -18,6 +17,7 @@
 #include "wi_state.h"
 #include "wi_table.h"
 #include "wi_value.h"
+
 
 wi_compiler_t*
 wi_new_compiler(wi_compiler_t* outer, wi_state_t* state, wi_parser_t* parser, wi_table_t* globals) {
@@ -675,7 +675,7 @@ _compiler_new_expr(wi_compiler_t* compiler) {
     }
 
     wi_parser_expect(compiler->parser, WI_TOKEN_CLOSE_BRACE);
-};
+}
 
 static void
 _compiler_object_expr(wi_compiler_t* compiler) {

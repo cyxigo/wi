@@ -20,34 +20,34 @@ enum {
     /**
      * Compiler limits
      */
-    WI_CONSTANT_MAX  = 65535,  // Maximum number of constants in a function
-    WI_JUMP_MAX      = 65535,  // Maximum jump offset
-    WI_LOOP_MAX      = 65535,  // Maximum loop offset
-    WI_LOCALS_MAX    = 255,    // Maximum number of local variables in a function
-    WI_UPVALUES_MAX  = 255,    // Maximum number of upvalues in a function (closure)
-    WI_PARAMETER_MAX = 255,    // Maximum number of parameters in a function and arguments in a call
+    WI_CONSTANT_MAX  = 65535, /* Maximum number of constants in a function */
+    WI_JUMP_MAX      = 65535, /* Maximum jump offset */
+    WI_LOOP_MAX      = 65535, /* Maximum loop offset */
+    WI_LOCALS_MAX    = 255,   /* Maximum number of local variables in a function */
+    WI_UPVALUES_MAX  = 255,   /* Maximum number of upvalues in a function (closure) */
+    WI_PARAMETER_MAX = 255,   /* Maximum number of parameters in a function and arguments in a call */
 
     /**
      * Garbage Collector settings
      */
-    WI_GC_MIN_HEAP         = 10485760,  // Initial heap size before first collection (`10MB`)
-    WI_GC_HEAP_GROW_FACTOR = 2,         // Heap growth factor per garbage collection run
+    WI_GC_MIN_HEAP         = 10485760, /* Initial heap size before first collection (`10MB`) */
+    WI_GC_HEAP_GROW_FACTOR = 2,        /* Heap growth factor per garbage collection run */
 
     /**
      * VM limits
      */
-    WI_CALL_FRAMES_COUNT = 16384,  // Maximum number of call frames
-    WI_STACK_COUNT       = 65535,  // Maximum number of values on the VM stack
-    WI_C_CALL_STACK_MAX  = 200,    // Maximum depth of nested `wi_state_call` and of recoveries
+    WI_CALL_FRAMES_COUNT = 16384, /* Maximum number of call frames */
+    WI_STACK_COUNT       = 65535, /* Maximum number of values on the VM stack */
+    WI_C_CALL_STACK_MAX  = 200,   /* Maximum depth of nested `wi_state_call` and of recoveries */
 };
 
 /**
  * Configuration flags for the Wi state
  */
 typedef enum {
-    WI_CONF_PRINT_CODE,  // Print bytecode after compilation
-    WI_CONF_STRESS_GC,   // Run garbage collection on every allocation
-    WI_CONF_LOG_GC,      // Log garbage collection
+    WI_CONF_PRINT_CODE, /* Print bytecode after compilation */
+    WI_CONF_STRESS_GC,  /* Run garbage collection on every allocation */
+    WI_CONF_LOG_GC,     /* Log garbage collection */
 } wi_conf_flag_t;
 
 /**
