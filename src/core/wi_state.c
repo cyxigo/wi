@@ -68,6 +68,7 @@ wi_new_state(wi_conf conf) {
     state->gc   = wi_new_gc(state->conf);
 
     if (!state->gc) {
+        free(state);
         return NULL;
     }
 
