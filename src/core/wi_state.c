@@ -662,10 +662,10 @@ _state_call(struct wi_state* state, struct wi_closure* closure, uint8_t arg_coun
 
     /*
         for variadic functions, stack looks like:
-        [fixed_args] [var_args array] [function]
+        [function] [fixed_args] [var_args array]
         here, [fixed_args] is prototype->arity, and -2 is var_args array and the function itself
         for simple functions, stack is:
-        [fixed_args] [function]
+        [function] [fixed_args]
         so [fixed_args] is simply arg_count and -1 is the function
 
         we set frame->slots to point to the start of the arguments so function can access them
