@@ -13,6 +13,7 @@
 
 #include "../include/wi_conf.h"
 #include "wi_box.h"
+#include "wi_buf.h"
 #include "wi_compiler.h"
 #include "wi_gc.h"
 #include "wi_table.h"
@@ -82,6 +83,9 @@ wi_new_state(wi_conf conf) {
 
     state->interrupted = 0;
 
+    state->frames         = NULL;
+    state->frame_capacity = 0;
+
     _state_reset_stack(state);
 
     wi_table_init(&state->globals, state->gc);
@@ -126,6 +130,7 @@ _state_free_foreign_handles(struct wi_state* state) {
 void
 wi_delete_state(struct wi_state* state) {
     wi_state_reset_error(state);
+    free(state->frames);
 
     wi_table_free(&state->globals);
     wi_table_free(&state->foreign);
@@ -182,6 +187,12 @@ wi_state_add_foreign_handle(struct wi_state* state, wi_lib_handle lib) {
 
     while (handle) {
         if (handle->lib == lib) {
+            /*
+                we expect a handle to be opened by the point of calling this function
+                so we use wi_lib_handle_close if we are trying to load it again
+                safe because both FreeLibrary and dlclose just decrement the reference count
+                of the handle
+            */
             wi_lib_handle_close(lib);
             return false;
         }
@@ -488,6 +499,11 @@ _state_call_foreign(struct wi_state* state, struct wi_foreign* foreign, uint8_t 
 
 static void
 _state_capture_overflow_ctx(struct wi_state* state) {
+    /*
+        this is useful considering that without this call stack overflow will show you
+        exactly WI_CALL_FRAMES_COUNT amount of functions in the backtrace
+        now that's NOT very useful isn't it?
+    */
     if (state->frame_count > 0) {
         state->frames[0]   = state->frames[state->frame_count - 1];
         state->frame_count = 1;
@@ -506,6 +522,23 @@ _state_call(struct wi_state* state, struct wi_closure* closure, uint8_t arg_coun
         wi_state_error(state, "call stack overflow (limit is %i)", WI_CALL_FRAMES_COUNT);
     }
 
+    if (state->frame_count == state->frame_capacity) {
+        int capacity = WI_GROW_CAPACITY(state->frame_capacity);
+
+        if (capacity > WI_CALL_FRAMES_COUNT) {
+            capacity = WI_CALL_FRAMES_COUNT;
+        }
+
+        state->frames = realloc(state->frames, sizeof(struct wi_call_frame) * (size_t)capacity);
+
+        if (!state->frames) {
+            wi_state_oom(state, "out of memory: failed to allocate call frames");
+        }
+
+        state->frame_capacity = capacity;
+    }
+
+    /* in worst case scenario, can we provide enough stack slots? */
     if (state->stack_top + prototype->max_slot_count >= state->stack_end) {
         _state_capture_overflow_ctx(state);
         wi_state_error(state, "stack overflow (limit is %i)", WI_STACK_COUNT);
@@ -515,6 +548,17 @@ _state_call(struct wi_state* state, struct wi_closure* closure, uint8_t arg_coun
     frame->closure              = closure;
     frame->ip                   = prototype->bytes.data;
 
+    /*
+        for variadic functions, stack looks like:
+        [fixed_args] [var_args array] [function]
+        here, [fixed_args] is prototype->arity, and -2 is var_args array and the function itself
+        for simple functions, stack is:
+        [fixed_args] [function]
+        so [fixed_args] is simply arg_count and -1 is the function
+
+        we set frame->slots to point to the start of the arguments so function can access them
+        as locals! (first slot, which is a function, is a local too - so recursive functions can use it)
+    */
     if (prototype->is_variadic) {
         _state_push_array(state, arg_count - prototype->arity);
         frame->slots = state->stack_top - prototype->arity - 2;
@@ -529,6 +573,7 @@ _state_tail_call(struct wi_state* state, struct wi_call_frame* frame, struct wi_
     struct wi_prototype* prototype = closure->prototype;
     wi_state_check_arity(state, prototype->arity, arg_count, prototype->is_variadic);
 
+    /* in worst case scenario, can we provide enough stack slots? */
     if (frame->slots + prototype->max_slot_count >= state->stack_end) {
         _state_capture_overflow_ctx(state);
         wi_state_error(state, "stack overflow (limit is %i)", WI_STACK_COUNT);
@@ -536,6 +581,9 @@ _state_tail_call(struct wi_state* state, struct wi_call_frame* frame, struct wi_
 
     _state_close_upvalues(state, frame->slots);
 
+    /*
+        move new arguments in the place of old ones
+    */
     if (prototype->is_variadic) {
         _state_push_array(state, arg_count - prototype->arity);
         wi_value* callee_slots = state->stack_top - prototype->arity - 2;
@@ -1252,7 +1300,7 @@ wi_state_check_arity(struct wi_state* state, int arity, uint8_t arg_count, bool 
 
 enum wi_run_result
 wi_state_call(struct wi_state* state, struct wi_closure* closure, uint8_t arg_count, bool drop_result) {
-    if (state->c_call_depth >= WI_C_CALL_STACK_MAX) {
+    if (state->c_call_depth == WI_C_CALL_STACK_MAX) {
         wi_state_error(state, "C call stack overflow (limit is %i)", WI_C_CALL_STACK_MAX);
     }
 
@@ -1274,7 +1322,8 @@ enum wi_run_result
 wi_state_run(struct wi_state* state, const char* file_path, const char* src) {
     wi_state_reset_error(state);
     state->interrupted = 0;
-    int jmp_result     = setjmp(state->jmp);
+    /* set early so we can catch compiler/parser oom */
+    int jmp_result = setjmp(state->jmp);
 
     if (jmp_result == WI_JMP_ABORT) {
         return WI_RUN_ABORT;

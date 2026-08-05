@@ -58,7 +58,7 @@ enum {
 struct wi_recovery {
     jmp_buf           jmp;
     int               frame_count;
-    int               c_call_depth;
+    uint8_t           c_call_depth;
     wi_value*         stack_top;
     wi_value*         ffi_stack;
     int               temp_root_count;
@@ -68,8 +68,8 @@ struct wi_recovery {
 struct wi_state {
     char* error;
     /*
-     * this is separated because... we are out of memory, what would we do? allocate MORE memory?
-     * no, instead we use this little static string thingy
+        this is separated because... we are out of memory, what would we do? allocate MORE memory?
+        no, instead we use this little static string thingy
      */
     const char* oom;
 
@@ -88,9 +88,10 @@ struct wi_state {
     struct wi_recovery recoveries[WI_C_CALL_STACK_MAX];
     int                recovery_count;
 
-    struct wi_call_frame frames[WI_CALL_FRAMES_COUNT];
-    int                  frame_count;
-    int                  c_call_depth;
+    struct wi_call_frame* frames;
+    int                   frame_capacity;
+    int                   frame_count;
+    uint8_t               c_call_depth;
 
     wi_value  stack[WI_STACK_COUNT];
     wi_value* stack_end;
