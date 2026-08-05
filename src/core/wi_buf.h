@@ -5,6 +5,8 @@
 #include <stdio.h>
 #include <stdlib.h> /* IWYU pragma: export */
 
+#include "wi_util.h"
+
 struct wi_gc;
 
 enum {
@@ -55,7 +57,7 @@ enum {
     }                                                                                                    \
                                                                                                          \
     int wi_##name##_buf_add(struct wi_##name##_buf* buf, type item) {                                    \
-        if (buf->count + 1 > buf->capacity) {                                                            \
+        if (WI_UNLIKELY(buf->count + 1 > buf->capacity)) {                                               \
             int old_capacity = buf->capacity;                                                            \
             buf->capacity    = WI_GROW_CAPACITY(buf->capacity);                                          \
             buf->data        = WI_GC_ALLOC_ARRAY(buf->gc, type, buf->data, old_capacity, buf->capacity); \

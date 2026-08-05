@@ -6,6 +6,7 @@
 #include "wi_box.h"
 #include "wi_buf.h"
 #include "wi_gc.h"
+#include "wi_util.h"
 #include "wi_value.h"
 
 uint32_t
@@ -97,7 +98,7 @@ _table_adjust_capacity(struct wi_table* table, int capacity) {
 
 bool
 wi_table_set(struct wi_table* table, wi_value key, wi_value value) {
-    if (table->count + 1 > table->capacity * WI_TABLE_MAX_LOAD) {
+    if (WI_UNLIKELY(table->count + 1 > table->capacity * WI_TABLE_MAX_LOAD)) {
         int capacity = WI_GROW_CAPACITY(table->capacity);
         _table_adjust_capacity(table, capacity);
     }

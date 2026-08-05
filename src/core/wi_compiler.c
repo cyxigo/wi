@@ -1236,16 +1236,17 @@ _compiler_require_stmt(struct wi_compiler* compiler) {
         wi_parser_error_at_prev(compiler->parser, "can only require files from top-level code");
     }
 
+    struct wi_token name = wi_parser_expect(compiler->parser, WI_TOKEN_NAME);
+    _compiler_decl_var(compiler, name);
+
+    wi_parser_expect(compiler->parser, WI_TOKEN_EQUAL);
+
     struct wi_token   path     = wi_parser_expect(compiler->parser, WI_TOKEN_LIT_STRING);
     struct wi_string* path_box = wi_copy_cstring(compiler->state->gc, path.start + 1, path.len - 2);
 
     if (!compiler->state->require_exists(compiler->state, path_box->chars)) {
         wi_parser_error_at(compiler->parser, path, "file %s does not exist", path_box->chars);
     }
-
-    wi_parser_expect(compiler->parser, WI_TOKEN_EQUAL);
-    struct wi_token name = wi_parser_expect(compiler->parser, WI_TOKEN_NAME);
-    _compiler_decl_var(compiler, name);
 
     wi_parser_expect(compiler->parser, WI_TOKEN_SEMICOLON);
 

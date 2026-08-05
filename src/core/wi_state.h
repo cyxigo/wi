@@ -49,6 +49,7 @@ struct wi_call_frame {
     wi_value*          slots;
 };
 
+/* mirrors wi_run_result */
 enum {
     WI_JMP_OK    = 0,
     WI_JMP_ERROR = 1,
@@ -56,13 +57,14 @@ enum {
 };
 
 struct wi_recovery {
-    jmp_buf           jmp;
-    int               frame_count;
-    uint8_t           c_call_depth;
-    wi_value*         stack_top;
-    wi_value*         ffi_stack;
-    int               temp_root_count;
-    struct wi_string* error;
+    struct wi_recovery* next;
+    jmp_buf             jmp;
+    int                 frame_count;
+    uint8_t             c_call_depth;
+    wi_value*           stack_top;
+    wi_value*           ffi_stack;
+    int                 temp_root_count;
+    struct wi_string*   error;
 };
 
 struct wi_state {
@@ -70,7 +72,7 @@ struct wi_state {
     /*
         this is separated because... we are out of memory, what would we do? allocate MORE memory?
         no, instead we use this little static string thingy
-     */
+    */
     const char* oom;
 
     wi_conf       conf;
@@ -85,15 +87,16 @@ struct wi_state {
     jmp_buf               jmp;
     volatile sig_atomic_t interrupted;
 
-    struct wi_recovery recoveries[WI_C_CALL_STACK_MAX];
-    int                recovery_count;
+    struct wi_recovery* recoveries;
+    uint8_t             recovery_count;
 
     struct wi_call_frame* frames;
     int                   frame_capacity;
     int                   frame_count;
     uint8_t               c_call_depth;
 
-    wi_value  stack[WI_STACK_COUNT];
+    wi_value* stack;
+    int       stack_capacity;
     wi_value* stack_end;
     wi_value* stack_top;
     wi_value* ffi_stack;
@@ -181,13 +184,11 @@ wi_state_set_args(struct wi_state* state, int argc, const char** argv);
 
 bool
 wi_state_add_foreign_handle(struct wi_state* state, wi_lib_handle lib);
+
 struct wi_recovery*
 wi_state_push_recovery(struct wi_state* state);
-
-static inline void
-wi_state_pop_recovery(struct wi_state* state) {
-    state->recovery_count--;
-}
+void
+wi_state_pop_recovery(struct wi_state* state);
 
 WI_NORETURN void
 wi_state_error(struct wi_state* state, const char* format, ...);
@@ -201,6 +202,8 @@ wi_state_interrupt(struct wi_state* state);
 
 void
 wi_state_check_arity(struct wi_state* state, int arity, uint8_t arg_count, bool is_variadic);
+void
+wi_state_call_foreign(struct wi_state* state, struct wi_foreign* foreign, uint8_t arg_count);
 enum wi_run_result
 wi_state_call(struct wi_state* state, struct wi_closure* closure, uint8_t arg_count, bool drop_result);
 

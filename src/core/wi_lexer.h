@@ -26,7 +26,7 @@ wi_is_hex_digit(char c) {
 
 static inline bool
 wi_is_alpha(char c) {
-    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_' || c == '@';
+    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_';
 }
 
 static inline bool

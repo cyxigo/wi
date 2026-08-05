@@ -36,9 +36,9 @@ enum {
     /**
      * VM limits
      */
-    WI_CALL_FRAMES_COUNT = 16384, /* Maximum number of call frames */
-    WI_STACK_COUNT       = 65535, /* Maximum number of values on the VM stack */
-    WI_C_CALL_STACK_MAX  = 200,   /* Maximum depth of nested `wi_state_call` and of recoveries */
+    WI_CSTACK_MAX = 200,     /* Maximum depth of nested `wi_state_call` and of recoveries */
+    WI_STACK_MIN  = 20,      /* Minimum number of values on the VM stack */
+    WI_STACK_MAX  = 1000000, /* Maximum number of values on the VM stack */
 };
 
 /**

@@ -22,8 +22,9 @@
 
 static void
 _state_reset_stack(struct wi_state* state) {
+    state->recoveries     = NULL;
     state->recovery_count = 0;
-    state->stack_end      = state->stack + WI_STACK_COUNT;
+    state->stack_end      = state->stack + state->stack_capacity;
     state->stack_top      = state->stack;
     state->ffi_stack      = NULL;
     state->frame_count    = 0;
@@ -86,6 +87,15 @@ wi_new_state(wi_conf conf) {
     state->frames         = NULL;
     state->frame_capacity = 0;
 
+    state->stack          = malloc(sizeof(wi_value) * WI_STACK_MIN);
+    state->stack_capacity = WI_STACK_MIN;
+
+    if (!state->stack) {
+        wi_delete_gc(state->gc);
+        free(state);
+        return NULL;
+    }
+
     _state_reset_stack(state);
 
     wi_table_init(&state->globals, state->gc);
@@ -131,6 +141,7 @@ void
 wi_delete_state(struct wi_state* state) {
     wi_state_reset_error(state);
     free(state->frames);
+    free(state->stack);
 
     wi_table_free(&state->globals);
     wi_table_free(&state->foreign);
@@ -152,7 +163,7 @@ wi_state_append_error_va(struct wi_state* state, const char* format, va_list arg
     size_t len = state->error ? strlen(state->error) : 0;
     char*  buf = realloc(state->error, len + (size_t)add_len + 1);
 
-    if (!buf) {
+    if (WI_UNLIKELY(!buf)) {
         wi_state_oom(state, "out of memory: failed to allocate error message");
     }
 
@@ -217,11 +228,13 @@ wi_state_add_foreign_handle(struct wi_state* state, wi_lib_handle lib) {
 
 struct wi_recovery*
 wi_state_push_recovery(struct wi_state* state) {
-    if (state->recovery_count >= WI_C_CALL_STACK_MAX) {
-        wi_state_error(state, "too many error buffers (limit is %i)", WI_C_CALL_STACK_MAX);
+    if (state->recovery_count == WI_CSTACK_MAX) {
+        wi_state_error(state, "too many error buffers (limit is %i)", WI_CSTACK_MAX);
     }
 
-    struct wi_recovery* recovery = &state->recoveries[state->recovery_count++];
+    struct wi_recovery* recovery = malloc(sizeof(struct wi_recovery));
+    recovery->next               = state->recoveries;
+    state->recoveries            = recovery;
 
     recovery->frame_count     = state->frame_count;
     recovery->c_call_depth    = state->c_call_depth;
@@ -230,7 +243,21 @@ wi_state_push_recovery(struct wi_state* state) {
     recovery->temp_root_count = state->gc->temp_root_count;
     recovery->error           = NULL;
 
+    state->recovery_count++;
     return recovery;
+}
+
+void
+wi_state_pop_recovery(struct wi_state* state) {
+    struct wi_recovery* recovery = state->recoveries;
+
+    if (WI_UNLIKELY(!recovery)) {
+        return;
+    }
+
+    state->recoveries = recovery->next;
+    free(recovery);
+    state->recovery_count--;
 }
 
 static void
@@ -246,8 +273,8 @@ wi_state_error(struct wi_state* state, const char* format, ...) {
 
     wi_state_reset_error(state);
 
-    if (state->recovery_count > 0) {
-        struct wi_recovery* recovery = &state->recoveries[state->recovery_count - 1];
+    if (state->recoveries) {
+        struct wi_recovery* recovery = state->recoveries;
         _state_close_upvalues(state, recovery->stack_top);
 
         state->frame_count         = recovery->frame_count;
@@ -382,13 +409,13 @@ _state_push_array(struct wi_state* state, int item_count) {
 
 static int
 _state_validate_index(struct wi_state* state, const char* target, wi_value value, int count) {
-    if (!wi_value_is_real(value)) {
+    if (WI_UNLIKELY(!wi_value_is_real(value))) {
         wi_state_error(state, "%s index must be a real, got %s", target, wi_value_type(value));
     }
 
     int index = (int)wi_value_as_real(value);
 
-    if (index < 0 || index >= count) {
+    if (WI_UNLIKELY(index < 0 || index >= count)) {
         wi_state_error(state, "%s index out of range: %i", target, index);
     }
 
@@ -486,22 +513,116 @@ _state_close_upvalues(struct wi_state* state, wi_value* last) {
     }
 }
 
+/*
+    so! there are many things (a.k.a pointers) to correct after we obliterate the
+    old stack memory with realloc...
+*/
 static void
-_state_call_foreign(struct wi_state* state, struct wi_foreign* foreign, uint8_t arg_count) {
-    wi_state_check_arity(state, foreign->arity, arg_count, foreign->is_variadic);
+_state_correct_stack(struct wi_state* state, wi_value* old_stack, wi_value* new_stack) {
+    /*
+        this is safe as long as we don't try, and, obliviously,
+        dereference the old stack... why would we need to anyway?
+    */
+    ptrdiff_t diff = new_stack - old_stack;
+    state->stack   = new_stack;
 
-    state->ffi_stack = state->stack_top - arg_count - 1;
-    foreign->fn(state, arg_count);
+    state->stack_top += diff;
+    state->stack_end = new_stack + state->stack_capacity;
 
-    state->stack_top = state->ffi_stack + 1;
-    state->ffi_stack = NULL;
+    /* correct all the recoveries */
+    struct wi_recovery* recovery = state->recoveries;
+
+    while (recovery) {
+        recovery->stack_top += diff;
+
+        if (recovery->ffi_stack) {
+            recovery->ffi_stack += diff;
+        }
+
+        recovery = recovery->next;
+    }
+
+    /* correct all the call frames */
+    for (int i = 0; i < state->frame_count; i++) {
+        state->frames[i].slots += diff;
+    }
+
+    /* correct even the ffi stack */
+    if (state->ffi_stack) {
+        state->ffi_stack += diff;
+    }
+
+    /* correct all the open upvalues */
+    for (struct wi_upvalue* upvalue = state->open_upvalues; upvalue; upvalue = upvalue->next) {
+        upvalue->location += diff;
+    }
+}
+
+/*
+    ensures [needed] more slots fit past [base], growing (and correcting) the stack
+    why do we need [base]? because of the tail calls!
+    let's trace the things... when we call a function, we add a new frame right? stack is:
+    [function] [arg1] [arg2]
+    cool! so, when we call a NEW function...
+    [function] [arg1] [arg2] [new_function] [arg1]
+                            ^------ calculate from here (the stack top)
+    see where i'm going? tail calls don't need that old function, so we don't need to calculate
+    from the stack_top, but from overwritten frame's slots
+    [function] [arg1] [arg2] <--- BOOM! TAIL CALL
+    [new_function] [arg1]
+    ^------ calculate from here (where previous frame's slots started)
+    i hope that clears up things...
+
+    p.s: this comment exists because after i made this function with the [base] parameter and took a nap
+    i couldn't understand why it exists for a looooooong time. welp, turns out comments are really important.
+    - cyxigo, 08.05.2026
+*/
+static bool
+_state_grow_stack(struct wi_state* state, wi_value* base, int needed) {
+    int required = (int)(base - state->stack) + needed;
+
+    if (required > WI_STACK_MAX) {
+        return false;
+    }
+
+    int capacity = state->stack_capacity;
+
+    while (capacity < required) {
+        capacity = WI_GROW_CAPACITY(capacity);
+    }
+
+    if (capacity > WI_STACK_MAX) {
+        capacity = WI_STACK_MAX;
+    }
+
+    wi_value* old_stack = state->stack;
+    wi_value* new_stack = realloc(state->stack, sizeof(wi_value) * (size_t)capacity);
+
+    if (WI_UNLIKELY(!new_stack)) {
+        wi_state_oom(state, "out of memory: failed to allocate the value stack");
+    }
+
+    state->stack_capacity = capacity;
+    /* reallocating memory usually means breaking many many things... */
+    _state_correct_stack(state, old_stack, new_stack);
+
+    return true;
+}
+
+static bool
+_state_reserve_stack(struct wi_state* state, wi_value* base, int needed) {
+    if (WI_UNLIKELY(base + needed > state->stack_end)) {
+        return _state_grow_stack(state, base, needed);
+    }
+
+    return true;
 }
 
 static void
 _state_capture_overflow_ctx(struct wi_state* state) {
     /*
         this is useful considering that without this call stack overflow will show you
-        exactly WI_CALL_FRAMES_COUNT amount of functions in the backtrace
+        exactly WI_STACK_MAX amount of functions in the backtrace
         now that's NOT very useful isn't it?
     */
     if (state->frame_count > 0) {
@@ -517,31 +638,22 @@ _state_call(struct wi_state* state, struct wi_closure* closure, uint8_t arg_coun
     struct wi_prototype* prototype = closure->prototype;
     wi_state_check_arity(state, prototype->arity, arg_count, prototype->is_variadic);
 
-    if (state->frame_count == WI_CALL_FRAMES_COUNT) {
-        _state_capture_overflow_ctx(state);
-        wi_state_error(state, "call stack overflow (limit is %i)", WI_CALL_FRAMES_COUNT);
-    }
-
-    if (state->frame_count == state->frame_capacity) {
-        int capacity = WI_GROW_CAPACITY(state->frame_capacity);
-
-        if (capacity > WI_CALL_FRAMES_COUNT) {
-            capacity = WI_CALL_FRAMES_COUNT;
-        }
-
+    /* grow the frames if needed */
+    if (WI_UNLIKELY(state->frame_count == state->frame_capacity)) {
+        int capacity  = WI_GROW_CAPACITY(state->frame_capacity);
         state->frames = realloc(state->frames, sizeof(struct wi_call_frame) * (size_t)capacity);
 
-        if (!state->frames) {
+        if (WI_UNLIKELY(!state->frames)) {
             wi_state_oom(state, "out of memory: failed to allocate call frames");
         }
 
         state->frame_capacity = capacity;
     }
 
-    /* in worst case scenario, can we provide enough stack slots? */
-    if (state->stack_top + prototype->max_slot_count >= state->stack_end) {
+    /* calculate and, if needed, grow the slots starting from the stack top */
+    if (!_state_reserve_stack(state, state->stack_top, prototype->max_slot_count)) {
         _state_capture_overflow_ctx(state);
-        wi_state_error(state, "stack overflow (limit is %i)", WI_STACK_COUNT);
+        wi_state_error(state, "stack overflow (limit is %i)", WI_STACK_MAX);
     }
 
     struct wi_call_frame* frame = &state->frames[state->frame_count++];
@@ -573,16 +685,16 @@ _state_tail_call(struct wi_state* state, struct wi_call_frame* frame, struct wi_
     struct wi_prototype* prototype = closure->prototype;
     wi_state_check_arity(state, prototype->arity, arg_count, prototype->is_variadic);
 
-    /* in worst case scenario, can we provide enough stack slots? */
-    if (frame->slots + prototype->max_slot_count >= state->stack_end) {
+    /* calculate and, if needed, grow the slots starting from the reused frame slots */
+    if (!_state_reserve_stack(state, frame->slots, prototype->max_slot_count)) {
         _state_capture_overflow_ctx(state);
-        wi_state_error(state, "stack overflow (limit is %i)", WI_STACK_COUNT);
+        wi_state_error(state, "stack overflow (limit is %i)", WI_STACK_MAX);
     }
 
     _state_close_upvalues(state, frame->slots);
 
     /*
-        move new arguments in the place of old ones
+        move new arguments in the place of the old ones
     */
     if (prototype->is_variadic) {
         _state_push_array(state, arg_count - prototype->arity);
@@ -738,7 +850,7 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
         wi_value b = wi_state_pop(state);                                                         \
         wi_value a = wi_state_pop(state);                                                         \
                                                                                                   \
-        if (!wi_value_is_real(a) || !wi_value_is_real(b)) {                                       \
+        if (WI_UNLIKELY(!wi_value_is_real(a) || !wi_value_is_real(b))) {                          \
             _ERROR("cannot use operator '" #op "' on values of type %s and %s", wi_value_type(a), \
                    wi_value_type(b));                                                             \
         }                                                                                         \
@@ -753,7 +865,7 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
         wi_value b = wi_state_pop(state);                                                         \
         wi_value a = wi_state_pop(state);                                                         \
                                                                                                   \
-        if (!wi_value_is_real(a) || !wi_value_is_real(b)) {                                       \
+        if (WI_UNLIKELY(!wi_value_is_real(a) || !wi_value_is_real(b))) {                          \
             _ERROR("cannot use operator '" #op "' on values of type %s and %s", wi_value_type(a), \
                    wi_value_type(b));                                                             \
         }                                                                                         \
@@ -1100,7 +1212,7 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
             frame->ip          = ip;
 
             if (wi_value_is_foreign(value)) {
-                _state_call_foreign(state, wi_value_as_foreign(value), arg_count);
+                wi_state_call_foreign(state, wi_value_as_foreign(value), arg_count);
                 _DISPATCH();
             }
 
@@ -1119,7 +1231,7 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
             frame->ip          = ip;
 
             if (wi_value_is_foreign(value)) {
-                _state_call_foreign(state, wi_value_as_foreign(value), arg_count);
+                wi_state_call_foreign(state, wi_value_as_foreign(value), arg_count);
                 goto _OPCODE_LABEL(RETURN);
             }
 
@@ -1290,18 +1402,29 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
 void
 wi_state_check_arity(struct wi_state* state, int arity, uint8_t arg_count, bool is_variadic) {
     if (is_variadic) {
-        if (arg_count < arity) {
+        if (WI_UNLIKELY(arg_count < arity)) {
             wi_state_error(state, "expected at least %i arguments but got %hhu", arity, arg_count);
         }
-    } else if (arg_count != arity) {
+    } else if (WI_UNLIKELY(arg_count != arity)) {
         wi_state_error(state, "expected %i arguments but got %hhu", arity, arg_count);
     }
 }
 
+void
+wi_state_call_foreign(struct wi_state* state, struct wi_foreign* foreign, uint8_t arg_count) {
+    wi_state_check_arity(state, foreign->arity, arg_count, foreign->is_variadic);
+
+    state->ffi_stack = state->stack_top - arg_count - 1;
+    foreign->fn(state, arg_count);
+
+    state->stack_top = state->ffi_stack + 1;
+    state->ffi_stack = NULL;
+}
+
 enum wi_run_result
 wi_state_call(struct wi_state* state, struct wi_closure* closure, uint8_t arg_count, bool drop_result) {
-    if (state->c_call_depth == WI_C_CALL_STACK_MAX) {
-        wi_state_error(state, "C call stack overflow (limit is %i)", WI_C_CALL_STACK_MAX);
+    if (state->c_call_depth == WI_CSTACK_MAX) {
+        wi_state_error(state, "C call stack overflow (limit is %i)", WI_CSTACK_MAX);
     }
 
     wi_value* ffi_stack = state->ffi_stack;

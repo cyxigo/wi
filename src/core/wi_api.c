@@ -286,30 +286,36 @@ wi_check_userdata(struct wi_state* state, const char* name) {
 
 bool
 wi_call(struct wi_state* state, uint8_t arg_count, char** error) {
-    wi_value*           start    = state->stack_top - arg_count - 1;
+    /* an offset, not a pointer - in case stack reallocates (very scary) */
+    ptrdiff_t           start    = state->stack_top - state->stack - arg_count - 1;
     struct wi_recovery* recovery = wi_state_push_recovery(state);
     bool                failed;
 
     if (setjmp(recovery->jmp) == WI_JMP_OK) {
         wi_value value = wi_state_peek(state, arg_count);
 
-        if (!wi_value_is_closure(value)) {
+        if (wi_value_is_foreign(value)) {
+            wi_state_call_foreign(state, wi_value_as_foreign(value), arg_count);
+        } else if (wi_value_is_closure(value)) {
+            wi_state_call(state, wi_value_as_closure(value), arg_count, false);
+        } else {
             wi_state_error(state, "cannot call a value of type %s", wi_value_type(value));
         }
 
-        wi_state_call(state, wi_value_as_closure(value), arg_count, false);
         failed = false;
     } else {
         failed = true;
     }
 
     if (failed) {
-        state->stack_top = start;
+        state->stack_top = state->stack + start;
     }
 
     if (error) {
-        /* `strdup` because after we pop the recovery, GC will free its `error` */
-        /* in `_base_try` we don't need to do that because it's immediately passed to a new object */
+        /*
+            strdup because after we pop the recovery, GC will free its error
+            in _base_try we don't need to do that because it's immediately passed to a new object
+        */
         *error = failed ? strdup(recovery->error->chars) : NULL;
     }
 

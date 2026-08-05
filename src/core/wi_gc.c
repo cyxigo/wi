@@ -64,7 +64,7 @@ wi_delete_gc(struct wi_gc* gc) {
 
 void
 wi_gc_push_root(struct wi_gc* gc, struct wi_box* root) {
-    if (gc->temp_root_count + 1 > gc->temp_root_capacity) {
+    if (WI_UNLIKELY(gc->temp_root_count + 1 > gc->temp_root_capacity)) {
         gc->temp_root_capacity = WI_GROW_CAPACITY(gc->temp_root_capacity);
         gc->temp_roots         = realloc(gc->temp_roots, sizeof(struct wi_box*) * (size_t)gc->temp_root_capacity);
 
@@ -81,7 +81,8 @@ wi_gc_realloc(struct wi_gc* gc, void* ptr, size_t old_size, size_t new_size) {
     gc->bytes_allocated += new_size - old_size;
 
     if (new_size > old_size) {
-        if (wi_conf_is_set(gc->conf, WI_CONF_STRESS_GC) || gc->bytes_allocated > gc->next_collection) {
+        if (WI_UNLIKELY(wi_conf_is_set(gc->conf, WI_CONF_STRESS_GC)) ||
+            gc->bytes_allocated > gc->next_collection) {
             wi_gc_collect_garbage(gc);
         }
     }
@@ -93,7 +94,7 @@ wi_gc_realloc(struct wi_gc* gc, void* ptr, size_t old_size, size_t new_size) {
 
     void* result = realloc(ptr, new_size);
 
-    if (!result) {
+    if (WI_UNLIKELY(!result)) {
         wi_state_oom(gc->state, "out of memory: failed to allocate memory in the garbage collector");
     }
 
@@ -192,7 +193,7 @@ _gc_mark_box(struct wi_gc* gc, struct wi_box* box) {
         gc->gray_capacity = WI_GROW_CAPACITY(gc->gray_capacity);
         gc->gray_stack    = realloc(gc->gray_stack, sizeof(struct wi_box*) * (size_t)gc->gray_capacity);
 
-        if (!gc->gray_stack) {
+        if (WI_UNLIKELY(!gc->gray_stack)) {
             wi_state_oom(gc->state, "out of memory: failed to allocate garbage collector gray stack");
         }
     }
@@ -250,10 +251,13 @@ _gc_mark_roots(struct wi_gc* gc) {
     }
 
     _gc_mark_compiler(gc);
-    struct wi_state* state = gc->state;
 
-    for (int i = 0; i < state->recovery_count; i++) {
-        _GC_MARK_BOX(gc, state->recoveries[i].error);
+    struct wi_state*    state    = gc->state;
+    struct wi_recovery* recovery = state->recoveries;
+
+    while (recovery) {
+        _GC_MARK_BOX(gc, recovery->error);
+        recovery = recovery->next;
     }
 
     for (int i = 0; i < state->frame_count; i++) {
