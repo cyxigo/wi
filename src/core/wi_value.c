@@ -88,8 +88,9 @@ _print_map(struct wi_map* map) {
             _print_string_quoted(wi_value_as_string(entry->key));
         } else {
             wi_value_print(entry->key);
-            printf(": ");
         }
+
+        printf(": ");
 
         if (wi_value_is_string(entry->value)) {
             _print_string_quoted(wi_value_as_string(entry->value));
