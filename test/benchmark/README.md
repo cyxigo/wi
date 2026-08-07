@@ -14,15 +14,15 @@ I don't have many interpreted languages installed: Wi, Lua (5.5.0), Python (3.12
 
 - Wren: 0.140s
 - Ruby: 0.144s
-- Python: 0.156s
-- Wi: 0.172s
-- Lua: 0.200s
+- Wi: 0.156s
+- Lua: 0.196s
+- Python: 0.203s
 
 ## Binary trees
 
 - Ruby: 0.200s
 - Wren: 0.370s
-- Wi: 0.399s
+- Wi: 0.395s
 - Lua: 0.400s
 - Python: 0.500s
 

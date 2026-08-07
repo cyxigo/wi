@@ -651,7 +651,7 @@ _state_call(struct wi_state* state, struct wi_closure* closure, uint8_t arg_coun
     }
 
     /* calculate and, if needed, grow the slots starting from the stack top */
-    if (!_state_reserve_stack(state, state->stack_top, prototype->max_slot_count)) {
+    if (WI_UNLIKELY(!_state_reserve_stack(state, state->stack_top, prototype->max_slot_count))) {
         _state_capture_overflow_ctx(state);
         wi_state_error(state, "stack overflow (limit is %i)", WI_STACK_MAX);
     }
@@ -686,7 +686,7 @@ _state_tail_call(struct wi_state* state, struct wi_call_frame* frame, struct wi_
     wi_state_check_arity(state, prototype->arity, arg_count, prototype->is_variadic);
 
     /* calculate and, if needed, grow the slots starting from the reused frame slots */
-    if (!_state_reserve_stack(state, frame->slots, prototype->max_slot_count)) {
+    if (WI_UNLIKELY(!_state_reserve_stack(state, frame->slots, prototype->max_slot_count))) {
         _state_capture_overflow_ctx(state);
         wi_state_error(state, "stack overflow (limit is %i)", WI_STACK_MAX);
     }
@@ -718,7 +718,7 @@ static wi_value
 _state_resolve_method(struct wi_state* state, wi_value receiver, wi_value name) {
     wi_value function;
 
-    if (wi_value_is_object(receiver)) {
+    if (WI_LIKELY(wi_value_is_object(receiver))) {
         _state_resolve_field(state, wi_value_as_object(receiver), name, &function);
         return function;
     }
@@ -808,6 +808,9 @@ _state_require(struct wi_state* state, wi_value path_value, wi_value name_value)
     return closure;
 }
 
+/*
+    here's where the MAGIC happens..
+*/
 static enum wi_run_result
 _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_result) {
     struct wi_call_frame* frame = wi_state_frame(state);
@@ -875,6 +878,50 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
                                                                                                   \
         wi_state_push(state, wi_make_real_value((wi_real)(a_int op b_int)));                      \
     } while (false)
+
+#define _CALL(value)                                                         \
+    if (wi_value_is_foreign(value)) {                                        \
+        wi_state_call_foreign(state, wi_value_as_foreign(value), arg_count); \
+        _DISPATCH();                                                         \
+    }                                                                        \
+                                                                             \
+    if (WI_UNLIKELY(!wi_value_is_closure(value))) {                          \
+        _ERROR("cannot call a value of type %s", wi_value_type(value));      \
+    }                                                                        \
+                                                                             \
+    _state_call(state, wi_value_as_closure(value), arg_count);               \
+    _UPDATE_FRAME();                                                         \
+    _CHECK_INTERRUPT();
+#define _TAIL_CALL(value)                                                                 \
+    if (wi_value_is_foreign(value)) {                                                     \
+        wi_state_call_foreign(state, wi_value_as_foreign(value), arg_count);              \
+        /*                                                                                \
+            we can't reuse the call frame because well... it does not exist to begin with \
+            so we use WI_OP_RETURN, which, removes the frame!                             \
+        */                                                                                \
+        goto _OPCODE_LABEL(RETURN);                                                       \
+    }                                                                                     \
+                                                                                          \
+    if (WI_UNLIKELY(!wi_value_is_closure(value))) {                                       \
+        _ERROR("cannot call a value of type %s", wi_value_type(value));                   \
+    }                                                                                     \
+                                                                                          \
+    _state_tail_call(state, frame, wi_value_as_closure(value), arg_count);                \
+    _UPDATE_FRAME();                                                                      \
+    _CHECK_INTERRUPT();
+
+#define _LOAD_METHOD(void)                                          \
+    wi_value name      = _READ_CONSTANT();                          \
+    uint8_t  arg_count = _READ_BYTE();                              \
+    wi_value receiver  = wi_state_peek(state, arg_count - 1);       \
+    frame->ip          = ip;                                        \
+                                                                    \
+    wi_value method = _state_resolve_method(state, receiver, name); \
+                                                                    \
+    wi_value* args = state->stack_top - arg_count;                  \
+    memmove(args + 1, args, sizeof(wi_value) * arg_count);          \
+    args[0] = method;                                               \
+    state->stack_top++
 
     _DISPATCH();
     {
@@ -1211,18 +1258,7 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
             wi_value value     = wi_state_peek(state, arg_count);
             frame->ip          = ip;
 
-            if (wi_value_is_foreign(value)) {
-                wi_state_call_foreign(state, wi_value_as_foreign(value), arg_count);
-                _DISPATCH();
-            }
-
-            if (!wi_value_is_closure(value)) {
-                _ERROR("cannot call a value of type %s", wi_value_type(value));
-            }
-
-            _state_call(state, wi_value_as_closure(value), arg_count);
-            _UPDATE_FRAME();
-            _CHECK_INTERRUPT();
+            _CALL(value);
             _DISPATCH();
         }
         _OPCODE_LABEL(TAIL_CALL) : {
@@ -1230,18 +1266,7 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
             wi_value value     = wi_state_peek(state, arg_count);
             frame->ip          = ip;
 
-            if (wi_value_is_foreign(value)) {
-                wi_state_call_foreign(state, wi_value_as_foreign(value), arg_count);
-                goto _OPCODE_LABEL(RETURN);
-            }
-
-            if (!wi_value_is_closure(value)) {
-                _ERROR("cannot call a value of type %s", wi_value_type(value));
-            }
-
-            _state_tail_call(state, frame, wi_value_as_closure(value), arg_count);
-            _UPDATE_FRAME();
-            _CHECK_INTERRUPT();
+            _TAIL_CALL(value);
             _DISPATCH();
         }
         _OPCODE_LABEL(RETURN) : {
@@ -1330,15 +1355,14 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
             wi_state_push(state, value);
             _DISPATCH();
         }
-        _OPCODE_LABEL(LOAD_METHOD) : {
-            wi_value name     = _READ_CONSTANT();
-            wi_value receiver = wi_state_pop(state);
-            frame->ip         = ip;
-
-            wi_value function = _state_resolve_method(state, receiver, name);
-
-            wi_state_push(state, function);
-            wi_state_push(state, receiver);
+        _OPCODE_LABEL(INVOKE) : {
+            _LOAD_METHOD();
+            _CALL(method);
+            _DISPATCH();
+        }
+        _OPCODE_LABEL(TAIL_INVOKE) : {
+            _LOAD_METHOD();
+            _TAIL_CALL(method);
             _DISPATCH();
         }
         _OPCODE_LABEL(NEW) : {
@@ -1397,6 +1421,11 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
 
 #undef _BINARY_OP
 #undef _BIT_OP
+
+#undef _CALL
+#undef _TAIL_CALL
+
+#undef _LOAD_METHOD
 }
 
 void
@@ -1468,6 +1497,7 @@ wi_state_run(struct wi_state* state, const char* file_path, const char* src) {
 
     wi_state_push(state, WI_MAKE_BOX_VALUE(closure));
     _state_call(state, closure, 0);
+
     return _state_interpreter_loop(state, 0, true);
 }
 

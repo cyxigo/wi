@@ -146,9 +146,9 @@ wi_value_print(wi_value value) {
         struct wi_object* object = wi_value_as_object(value);
 
         if (object->name) {
-            printf("<object %s at %p> ", object->name->chars, (void*)object);
+            printf("<object %s at %p>", object->name->chars, (void*)object);
         } else {
-            printf("<anonymous object at %p> ", (void*)object);
+            printf("<anonymous object at %p>", (void*)object);
         }
     } else if (wi_value_is_userdata(value)) {
         struct wi_userdata* userdata = wi_value_as_userdata(value);

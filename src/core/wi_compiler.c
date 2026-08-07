@@ -804,13 +804,12 @@ _compiler_invoke(struct wi_compiler* compiler) {
     struct wi_token name          = wi_parser_expect(compiler->parser, WI_TOKEN_NAME);
     uint16_t        name_constant = _compiler_name_constant(compiler, name);
 
-    _compiler_emit_opcode_short(compiler, WI_OP_LOAD_METHOD, name_constant);
-
     wi_parser_expect(compiler->parser, WI_TOKEN_OPEN_PAREN);
     uint8_t arg_count = _compiler_arg_list(compiler, 1);
 
-    _compiler_emit_opcode_byte(compiler, WI_OP_CALL, arg_count);
-    compiler->last_call_offset = compiler->prototype->bytes.count - 2;
+    _compiler_emit_opcode_short(compiler, WI_OP_INVOKE, name_constant);
+    _compiler_emit_byte(compiler, arg_count);
+    compiler->last_call_offset = compiler->prototype->bytes.count - 4;
 }
 
 static void
@@ -1224,6 +1223,11 @@ _compiler_return_stmt(struct wi_compiler* compiler) {
 
     if (offset == end - 2 && bytes[offset] == WI_OP_CALL) {
         bytes[offset] = WI_OP_TAIL_CALL;
+        return;
+    }
+
+    if (offset == end - 4 && bytes[offset] == WI_OP_INVOKE) {
+        bytes[offset] = WI_OP_TAIL_INVOKE;
         return;
     }
 
