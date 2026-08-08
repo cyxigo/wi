@@ -125,6 +125,8 @@ wi_token_kind_to_string(enum wi_token_kind kind) {
             return "object";
         case WI_TOKEN_KW_REQUIRE:
             return "require";
+        case WI_TOKEN_KW_LOAD:
+            return "load";
         case WI_TOKEN_EOF:
             return "end of file";
         case WI_TOKEN_ERROR:
@@ -286,6 +288,8 @@ _lexer_name_kind(struct wi_lexer* lexer) {
             }
 
             break;
+        case 'l':
+            return _lexer_check_kw(lexer, 1, 3, "oad", WI_TOKEN_KW_LOAD);
     }
 
     return WI_TOKEN_NAME;

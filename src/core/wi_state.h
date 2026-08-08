@@ -24,7 +24,7 @@ typedef void* wi_lib_handle;
 #include "wi_value.h"
 
 static inline void
-wi_lib_handle_close(wi_lib_handle lib) {
+wi_lib_close(wi_lib_handle lib) {
 #ifdef _WIN32
     FreeLibrary(lib);
 #else
@@ -38,9 +38,9 @@ enum {
 #undef WI_OPCODE
 };
 
-struct wi_foreign_handle {
-    struct wi_foreign_handle* next;
-    wi_lib_handle             lib;
+struct wi_lib_node {
+    struct wi_lib_node* next;
+    wi_lib_handle       handle;
 };
 
 struct wi_call_frame {
@@ -87,6 +87,10 @@ struct wi_state {
     jmp_buf               jmp;
     volatile sig_atomic_t interrupted;
 
+    /*
+        recoveries are implemented as a linked list because using a dynamic
+        array with realloc on a structure with jmp_buf is undefined behaviour™
+    */
     struct wi_recovery* recoveries;
     uint8_t             recovery_count;
 
@@ -106,7 +110,13 @@ struct wi_state {
     struct wi_table    required;
     struct wi_upvalue* open_upvalues;
 
-    struct wi_foreign_handle* foreign_handles;
+    /*
+        these are a linked list because:
+        1. we won't have THAT many opened handles that a linked list would be an overhead compared
+           to a dynamic array with realloc
+        2. i love linked lists
+    */
+    struct wi_lib_node* libs;
 
     struct wi_object* string_obj;
     struct wi_object* array_obj;
@@ -183,7 +193,11 @@ void
 wi_state_set_args(struct wi_state* state, int argc, const char** argv);
 
 bool
-wi_state_add_foreign_handle(struct wi_state* state, wi_lib_handle lib);
+wi_state_add_lib(struct wi_state* state, wi_lib_handle lib);
+void
+wi_state_close_libs_from(struct wi_state* state, struct wi_lib_node* from);
+void
+wi_state_close_libs(struct wi_state* state);
 
 struct wi_recovery*
 wi_state_push_recovery(struct wi_state* state);

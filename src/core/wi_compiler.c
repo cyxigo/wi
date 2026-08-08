@@ -1,3 +1,7 @@
+#ifndef _WIN32
+#define _POSIX_C_SOURCE 200809L
+#endif
+
 #include "wi_compiler.h"
 
 #include <setjmp.h>
@@ -6,6 +10,13 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
+
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <dlfcn.h>
+#include <unistd.h>
+#endif
 
 #include "../include/wi_conf.h"
 #include "wi_box.h"
@@ -314,6 +325,11 @@ _compiler_end_scope(struct wi_compiler* compiler) {
     }
 }
 
+static bool
+_compiler_is_top_level(struct wi_compiler* compiler) {
+    return !compiler->outer && compiler->scope_depth == 0;
+}
+
 static void
 _compiler_block(struct wi_compiler* compiler) {
     while (!wi_parser_check(compiler->parser, WI_TOKEN_CLOSE_BRACE) && !wi_parser_is_at_end(compiler->parser)) {
@@ -412,11 +428,22 @@ _compiler_var(struct wi_compiler* compiler, struct wi_token name) {
     }
 
     if (global_name) {
-        wi_value value = WI_MAKE_BOX_VALUE(global_name);
+        wi_value value   = WI_MAKE_BOX_VALUE(global_name);
+        wi_value foreign = wi_make_empty_value();
 
         if (!wi_table_get(compiler->globals, value, NULL) &&
-            !wi_table_get(&compiler->state->foreign, value, NULL)) {
+            !wi_table_get(&compiler->state->foreign, value, &foreign)) {
             wi_parser_error_at(compiler->parser, name, "variable %s is used but not defined", global_name->chars);
+        }
+
+        if (!wi_value_is_empty(foreign)) {
+            if (wi_parser_check(compiler->parser, WI_TOKEN_EQUAL)) {
+                wi_parser_error_at(compiler->parser, name, "cannot reassign a foreign variable %s",
+                                   global_name->chars);
+            }
+
+            _compiler_emit_push(compiler, foreign);
+            return;
         }
     }
 
@@ -1236,7 +1263,7 @@ _compiler_return_stmt(struct wi_compiler* compiler) {
 
 static void
 _compiler_require_stmt(struct wi_compiler* compiler) {
-    if (compiler->outer || compiler->scope_depth > 0) {
+    if (!_compiler_is_top_level(compiler)) {
         wi_parser_error_at_prev(compiler->parser, "can only require files from top-level code");
     }
 
@@ -1259,6 +1286,99 @@ _compiler_require_stmt(struct wi_compiler* compiler) {
 
     _compiler_emit_opcode_short(compiler, WI_OP_REQUIRE, path_constant);
     _compiler_emit_short(compiler, name_constant);
+}
+
+static void
+_compiler_load_stmt(struct wi_compiler* compiler) {
+    if (!_compiler_is_top_level(compiler)) {
+        wi_parser_error_at_prev(compiler->parser, "can only use 'load' from top-level code");
+    }
+
+    /* prepare for seeing horrifying things... platform-specific code!!! */
+    struct wi_token   path_token = wi_parser_expect(compiler->parser, WI_TOKEN_LIT_STRING);
+    struct wi_string* path_box   = wi_copy_cstring(compiler->parser->gc, path_token.start + 1, path_token.len - 2);
+    wi_parser_expect(compiler->parser, WI_TOKEN_SEMICOLON);
+
+    struct wi_state* state = compiler->parser->gc->state;
+
+    int    raw_path_len = path_box->len;
+    char*  raw_path     = path_box->chars;
+    char   path[4096]; /* i assume 4kb is enough for this mess */
+    size_t path_size = sizeof(path);
+
+    /* platform-specific code is a legitimate way of torturing */
+#ifdef _WIN32
+    DWORD len = GetModuleFileName(NULL, path, (DWORD)path_size);
+
+    if (len < 1 || len >= path_size) {
+        wi_parser_error_at_prev(compiler->parser, "call to GetModuleFileName failed or path truncated");
+    }
+
+    char* last_slash = strrchr(path, '\\');
+
+    if (last_slash) {
+        *last_slash = '\0';
+    }
+
+    size_t path_len  = strlen(path);
+    size_t remaining = path_size - path_len;
+
+    /* 14: '\foreign\' + '.dll' + '\0' */
+    if (remaining < 14 || raw_path_len > (remaining - 14)) {
+        wi_parser_error_at_prev(compiler->parser, "foreign path too long");
+    }
+
+    snprintf(path + path_len, remaining, "\\foreign\\%s.dll", raw_path);
+    HMODULE lib = LoadLibraryA(path);
+#elif defined(__linux__)
+    ssize_t len = readlink("/proc/self/exe", path, path_size - 1);
+
+    if (len == -1) {
+        wi_parser_error_at_prev(compiler->parser, "call to readlink failed");
+    }
+
+    path[len] = '\0';
+
+    char* last_slash = strrchr(path, '/');
+
+    if (last_slash) {
+        *last_slash = '\0';
+    }
+
+    size_t path_len  = strlen(path);
+    size_t remaining = path_size - path_len;
+
+    /* 13: '/foreign/' + '.so' + '\0' */
+    if (remaining < 13 || raw_path_len > (remaining - 13)) {
+        wi_parser_error_at_prev(compiler->parser, "foreign path too long");
+    }
+
+    snprintf(path + path_len, remaining, "/foreign/%s.so", raw_path);
+    void* lib = dlopen(path, RTLD_NOW | RTLD_GLOBAL);
+#else
+#error platform not supported by load statement
+#endif
+
+    if (!lib) {
+        wi_parser_error_at_prev(compiler->parser, "failed to load foreign %s\nattempted path: %s", raw_path, path);
+    }
+
+    typedef void (*_foreign_init_fn)(struct wi_state* state);
+
+#ifdef _WIN32
+    _foreign_init_fn init = (_foreign_init_fn)GetProcAddress(lib, "wi_foreign_init");
+#else
+    _foreign_init_fn init = (_foreign_init_fn)dlsym(lib, "wi_foreign_init");
+#endif
+
+    if (!init) {
+        wi_lib_close(lib);
+        wi_parser_error_at_prev(compiler->parser, "foreign %s does not export wi_foreign_init", raw_path);
+    }
+
+    if (wi_state_add_lib(state, lib)) {
+        init(state);
+    }
 }
 
 static void
@@ -1300,6 +1420,10 @@ _compiler_stmt(struct wi_compiler* compiler) {
             wi_parser_advance(compiler->parser);
             _compiler_require_stmt(compiler);
             break;
+        case WI_TOKEN_KW_LOAD:
+            wi_parser_advance(compiler->parser);
+            _compiler_load_stmt(compiler);
+            break;
         default:
             _compiler_expr_stmt(compiler);
             break;
@@ -1324,6 +1448,24 @@ wi_compile(struct wi_state* state, const char* file_path, const char* src, struc
         wi_state_oom(state, "out of memory: failed to allocate the compiler");
     }
 
+    /*
+        we capture this because of the load statement
+        when a compilation of the script fails, we need to close any open foreign handles by
+        the load statement, but using wi_state_close_libs would close every single handle opened
+        even by a different script, so we do this:
+
+        script1: [lib1] [lib2]
+                 ^^^^^^^^^^^^^ these are captured by script1, script2 will have no idea these exist
+        script2: [lib3] [lib4] <--- BOOM! ERROR!
+                 ^^^^^^^^^^^^^ these are captured by script2, so only these will be closed in the case
+                               of a compile error
+
+        while this may not seem useful in general scripts, if you use REPL, technically every line is
+        a different "script" (mostly because it compiles and runs over and over, a more correct term would
+        be something like a "compilation unit"), so it's pretty useful there or in any similar situation!
+    */
+    struct wi_lib_node* libs = state->libs;
+
     if (setjmp(compiler->parser->error_jmp) == 0) {
         while (!wi_parser_is_at_end(compiler->parser)) {
             _compiler_stmt(compiler);
@@ -1337,8 +1479,11 @@ wi_compile(struct wi_state* state, const char* file_path, const char* src, struc
         return prototype;
     }
 
+    wi_state_close_libs_from(state, libs);
+
     wi_delete_parser(parser);
     wi_delete_compiler(compiler);
     state->gc->compiler = NULL;
+
     return NULL;
 }

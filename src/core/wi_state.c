@@ -102,7 +102,7 @@ wi_new_state(wi_conf conf) {
     wi_table_init(&state->foreign, state->gc);
     wi_table_init(&state->required, state->gc);
 
-    state->foreign_handles = NULL;
+    state->libs = NULL;
 
     state->string_obj = NULL;
     state->array_obj  = NULL;
@@ -119,24 +119,6 @@ wi_new_state(wi_conf conf) {
     return state;
 }
 
-static void
-_state_free_foreign_handles(struct wi_state* state) {
-    struct wi_foreign_handle* handle = state->foreign_handles;
-
-    while (handle) {
-        struct wi_foreign_handle* next = handle->next;
-
-#ifdef _WIN32
-        FreeLibrary(handle->lib);
-#else
-        dlclose(handle->lib);
-#endif
-
-        free(handle);
-        handle = next;
-    }
-}
-
 void
 wi_delete_state(struct wi_state* state) {
     wi_state_reset_error(state);
@@ -149,7 +131,7 @@ wi_delete_state(struct wi_state* state) {
 
     wi_delete_gc(state->gc);
 
-    _state_free_foreign_handles(state);
+    wi_state_close_libs(state);
     free(state);
 }
 
@@ -193,37 +175,56 @@ wi_state_set_args(struct wi_state* state, int argc, const char** argv) {
 }
 
 bool
-wi_state_add_foreign_handle(struct wi_state* state, wi_lib_handle lib) {
-    struct wi_foreign_handle* handle = state->foreign_handles;
+wi_state_add_lib(struct wi_state* state, wi_lib_handle handle) {
+    struct wi_lib_node* lib = state->libs;
 
-    while (handle) {
-        if (handle->lib == lib) {
+    while (lib) {
+        if (lib->handle == handle) {
             /*
                 we expect a handle to be opened by the point of calling this function
-                so we use wi_lib_handle_close if we are trying to load it again
+                so we use wi_lib_close if we are trying to load it again
                 safe because both FreeLibrary and dlclose just decrement the reference count
                 of the handle
             */
-            wi_lib_handle_close(lib);
+            wi_lib_close(handle);
             return false;
         }
 
-        handle = handle->next;
+        lib = lib->next;
     }
 
-    struct wi_foreign_handle* new_handle = malloc(sizeof(struct wi_foreign_handle));
+    struct wi_lib_node* new_lib = malloc(sizeof(struct wi_lib_node));
 
-    if (!new_handle) {
-        wi_lib_handle_close(lib);
-        wi_state_error(state, "not enough memory to allocate a foreign handle");
+    if (!new_lib) {
+        wi_lib_close(handle);
         return false;
     }
 
-    new_handle->lib        = lib;
-    new_handle->next       = state->foreign_handles;
-    state->foreign_handles = new_handle;
+    new_lib->handle = handle;
+    new_lib->next   = state->libs;
+    state->libs     = new_lib;
 
     return true;
+}
+
+void
+wi_state_close_libs_from(struct wi_state* state, struct wi_lib_node* from) {
+    struct wi_lib_node* lib = state->libs;
+
+    while (lib != from) {
+        struct wi_lib_node* next = lib->next;
+        wi_lib_close(lib->handle);
+        free(lib);
+        lib = next;
+    }
+
+    state->libs = from;
+}
+
+void
+wi_state_close_libs(struct wi_state* state) {
+    /* since wi_state_close_libs_from checks until lib == from we can use NULL here */
+    wi_state_close_libs_from(state, NULL);
 }
 
 struct wi_recovery*
@@ -958,12 +959,7 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
             wi_value name = _READ_CONSTANT();
             wi_value value;
 
-            if (wi_table_get(frame->closure->globals, name, &value)) {
-                wi_state_push(state, value);
-                _DISPATCH();
-            }
-
-            wi_table_get(&state->foreign, name, &value);
+            wi_table_get(frame->closure->globals, name, &value);
             wi_state_push(state, value);
             _DISPATCH();
         }
@@ -1119,7 +1115,7 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
                 _DISPATCH();
             }
 
-            _ERROR("cannot use operator '#' on a value of type '%s'", wi_value_type(a));
+            _ERROR("cannot use operator '#' on a value of type %s", wi_value_type(a));
             _DISPATCH();
         }
         _OPCODE_LABEL(CONCAT) : {

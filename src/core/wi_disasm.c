@@ -236,7 +236,7 @@ wi_prototype_disasm_instr(struct wi_prototype* prototype, int offset) {
 
             char* path = wi_value_as_cstring(prototype->constants.data[path_constant]);
             char* name = wi_value_as_cstring(prototype->constants.data[name_constant]);
-            printf("require %s = '%s';\n", name, path);
+            printf("require %s = \"%s\";\n", name, path);
 
             return offset;
         }

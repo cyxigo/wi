@@ -96,6 +96,7 @@ enum wi_token_kind {
     WI_TOKEN_KW_NEW,
     WI_TOKEN_KW_OBJECT,
     WI_TOKEN_KW_REQUIRE,
+    WI_TOKEN_KW_LOAD,
 
     WI_TOKEN_EOF,
     WI_TOKEN_ERROR,
