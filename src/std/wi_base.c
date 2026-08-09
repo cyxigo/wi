@@ -23,15 +23,15 @@ _base_print(struct wi_state* state, int arg_count) {
 
 static void
 _base_input(struct wi_state* state, int arg_count) {
-    char buf[2048];
+    char* line;
 
-    if (!fgets(buf, sizeof(buf), stdin)) {
+    if (!wi_read_line(&line)) {
         wi_slot_set_null(state, 0);
         return;
     }
 
-    buf[strcspn(buf, "\n")] = 0;
-    state->ffi_stack[0]     = WI_MAKE_BOX_VALUE(wi_make_string(state->gc, buf));
+    line[strcspn(line, "\n")] = 0;
+    state->ffi_stack[0]       = WI_MAKE_BOX_VALUE(wi_make_string(state->gc, line));
 }
 
 static void

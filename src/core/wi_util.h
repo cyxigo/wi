@@ -1,6 +1,7 @@
 #ifndef WI_UTIL_H
 #define WI_UTIL_H
 
+#include <stdbool.h>
 #include <stdio.h>
 
 #define WI_NORETURN __attribute__((noreturn))
@@ -10,5 +11,7 @@
 
 char*
 wi_read_stream(FILE* stream);
+bool
+wi_read_line(char** line);
 
 #endif

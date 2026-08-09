@@ -5,6 +5,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 #include "../include/wi.h"
 #include "../include/wi_conf.h"
 #include "wi_util.h"
@@ -49,17 +53,18 @@ _version(void) {
 static void
 _repl(void) {
     _version();
-    char line[2048];
 
     for (;;) {
         printf("> ");
+        char* line;
 
-        if (!fgets(line, sizeof(line), stdin)) {
+        if (!wi_read_line(&line)) {
             printf("\n");
             break;
         }
 
         wi_run_result result = wi_state_run(_g_state, "<stdin>", line);
+        free(line);
 
         if (result == WI_RUN_ERROR) {
             _print_error();
@@ -191,6 +196,11 @@ _parse_flags(int argc, const char* argv[], wi_conf* conf, const char** file_path
 
 extern int
 main(int argc, const char* argv[]) {
+#ifdef _WIN32
+    SetConsoleOutputCP(CP_UTF8);
+    SetConsoleCP(CP_UTF8);
+#endif
+
     signal(SIGINT, _sigint_handler);
     wi_conf      conf        = WI_DEFAULT_CONF;
     const char*  file_path   = NULL;
