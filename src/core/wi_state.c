@@ -99,6 +99,7 @@ wi_new_state(wi_conf conf) {
     _state_reset_stack(state);
 
     wi_table_init(&state->globals, state->gc);
+    wi_table_init(&state->global_attrs, state->gc);
     wi_table_init(&state->foreign, state->gc);
     wi_table_init(&state->required, state->gc);
 
@@ -126,6 +127,7 @@ wi_delete_state(struct wi_state* state) {
     free(state->stack);
 
     wi_table_free(&state->globals);
+    wi_table_free(&state->global_attrs);
     wi_table_free(&state->foreign);
     wi_table_free(&state->required);
 
@@ -271,8 +273,6 @@ wi_state_error(struct wi_state* state, const char* format, ...) {
     va_start(args, format);                        \
     wi_state_append_error_va(state, format, args); \
     va_end(args)
-
-    wi_state_reset_error(state);
 
     if (state->recoveries) {
         struct wi_recovery* recovery = state->recoveries;
@@ -781,11 +781,17 @@ _state_require(struct wi_state* state, wi_value path_value, wi_value name_value)
     struct wi_object* object = wi_new_object(state->gc, name);
     WI_GC_PUSH_ROOT(state->gc, object);
 
-    /* we wrap `src` in a box in case `wi_compile` fails and causes oom error */
-    /* gc will have a reference to `src` and will be able to free it */
+    /*
+        we wrap src in a box in case wi_compile fails and causes oom error
+        gc will have a reference to src and will be able to free it
+    */
     struct wi_string* src_box = wi_take_cstring(state->gc, src, (int)strlen(src));
     WI_GC_PUSH_ROOT(state->gc, src_box);
 
+    /*
+        here, object->fields acts as state->global_attrs, it's temporary yes, but we won't need
+        to go back to the required script (i.e. recompile it)
+    */
     struct wi_prototype* prototype = wi_compile(state, path, src_box->chars, &object->fields);
 
     if (!prototype) {
@@ -1481,7 +1487,7 @@ wi_state_run(struct wi_state* state, const char* file_path, const char* src) {
         return WI_RUN_ERROR;
     }
 
-    struct wi_prototype* prototype = wi_compile(state, file_path, src, &state->globals);
+    struct wi_prototype* prototype = wi_compile(state, file_path, src, &state->global_attrs);
 
     if (!prototype) {
         return WI_RUN_ERROR;

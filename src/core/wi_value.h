@@ -10,7 +10,6 @@
 
 struct wi_box;
 
-#define WI_REAL_FORMAT "%.15g"
 #define WI_QNAN 0x7ffc000000000000
 #define WI_SIGN_BIT 0x8000000000000000
 

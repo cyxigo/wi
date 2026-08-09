@@ -237,7 +237,7 @@ _gc_mark_compiler(struct wi_gc* gc) {
     struct wi_compiler* compiler = gc->compiler;
 
     while (compiler) {
-        _gc_mark_table(gc, compiler->globals);
+        _gc_mark_table(gc, compiler->global_attrs);
         _GC_MARK_BOX(gc, compiler->prototype);
         _GC_MARK_BOX(gc, compiler->constants);
         compiler = compiler->outer;

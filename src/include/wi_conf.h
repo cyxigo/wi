@@ -9,6 +9,11 @@
  */
 #define WI_VERSION_STRING "6.0.0-beta"
 
+/**
+ * Format that Wi uses to print any real
+ */
+#define WI_REAL_FORMAT "%.15g"
+
 enum {
     /**
      * Version numbers

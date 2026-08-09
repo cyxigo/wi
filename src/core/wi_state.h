@@ -24,11 +24,11 @@ typedef void* wi_lib_handle;
 #include "wi_value.h"
 
 static inline void
-wi_lib_close(wi_lib_handle lib) {
+wi_lib_close(wi_lib_handle handle) {
 #ifdef _WIN32
-    FreeLibrary(lib);
+    FreeLibrary(handle);
 #else
-    dlclose(lib);
+    dlclose(handle);
 #endif
 }
 
@@ -105,7 +105,13 @@ struct wi_state {
     wi_value* stack_top;
     wi_value* ffi_stack;
 
-    struct wi_table    globals;
+    struct wi_table globals;
+    /*
+        this table is used by the compiler for two purposes:
+        1. track globals definition and redefinition
+        2. track globals attributes, such as <const>
+    */
+    struct wi_table    global_attrs;
     struct wi_table    foreign;
     struct wi_table    required;
     struct wi_upvalue* open_upvalues;
@@ -122,7 +128,7 @@ struct wi_state {
     struct wi_object* array_obj;
     struct wi_object* map_obj;
 
-    /* these are used in `base.try` so we don't need to push 3 gc roots every time we need to call it */
+    /* these are used in _base_try so we don't need to push 3 gc roots every time we need to call it */
     struct wi_string* ok_str;
     struct wi_string* value_str;
     struct wi_string* error_str;
