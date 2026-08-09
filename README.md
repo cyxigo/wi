@@ -51,8 +51,8 @@ Around three years ago, I was looking through interpreted programming languages 
 
 ## Current project status
 
-This programming language was created by me, and only me - a single person. It's in beta and I'm working on it almost every day. The standard library isn't finished yet, but it's already quite useful. Other than the API, everything is completely uncommented. I really, really have never commented my code in my entire life. Sure, this is a terrible practice, but it's hard for me since I'm not a native English speaker. That doesn't mean I shouldn't comment my code, so... I'll try to comment it when I can.
+This programming language was created by me, and only me - a single person. It's in beta and I'm working on it almost every day. The standard library isn't finished yet, but it's already quite useful. Other than the API, the code is not heavily commented, only the parts that can be really confusing (WIP).
 
-Of course, some parts of the code may contain bad practices, and I'm very open to suggestions - if you have one, open an issue!
+Some parts may still need polish, and I'm very open to suggestions - if you have one, open an issue!
 
 No AI was used in the creation of this project - only me, my horrid laptop, my favorite book (Crafting Interpreters), Googling, and stuff.
