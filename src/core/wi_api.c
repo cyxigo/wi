@@ -1,9 +1,3 @@
-#ifdef _WIN32
-#define strdup _strdup
-#else
-#define _POSIX_C_SOURCE 200809L
-#endif
-
 #include <setjmp.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -15,11 +9,11 @@
 #include "../std/wi_math.h"
 #include "../std/wi_os.h"
 #include "../std/wi_string.h"
-#include "../std/wi_utf8.h"
 #include "wi_box.h"
 #include "wi_gc.h"
 #include "wi_state.h"
 #include "wi_table.h"
+#include "wi_util.h"
 #include "wi_value.h"
 
 void
@@ -27,7 +21,6 @@ wi_def_std(struct wi_state* state) {
     wi_state_def_base_foreign(state);
     wi_state_def_os_foreign(state);
     wi_state_def_math_foreign(state);
-    wi_state_def_utf8_foreign(state);
     wi_state_def_string_foreign(state);
     wi_state_def_array_foreign(state);
     wi_state_def_map_foreign(state);
@@ -167,7 +160,7 @@ wi_is_string(struct wi_state* state) {
 bool
 wi_is_userdata(struct wi_state* state, const char* name) {
     wi_value top = wi_state_top(state);
-    return wi_value_is_userdata(top) && strcmp(wi_value_as_userdata(top)->name->chars, name) == 0;
+    return wi_value_is_userdata(top) && strcmp(wi_value_as_userdata(top)->name->buf, name) == 0;
 }
 
 void
@@ -213,14 +206,14 @@ wi_pop_bool(struct wi_state* state) {
 }
 
 char*
-wi_pop_string(struct wi_state* state, int* len) {
+wi_pop_string(struct wi_state* state, int* count) {
     struct wi_string* string = wi_value_as_string(wi_state_pop(state));
 
-    if (len) {
-        *len = string->len;
+    if (count) {
+        *count = string->count;
     }
 
-    return string->chars;
+    return string->buf;
 }
 
 void*
@@ -251,7 +244,7 @@ wi_check_bool(struct wi_state* state) {
 }
 
 char*
-wi_check_string(struct wi_state* state, int* len) {
+wi_check_string(struct wi_state* state, int* count) {
     wi_value value = wi_state_pop(state);
 
     if (!wi_value_is_string(value)) {
@@ -260,11 +253,11 @@ wi_check_string(struct wi_state* state, int* len) {
 
     struct wi_string* string = wi_value_as_string(value);
 
-    if (len) {
-        *len = string->len;
+    if (count) {
+        *count = string->count;
     }
 
-    return string->chars;
+    return string->buf;
 }
 
 void*
@@ -277,8 +270,8 @@ wi_check_userdata(struct wi_state* state, const char* name) {
 
     struct wi_userdata* userdata = wi_value_as_userdata(value);
 
-    if (strcmp(userdata->name->chars, name) != 0) {
-        wi_state_error(state, "expected userdata %s but got %s", name, userdata->name->chars);
+    if (strcmp(userdata->name->buf, name) != 0) {
+        wi_state_error(state, "expected userdata %s but got %s", name, userdata->name->buf);
     }
 
     return userdata->data;
@@ -316,7 +309,7 @@ wi_call(struct wi_state* state, uint8_t arg_count, char** error) {
             strdup because after we pop the recovery, GC will free its error
             in _base_try we don't need to do that because it's immediately passed to a new object
         */
-        *error = failed ? strdup(recovery->error->chars) : NULL;
+        *error = failed ? wi_strdup(recovery->error->buf) : NULL;
     }
 
     wi_state_pop_recovery(state);
@@ -392,14 +385,14 @@ wi_slot_get_bool(struct wi_state* state, int slot) {
 }
 
 char*
-wi_slot_get_string(struct wi_state* state, int slot, int* len) {
+wi_slot_get_string(struct wi_state* state, int slot, int* count) {
     struct wi_string* string = wi_value_as_string(state->ffi_stack[slot]);
 
-    if (len) {
-        *len = string->len;
+    if (count) {
+        *count = string->count;
     }
 
-    return string->chars;
+    return string->buf;
 }
 
 void*
@@ -428,7 +421,7 @@ wi_slot_check_bool(struct wi_state* state, int slot) {
 }
 
 char*
-wi_slot_check_string(struct wi_state* state, int slot, int* len) {
+wi_slot_check_string(struct wi_state* state, int slot, int* count) {
     if (!wi_slot_is_string(state, slot)) {
         wi_state_error(state, "bad argument %i - expected a value of type string but got %s", slot,
                        wi_value_type(state->ffi_stack[slot]));
@@ -436,11 +429,11 @@ wi_slot_check_string(struct wi_state* state, int slot, int* len) {
 
     struct wi_string* string = wi_value_as_string(state->ffi_stack[slot]);
 
-    if (len) {
-        *len = string->len;
+    if (count) {
+        *count = string->count;
     }
 
-    return string->chars;
+    return string->buf;
 }
 
 void*
@@ -452,9 +445,9 @@ wi_slot_check_userdata(struct wi_state* state, int slot, const char* name) {
 
     struct wi_userdata* userdata = wi_value_as_userdata(state->ffi_stack[slot]);
 
-    if (strcmp(userdata->name->chars, name) != 0) {
+    if (strcmp(userdata->name->buf, name) != 0) {
         wi_state_error(state, "bad argument %i - expected userdata %s but got %s", slot, name,
-                       userdata->name->chars);
+                       userdata->name->buf);
     }
 
     return userdata->data;

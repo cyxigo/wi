@@ -105,7 +105,7 @@ enum wi_token_kind {
 struct wi_token {
     enum wi_token_kind kind;
     const char*        start;
-    int                len;
+    int                count;
     int                line;
     int                col;
 };
@@ -114,7 +114,7 @@ extern const struct wi_token WI_BLANK_TOKEN;
 
 static inline bool
 wi_token_lexemes_equal(struct wi_token a, struct wi_token b) {
-    return a.len == b.len && memcmp(a.start, b.start, (size_t)a.len) == 0;
+    return a.count == b.count && memcmp(a.start, b.start, (size_t)a.count) == 0;
 }
 
 static inline struct wi_token
@@ -122,7 +122,7 @@ wi_token_from_string(const char* string) {
     return (struct wi_token){
         .kind  = WI_TOKEN_NAME,
         .start = string,
-        .len   = (int)strlen(string),
+        .count = (int)strlen(string),
         .line  = 1,
     };
 }
@@ -136,7 +136,8 @@ struct wi_lexer {
     const char* start;
     const char* curr;
     int         line;
-    int         col;
+    int         start_col;
+    int         curr_col;
 };
 
 void

@@ -45,7 +45,7 @@ wi_table_init(struct wi_table* table, struct wi_gc* gc) {
 
 void
 wi_table_free(struct wi_table* table) {
-    WI_GC_FREE_ARRAY(table->gc, struct wi_entry, table->entries, table->capacity);
+    WI_GC_FREE_BUF(table->gc, struct wi_entry, table->entries, table->capacity);
     wi_table_init(table, table->gc);
 }
 
@@ -91,7 +91,7 @@ _table_adjust_capacity(struct wi_table* table, int capacity) {
         table->count++;
     }
 
-    WI_GC_FREE_ARRAY(table->gc, struct wi_entry, table->entries, table->capacity);
+    WI_GC_FREE_BUF(table->gc, struct wi_entry, table->entries, table->capacity);
     table->capacity = capacity;
     table->entries  = entries;
 }
@@ -176,7 +176,7 @@ wi_table_find_string(struct wi_table* table, const char* chars, int len, uint32_
         if (wi_value_is_string(entry->key)) {
             struct wi_string* key = wi_value_as_string(entry->key);
 
-            if (key->len == len && key->hash == hash && memcmp(key->chars, chars, (size_t)len) == 0) {
+            if (key->count == len && key->hash == hash && memcmp(key->buf, chars, (size_t)len) == 0) {
                 return key;
             }
         }
@@ -225,7 +225,7 @@ wi_table_copy(struct wi_table* src, struct wi_table* dest) {
     }
 
     if (dest->entries) {
-        WI_GC_FREE_ARRAY(dest->gc, struct wi_entry, dest->entries, dest->capacity);
+        WI_GC_FREE_BUF(dest->gc, struct wi_entry, dest->entries, dest->capacity);
     }
 
     if (src->capacity == 0) {

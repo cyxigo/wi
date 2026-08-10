@@ -23,6 +23,14 @@ _base_print(struct wi_state* state, int arg_count) {
 
 static void
 _base_input(struct wi_state* state, int arg_count) {
+    if (arg_count == 1) {
+        wi_value_print(state->ffi_stack[1]);
+    } else if (arg_count == 0) {
+        /* do nothing */
+    } else {
+        wi_state_error(state, "input() takes only 0 or 1 arguments");
+    }
+
     char* line;
 
     if (!wi_read_line(&line)) {
@@ -174,10 +182,10 @@ _base_to_real(struct wi_state* state, int arg_count) {
     } else if (wi_value_is_string(value)) {
         struct wi_string* string = wi_value_as_string(state->ffi_stack[1]);
         char*             end    = NULL;
-        wi_real           real   = wi_string_to_real(string->chars, string->len, &end);
+        wi_real           real   = wi_string_to_real(string->buf, string->count, &end);
 
-        if (end != string->chars + string->len) {
-            wi_state_error(state, "invalid real format %s", string->chars);
+        if (end != string->buf + string->count) {
+            wi_state_error(state, "invalid real format %s", string->buf);
         }
 
         result = wi_make_real_value(real);
@@ -200,7 +208,12 @@ _base_to_string(struct wi_state* state, int arg_count) {
         return;
     }
 
-    char*             string     = wi_value_to_string(state->ffi_stack[1]);
+    char* string = wi_value_to_string(state->ffi_stack[1]);
+
+    if (!string) {
+        wi_state_oom(state, "out of memory: failed to allocate a string for concatenation");
+    }
+
     struct wi_string* string_box = wi_take_cstring(state->gc, string, (int)strlen(string));
     state->ffi_stack[0]          = WI_MAKE_BOX_VALUE(string_box);
 }
@@ -233,7 +246,7 @@ _base_fields(struct wi_state* state, int arg_count) {
 void
 wi_state_def_base_foreign(struct wi_state* state) {
     wi_def_foreign(state, "print", _base_print, 0, true);
-    wi_def_foreign(state, "input", _base_input, 0, false);
+    wi_def_foreign(state, "input", _base_input, 0, true);
     wi_def_foreign(state, "is_main", _base_is_main, 0, false);
     wi_def_foreign(state, "exit", _base_exit, 0, false);
 

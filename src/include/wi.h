@@ -390,10 +390,10 @@ wi_pop_bool(wi_state* state);
  * Pop a string value from the stack
  *
  * @param state Wi state instance
- * @param len Optional pointer to store the string length, can be `NULL`
+ * @param count Optional pointer to store the string byte count, can be `NULL`
  */
 WI_API char*
-wi_pop_string(wi_state* state, int* len);
+wi_pop_string(wi_state* state, int* count);
 
 /**
  * Pop userdata from the stack
@@ -423,10 +423,10 @@ wi_check_bool(wi_state* state);
  * Pop a string value from the stack with type-checking
  *
  * @param state Wi state instance
- * @param len Optional pointer to store the string length, can be `NULL`
+ * @param count Optional pointer to store the string byte count, can be `NULL`
  */
 WI_API char*
-wi_check_string(wi_state* state, int* len);
+wi_check_string(wi_state* state, int* count);
 
 /**
  * Pop userdata from the stack with type-checking
@@ -570,15 +570,15 @@ WI_API bool
 wi_slot_get_bool(wi_state* state, int slot);
 
 /**
- * Get a string value and its length from a slot
+ * Get a string value from a slot
  *
  * @param state Wi state instance
  * @param slot Slot index (0-[arg_count])
- * @param len Optional pointer to store the string length, can be `NULL`
+ * @param count Optional pointer to store the string byte count, can be `NULL`
  * @return String stored in a slot
  */
 WI_API char*
-wi_slot_get_string(wi_state* state, int slot, int* len);
+wi_slot_get_string(wi_state* state, int slot, int* count);
 
 /**
  * Get userdata from a slot
@@ -615,11 +615,11 @@ wi_slot_check_bool(wi_state* state, int slot);
  *
  * @param state Wi state instance
  * @param slot Slot index (0-[arg_count])
- * @param len Optional pointer to store the string length, can be `NULL`
+ * @param count Optional pointer to store the string byte count, can be `NULL`
  * @return String stored in a slot
  */
 WI_API char*
-wi_slot_check_string(wi_state* state, int slot, int* len);
+wi_slot_check_string(wi_state* state, int slot, int* count);
 
 /**
  * Get userdata from a slot with type-checking

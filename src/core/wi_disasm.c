@@ -59,7 +59,7 @@ _invoke_instr(const char* name, struct wi_prototype* prototype, int offset) {
     uint8_t           arg_count     = prototype->bytes.data[offset + 3];
     struct wi_string* name_box      = wi_value_as_string(prototype->constants.data[name_constant]);
 
-    printf("%-16s C%05hu %s (%hhu args, including receiver)\n", name, name_constant, name_box->chars, arg_count);
+    printf("%-16s C%05hu %s (%hhu args, including receiver)\n", name, name_constant, name_box->buf, arg_count);
     return offset + 4;
 }
 
@@ -216,7 +216,7 @@ wi_prototype_disasm_instr(struct wi_prototype* prototype, int offset) {
                 uint16_t constant      = prototype->bytes.data[offset] << 8 | prototype->bytes.data[offset + 1];
                 struct wi_string* name = wi_value_as_string(prototype->constants.data[constant]);
 
-                printf("C:%05hu %s (name)", constant, name->chars);
+                printf("C:%05hu %s (name)", constant, name->buf);
 
                 offset += 2;
             } else {
@@ -263,7 +263,7 @@ wi_prototype_disasm(struct wi_prototype* prototype) {
     if (prototype->is_main) {
         printf("--- main function (%s) ---\n", prototype->file_path);
     } else if (prototype->name) {
-        printf("--- %s() (%s) ---\n", prototype->name->chars, prototype->file_path);
+        printf("--- %s() (%s) ---\n", prototype->name->buf, prototype->file_path);
     } else {
         printf("--- anonymous function (%s) ---\n", prototype->file_path);
     }

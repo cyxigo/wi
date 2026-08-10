@@ -62,7 +62,7 @@ wi_gc_collect_garbage(struct wi_gc* gc);
 #define WI_GC_ALLOC(gc, type, count) wi_gc_realloc(gc, NULL, 0, sizeof(type) * (size_t)(count))
 #define WI_GC_ALLOC_ARRAY(gc, type, ptr, old_count, new_count) \
     wi_gc_realloc(gc, ptr, sizeof(type) * (size_t)old_count, sizeof(type) * (size_t)new_count)
-#define WI_GC_FREE_ARRAY(gc, type, ptr, count) wi_gc_realloc(gc, ptr, sizeof(type) * (size_t)(count), 0)
+#define WI_GC_FREE_BUF(gc, type, ptr, count) wi_gc_realloc(gc, ptr, sizeof(type) * (size_t)(count), 0)
 #define WI_GC_FREE(gc, type, ptr) wi_gc_realloc(gc, ptr, sizeof(type), 0)
 
 #endif

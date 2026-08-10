@@ -110,7 +110,7 @@ _gc_free_box(struct wi_gc* gc, struct wi_box* box) {
     switch (box->kind) {
         case WI_BOX_STRING: {
             struct wi_string* string = (struct wi_string*)box;
-            WI_GC_FREE_ARRAY(gc, char, string->chars, string->len + 1);
+            WI_GC_FREE_BUF(gc, char, string->buf, string->count + 1);
             WI_GC_FREE(gc, struct wi_string, box);
             break;
         }
@@ -141,7 +141,7 @@ _gc_free_box(struct wi_gc* gc, struct wi_box* box) {
             break;
         case WI_BOX_CLOSURE: {
             struct wi_closure* closure = (struct wi_closure*)box;
-            WI_GC_FREE_ARRAY(gc, struct wi_upvalue*, closure->upvalues, closure->upvalue_count);
+            WI_GC_FREE_BUF(gc, struct wi_upvalue*, closure->upvalues, closure->upvalue_count);
             WI_GC_FREE(gc, struct wi_closure, box);
             break;
         }

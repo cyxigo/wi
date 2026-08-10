@@ -85,7 +85,9 @@ _parser_append_token_line(struct wi_parser* parser, struct wi_token token) {
                           line_start);
     wi_state_append_error(state, " %*s | %*s", line_width, "", token.col - 1, "");
 
-    for (int i = 0; i < token.len; i++) {
+    int caret_count = wi_utf8_len(token.start, token.count);
+
+    for (int i = 0; i < caret_count; i++) {
         wi_state_append_error(state, "^");
     }
 
@@ -183,8 +185,8 @@ wi_parser_expect(struct wi_parser* parser, enum wi_token_kind kind) {
     }
 
     struct wi_token* prev = &parser->prev;
-    prev->col += prev->len;
-    prev->len = 1;
+    prev->col += wi_utf8_len(prev->start, prev->count);
+    prev->count = 1;
     wi_parser_error_at_prev(parser, "expected %s", wi_token_kind_to_string(kind));
 
     return WI_BLANK_TOKEN;

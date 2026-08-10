@@ -39,8 +39,9 @@ wi_new_box(struct wi_gc* gc, size_t size, enum wi_box_kind kind);
 
 struct wi_string {
     struct wi_box box;
-    char*         chars;
-    int32_t       len;
+    char*         buf;
+    int           count;
+    int           len;
     uint32_t      hash;
 };
 
@@ -53,17 +54,18 @@ static inline struct wi_string*
 wi_value_as_string(wi_value value) {
     return (struct wi_string*)wi_value_as_box(value);
 }
+
 static inline char*
 wi_value_as_cstring(wi_value value) {
-    return wi_value_as_string(value)->chars;
+    return wi_value_as_string(value)->buf;
 }
 
 struct wi_string*
-wi_new_string(struct wi_gc* gc, char* chars, int len, uint32_t hash);
+wi_new_string(struct wi_gc* gc, char* chars, int count, uint32_t hash);
 struct wi_string*
-wi_copy_cstring(struct wi_gc* gc, const char* chars, int len);
+wi_copy_cstring(struct wi_gc* gc, const char* chars, int count);
 struct wi_string*
-wi_take_cstring(struct wi_gc* gc, char* chars, int len);
+wi_take_cstring(struct wi_gc* gc, char* chars, int count);
 
 static inline struct wi_string*
 wi_make_string(struct wi_gc* gc, const char* string) {

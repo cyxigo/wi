@@ -1,9 +1,3 @@
-#ifdef _WIN32
-#define strdup _strdup
-#else
-#define _POSIX_C_SOURCE 200809L
-#endif
-
 #include "wi_util.h"
 
 #include <stdarg.h>
@@ -14,6 +8,35 @@
 #ifdef _WIN32
 #include <windows.h>
 #endif
+
+/*
+    got tired from using tons of macros to provide strdup...
+    so here's this little function thingy! plain as day, simple as it gets!
+*/
+char*
+wi_strdup(const char* src) {
+    size_t len = strlen(src) + 1;
+    void* new  = malloc(len);
+
+    if (!new) {
+        return NULL;
+    }
+
+    return memcpy(new, src, len);
+}
+
+int
+wi_utf8_len(const char* chars, int count) {
+    int len = 0;
+
+    for (int i = 0; i < count; i++) {
+        if ((chars[i] & 0xc0) != 0x80) {
+            len++;
+        }
+    }
+
+    return len;
+}
 
 char*
 wi_read_stream(FILE* stream) {
@@ -51,7 +74,6 @@ wi_read_line(char** line) {
     wchar_t wbuf[2048];
     DWORD   wbuf_len = sizeof(wbuf) / sizeof(wbuf[0]) - 1;
     DWORD   read     = 0;
-    DWORD   err      = 0;
 
     if (!ReadConsoleW(hstdin, wbuf, wbuf_len, &read, NULL)) {
         *line = NULL;
@@ -85,7 +107,7 @@ wi_read_line(char** line) {
         return false;
     }
 
-    *line = strdup(buf);
+    *line = wi_strdup(buf);
 
     if (!*line) {
         return false;
