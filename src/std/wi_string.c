@@ -8,7 +8,7 @@
 static void
 _string_sub(struct wi_state* state, int arg_count) {
     int   len;
-    char* string = wi_slot_check_string(state, 1, &len);
+    char* string = wi_slot_check_string(state, 1, &len, NULL);
     int   start  = (int)wi_slot_check_real(state, 2);
     int   end    = (int)wi_slot_check_real(state, 3);
 
@@ -22,7 +22,7 @@ _string_sub(struct wi_state* state, int arg_count) {
 static void
 _string_upper(struct wi_state* state, int arg_count) {
     int   len;
-    char* string = wi_slot_check_string(state, 1, &len);
+    char* string = wi_slot_check_string(state, 1, &len, NULL);
     char* buf    = WI_GC_ALLOC(state->gc, char, len + 1);
 
     for (int i = 0; i < len; i++) {
@@ -36,7 +36,7 @@ _string_upper(struct wi_state* state, int arg_count) {
 static void
 _string_lower(struct wi_state* state, int arg_count) {
     int   len;
-    char* string = wi_slot_check_string(state, 1, &len);
+    char* string = wi_slot_check_string(state, 1, &len, NULL);
     char* buf    = WI_GC_ALLOC(state->gc, char, len + 1);
 
     for (int i = 0; i < len; i++) {
@@ -50,7 +50,7 @@ _string_lower(struct wi_state* state, int arg_count) {
 static void
 _string_trim(struct wi_state* state, int arg_count) {
     int   len;
-    char* string = wi_slot_check_string(state, 1, &len);
+    char* string = wi_slot_check_string(state, 1, &len, NULL);
     int   start  = 0;
     int   end    = len;
 
@@ -68,9 +68,9 @@ _string_trim(struct wi_state* state, int arg_count) {
 static void
 _string_has(struct wi_state* state, int arg_count) {
     int   len;
-    char* string = wi_slot_check_string(state, 1, &len);
+    char* string = wi_slot_check_string(state, 1, &len, NULL);
     int   target_len;
-    char* target = wi_slot_check_string(state, 2, &target_len);
+    char* target = wi_slot_check_string(state, 2, &target_len, NULL);
     bool  found  = target_len == 0;
 
     for (int i = 0; !found && i + target_len <= len; i++) {
@@ -85,9 +85,9 @@ _string_has(struct wi_state* state, int arg_count) {
 static void
 _string_starts_with(struct wi_state* state, int arg_count) {
     int   len;
-    char* string = wi_slot_check_string(state, 1, &len);
+    char* string = wi_slot_check_string(state, 1, &len, NULL);
     int   prefix_len;
-    char* prefix = wi_slot_check_string(state, 2, &prefix_len);
+    char* prefix = wi_slot_check_string(state, 2, &prefix_len, NULL);
     bool  result = prefix_len <= len && memcmp(string, prefix, (size_t)prefix_len) == 0;
 
     wi_slot_set_bool(state, 0, result);
@@ -96,9 +96,9 @@ _string_starts_with(struct wi_state* state, int arg_count) {
 static void
 _string_ends_with(struct wi_state* state, int arg_count) {
     int   len;
-    char* string = wi_slot_check_string(state, 1, &len);
+    char* string = wi_slot_check_string(state, 1, &len, NULL);
     int   suffix_len;
-    char* suffix = wi_slot_check_string(state, 2, &suffix_len);
+    char* suffix = wi_slot_check_string(state, 2, &suffix_len, NULL);
     bool  result = suffix_len <= len && memcmp(string + (len - suffix_len), suffix, (size_t)suffix_len) == 0;
 
     wi_slot_set_bool(state, 0, result);
@@ -107,11 +107,11 @@ _string_ends_with(struct wi_state* state, int arg_count) {
 static void
 _string_replace(struct wi_state* state, int arg_count) {
     int   len;
-    char* string = wi_slot_check_string(state, 1, &len);
+    char* string = wi_slot_check_string(state, 1, &len, NULL);
     int   old_len;
-    char* old = wi_slot_check_string(state, 2, &old_len);
+    char* old = wi_slot_check_string(state, 2, &old_len, NULL);
     int   new_len;
-    char* new = wi_slot_check_string(state, 3, &new_len);
+    char* new = wi_slot_check_string(state, 3, &new_len, NULL);
 
     if (old_len == 0) {
         state->ffi_stack[0] = state->ffi_stack[1];
@@ -145,9 +145,9 @@ _string_replace(struct wi_state* state, int arg_count) {
 static void
 _string_split(struct wi_state* state, int arg_count) {
     int   len;
-    char* string = wi_slot_check_string(state, 1, &len);
+    char* string = wi_slot_check_string(state, 1, &len, NULL);
     int   sep_len;
-    char* sep = wi_slot_check_string(state, 2, &sep_len);
+    char* sep = wi_slot_check_string(state, 2, &sep_len, NULL);
 
     struct wi_array* result = wi_new_array(state->gc);
     state->ffi_stack[0]     = WI_MAKE_BOX_VALUE(result);
@@ -185,7 +185,7 @@ _string_split(struct wi_state* state, int arg_count) {
 static void
 _string_reverse(struct wi_state* state, int arg_count) {
     int   len;
-    char* string = wi_slot_check_string(state, 1, &len);
+    char* string = wi_slot_check_string(state, 1, &len, NULL);
     char* buf    = WI_GC_ALLOC(state->gc, char, len + 1);
 
     for (int i = 0; i < len; i++) {

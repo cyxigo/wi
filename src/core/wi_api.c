@@ -206,11 +206,15 @@ wi_pop_bool(struct wi_state* state) {
 }
 
 char*
-wi_pop_string(struct wi_state* state, int* count) {
+wi_pop_string(struct wi_state* state, int* count, int* len) {
     struct wi_string* string = wi_value_as_string(wi_state_pop(state));
 
     if (count) {
         *count = string->count;
+    }
+
+    if (len) {
+        *len = string->len;
     }
 
     return string->buf;
@@ -244,7 +248,7 @@ wi_check_bool(struct wi_state* state) {
 }
 
 char*
-wi_check_string(struct wi_state* state, int* count) {
+wi_check_string(struct wi_state* state, int* count, int* len) {
     wi_value value = wi_state_pop(state);
 
     if (!wi_value_is_string(value)) {
@@ -255,6 +259,10 @@ wi_check_string(struct wi_state* state, int* count) {
 
     if (count) {
         *count = string->count;
+    }
+
+    if (len) {
+        *len = string->len;
     }
 
     return string->buf;
@@ -385,11 +393,15 @@ wi_slot_get_bool(struct wi_state* state, int slot) {
 }
 
 char*
-wi_slot_get_string(struct wi_state* state, int slot, int* count) {
+wi_slot_get_string(struct wi_state* state, int slot, int* count, int* len) {
     struct wi_string* string = wi_value_as_string(state->ffi_stack[slot]);
 
     if (count) {
         *count = string->count;
+    }
+
+    if (len) {
+        *len = string->len;
     }
 
     return string->buf;
@@ -421,7 +433,7 @@ wi_slot_check_bool(struct wi_state* state, int slot) {
 }
 
 char*
-wi_slot_check_string(struct wi_state* state, int slot, int* count) {
+wi_slot_check_string(struct wi_state* state, int slot, int* count, int* len) {
     if (!wi_slot_is_string(state, slot)) {
         wi_state_error(state, "bad argument %i - expected a value of type string but got %s", slot,
                        wi_value_type(state->ffi_stack[slot]));
@@ -431,6 +443,10 @@ wi_slot_check_string(struct wi_state* state, int slot, int* count) {
 
     if (count) {
         *count = string->count;
+    }
+
+    if (len) {
+        *len = string->len;
     }
 
     return string->buf;

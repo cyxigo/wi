@@ -55,7 +55,7 @@ _base_exit(struct wi_state* state, int arg_count) {
 
 static void
 _base_error(struct wi_state* state, int arg_count) {
-    wi_state_error(state, "%s", wi_slot_check_string(state, 1, NULL));
+    wi_state_error(state, "%s", wi_slot_check_string(state, 1, NULL, NULL));
 }
 
 static void
@@ -63,7 +63,7 @@ _base_assert(struct wi_state* state, int arg_count) {
     bool is_falsy = wi_value_is_falsy(state->ffi_stack[1]);
 
     if (is_falsy) {
-        wi_state_error(state, "%s", wi_slot_check_string(state, 2, NULL));
+        wi_state_error(state, "%s", wi_slot_check_string(state, 2, NULL, NULL));
     }
 
     wi_slot_set_bool(state, 0, !is_falsy);
@@ -231,7 +231,7 @@ _check_arg1_object(struct wi_state* state) {
 static void
 _base_has_field(struct wi_state* state, int arg_count) {
     struct wi_object* object = _check_arg1_object(state);
-    wi_slot_check_string(state, 2, NULL);
+    wi_slot_check_string(state, 2, NULL, NULL);
     wi_slot_set_bool(state, 0, wi_table_get(&object->fields, state->ffi_stack[2], NULL));
 }
 
