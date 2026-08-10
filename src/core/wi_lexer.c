@@ -432,6 +432,11 @@ wi_lexer_next(struct wi_lexer* lexer) {
 
     char c = _lexer_advance(lexer);
 
+    /*
+        while yes, this error is not entirely accurate
+        (because we check every character, not names only)
+        our dear user most likely tried to type a character that is meant to be a name or in a name
+    */
     if ((c & 0x80) != 0) {
         return _lexer_error(lexer, "non-ascii character in a name", lexer->line, lexer->curr_col - 1);
     }
