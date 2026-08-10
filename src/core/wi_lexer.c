@@ -8,7 +8,7 @@
 const struct wi_token WI_BLANK_TOKEN = {
     .kind  = WI_TOKEN_BLANK,
     .start = "",
-    .len   = 0,
+    .count = 0,
     .line  = 0,
 };
 
@@ -143,7 +143,8 @@ wi_lexer_init(struct wi_lexer* lexer, const char* file_path, const char* src) {
     lexer->start     = src;
     lexer->curr      = src;
     lexer->line      = 1;
-    lexer->col       = 1;
+    lexer->start_col = 1;
+    lexer->curr_col  = 1;
 }
 
 static struct wi_token
@@ -155,12 +156,12 @@ _lexer_make_token(struct wi_lexer* lexer, enum wi_token_kind kind) {
 
     if (token.kind == WI_TOKEN_EOF) {
         token.start = "<eof>";
-        token.len   = 5;
-        token.col   = lexer->col;
+        token.count = 5;
+        token.col   = lexer->curr_col;
     } else {
         token.start = lexer->start;
-        token.len   = (int)(lexer->curr - lexer->start);
-        token.col   = lexer->col - token.len;
+        token.count = (int)(lexer->curr - lexer->start);
+        token.col   = lexer->start_col;
     }
 
     return token;
@@ -171,7 +172,7 @@ _lexer_error(struct wi_lexer* lexer, const char* msg, int line, int col) {
     return (struct wi_token){
         .kind  = WI_TOKEN_ERROR,
         .start = msg,
-        .len   = 1,
+        .count = 1,
         .line  = line,
         .col   = col,
     };
@@ -188,9 +189,9 @@ _lexer_advance(struct wi_lexer* lexer) {
 
     if (c == '\n') {
         lexer->line++;
-        lexer->col = 1;
-    } else {
-        lexer->col++;
+        lexer->curr_col = 1;
+    } else if ((c & 0xc0) != 0x80) {
+        lexer->curr_col++;
     }
 
     return c;
@@ -296,12 +297,12 @@ _lexer_name_kind(struct wi_lexer* lexer) {
 }
 
 static struct wi_token
-_lexer_name(struct wi_lexer* ls) {
-    while (wi_is_alnum(_lexer_peek(ls))) {
-        _lexer_advance(ls);
+_lexer_name(struct wi_lexer* lexer) {
+    while (wi_is_alnum(_lexer_peek(lexer))) {
+        _lexer_advance(lexer);
     }
 
-    return _lexer_make_token(ls, _lexer_name_kind(ls));
+    return _lexer_make_token(lexer, _lexer_name_kind(lexer));
 }
 
 static struct wi_token
@@ -318,7 +319,7 @@ _lexer_non_dec_real(struct wi_lexer* lexer) {
     }
 
     int line = lexer->line;
-    int col  = lexer->col;
+    int col  = lexer->curr_col;
 
     _lexer_advance(lexer);
 
@@ -359,7 +360,7 @@ _lexer_real(struct wi_lexer* lexer) {
 static struct wi_token
 _lexer_string(struct wi_lexer* lexer) {
     int line = lexer->line;
-    int col  = lexer->col - 1;
+    int col  = lexer->curr_col - 1;
 
     while (_lexer_peek(lexer) != '"' && !_lexer_is_at_end(lexer)) {
         if (_lexer_check(lexer, '\\') && _lexer_peek_next(lexer) != '\0') {
@@ -421,13 +422,19 @@ _lexer_skip_whitespace(struct wi_lexer* lexer) {
 struct wi_token
 wi_lexer_next(struct wi_lexer* lexer) {
     _lexer_skip_whitespace(lexer);
-    lexer->start = lexer->curr;
+
+    lexer->start     = lexer->curr;
+    lexer->start_col = lexer->curr_col;
 
     if (_lexer_is_at_end(lexer)) {
         return _lexer_make_token(lexer, WI_TOKEN_EOF);
     }
 
     char c = _lexer_advance(lexer);
+
+    if ((c & 0x80) != 0) {
+        return _lexer_error(lexer, "non-ascii character in a name", lexer->line, lexer->curr_col - 1);
+    }
 
     if (wi_is_alpha(c)) {
         return _lexer_name(lexer);
@@ -514,5 +521,5 @@ wi_lexer_next(struct wi_lexer* lexer) {
             break;
     }
 
-    return _lexer_error(lexer, "unexpected character", lexer->line, lexer->col);
+    return _lexer_error(lexer, "unexpected character", lexer->line, lexer->curr_col);
 }

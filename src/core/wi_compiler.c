@@ -221,7 +221,7 @@ _compiler_make_constant(struct wi_compiler* compiler, wi_value value) {
 
 static uint16_t
 _compiler_name_constant(struct wi_compiler* compiler, struct wi_token name) {
-    wi_value value = WI_MAKE_BOX_VALUE(wi_copy_cstring(compiler->state->gc, name.start, name.len));
+    wi_value value = WI_MAKE_BOX_VALUE(wi_copy_cstring(compiler->state->gc, name.start, name.count));
     return _compiler_make_constant(compiler, value);
 }
 
@@ -267,7 +267,7 @@ _compiler_decl_var(struct wi_compiler* compiler, struct wi_token name, wi_attrs 
         }
 
         if (wi_token_lexemes_equal(name, local->name)) {
-            wi_parser_error_at(compiler->parser, name, "variable %.*s is already defined", name.len, name.start);
+            wi_parser_error_at(compiler->parser, name, "variable %.*s is already defined", name.count, name.start);
             return;
         }
     }
@@ -295,10 +295,10 @@ _compiler_def_var(struct wi_compiler* compiler, struct wi_token name, wi_attrs a
         return;
     }
 
-    struct wi_string* name_box = wi_copy_cstring(compiler->state->gc, name.start, name.len);
+    struct wi_string* name_box = wi_copy_cstring(compiler->state->gc, name.start, name.count);
 
     if (!wi_table_set(compiler->global_attrs, WI_MAKE_BOX_VALUE(name_box), wi_make_real_value(attrs))) {
-        wi_parser_error_at(compiler->parser, name, "variable %s is already defined", name_box->chars);
+        wi_parser_error_at(compiler->parser, name, "variable %s is already defined", name_box->buf);
     }
 
     uint16_t constant = _compiler_make_constant(compiler, WI_MAKE_BOX_VALUE(name_box));
@@ -429,7 +429,7 @@ _compiler_var(struct wi_compiler* compiler, struct wi_token name) {
     } else {
         set_op      = WI_OP_SET_GLOBAL;
         get_op      = WI_OP_GET_GLOBAL;
-        global_name = wi_copy_cstring(compiler->state->gc, name.start, name.len);
+        global_name = wi_copy_cstring(compiler->state->gc, name.start, name.count);
         arg         = (int)_compiler_make_constant(compiler, WI_MAKE_BOX_VALUE(global_name));
     }
 
@@ -440,13 +440,13 @@ _compiler_var(struct wi_compiler* compiler, struct wi_token name) {
 
         if (!wi_table_get(compiler->global_attrs, name_value, &attrs_value) &&
             !wi_table_get(&compiler->state->foreign, name_value, &foreign)) {
-            wi_parser_error_at(compiler->parser, name, "variable %s is used but not defined", global_name->chars);
+            wi_parser_error_at(compiler->parser, name, "variable %s is used but not defined", global_name->buf);
         }
 
         if (!wi_value_is_empty(foreign)) {
             if (wi_parser_check(compiler->parser, WI_TOKEN_EQUAL)) {
                 wi_parser_error_at(compiler->parser, name, "cannot reassign a foreign variable %s",
-                                   global_name->chars);
+                                   global_name->buf);
             }
 
             _compiler_emit_push(compiler, foreign);
@@ -458,7 +458,7 @@ _compiler_var(struct wi_compiler* compiler, struct wi_token name) {
 
     if (wi_parser_match(compiler->parser, WI_TOKEN_EQUAL)) {
         if (wi_attr_is_set(attrs, WI_ATTR_CONST)) {
-            wi_parser_error_at_prev(compiler->parser, "cannot reassign <const> variable %.*s", name.len,
+            wi_parser_error_at_prev(compiler->parser, "cannot reassign <const> variable %.*s", name.count,
                                     name.start);
         }
 
@@ -491,7 +491,7 @@ _compiler_var(struct wi_compiler* compiler, struct wi_token name) {
 static bool
 _compiler_check_attr(struct wi_compiler* compiler, struct wi_token token, const char* attr) {
     size_t len = strlen(attr);
-    return token.len == (int)len && memcmp(token.start, attr, len) == 0;
+    return token.count == (int)len && memcmp(token.start, attr, len) == 0;
 }
 
 static wi_attrs
@@ -508,7 +508,7 @@ _compiler_parse_attrs(struct wi_compiler* compiler) {
         if (_compiler_check_attr(compiler, token, "const")) {
             wi_attr_set(&attrs, WI_ATTR_CONST);
         } else {
-            wi_parser_error_at(compiler->parser, token, "unknown attribute %.*s", token.len, token.start);
+            wi_parser_error_at(compiler->parser, token, "unknown attribute %.*s", token.count, token.start);
         }
 
         wi_parser_expect(compiler->parser, WI_TOKEN_GREATER);
@@ -523,7 +523,7 @@ _compiler_get_name(struct wi_compiler* compiler) {
         return NULL;
     }
 
-    return wi_copy_cstring(compiler->state->gc, compiler->var_name.start, compiler->var_name.len);
+    return wi_copy_cstring(compiler->state->gc, compiler->var_name.start, compiler->var_name.count);
 }
 
 static void
@@ -534,7 +534,7 @@ _compiler_var_expr(struct wi_compiler* compiler) {
 static void
 _compiler_real_expr(struct wi_compiler* compiler) {
     struct wi_token token = compiler->parser->prev;
-    wi_real         real  = wi_string_to_real(token.start, token.len, NULL);
+    wi_real         real  = wi_string_to_real(token.start, token.count, NULL);
     _compiler_emit_push(compiler, wi_make_real_value(real));
 }
 
@@ -567,10 +567,10 @@ _compiler_string_expr(struct wi_compiler* compiler) {
     struct wi_token    token = compiler->parser->prev;
     struct wi_char_buf chars;
     wi_char_buf_init(&chars, compiler->state->gc);
-    wi_char_buf_reserve(&chars, token.len - 2);
+    wi_char_buf_reserve(&chars, token.count - 2);
 
-    for (int i = 1; i < token.len - 1; i++) {
-        if (token.start[i] == '\\' && i + 1 < token.len - 1) {
+    for (int i = 1; i < token.count - 1; i++) {
+        if (token.start[i] == '\\' && i + 1 < token.count - 1) {
             _compiler_add_esc_char(compiler, &chars, token.start[++i]);
         } else {
             wi_char_buf_add(&chars, token.start[i]);
@@ -654,8 +654,8 @@ _compiler_function_expr(struct wi_compiler* outer) {
     if (compiler.prototype->name) {
         compiler.locals[0].name = (struct wi_token){
             .kind  = WI_TOKEN_NAME,
-            .start = compiler.prototype->name->chars,
-            .len   = compiler.prototype->name->len,
+            .start = compiler.prototype->name->buf,
+            .count = compiler.prototype->name->count,
             .line  = compiler.parser->curr.line,
         };
     }
@@ -1314,21 +1314,22 @@ _compiler_require_stmt(struct wi_compiler* compiler) {
         wi_parser_error_at_prev(compiler->parser, "can only require files from top-level code");
     }
 
-    struct wi_token   name     = wi_parser_expect(compiler->parser, WI_TOKEN_NAME);
-    wi_attrs          attrs    = _compiler_parse_attrs(compiler);
-    struct wi_string* name_box = wi_copy_cstring(compiler->state->gc, name.start, name.len);
-
-    if (!wi_table_set(compiler->global_attrs, WI_MAKE_BOX_VALUE(name_box), wi_make_real_value(attrs))) {
-        wi_parser_error_at(compiler->parser, name, "variable %s is already defined", name_box->chars);
-    }
+    struct wi_token name  = wi_parser_expect(compiler->parser, WI_TOKEN_NAME);
+    wi_attrs        attrs = _compiler_parse_attrs(compiler);
 
     wi_parser_expect(compiler->parser, WI_TOKEN_EQUAL);
 
     struct wi_token   path     = wi_parser_expect(compiler->parser, WI_TOKEN_LIT_STRING);
-    struct wi_string* path_box = wi_copy_cstring(compiler->state->gc, path.start + 1, path.len - 2);
+    struct wi_string* path_box = wi_copy_cstring(compiler->state->gc, path.start + 1, path.count - 2);
 
-    if (!compiler->state->require_exists(compiler->state, path_box->chars)) {
-        wi_parser_error_at(compiler->parser, path, "file %s does not exist", path_box->chars);
+    if (!compiler->state->require_exists(compiler->state, path_box->buf)) {
+        wi_parser_error_at(compiler->parser, path, "file %s does not exist", path_box->buf);
+    }
+
+    struct wi_string* name_box = wi_copy_cstring(compiler->state->gc, name.start, name.count);
+
+    if (!wi_table_set(compiler->global_attrs, WI_MAKE_BOX_VALUE(name_box), wi_make_real_value(attrs))) {
+        wi_parser_error_at(compiler->parser, name, "variable %s is already defined", name_box->buf);
     }
 
     wi_parser_expect(compiler->parser, WI_TOKEN_SEMICOLON);
@@ -1348,13 +1349,13 @@ _compiler_load_stmt(struct wi_compiler* compiler) {
 
     /* prepare for seeing horrifying things... platform-specific code!!! */
     struct wi_token   path_token = wi_parser_expect(compiler->parser, WI_TOKEN_LIT_STRING);
-    struct wi_string* path_box   = wi_copy_cstring(compiler->parser->gc, path_token.start + 1, path_token.len - 2);
+    struct wi_string* path_box = wi_copy_cstring(compiler->parser->gc, path_token.start + 1, path_token.count - 2);
     wi_parser_expect(compiler->parser, WI_TOKEN_SEMICOLON);
 
     struct wi_state* state = compiler->parser->gc->state;
 
-    int    raw_path_len = path_box->len;
-    char*  raw_path     = path_box->chars;
+    int    raw_path_len = path_box->count;
+    char*  raw_path     = path_box->buf;
     char   path[4096]; /* i assume 4kb is enough for this mess */
     size_t path_size = sizeof(path);
 

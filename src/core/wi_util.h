@@ -10,8 +10,13 @@
 #define WI_LIKELY(x) __builtin_expect(!!(x), 1)
 
 char*
+wi_strdup(const char* src);
+int
+wi_utf8_len(const char* chars, int count);
+
+char*
 wi_read_stream(FILE* stream);
 bool
-wi_read_line(char** line);
+wi_read_line(char**);
 
 #endif

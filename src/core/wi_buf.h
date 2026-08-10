@@ -40,7 +40,7 @@ enum {
     }                                                                                                    \
                                                                                                          \
     void wi_##name##_buf_free(struct wi_##name##_buf* buf) {                                             \
-        WI_GC_FREE_ARRAY(buf->gc, type, buf->data, buf->capacity);                                       \
+        WI_GC_FREE_BUF(buf->gc, type, buf->data, buf->capacity);                                         \
         wi_##name##_buf_init(buf, buf->gc);                                                              \
     }                                                                                                    \
                                                                                                          \

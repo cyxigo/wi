@@ -303,7 +303,7 @@ wi_state_error(struct wi_state* state, const char* format, ...) {
         if (prototype->is_main) {
             wi_state_append_error(state, " in main function\n");
         } else if (prototype->name) {
-            wi_state_append_error(state, " in %s()\n", prototype->name->chars);
+            wi_state_append_error(state, " in %s()\n", prototype->name->buf);
         } else {
             wi_state_append_error(state, " in anonymous function\n");
         }
@@ -343,36 +343,47 @@ _state_concat(struct wi_state* state) {
 
     char* a_chars;
     char* b_chars;
-    int   a_len;
-    int   b_len;
+    int   a_count;
+    int   b_count;
     bool  a_owned = false;
     bool  b_owned = false;
 
     if (wi_value_is_string(a)) {
-        struct wi_string* s = wi_value_as_string(a);
-        a_chars             = s->chars;
-        a_len               = s->len;
+        struct wi_string* string = wi_value_as_string(a);
+        a_chars                  = string->buf;
+        a_count                  = string->count;
     } else {
         a_chars = wi_value_to_string(a);
-        a_len   = (int)strlen(a_chars);
+
+        if (!a_chars) {
+            wi_state_oom(state, "out of memory: failed to allocate a string for concatenation");
+        }
+
+        a_count = (int)strlen(a_chars);
         a_owned = true;
     }
 
     if (wi_value_is_string(b)) {
-        struct wi_string* s = wi_value_as_string(b);
-        b_chars             = s->chars;
-        b_len               = s->len;
+        struct wi_string* string = wi_value_as_string(b);
+
+        b_chars = string->buf;
+        b_count = string->count;
     } else {
         b_chars = wi_value_to_string(b);
-        b_len   = (int)strlen(b_chars);
+
+        if (!b_chars) {
+            wi_state_oom(state, "out of memory: failed to allocate a string for concatenation");
+        }
+
+        b_count = (int)strlen(b_chars);
         b_owned = true;
     }
 
-    int   len   = a_len + b_len;
+    int   len   = a_count + b_count;
     char* chars = WI_GC_ALLOC(state->gc, char, len + 1);
 
-    memcpy(chars, a_chars, (size_t)a_len);
-    memcpy(chars + a_len, b_chars, (size_t)b_len);
+    memcpy(chars, a_chars, (size_t)a_count);
+    memcpy(chars + a_count, b_chars, (size_t)b_count);
     chars[len] = '\0';
 
     if (a_owned) {
@@ -444,15 +455,43 @@ _state_subscript_set(struct wi_state* state, wi_value target, wi_value index, wi
 
 static wi_value
 _state_subscript_get(struct wi_state* state, wi_value target, wi_value index) {
-    if (wi_value_is_string(target)) {
+    if (WI_UNLIKELY(wi_value_is_string(target))) {
         struct wi_string* string = wi_value_as_string(target);
         int               i      = _state_validate_index(state, "string", index, string->len);
+        int               j      = 0;
+        int               count  = 0;
 
-        char result[2];
-        result[0] = string->chars[i];
-        result[1] = '\0';
+        while (j < string->count) {
+            if ((string->buf[j] & 0xc0) != 0x80) {
+                if (count == i) {
+                    break;
+                }
 
-        return WI_MAKE_BOX_VALUE(wi_copy_cstring(state->gc, result, 1));
+                count++;
+            }
+
+            j++;
+        }
+
+        size_t cp_len = 1;
+        char   c      = string->buf[j];
+
+        if ((c & 0xE0) == 0xC0) {
+            cp_len = 2;
+        } else if ((c & 0xF0) == 0xE0) {
+            cp_len = 3;
+        } else if ((c & 0xF8) == 0xF0) {
+            cp_len = 4;
+        }
+
+        if (j + (int)cp_len > string->count) {
+            wi_state_error(state, "malformed utf-8 sequence at index %i", i);
+        }
+
+        char buf[5] = {0};
+        memcpy(buf, string->buf + j, cp_len);
+
+        return WI_MAKE_BOX_VALUE(wi_make_string(state->gc, buf));
     }
 
     if (wi_value_is_array(target)) {
@@ -749,7 +788,7 @@ _state_resolve_field(struct wi_state* state, struct wi_object* object, wi_value 
     }
 
     if (object->name) {
-        wi_state_error(state, "object %s has no field %s", object->name->chars, wi_value_as_cstring(name));
+        wi_state_error(state, "object %s has no field %s", object->name->buf, wi_value_as_cstring(name));
         return;
     }
 
@@ -775,7 +814,7 @@ _state_require(struct wi_state* state, wi_value path_value, wi_value name_value)
 
     if (wi_table_get(frame->closure->globals, name_value, NULL)) {
         free(src);
-        wi_state_error(state, "variable %s is already defined", name->chars);
+        wi_state_error(state, "variable %s is already defined", name->buf);
     }
 
     struct wi_object* object = wi_new_object(state->gc, name);
@@ -792,7 +831,7 @@ _state_require(struct wi_state* state, wi_value path_value, wi_value name_value)
         here, object->fields acts as state->global_attrs, it's temporary yes, but we won't need
         to go back to the required script (i.e. recompile it)
     */
-    struct wi_prototype* prototype = wi_compile(state, path, src_box->chars, &object->fields);
+    struct wi_prototype* prototype = wi_compile(state, path, src_box->buf, &object->fields);
 
     if (!prototype) {
         wi_gc_pop_root(state->gc); /* src_box */

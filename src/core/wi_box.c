@@ -28,11 +28,12 @@ wi_new_box(struct wi_gc* gc, size_t size, enum wi_box_kind kind) {
 }
 
 struct wi_string*
-wi_new_string(struct wi_gc* gc, char* chars, int len, uint32_t hash) {
+wi_new_string(struct wi_gc* gc, char* chars, int count, uint32_t hash) {
     struct wi_string* string = WI_NEW_BOX(gc, struct wi_string, WI_BOX_STRING);
 
-    string->chars = chars;
-    string->len   = len;
+    string->buf   = chars;
+    string->count = count;
+    string->len   = wi_utf8_len(chars, count);
     string->hash  = hash;
 
     WI_GC_PUSH_ROOT(gc, string);
@@ -43,32 +44,32 @@ wi_new_string(struct wi_gc* gc, char* chars, int len, uint32_t hash) {
 }
 
 struct wi_string*
-wi_copy_cstring(struct wi_gc* gc, const char* chars, int len) {
-    uint32_t          hash     = wi_string_hash(chars, len);
-    struct wi_string* interned = wi_table_find_string(&gc->strings, chars, len, hash);
+wi_copy_cstring(struct wi_gc* gc, const char* chars, int count) {
+    uint32_t          hash     = wi_string_hash(chars, count);
+    struct wi_string* interned = wi_table_find_string(&gc->strings, chars, count, hash);
 
     if (interned) {
         return interned;
     }
 
-    char* heap_chars = WI_GC_ALLOC(gc, char, len + 1);
-    memcpy(heap_chars, chars, (size_t)len);
-    heap_chars[len] = '\0';
+    char* heap_chars = WI_GC_ALLOC(gc, char, count + 1);
+    memcpy(heap_chars, chars, (size_t)count);
+    heap_chars[count] = '\0';
 
-    return wi_new_string(gc, heap_chars, len, hash);
+    return wi_new_string(gc, heap_chars, count, hash);
 }
 
 struct wi_string*
-wi_take_cstring(struct wi_gc* gc, char* chars, int len) {
-    uint32_t          hash     = wi_string_hash(chars, len);
-    struct wi_string* interned = wi_table_find_string(&gc->strings, chars, len, hash);
+wi_take_cstring(struct wi_gc* gc, char* chars, int count) {
+    uint32_t          hash     = wi_string_hash(chars, count);
+    struct wi_string* interned = wi_table_find_string(&gc->strings, chars, count, hash);
 
     if (interned) {
-        WI_GC_FREE_ARRAY(gc, char, chars, len + 1);
+        WI_GC_FREE_BUF(gc, char, chars, count + 1);
         return interned;
     }
 
-    return wi_new_string(gc, chars, len, hash);
+    return wi_new_string(gc, chars, count, hash);
 }
 
 struct wi_array*
