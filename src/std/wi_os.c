@@ -17,7 +17,7 @@ _os_time(struct wi_state* state, int arg_count) {
 
 static void
 _os_get_env(struct wi_state* state, int arg_count) {
-    char* value = getenv(wi_slot_check_string(state, 1, NULL));
+    char* value = getenv(wi_slot_check_string(state, 1, NULL, NULL));
 
     if (!value) {
         wi_slot_set_null(state, 0);
