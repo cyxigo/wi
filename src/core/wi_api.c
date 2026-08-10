@@ -92,7 +92,8 @@ wi_object_set_field_bool(struct wi_state* state, struct wi_object* object, const
 }
 
 void
-wi_object_set_field_string(struct wi_state* state, struct wi_object* object, const char* name, char* string) {
+wi_object_set_field_string(struct wi_state* state, struct wi_object* object, const char* name,
+                           const char* string) {
     struct wi_string* box = wi_make_string(state->gc, string);
     _set_field(state, object, name, WI_MAKE_BOX_VALUE(box));
 }

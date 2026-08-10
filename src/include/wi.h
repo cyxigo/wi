@@ -121,10 +121,10 @@ wi_object_set_field_bool(wi_state* state, wi_object* object, const char* name, b
  * @param state Wi state instance
  * @param object Target object
  * @param name Field name
- * @param string Value to set
+ * @param string String (**must** be valid UTF-8, invalid - undefined behaviour)
  */
 WI_API void
-wi_object_set_field_string(wi_state* state, wi_object* object, const char* name, char* string);
+wi_object_set_field_string(wi_state* state, wi_object* object, const char* name, const char* string);
 
 /**
  * Set userdata as a field on an object
@@ -204,7 +204,7 @@ wi_state_set_require_exists_fn(wi_state* state, wi_require_exists_fn fn);
  *
  * @param state Wi state instance
  * @param argc Number of arguments
- * @param argv Array of argument strings
+ * @param argv Array of argument strings (**must** be valid UTF-8, invalid - undefined behaviour)
  */
 WI_API void
 wi_state_set_args(wi_state* state, int argc, const char** argv);
@@ -346,7 +346,7 @@ wi_push_bool(wi_state* state, bool boolean);
  * Push a string value onto the stack
  *
  * @param state Wi state instance
- * @param string String
+ * @param string String (**must** be valid UTF-8, invalid - undefined behaviour)
  */
 WI_API void
 wi_push_string(wi_state* state, const char* string);
@@ -507,6 +507,7 @@ wi_slot_is_userdata(wi_state* state, int slot);
  *
  * @param state Wi state instance
  * @param slot Slot index (0-[arg_count])
+ * @param real Real
  */
 WI_API void
 wi_slot_set_real(wi_state* state, int slot, wi_real real);
@@ -525,6 +526,7 @@ wi_slot_set_null(wi_state* state, int slot);
  *
  * @param state Wi state instance
  * @param slot Slot index (0-[arg_count])
+ * @param boolean Boolean
  */
 WI_API void
 wi_slot_set_bool(wi_state* state, int slot, bool boolean);
@@ -534,6 +536,7 @@ wi_slot_set_bool(wi_state* state, int slot, bool boolean);
  *
  * @param state Wi state instance
  * @param slot Slot index (0-[arg_count])
+ * @param string String (**must** be valid UTF-8, invalid - undefined behaviour)
  */
 WI_API void
 wi_slot_set_string(wi_state* state, int slot, const char* string);
