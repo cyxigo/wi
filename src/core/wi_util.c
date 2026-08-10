@@ -1,6 +1,7 @@
 #include "wi_util.h"
 
 #include <stdarg.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -31,6 +32,7 @@ wi_utf8_len(const char* buf, int count) {
     int len = 0;
 
     for (int i = 0; i < count; i++) {
+        /* not a continuation byte? -> a codepoint start */
         if ((buf[i] & 0xc0) != 0x80) {
             len++;
         }
@@ -46,9 +48,9 @@ wi_utf8_cp_offset(const char* buf, int count, int cp_index) {
     int cp     = 0;
 
     while (offset < count && cp < cp_index) {
-        offset++; /* lead byte: 0b11... (0b0... for ASCII) */
+        offset++; /* lead byte: 11xxxxxx (0xxxxxxx for ASCII) */
 
-        /* continuation bytes */
+        /* continuation bytes (10xxxxxx) */
         while (offset < count && (buf[offset] & 0xc0) == 0x80) {
             offset++;
         }
@@ -57,6 +59,22 @@ wi_utf8_cp_offset(const char* buf, int count, int cp_index) {
     }
 
     return offset;
+}
+
+/* returns codepoint length (starting at [cp_start]) */
+size_t
+wi_utf8_cp_len(char cp_start) {
+    size_t cp_len = 1; /* 0xxxxxxx */
+
+    if ((cp_start & 0xe0) == 0xc0) { /* 110xxxxx */
+        cp_len = 2;
+    } else if ((cp_start & 0xf0) == 0xe0) { /* 1110xxxx */
+        cp_len = 3;
+    } else if ((cp_start & 0xf8) == 0xf0) { /* 11110xxx */
+        cp_len = 4;
+    }
+
+    return cp_len;
 }
 
 char*

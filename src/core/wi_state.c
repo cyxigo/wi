@@ -459,17 +459,7 @@ _state_subscript_get(struct wi_state* state, wi_value target, wi_value index) {
         struct wi_string* string = wi_value_as_string(target);
         int               i      = _state_validate_index(state, "string", index, string->len);
         i                        = wi_utf8_cp_offset(string->buf, string->count, i);
-
-        size_t cp_len = 1;
-        char   c      = string->buf[i];
-
-        if ((c & 0xe0) == 0xc0) {
-            cp_len = 2;
-        } else if ((c & 0xf0) == 0xe0) {
-            cp_len = 3;
-        } else if ((c & 0xf8) == 0xf0) {
-            cp_len = 4;
-        }
+        size_t cp_len            = wi_utf8_cp_len(string->buf[i]);
 
         if (i + (int)cp_len > string->count) {
             wi_state_error(state, "malformed utf-8 sequence at index %i", i);
