@@ -12,7 +12,9 @@
 char*
 wi_strdup(const char* src);
 int
-wi_utf8_len(const char* chars, int count);
+wi_utf8_len(const char* buf, int count);
+int
+wi_utf8_cp_offset(const char* buf, int count, int cp_index);
 
 char*
 wi_read_stream(FILE* stream);

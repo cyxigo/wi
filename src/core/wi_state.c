@@ -458,38 +458,25 @@ _state_subscript_get(struct wi_state* state, wi_value target, wi_value index) {
     if (WI_UNLIKELY(wi_value_is_string(target))) {
         struct wi_string* string = wi_value_as_string(target);
         int               i      = _state_validate_index(state, "string", index, string->len);
-        int               j      = 0;
-        int               count  = 0;
-
-        while (j < string->count) {
-            if ((string->buf[j] & 0xc0) != 0x80) {
-                if (count == i) {
-                    break;
-                }
-
-                count++;
-            }
-
-            j++;
-        }
+        i                        = wi_utf8_cp_offset(string->buf, string->count, i);
 
         size_t cp_len = 1;
-        char   c      = string->buf[j];
+        char   c      = string->buf[i];
 
-        if ((c & 0xE0) == 0xC0) {
+        if ((c & 0xe0) == 0xc0) {
             cp_len = 2;
-        } else if ((c & 0xF0) == 0xE0) {
+        } else if ((c & 0xf0) == 0xe0) {
             cp_len = 3;
-        } else if ((c & 0xF8) == 0xF0) {
+        } else if ((c & 0xf8) == 0xf0) {
             cp_len = 4;
         }
 
-        if (j + (int)cp_len > string->count) {
+        if (i + (int)cp_len > string->count) {
             wi_state_error(state, "malformed utf-8 sequence at index %i", i);
         }
 
         char buf[5] = {0};
-        memcpy(buf, string->buf + j, cp_len);
+        memcpy(buf, string->buf + i, cp_len);
 
         return WI_MAKE_BOX_VALUE(wi_make_string(state->gc, buf));
     }

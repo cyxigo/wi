@@ -25,17 +25,37 @@ wi_strdup(const char* src) {
     return memcpy(new, src, len);
 }
 
+/* returns a codepoint count from a byte count */
 int
-wi_utf8_len(const char* chars, int count) {
+wi_utf8_len(const char* buf, int count) {
     int len = 0;
 
     for (int i = 0; i < count; i++) {
-        if ((chars[i] & 0xc0) != 0x80) {
+        if ((buf[i] & 0xc0) != 0x80) {
             len++;
         }
     }
 
     return len;
+}
+
+/* converts a codepoint index into a byte index */
+int
+wi_utf8_cp_offset(const char* buf, int count, int cp_index) {
+    int byte = 0;
+    int cp   = 0;
+
+    while (byte < count && cp < cp_index) {
+        byte++;
+
+        while (byte < count && (buf[byte] & 0xc0) == 0x80) {
+            byte++;
+        }
+
+        cp++;
+    }
+
+    return byte;
 }
 
 char*

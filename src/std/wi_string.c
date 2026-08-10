@@ -8,7 +8,8 @@
 static void
 _string_sub(struct wi_state* state, int arg_count) {
     int   len;
-    char* string = wi_slot_check_string(state, 1, &len, NULL);
+    int   count;
+    char* string = wi_slot_check_string(state, 1, &count, &len);
     int   start  = (int)wi_slot_check_real(state, 2);
     int   end    = (int)wi_slot_check_real(state, 3);
 
@@ -16,7 +17,11 @@ _string_sub(struct wi_state* state, int arg_count) {
         wi_state_error(state, "string sub bounds out of range: %i to %i", start, end);
     }
 
-    state->ffi_stack[0] = WI_MAKE_BOX_VALUE(wi_copy_cstring(state->gc, string + start, end - start));
+    int byte_start = wi_utf8_cp_offset(string, count, start);
+    int byte_end   = wi_utf8_cp_offset(string, count, end);
+
+    struct wi_string* result = wi_copy_cstring(state->gc, string + byte_start, byte_end - byte_start);
+    state->ffi_stack[0]      = WI_MAKE_BOX_VALUE(result);
 }
 
 static void
@@ -49,10 +54,10 @@ _string_lower(struct wi_state* state, int arg_count) {
 
 static void
 _string_trim(struct wi_state* state, int arg_count) {
-    int   len;
-    char* string = wi_slot_check_string(state, 1, &len, NULL);
+    int   count;
+    char* string = wi_slot_check_string(state, 1, &count, NULL);
     int   start  = 0;
-    int   end    = len;
+    int   end    = count;
 
     while (start < end && isspace(string[start])) {
         start++;
@@ -67,14 +72,14 @@ _string_trim(struct wi_state* state, int arg_count) {
 
 static void
 _string_has(struct wi_state* state, int arg_count) {
-    int   len;
-    char* string = wi_slot_check_string(state, 1, &len, NULL);
-    int   target_len;
-    char* target = wi_slot_check_string(state, 2, &target_len, NULL);
-    bool  found  = target_len == 0;
+    int   count;
+    char* string = wi_slot_check_string(state, 1, &count, NULL);
+    int   target_count;
+    char* target = wi_slot_check_string(state, 2, &target_count, NULL);
+    bool  found  = target_count == 0;
 
-    for (int i = 0; !found && i + target_len <= len; i++) {
-        if (memcmp(string + i, target, (size_t)target_len) == 0) {
+    for (int i = 0; !found && i + target_count <= count; i++) {
+        if (memcmp(string + i, target, (size_t)target_count) == 0) {
             found = true;
         }
     }
@@ -84,36 +89,36 @@ _string_has(struct wi_state* state, int arg_count) {
 
 static void
 _string_starts_with(struct wi_state* state, int arg_count) {
-    int   len;
-    char* string = wi_slot_check_string(state, 1, &len, NULL);
-    int   prefix_len;
-    char* prefix = wi_slot_check_string(state, 2, &prefix_len, NULL);
-    bool  result = prefix_len <= len && memcmp(string, prefix, (size_t)prefix_len) == 0;
+    int   count;
+    char* string = wi_slot_check_string(state, 1, &count, NULL);
+    int   pref_count;
+    char* pref   = wi_slot_check_string(state, 2, &pref_count, NULL);
+    bool  result = pref_count <= count && memcmp(string, pref, (size_t)pref_count) == 0;
 
     wi_slot_set_bool(state, 0, result);
 }
 
 static void
 _string_ends_with(struct wi_state* state, int arg_count) {
-    int   len;
-    char* string = wi_slot_check_string(state, 1, &len, NULL);
-    int   suffix_len;
-    char* suffix = wi_slot_check_string(state, 2, &suffix_len, NULL);
-    bool  result = suffix_len <= len && memcmp(string + (len - suffix_len), suffix, (size_t)suffix_len) == 0;
+    int   count;
+    char* string = wi_slot_check_string(state, 1, &count, NULL);
+    int   suff_count;
+    char* suff   = wi_slot_check_string(state, 2, &suff_count, NULL);
+    bool  result = suff_count <= count && memcmp(string + (count - suff_count), suff, (size_t)suff_count) == 0;
 
     wi_slot_set_bool(state, 0, result);
 }
 
 static void
 _string_replace(struct wi_state* state, int arg_count) {
-    int   len;
-    char* string = wi_slot_check_string(state, 1, &len, NULL);
-    int   old_len;
-    char* old = wi_slot_check_string(state, 2, &old_len, NULL);
-    int   new_len;
-    char* new = wi_slot_check_string(state, 3, &new_len, NULL);
+    int   count;
+    char* string = wi_slot_check_string(state, 1, &count, NULL);
+    int   old_count;
+    char* old = wi_slot_check_string(state, 2, &old_count, NULL);
+    int   new_count;
+    char* new = wi_slot_check_string(state, 3, &new_count, NULL);
 
-    if (old_len == 0) {
+    if (old_count == 0) {
         state->ffi_stack[0] = state->ffi_stack[1];
         return;
     }
@@ -123,13 +128,13 @@ _string_replace(struct wi_state* state, int arg_count) {
 
     int i = 0;
 
-    while (i < len) {
-        if (i + old_len <= len && memcmp(string + i, old, (size_t)old_len) == 0) {
-            for (int j = 0; j < new_len; j++) {
+    while (i < count) {
+        if (i + old_count <= count && memcmp(string + i, old, (size_t)old_count) == 0) {
+            for (int j = 0; j < new_count; j++) {
                 wi_char_buf_add(&result, new[j]);
             }
 
-            i += old_len;
+            i += old_count;
         } else {
             wi_char_buf_add(&result, string[i]);
             i++;
@@ -144,15 +149,15 @@ _string_replace(struct wi_state* state, int arg_count) {
 
 static void
 _string_split(struct wi_state* state, int arg_count) {
-    int   len;
-    char* string = wi_slot_check_string(state, 1, &len, NULL);
-    int   sep_len;
-    char* sep = wi_slot_check_string(state, 2, &sep_len, NULL);
+    int   count;
+    char* string = wi_slot_check_string(state, 1, &count, NULL);
+    int   sep_count;
+    char* sep = wi_slot_check_string(state, 2, &sep_count, NULL);
 
     struct wi_array* result = wi_new_array(state->gc);
     state->ffi_stack[0]     = WI_MAKE_BOX_VALUE(result);
 
-    if (sep_len == 0) {
+    if (sep_count == 0) {
         wi_value_buf_add(&result->items, state->ffi_stack[1]);
         return;
     }
@@ -160,22 +165,22 @@ _string_split(struct wi_state* state, int arg_count) {
     int start = 0;
     int i     = 0;
 
-    while (i + sep_len <= len) {
-        if (memcmp(string + i, sep, (size_t)sep_len) == 0) {
+    while (i + sep_count <= count) {
+        if (memcmp(string + i, sep, (size_t)sep_count) == 0) {
             struct wi_string* part = wi_copy_cstring(state->gc, string + start, i - start);
 
             WI_GC_PUSH_ROOT(state->gc, part);
             wi_value_buf_add(&result->items, WI_MAKE_BOX_VALUE(part));
             wi_gc_pop_root(state->gc);
 
-            i += sep_len;
+            i += sep_count;
             start = i;
         } else {
             i++;
         }
     }
 
-    struct wi_string* last = wi_copy_cstring(state->gc, string + start, len - start);
+    struct wi_string* last = wi_copy_cstring(state->gc, string + start, count - start);
 
     WI_GC_PUSH_ROOT(state->gc, last);
     wi_value_buf_add(&result->items, WI_MAKE_BOX_VALUE(last));
@@ -183,17 +188,57 @@ _string_split(struct wi_state* state, int arg_count) {
 }
 
 static void
-_string_reverse(struct wi_state* state, int arg_count) {
-    int   len;
-    char* string = wi_slot_check_string(state, 1, &len, NULL);
-    char* buf    = WI_GC_ALLOC(state->gc, char, len + 1);
+_reverse_bytes(char* start, char* end) {
+    while (start < end) {
+        char c   = *start;
+        *start++ = *end;
+        *end--   = c;
+    }
+}
 
-    for (int i = 0; i < len; i++) {
-        buf[i] = string[len - 1 - i];
+static char*
+_reverse_cp_bytes(char* start, char* buf_end) {
+    char* end = start;
+
+    while (end + 1 < buf_end && (end[1] & 0xc0) == 0x80) {
+        end++;
     }
 
-    buf[len]            = '\0';
-    state->ffi_stack[0] = WI_MAKE_BOX_VALUE(wi_take_cstring(state->gc, buf, len));
+    _reverse_bytes(start, end);
+    return end + 1;
+}
+
+static void
+_string_reverse(struct wi_state* state, int arg_count) {
+    int   count;
+    char* string = wi_slot_check_string(state, 1, &count, NULL);
+    char* buf    = WI_GC_ALLOC(state->gc, char, count + 1);
+
+    memcpy(buf, string, (size_t)count);
+    buf[count] = '\0';
+
+    if (count == 0) {
+        goto end;
+    }
+
+    /*
+        so how this thingy works:
+        first pass - we reverse each codepoint bytes
+        second pass - we reverse the whole string
+        see how first pass is synced with second pass? yep! and we get a perfectly
+        fine reversed utf-8 string
+    */
+    char* buf_end = buf + count;
+    char* pos     = buf;
+
+    while (pos < buf_end) {
+        pos = _reverse_cp_bytes(pos, buf_end);
+    }
+
+    _reverse_bytes(buf, buf_end - 1);
+
+end:
+    state->ffi_stack[0] = WI_MAKE_BOX_VALUE(wi_take_cstring(state->gc, buf, count));
 }
 
 void
