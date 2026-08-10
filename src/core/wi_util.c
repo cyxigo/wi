@@ -42,20 +42,21 @@ wi_utf8_len(const char* buf, int count) {
 /* converts a codepoint index into a byte index */
 int
 wi_utf8_cp_offset(const char* buf, int count, int cp_index) {
-    int byte = 0;
-    int cp   = 0;
+    int offset = 0;
+    int cp     = 0;
 
-    while (byte < count && cp < cp_index) {
-        byte++;
+    while (offset < count && cp < cp_index) {
+        offset++; /* lead byte: 0b11... (0b0... for ASCII) */
 
-        while (byte < count && (buf[byte] & 0xc0) == 0x80) {
-            byte++;
+        /* continuation bytes */
+        while (offset < count && (buf[offset] & 0xc0) == 0x80) {
+            offset++;
         }
 
         cp++;
     }
 
-    return byte;
+    return offset;
 }
 
 char*
