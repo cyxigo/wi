@@ -192,6 +192,14 @@ _parse_flags(int argc, const char* argv[], wi_conf* conf, const char** file_path
 
         _flag_parse_error(argv[0], "unknown option");
     }
+
+    for (int j = 0; j < *script_argc; j++) {
+        const char* arg = (*script_argv)[j];
+
+        if (!wi_utf8_validate(arg, (int)strlen(arg))) {
+            _flag_parse_error(argv[0], "invalid utf-8 sequence in script argument %i", j);
+        }
+    }
 }
 
 extern int

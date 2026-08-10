@@ -2,6 +2,7 @@
 
 #include <stdarg.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -75,6 +76,63 @@ wi_utf8_cp_len(char cp_start) {
     }
 
     return cp_len;
+}
+
+bool
+wi_utf8_validate(const char* buf, int count) {
+    uint8_t* b   = (uint8_t*)buf;
+    uint8_t* end = b + count;
+
+    while (b < end) {
+        if (*b < 0x80) {
+            /* 0xxxxxxx */
+            b++;
+        } else if ((b[0] & 0xe0) == 0xc0) {
+            /* 110xxxxx 10xxxxxx */
+            if (b + 1 >= end) {
+                return false;
+            }
+
+            if ((b[1] & 0xc0) != 0x80 || /* invalid continuation? */
+                (b[0] & 0xfe) == 0xc0 /* overlong? */) {
+                return false;
+            }
+
+            b += 2;
+        } else if ((b[0] & 0xf0) == 0xe0) {
+            /* 1110xxxx 10xxxxxx 10xxxxxx */
+            if (b + 2 >= end) {
+                return false;
+            }
+
+            if ((b[1] & 0xc0) != 0x80 || (b[2] & 0xc0) != 0x80 ||
+                (b[0] == 0xe0 && (b[1] & 0xe0) == 0x80) || /* overlong? */
+                (b[0] == 0xed && (b[1] & 0xe0) == 0xa0) || /* surrogate? */
+                (b[0] == 0xef && b[1] == 0xbf && (b[2] & 0xfe) == 0xbe)) {
+                return false;
+            }
+
+            b += 3;
+        } else if ((b[0] & 0xf8) == 0xf0) {
+            /* 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx */
+            if (b + 3 >= end) {
+                return false;
+            }
+
+            if ((b[1] & 0xc0) != 0x80 || (b[2] & 0xc0) != 0x80 || (b[3] & 0xc0) != 0x80 ||
+                (b[0] == 0xf0 && (b[1] & 0xf0) == 0x80) || /* overlong? */
+                (b[0] == 0xf4 && b[1] > 0x8f) || b[0] > 0xf4) /* > U+10FFFF? */ {
+                return false;
+            }
+
+            b += 4;
+        } else {
+            /* invalid byte */
+            return false;
+        }
+    }
+
+    return true;
 }
 
 char*

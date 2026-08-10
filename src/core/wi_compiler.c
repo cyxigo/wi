@@ -1485,6 +1485,14 @@ _compiler_stmt(struct wi_compiler* compiler) {
 
 struct wi_prototype*
 wi_compile(struct wi_state* state, const char* file_path, const char* src, struct wi_table* globals) {
+    if (!wi_utf8_validate(src, (int)strlen(src))) {
+        /* we can't use amazing wi_parser_X functions so... we do it the barbaric way... */
+        wi_state_reset_error(state);
+        wi_state_append_error(state, "compile error: invalid utf-8 sequence\n");
+        wi_state_append_error(state, "   --> %s\n", file_path);
+        return NULL;
+    }
+
     struct wi_lexer lexer;
     wi_lexer_init(&lexer, file_path, src);
 
@@ -1519,7 +1527,7 @@ wi_compile(struct wi_state* state, const char* file_path, const char* src, struc
     */
     struct wi_lib_node* libs = state->libs;
 
-    if (setjmp(compiler->parser->error_jmp) == 0) {
+    if (setjmp(compiler->parser->error_jmp) == WI_JMP_OK) {
         while (!wi_parser_is_at_end(compiler->parser)) {
             _compiler_stmt(compiler);
         }

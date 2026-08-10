@@ -461,10 +461,6 @@ _state_subscript_get(struct wi_state* state, wi_value target, wi_value index) {
         i                        = wi_utf8_cp_offset(string->buf, string->count, i);
         size_t cp_len            = wi_utf8_cp_len(string->buf[i]);
 
-        if (i + (int)cp_len > string->count) {
-            wi_state_error(state, "malformed utf-8 sequence at index %i", i);
-        }
-
         char buf[5] = {0};
         memcpy(buf, string->buf + i, cp_len);
 

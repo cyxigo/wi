@@ -19,6 +19,8 @@ int
 wi_utf8_cp_offset(const char* buf, int count, int cp_index);
 size_t
 wi_utf8_cp_len(char cp_start);
+bool
+wi_utf8_validate(const char* buf, int count);
 
 char*
 wi_read_stream(FILE* stream);

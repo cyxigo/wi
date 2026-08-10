@@ -24,6 +24,10 @@ _os_get_env(struct wi_state* state, int arg_count) {
         return;
     }
 
+    if (!wi_utf8_validate(value, (int)strlen(value))) {
+        wi_state_error(state, "invalid utf-8 sequence from os.get_env()");
+    }
+
     wi_slot_set_string(state, 0, value);
 }
 
@@ -34,7 +38,12 @@ _os_args(struct wi_state* state, int arg_count) {
     wi_value_buf_reserve(&result->items, state->script_argc);
 
     for (int i = 0; i < state->script_argc; i++) {
-        const char*       arg     = state->script_argv[i];
+        const char* arg = state->script_argv[i];
+
+        if (!wi_utf8_validate(arg, (int)strlen(arg))) {
+            wi_state_error(state, "invalid utf-8 sequence in script argument %i", i);
+        }
+
         struct wi_string* arg_box = wi_make_string(state->gc, arg);
 
         WI_GC_PUSH_ROOT(state->gc, arg_box);
