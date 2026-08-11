@@ -1,6 +1,6 @@
 CompileFlags:
   Compiler: gcc
   Add:
-    - -std=gnu99
+    - -std=c99
     - -xc
     - -Isrc

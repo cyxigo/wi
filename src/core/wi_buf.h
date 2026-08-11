@@ -2,7 +2,6 @@
 #define WI_BUF_H
 
 #include <stdint.h>
-#include <stdio.h>
 #include <stdlib.h> /* IWYU pragma: export */
 
 #include "wi_util.h"

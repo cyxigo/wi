@@ -6,7 +6,7 @@
 
 #include "wi_box.h"
 #include "wi_buf.h"
-#include "wi_gc.h"
+#include "wi_gc.h"  // IWYU pragma: keep
 #include "wi_table.h"
 #include "wi_util.h"
 

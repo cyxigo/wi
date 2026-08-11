@@ -1,3 +1,7 @@
+#ifndef _WIN32
+#define _POSIX_C_SOURCE 200809L
+#endif
+
 #include "wi_state.h"
 
 #include <math.h>
@@ -9,7 +13,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#ifdef _WIN32
+#include <io.h>
+#else
 #include <unistd.h>
+#endif
 
 #include "../include/wi_conf.h"
 #include "wi_box.h"
@@ -52,7 +61,11 @@ _state_read_file(struct wi_state* state, const char* file_path) {
 
 static bool
 _state_require_exists(struct wi_state* state, const char* path) {
+#ifdef _WIN32
+    return _access(path, 0) == 0;
+#else
     return access(path, F_OK) == 0;
+#endif
 }
 
 struct wi_state*
@@ -838,12 +851,6 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
     register wi_value* constants = frame->closure->prototype->constants.data;
     register uint8_t*  ip        = frame->ip;
 
-    static void* dispatch_table[] = {
-#define WI_OPCODE(name, _, __) &&LABEL_##name,
-#include "wi_opcode.h"
-#undef WI_OPCODE
-    };
-
 #define _UPDATE_FRAME(void)                                \
     frame     = wi_state_frame(state);                     \
     constants = frame->closure->prototype->constants.data; \
@@ -853,10 +860,25 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
     frame->ip = ip; \
     wi_state_error(state, __VA_ARGS__)
 
-#define _DISPATCH(void) goto* dispatch_table[(opcode = _READ_BYTE())];
+#ifdef __GNUC__
+    static void* dispatch_table[] = {
+#define WI_OPCODE(name, _, __) &&LABEL_##name,
+#include "wi_opcode.h"
+#undef WI_OPCODE
+    };
+
+#define _INTERPRET _DISPATCH();
+#define _DISPATCH(void) goto* dispatch_table[(opcode = _READ_BYTE())]
 #define _OPCODE_LABEL(name) LABEL_##name
+#else
+#define _INTERPRET \
+    loop:          \
+    switch (opcode = _READ_BYTE())
+#define _DISPATCH(void) goto loop
+#define _OPCODE_LABEL(name) case WI_OP_##name
+#endif
+
 #define _CHECK_INTERRUPT(void)             \
-                                           \
     if (WI_UNLIKELY(state->interrupted)) { \
         state->interrupted = 0;            \
         frame->ip          = ip;           \
@@ -918,7 +940,7 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
             we can't reuse the call frame because well... it does not exist to begin with \
             so we use WI_OP_RETURN, which, removes the frame!                             \
         */                                                                                \
-        goto _OPCODE_LABEL(RETURN);                                                       \
+        goto _op_return;                                                                  \
     }                                                                                     \
                                                                                           \
     if (WI_UNLIKELY(!wi_value_is_closure(value))) {                                       \
@@ -942,8 +964,7 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
     args[0] = method;                                               \
     state->stack_top++
 
-    _DISPATCH();
-    {
+    _INTERPRET {
         _OPCODE_LABEL(PUSH) : {
             wi_state_push(state, _READ_CONSTANT());
             _DISPATCH();
@@ -1283,6 +1304,7 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
             _TAIL_CALL(value);
             _DISPATCH();
         }
+    _op_return:
         _OPCODE_LABEL(RETURN) : {
             wi_value result = wi_state_pop(state);
             state->frame_count--;
@@ -1425,6 +1447,7 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
 
 #undef _ERROR
 
+#undef _INTERPRET
 #undef _DISPATCH
 #undef _OPCODE_LABEL
 #undef _CHECK_INTERRUPT
@@ -1440,6 +1463,8 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
 #undef _TAIL_CALL
 
 #undef _LOAD_METHOD
+
+    return WI_RUN_OK;
 }
 
 void

@@ -5,10 +5,15 @@
 #include <stddef.h>
 #include <stdio.h>
 
+#ifdef __GNUC__
 #define WI_NORETURN __attribute__((noreturn))
-
 #define WI_UNLIKELY(x) __builtin_expect(!!(x), 0)
 #define WI_LIKELY(x) __builtin_expect(!!(x), 1)
+#else
+#define WI_NORETURN
+#define WI_UNLIKELY(x) (x)
+#define WI_LIKELY(x) (x)
+#endif
 
 char*
 wi_strdup(const char* src);

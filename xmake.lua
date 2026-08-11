@@ -2,9 +2,10 @@ set_project("Wi")
 
 set_version("1.0.0")
 set_description("The Wi programming language")
+set_license("MIT")
 
 function defaults()
-    add_languages("gnu99")
+    set_languages("c99")
     add_cflags("-flto -fno-stack-protector -fno-common -Wconversion -Wsign-conversion -Wfloat-conversion")
     set_optimize("fastest")
     set_warnings("all", "error")
