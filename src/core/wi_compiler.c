@@ -793,6 +793,26 @@ _compiler_object_expr(struct wi_compiler* compiler) {
 }
 
 static void
+_compiler_require_expr(struct wi_compiler* compiler) {
+    struct wi_string* name     = _compiler_get_name(compiler);
+    struct wi_token   path     = wi_parser_expect(compiler->parser, WI_TOKEN_LIT_STRING);
+    struct wi_string* path_box = wi_copy_cstring(compiler->state->gc, path.start + 1, path.count - 2);
+
+    if (!compiler->state->require_exists(compiler->state, path_box->buf)) {
+        wi_parser_error_at(compiler->parser, path, "file %s does not exist", path_box->buf);
+    }
+
+    uint16_t path_constant = _compiler_make_constant(compiler, WI_MAKE_BOX_VALUE(path_box));
+
+    _compiler_emit_opcode_short(compiler, WI_OP_REQUIRE, path_constant);
+    _compiler_emit_byte(compiler, name ? 1 : 0);
+
+    if (name) {
+        _compiler_emit_short(compiler, _compiler_make_constant(compiler, WI_MAKE_BOX_VALUE(name)));
+    }
+}
+
+static void
 _compiler_primary_expr(struct wi_compiler* compiler) {
     wi_parser_advance(compiler->parser);
 
@@ -830,6 +850,9 @@ _compiler_primary_expr(struct wi_compiler* compiler) {
             break;
         case WI_TOKEN_KW_OBJECT:
             _compiler_object_expr(compiler);
+            break;
+        case WI_TOKEN_KW_REQUIRE:
+            _compiler_require_expr(compiler);
             break;
         default:
             wi_parser_error_at_prev(compiler->parser, "expected expression");
@@ -1309,39 +1332,6 @@ _compiler_return_stmt(struct wi_compiler* compiler) {
 }
 
 static void
-_compiler_require_stmt(struct wi_compiler* compiler) {
-    if (!_compiler_is_top_level(compiler)) {
-        wi_parser_error_at_prev(compiler->parser, "can only require files from top-level code");
-    }
-
-    struct wi_token name  = wi_parser_expect(compiler->parser, WI_TOKEN_NAME);
-    wi_attrs        attrs = _compiler_parse_attrs(compiler);
-
-    wi_parser_expect(compiler->parser, WI_TOKEN_EQUAL);
-
-    struct wi_token   path     = wi_parser_expect(compiler->parser, WI_TOKEN_LIT_STRING);
-    struct wi_string* path_box = wi_copy_cstring(compiler->state->gc, path.start + 1, path.count - 2);
-
-    if (!compiler->state->require_exists(compiler->state, path_box->buf)) {
-        wi_parser_error_at(compiler->parser, path, "file %s does not exist", path_box->buf);
-    }
-
-    struct wi_string* name_box = wi_copy_cstring(compiler->state->gc, name.start, name.count);
-
-    if (!wi_table_set(compiler->global_attrs, WI_MAKE_BOX_VALUE(name_box), wi_make_real_value(attrs))) {
-        wi_parser_error_at(compiler->parser, name, "variable %s is already defined", name_box->buf);
-    }
-
-    wi_parser_expect(compiler->parser, WI_TOKEN_SEMICOLON);
-
-    uint16_t path_constant = _compiler_make_constant(compiler, WI_MAKE_BOX_VALUE(path_box));
-    uint16_t name_constant = _compiler_name_constant(compiler, name);
-
-    _compiler_emit_opcode_short(compiler, WI_OP_REQUIRE, path_constant);
-    _compiler_emit_short(compiler, name_constant);
-}
-
-static void
 _compiler_load_stmt(struct wi_compiler* compiler) {
     if (!_compiler_is_top_level(compiler)) {
         wi_parser_error_at_prev(compiler->parser, "can only use 'load' from top-level code");
@@ -1468,10 +1458,6 @@ _compiler_stmt(struct wi_compiler* compiler) {
         case WI_TOKEN_KW_RETURN:
             wi_parser_advance(compiler->parser);
             _compiler_return_stmt(compiler);
-            break;
-        case WI_TOKEN_KW_REQUIRE:
-            wi_parser_advance(compiler->parser);
-            _compiler_require_stmt(compiler);
             break;
         case WI_TOKEN_KW_LOAD:
             wi_parser_advance(compiler->parser);

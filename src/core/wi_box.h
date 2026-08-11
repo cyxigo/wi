@@ -170,7 +170,13 @@ struct wi_closure {
     struct wi_upvalue**  upvalues;
     uint8_t              upvalue_count;
     struct wi_table*     globals;
-    bool                 is_required;
+    /*
+        may be confusing so i'll explain:
+        when a script is required, we compile and run it just like the main script -
+        compiling it into a closure *and* setting this field because required scripts
+        turn into objects, so if this field is set - script is not main (was required)
+    */
+    struct wi_object* required;
 };
 
 static inline bool

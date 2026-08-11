@@ -132,15 +132,20 @@ wi_prototype_instr_size(struct wi_prototype* prototype, int offset) {
         return size;
     }
 
-    if (opcode == WI_OP_PUSH_CLOSURE) {
-        uint16_t             constant          = bytes[offset + 1] << 8 | bytes[offset + 2];
-        struct wi_prototype* closure_prototype = wi_value_as_prototype(prototype->constants.data[constant]);
-        return 3 + closure_prototype->upvalue_count * 2;
+    switch (opcode) {
+        case WI_OP_PUSH_CLOSURE: {
+            uint16_t             constant          = bytes[offset + 1] << 8 | bytes[offset + 2];
+            struct wi_prototype* closure_prototype = wi_value_as_prototype(prototype->constants.data[constant]);
+            return 3 + closure_prototype->upvalue_count * 2;
+        }
+        case WI_OP_PUSH_OBJECT:
+        case WI_OP_REQUIRE: {
+            uint8_t has_name = bytes[offset + 3];
+            return 4 + (has_name ? 2 : 0);
+        }
     }
 
-    /* WI_OP_PUSH_OBJECT */
-    uint8_t has_name = bytes[offset + 3];
-    return 4 + (has_name ? 2 : 0);
+    return -1; /* unreachable */
 }
 
 struct wi_foreign*
@@ -169,7 +174,7 @@ wi_new_closure(struct wi_gc* gc, struct wi_prototype* prototype, struct wi_table
     closure->upvalues      = upvalues;
     closure->upvalue_count = prototype->upvalue_count;
     closure->globals       = globals;
-    closure->is_required   = false;
+    closure->required      = NULL;
 
     return closure;
 }

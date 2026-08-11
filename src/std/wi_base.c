@@ -51,7 +51,7 @@ _base_input(struct wi_state* state, int arg_count) {
 static void
 _base_is_main(struct wi_state* state, int arg_count) {
     struct wi_call_frame* frame = wi_state_frame(state);
-    wi_slot_set_bool(state, 0, !frame->closure->is_required);
+    wi_slot_set_bool(state, 0, !frame->closure->required);
 }
 
 static void

@@ -230,13 +230,21 @@ wi_prototype_disasm_instr(struct wi_prototype* prototype, int offset) {
             offset++;
 
             uint16_t path_constant = prototype->bytes.data[offset] << 8 | prototype->bytes.data[offset + 1];
-            uint16_t name_constant = prototype->bytes.data[offset + 2] << 8 | prototype->bytes.data[offset + 3];
+            uint8_t  has_name      = prototype->bytes.data[offset + 2];
+            char*    path          = wi_value_as_cstring(prototype->constants.data[path_constant]);
+            offset += 3;
 
-            offset += 4;
+            printf("%-16s \"%s\" ", "require", path);
 
-            char* path = wi_value_as_cstring(prototype->constants.data[path_constant]);
-            char* name = wi_value_as_cstring(prototype->constants.data[name_constant]);
-            printf("require %s = \"%s\";\n", name, path);
+            if (has_name) {
+                uint16_t name_constant = prototype->bytes.data[offset] << 8 | prototype->bytes.data[offset + 1];
+                char*    name          = wi_value_as_cstring(prototype->constants.data[name_constant]);
+
+                printf("C:%05hu %s (name)\n", name_constant, name);
+                offset += 2;
+            } else {
+                printf("(anonymous)\n");
+            }
 
             return offset;
         }

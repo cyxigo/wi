@@ -321,6 +321,7 @@ _gc_blacken_box(struct wi_gc* gc, struct wi_box* box) {
                 _GC_MARK_BOX(gc, closure->upvalues[i]);
             }
 
+            _GC_MARK_BOX(gc, closure->required);
             break;
         }
         case WI_BOX_UPVALUE: {

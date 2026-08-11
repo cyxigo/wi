@@ -792,16 +792,9 @@ _state_set_field(struct wi_state* state, wi_value name, wi_value target) {
 }
 
 static struct wi_closure*
-_state_require(struct wi_state* state, wi_value path_value, wi_value name_value) {
-    struct wi_call_frame* frame = wi_state_frame(state);
-    struct wi_string*     name  = wi_value_as_string(name_value);
-    char*                 path  = wi_value_as_cstring(path_value);
-    char*                 src   = state->load_require(state, path);
-
-    if (wi_table_get(frame->closure->globals, name_value, NULL)) {
-        free(src);
-        wi_state_error(state, "variable %s is already defined", name->buf);
-    }
+_state_require(struct wi_state* state, wi_value path_value, struct wi_string* name) {
+    char* path = wi_value_as_cstring(path_value);
+    char* src  = state->load_require(state, path);
 
     struct wi_object* object = wi_new_object(state->gc, name);
     WI_GC_PUSH_ROOT(state->gc, object);
@@ -829,10 +822,9 @@ _state_require(struct wi_state* state, wi_value path_value, wi_value name_value)
     WI_GC_PUSH_ROOT(state->gc, prototype);
 
     wi_table_set(&state->required, path_value, WI_MAKE_BOX_VALUE(object));
-    wi_table_set(frame->closure->globals, name_value, WI_MAKE_BOX_VALUE(object));
 
     struct wi_closure* closure = wi_new_closure(state->gc, prototype, &object->fields);
-    closure->is_required       = true;
+    closure->required          = object;
 
     wi_gc_pop_root(state->gc); /* prototype */
     wi_gc_pop_root(state->gc); /* object */
@@ -1312,7 +1304,9 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
 
             state->stack_top = frame->slots;
 
-            if (!frame->closure->is_required) {
+            if (frame->closure->required) {
+                wi_state_push(state, WI_MAKE_BOX_VALUE(frame->closure->required));
+            } else {
                 wi_state_push(state, result);
             }
 
@@ -1420,21 +1414,23 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
             _DISPATCH();
         }
         _OPCODE_LABEL(REQUIRE) : {
-            wi_value path_value = _READ_CONSTANT();
-            wi_value name_value = _READ_CONSTANT();
+            wi_value          path_value = _READ_CONSTANT();
+            uint8_t           has_name   = _READ_BYTE();
+            struct wi_string* name       = NULL;
+
+            if (has_name) {
+                name = wi_value_as_string(_READ_CONSTANT());
+            }
+
             wi_value loaded;
 
             if (wi_table_get(&state->required, path_value, &loaded)) {
-                if (wi_table_get(frame->closure->globals, name_value, NULL)) {
-                    _ERROR("variable %s is already defined", wi_value_as_cstring(name_value));
-                }
-
-                wi_table_set(frame->closure->globals, name_value, loaded);
+                wi_state_push(state, loaded);
                 _DISPATCH();
             }
 
             frame->ip                  = ip;
-            struct wi_closure* closure = _state_require(state, path_value, name_value);
+            struct wi_closure* closure = _state_require(state, path_value, name);
             wi_state_push(state, WI_MAKE_BOX_VALUE(closure));
             _state_call(state, closure, 0);
 
