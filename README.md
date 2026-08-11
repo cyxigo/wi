@@ -36,14 +36,13 @@ slava->greet(); // Hello, Slava!
 
 ## Building
 
-Requires `gcc` and `xmake`. Then simply:
+Requires `xmake` to build and any **C99** compiler. Then simply:
 
 ```bash
 xmake
 ```
 
-Wi uses **GNU99** as its C standard. Any compiler supporting **GNU99** will comply too. <br>
-Wi has zero dependencies.
+For max speed and performance, it is better to use **GNU99** compatible compiler, since Wi uses many **GNU** extensions for performance tweaks.
 
 ## Inspiration
 
