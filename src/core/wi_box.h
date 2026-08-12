@@ -142,11 +142,10 @@ int
 wi_prototype_instr_size(struct wi_prototype* prototype, int offset);
 
 struct wi_foreign {
-    struct wi_box     box;
-    wi_foreign_fn     fn;
-    struct wi_string* name;
-    int               arity;
-    bool              is_variadic;
+    struct wi_box box;
+    wi_foreign_fn fn;
+    int           arity;
+    bool          is_variadic;
 };
 
 static inline bool
@@ -160,7 +159,7 @@ wi_value_as_foreign(wi_value value) {
 }
 
 struct wi_foreign*
-wi_new_foreign(struct wi_gc* gc, wi_foreign_fn fn, struct wi_string* name, int arity, bool is_variadic);
+wi_new_foreign(struct wi_gc* gc, wi_foreign_fn fn, int arity, bool is_variadic);
 
 struct wi_upvalue;
 
@@ -213,9 +212,8 @@ struct wi_upvalue*
 wi_new_upvalue(struct wi_gc* gc, wi_value* slot);
 
 struct wi_object {
-    struct wi_box     box;
-    struct wi_string* name;
-    struct wi_table   fields;
+    struct wi_box   box;
+    struct wi_table fields;
 };
 
 static inline bool
@@ -229,7 +227,7 @@ wi_value_as_object(wi_value value) {
 }
 
 struct wi_object*
-wi_new_object(struct wi_gc* gc, struct wi_string* name);
+wi_new_object(struct wi_gc* gc);
 
 struct wi_userdata {
     struct wi_box            box;

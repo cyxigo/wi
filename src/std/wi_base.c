@@ -81,7 +81,7 @@ _base_try(struct wi_state* state, int arg_count) {
     struct wi_prototype* prototype = closure->prototype;
     wi_state_check_arity(state, prototype->arity, (uint8_t)(arg_count - 1), prototype->is_variadic);
 
-    struct wi_object* result = wi_new_object(state->gc, NULL);
+    struct wi_object* result = wi_new_object(state->gc);
     state->ffi_stack[0]      = WI_MAKE_BOX_VALUE(result);
     wi_table_reserve(&result->fields, 3);
 
@@ -249,6 +249,71 @@ _base_fields(struct wi_state* state, int arg_count) {
     wi_table_copy(&object->fields, &fields->items);
 }
 
+static bool
+_equals(wi_value a, wi_value b);
+
+static bool
+_tables_equal(struct wi_table* a, struct wi_table* b) {
+    if (a->live_count != b->live_count) {
+        return false;
+    }
+
+    for (int i = 0; i < a->capacity; i++) {
+        struct wi_entry* entry = &a->entries[i];
+
+        if (wi_value_is_empty(entry->key)) {
+            continue;
+        }
+
+        wi_value b_value;
+
+        if (!wi_table_get(b, entry->key, &b_value) || !_equals(entry->value, b_value)) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+static bool
+_equals(wi_value a, wi_value b) {
+    if (wi_values_equal(a, b)) {
+        return true;
+    }
+
+    if (wi_value_is_array(a) && wi_value_is_array(b)) {
+        struct wi_array* a_box = wi_value_as_array(a);
+        struct wi_array* b_box = wi_value_as_array(b);
+
+        if (a_box->items.count != b_box->items.count) {
+            return false;
+        }
+
+        for (int i = 0; i < a_box->items.count; i++) {
+            if (!_equals(a_box->items.data[i], b_box->items.data[i])) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    if (wi_value_is_map(a) && wi_value_is_map(b)) {
+        return _tables_equal(&wi_value_as_map(a)->items, &wi_value_as_map(b)->items);
+    }
+
+    if (wi_value_is_object(a) && wi_value_is_object(b)) {
+        return _tables_equal(&wi_value_as_object(a)->fields, &wi_value_as_object(b)->fields);
+    }
+
+    return false;
+}
+
+static void
+_base_equals(struct wi_state* state, int arg_count) {
+    wi_slot_set_bool(state, 0, _equals(state->ffi_stack[1], state->ffi_stack[2]));
+}
+
 void
 wi_state_def_base_foreign(struct wi_state* state) {
     wi_def_foreign(state, "print", _base_print, 0, true);
@@ -279,4 +344,6 @@ wi_state_def_base_foreign(struct wi_state* state) {
 
     wi_def_foreign(state, "has_field", _base_has_field, 2, false);
     wi_def_foreign(state, "fields", _base_fields, 1, false);
+
+    wi_def_foreign(state, "equals", _base_equals, 2, false);
 }

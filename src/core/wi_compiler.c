@@ -657,6 +657,7 @@ _compiler_function_expr(struct wi_compiler* outer) {
             .start = compiler.prototype->name->buf,
             .count = compiler.prototype->name->count,
             .line  = compiler.parser->curr.line,
+            .col   = compiler.parser->curr.col,
         };
     }
 
@@ -755,12 +756,6 @@ _compiler_new_expr(struct wi_compiler* compiler) {
 
 static void
 _compiler_object_expr(struct wi_compiler* compiler) {
-    struct wi_string* name = _compiler_get_name(compiler);
-
-    if (name) {
-        WI_GC_PUSH_ROOT(compiler->state->gc, name);
-    }
-
     uint16_t field_count = 0;
     wi_parser_expect(compiler->parser, WI_TOKEN_OPEN_BRACE);
 
@@ -785,19 +780,11 @@ _compiler_object_expr(struct wi_compiler* compiler) {
     }
 
     wi_parser_expect(compiler->parser, WI_TOKEN_CLOSE_BRACE);
-
     _compiler_emit_opcode_short(compiler, WI_OP_PUSH_OBJECT, field_count);
-    _compiler_emit_byte(compiler, name ? 1 : 0);
-
-    if (name) {
-        _compiler_emit_short(compiler, _compiler_make_constant(compiler, WI_MAKE_BOX_VALUE(name)));
-        wi_gc_pop_root(compiler->state->gc);
-    }
 }
 
 static void
 _compiler_require_expr(struct wi_compiler* compiler) {
-    struct wi_string* name     = _compiler_get_name(compiler);
     struct wi_token   path     = wi_parser_expect(compiler->parser, WI_TOKEN_LIT_STRING);
     struct wi_string* path_box = wi_copy_cstring(compiler->state->gc, path.start + 1, path.count - 2);
 
@@ -806,13 +793,7 @@ _compiler_require_expr(struct wi_compiler* compiler) {
     }
 
     uint16_t path_constant = _compiler_make_constant(compiler, WI_MAKE_BOX_VALUE(path_box));
-
     _compiler_emit_opcode_short(compiler, WI_OP_REQUIRE, path_constant);
-    _compiler_emit_byte(compiler, name ? 1 : 0);
-
-    if (name) {
-        _compiler_emit_short(compiler, _compiler_make_constant(compiler, WI_MAKE_BOX_VALUE(name)));
-    }
 }
 
 static void

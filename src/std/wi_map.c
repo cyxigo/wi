@@ -18,11 +18,6 @@ _check_arg1_map(struct wi_state* state) {
     return _check_arg_map(state, 1);
 }
 
-static struct wi_map*
-_check_arg2_map(struct wi_state* state) {
-    return _check_arg_map(state, 2);
-}
-
 static void
 _map_copy(struct wi_state* state, int arg_count) {
     struct wi_map* src  = _check_arg1_map(state);
@@ -48,38 +43,6 @@ static void
 _map_count(struct wi_state* state, int arg_count) {
     struct wi_map* map = _check_arg1_map(state);
     wi_slot_set_real(state, 0, map->items.live_count);
-}
-
-static void
-_map_equals(struct wi_state* state, int arg_count) {
-    struct wi_map* a      = _check_arg1_map(state);
-    struct wi_map* b      = _check_arg2_map(state);
-    bool           equals = false;
-
-    int a_count = a->items.live_count;
-    int b_count = b->items.live_count;
-
-    if (a_count != b_count) {
-        goto end;
-    }
-
-    for (int i = 0; i < a->items.capacity; i++) {
-        struct wi_entry* entry = &a->items.entries[i];
-
-        if (wi_value_is_empty(entry->key)) {
-            continue;
-        }
-
-        wi_value b_value;
-
-        if (!wi_table_get(&b->items, entry->key, &b_value) || !wi_values_equal(entry->value, b_value)) {
-            goto end;
-        }
-    }
-
-    equals = true;
-end:
-    wi_slot_set_bool(state, 0, equals);
 }
 
 static void
@@ -171,7 +134,6 @@ wi_state_def_map_foreign(struct wi_state* state) {
     wi_object_set_field_foreign(state, object, "clear", _map_clear, 1, false);
     wi_object_set_field_foreign(state, object, "capacity", _map_capacity, 1, false);
     wi_object_set_field_foreign(state, object, "count", _map_count, 1, false);
-    wi_object_set_field_foreign(state, object, "equals", _map_equals, 2, false);
     wi_object_set_field_foreign(state, object, "keys", _map_keys, 1, false);
     wi_object_set_field_foreign(state, object, "values", _map_values, 1, false);
     wi_object_set_field_foreign(state, object, "has", _map_has, 2, false);

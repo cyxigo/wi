@@ -737,28 +737,6 @@ _state_tail_call(struct wi_state* state, struct wi_call_frame* frame, struct wi_
     frame->ip      = prototype->bytes.data;
 }
 
-static struct wi_object*
-_state_builtin_object(struct wi_state* state, wi_value value) {
-    if (wi_value_is_string(value)) {
-        return state->string_obj;
-    }
-
-    if (wi_value_is_array(value)) {
-        return state->array_obj;
-    }
-
-    if (wi_value_is_map(value)) {
-        return state->map_obj;
-    }
-
-    return NULL;
-}
-
-static struct wi_object*
-_state_get_object(struct wi_state* state, wi_value value) {
-    return wi_value_is_object(value) ? wi_value_as_object(value) : _state_builtin_object(state, value);
-}
-
 static void
 _state_resolve_field(struct wi_state* state, struct wi_object* object, wi_value name, wi_value* value);
 
@@ -766,15 +744,23 @@ static wi_value
 _state_resolve_method(struct wi_state* state, wi_value receiver, wi_value name) {
     wi_value function;
 
-    if (WI_LIKELY(wi_value_is_object(receiver))) {
+    if (wi_value_is_object(receiver)) {
         _state_resolve_field(state, wi_value_as_object(receiver), name, &function);
         return function;
     }
 
-    struct wi_object* object = _state_builtin_object(state, receiver);
+    struct wi_object* object = NULL;
+
+    if (wi_value_is_string(receiver)) {
+        object = state->string_obj;
+    } else if (wi_value_is_array(receiver)) {
+        object = state->array_obj;
+    } else if (wi_value_is_map(receiver)) {
+        object = state->map_obj;
+    }
 
     if (!object) {
-        wi_state_error(state, "value type %s has no functions", wi_value_type(receiver));
+        wi_state_error(state, "value type %s has no methods", wi_value_type(receiver));
     }
 
     _state_resolve_field(state, object, name, &function);
@@ -787,31 +773,25 @@ _state_resolve_field(struct wi_state* state, struct wi_object* object, wi_value 
         return;
     }
 
-    if (object->name) {
-        wi_state_error(state, "object %s has no field %s", object->name->buf, wi_value_as_cstring(name));
-        return;
-    }
-
-    wi_state_error(state, "anonymous object has no field %s", wi_value_as_cstring(name));
+    wi_state_error(state, "object has no field %s", wi_value_as_cstring(name));
 }
 
 static void
 _state_set_field(struct wi_state* state, wi_value name, wi_value target) {
-    struct wi_object* object = _state_get_object(state, target);
-
-    if (!object) {
+    if (WI_UNLIKELY(!wi_value_is_object(target))) {
         wi_state_error(state, "cannot access fields on a value of type %s", wi_value_type(target));
     }
 
+    struct wi_object* object = wi_value_as_object(target);
     wi_table_set(&object->fields, name, wi_state_top(state));
 }
 
 static struct wi_closure*
-_state_require(struct wi_state* state, wi_value path_value, struct wi_string* name) {
+_state_require(struct wi_state* state, wi_value path_value) {
     char* path = wi_value_as_cstring(path_value);
     char* src  = state->load_require(state, path);
 
-    struct wi_object* object = wi_new_object(state->gc, name);
+    struct wi_object* object = wi_new_object(state->gc);
     WI_GC_PUSH_ROOT(state->gc, object);
 
     /*
@@ -1337,16 +1317,8 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
             _DISPATCH();
         }
         _OPCODE_LABEL(PUSH_OBJECT) : {
-            uint16_t field_count = _READ_SHORT();
-            uint8_t  has_name    = _READ_BYTE();
-
-            struct wi_string* object_name = NULL;
-
-            if (has_name) {
-                object_name = wi_value_as_string(_READ_CONSTANT());
-            }
-
-            struct wi_object* object = wi_new_object(state->gc, object_name);
+            uint16_t          field_count = _READ_SHORT();
+            struct wi_object* object      = wi_new_object(state->gc);
             WI_GC_PUSH_ROOT(state->gc, object);
             wi_table_reserve(&object->fields, field_count);
 
@@ -1384,15 +1356,15 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
             _DISPATCH();
         }
         _OPCODE_LABEL(GET_FIELD) : {
-            wi_value          name   = _READ_CONSTANT();
-            wi_value          target = wi_state_top(state);
-            struct wi_object* object = _state_get_object(state, target);
+            wi_value name   = _READ_CONSTANT();
+            wi_value target = wi_state_top(state);
 
-            if (!object) {
+            if (!wi_value_is_object(target)) {
                 _ERROR("cannot access fields on a value of type %s", wi_value_type(target));
             }
 
-            wi_value value;
+            struct wi_object* object = wi_value_as_object(target);
+            wi_value          value;
             frame->ip = ip;
             _state_resolve_field(state, object, name, &value);
 
@@ -1418,7 +1390,7 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
             }
 
             struct wi_object* object = wi_value_as_object(target);
-            struct wi_object* clone  = wi_new_object(state->gc, object->name);
+            struct wi_object* clone  = wi_new_object(state->gc);
 
             WI_GC_PUSH_ROOT(state->gc, clone);
             wi_table_copy(&object->fields, &clone->fields);
@@ -1429,14 +1401,7 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
             _DISPATCH();
         }
         _OPCODE_LABEL(REQUIRE) : {
-            wi_value          path_value = _READ_CONSTANT();
-            uint8_t           has_name   = _READ_BYTE();
-            struct wi_string* name       = NULL;
-
-            if (has_name) {
-                name = wi_value_as_string(_READ_CONSTANT());
-            }
-
+            wi_value path_value = _READ_CONSTANT();
             wi_value loaded;
 
             if (wi_table_get(&state->required, path_value, &loaded)) {
@@ -1445,7 +1410,7 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
             }
 
             frame->ip                  = ip;
-            struct wi_closure* closure = _state_require(state, path_value, name);
+            struct wi_closure* closure = _state_require(state, path_value);
             wi_state_push(state, WI_MAKE_BOX_VALUE(closure));
             _state_call(state, closure, 0);
 

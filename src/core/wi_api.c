@@ -32,7 +32,7 @@ _def_foreign(struct wi_state* state, struct wi_table* table, const char* name, w
     struct wi_string* name_box = wi_make_string(state->gc, name);
     WI_GC_PUSH_ROOT(state->gc, name_box);
 
-    struct wi_foreign* foreign = wi_new_foreign(state->gc, fn, name_box, arity, is_variadic);
+    struct wi_foreign* foreign = wi_new_foreign(state->gc, fn, arity, is_variadic);
     WI_GC_PUSH_ROOT(state->gc, foreign);
 
     wi_table_set(table, WI_MAKE_BOX_VALUE(name_box), WI_MAKE_BOX_VALUE(foreign));
@@ -51,7 +51,7 @@ wi_def_object(struct wi_state* state, const char* name) {
     struct wi_string* name_box = wi_make_string(state->gc, name);
     WI_GC_PUSH_ROOT(state->gc, name_box);
 
-    struct wi_object* object = wi_new_object(state->gc, name_box);
+    struct wi_object* object = wi_new_object(state->gc);
     WI_GC_PUSH_ROOT(state->gc, object);
 
     wi_table_set(&state->foreign, WI_MAKE_BOX_VALUE(name_box), WI_MAKE_BOX_VALUE(object));

@@ -124,6 +124,7 @@ wi_token_from_string(const char* string) {
         .start = string,
         .count = (int)strlen(string),
         .line  = 1,
+        .col   = 1,
     };
 }
 

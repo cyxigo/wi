@@ -10,6 +10,7 @@ const struct wi_token WI_BLANK_TOKEN = {
     .start = "",
     .count = 0,
     .line  = 0,
+    .col   = 0,
 };
 
 const char*

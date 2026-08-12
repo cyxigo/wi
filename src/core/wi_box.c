@@ -7,7 +7,6 @@
 
 #include "wi_buf.h"
 #include "wi_gc.h"
-#include "wi_state.h"
 #include "wi_table.h"
 #include "wi_value.h"
 
@@ -132,28 +131,17 @@ wi_prototype_instr_size(struct wi_prototype* prototype, int offset) {
         return size;
     }
 
-    switch (opcode) {
-        case WI_OP_PUSH_CLOSURE: {
-            uint16_t             constant          = bytes[offset + 1] << 8 | bytes[offset + 2];
-            struct wi_prototype* closure_prototype = wi_value_as_prototype(prototype->constants.data[constant]);
-            return 3 + closure_prototype->upvalue_count * 2;
-        }
-        case WI_OP_PUSH_OBJECT:
-        case WI_OP_REQUIRE: {
-            uint8_t has_name = bytes[offset + 3];
-            return 4 + (has_name ? 2 : 0);
-        }
-    }
-
-    return -1; /* unreachable */
+    /* WI_OP_PUSH_CLOSURE */
+    uint16_t             constant          = bytes[offset + 1] << 8 | bytes[offset + 2];
+    struct wi_prototype* closure_prototype = wi_value_as_prototype(prototype->constants.data[constant]);
+    return 3 + closure_prototype->upvalue_count * 2;
 }
 
 struct wi_foreign*
-wi_new_foreign(struct wi_gc* gc, wi_foreign_fn fn, struct wi_string* name, int arity, bool is_variadic) {
+wi_new_foreign(struct wi_gc* gc, wi_foreign_fn fn, int arity, bool is_variadic) {
     struct wi_foreign* foreign = WI_NEW_BOX(gc, struct wi_foreign, WI_BOX_FOREIGN);
 
     foreign->fn          = fn;
-    foreign->name        = name;
     foreign->arity       = arity;
     foreign->is_variadic = is_variadic;
 
@@ -191,12 +179,9 @@ wi_new_upvalue(struct wi_gc* gc, wi_value* slot) {
 }
 
 struct wi_object*
-wi_new_object(struct wi_gc* gc, struct wi_string* name) {
+wi_new_object(struct wi_gc* gc) {
     struct wi_object* object = WI_NEW_BOX(gc, struct wi_object, WI_BOX_OBJECT);
-
-    object->name = name;
     wi_table_init(&object->fields, gc);
-
     return object;
 }
 

@@ -203,51 +203,10 @@ wi_prototype_disasm_instr(struct wi_prototype* prototype, int offset) {
             return _byte_instr("tail_call", "argument count", prototype, offset);
         case WI_OP_RETURN:
             return _simple_instr(offset, "return");
-        case WI_OP_PUSH_OBJECT: {
-            offset++;
-
-            uint16_t field_count = prototype->bytes.data[offset] << 8 | prototype->bytes.data[offset + 1];
-            uint8_t  has_name    = prototype->bytes.data[offset + 2];
-            offset += 3;
-
-            printf("%-16s ", "push_object");
-
-            if (has_name) {
-                uint16_t constant      = prototype->bytes.data[offset] << 8 | prototype->bytes.data[offset + 1];
-                struct wi_string* name = wi_value_as_string(prototype->constants.data[constant]);
-
-                printf("C:%05hu %s (name)", constant, name->buf);
-
-                offset += 2;
-            } else {
-                printf("(anonymous)");
-            }
-
-            printf(" (%hu fields) \n", field_count);
-            return offset;
-        }
-        case WI_OP_REQUIRE: {
-            offset++;
-
-            uint16_t path_constant = prototype->bytes.data[offset] << 8 | prototype->bytes.data[offset + 1];
-            uint8_t  has_name      = prototype->bytes.data[offset + 2];
-            char*    path          = wi_value_as_cstring(prototype->constants.data[path_constant]);
-            offset += 3;
-
-            printf("%-16s \"%s\" ", "require", path);
-
-            if (has_name) {
-                uint16_t name_constant = prototype->bytes.data[offset] << 8 | prototype->bytes.data[offset + 1];
-                char*    name          = wi_value_as_cstring(prototype->constants.data[name_constant]);
-
-                printf("C:%05hu %s (name)\n", name_constant, name);
-                offset += 2;
-            } else {
-                printf("(anonymous)\n");
-            }
-
-            return offset;
-        }
+        case WI_OP_PUSH_OBJECT:
+            return _short_instr("push_object", "field count", prototype, offset);
+        case WI_OP_REQUIRE:
+            return _constant_instr("require", "path", prototype, offset);
         case WI_OP_INIT_FIELD:
             return _constant_instr("init_field", "field name", prototype, offset);
         case WI_OP_SET_FIELD:

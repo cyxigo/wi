@@ -185,7 +185,7 @@ _gc_mark_box(struct wi_gc* gc, struct wi_box* box) {
 
     box->is_marked = true;
 
-    if (box->kind == WI_BOX_STRING) {
+    if (box->kind == WI_BOX_STRING || box->kind == WI_BOX_FOREIGN) {
         return;
     }
 
@@ -291,6 +291,7 @@ _gc_blacken_box(struct wi_gc* gc, struct wi_box* box) {
 
     switch (box->kind) {
         case WI_BOX_STRING:
+        case WI_BOX_FOREIGN:
             break;
         case WI_BOX_ARRAY: {
             struct wi_array* array = (struct wi_array*)box;
@@ -306,11 +307,6 @@ _gc_blacken_box(struct wi_gc* gc, struct wi_box* box) {
             struct wi_prototype* prototype = (struct wi_prototype*)box;
             _GC_MARK_BOX(gc, prototype->name);
             _gc_mark_value_buf(gc, &prototype->constants);
-            break;
-        }
-        case WI_BOX_FOREIGN: {
-            struct wi_foreign* foreign = (struct wi_foreign*)box;
-            _GC_MARK_BOX(gc, foreign->name);
             break;
         }
         case WI_BOX_CLOSURE: {
@@ -331,7 +327,6 @@ _gc_blacken_box(struct wi_gc* gc, struct wi_box* box) {
         }
         case WI_BOX_OBJECT: {
             struct wi_object* object = (struct wi_object*)box;
-            _GC_MARK_BOX(gc, object->name);
             _gc_mark_table(gc, &object->fields);
             break;
         }

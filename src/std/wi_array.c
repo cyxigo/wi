@@ -18,11 +18,6 @@ _check_arg1_array(struct wi_state* state) {
     return _check_arg_array(state, 1);
 }
 
-static struct wi_array*
-_check_arg2_array(struct wi_state* state) {
-    return _check_arg_array(state, 2);
-}
-
 static void
 _array_copy(struct wi_state* state, int arg_count) {
     struct wi_array* array     = _check_arg1_array(state);
@@ -53,28 +48,6 @@ static void
 _array_count(struct wi_state* state, int arg_count) {
     struct wi_array* array = _check_arg1_array(state);
     wi_slot_set_real(state, 0, array->items.count);
-}
-
-static void
-_array_equals(struct wi_state* state, int arg_count) {
-    struct wi_array* a      = _check_arg1_array(state);
-    struct wi_array* b      = _check_arg2_array(state);
-    bool             equals = false;
-
-    if (a->items.count != b->items.count) {
-        goto end;
-    }
-
-    for (int i = 0; i < a->items.count; i++) {
-        if (!wi_values_equal(a->items.data[i], b->items.data[i])) {
-            goto end;
-        }
-    }
-
-    equals = true;
-
-end:
-    wi_slot_set_bool(state, 0, equals);
 }
 
 static void
@@ -236,7 +209,6 @@ wi_state_def_array_foreign(struct wi_state* state) {
     wi_object_set_field_foreign(state, object, "clear", _array_clear, 1, false);
     wi_object_set_field_foreign(state, object, "capacity", _array_capacity, 1, false);
     wi_object_set_field_foreign(state, object, "count", _array_count, 1, false);
-    wi_object_set_field_foreign(state, object, "equals", _array_equals, 2, false);
     wi_object_set_field_foreign(state, object, "reverse", _array_reverse, 1, false);
     wi_object_set_field_foreign(state, object, "reversed", _array_reversed, 1, false);
     wi_object_set_field_foreign(state, object, "add", _array_add, 2, false);
