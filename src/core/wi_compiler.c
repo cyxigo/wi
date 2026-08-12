@@ -739,12 +739,15 @@ _compiler_new_expr(struct wi_compiler* compiler) {
     while (!wi_parser_check(compiler->parser, WI_TOKEN_CLOSE_BRACE) && !wi_parser_is_at_end(compiler->parser)) {
         struct wi_token name          = wi_parser_expect(compiler->parser, WI_TOKEN_NAME);
         uint16_t        name_constant = _compiler_name_constant(compiler, name);
+        struct wi_token var_name      = compiler->var_name;
+        compiler->var_name            = name;
 
         wi_parser_expect(compiler->parser, WI_TOKEN_EQUAL);
         _compiler_expr(compiler);
         wi_parser_expect(compiler->parser, WI_TOKEN_SEMICOLON);
 
         _compiler_emit_opcode_short(compiler, WI_OP_INIT_FIELD, name_constant);
+        compiler->var_name = var_name;
     }
 
     wi_parser_expect(compiler->parser, WI_TOKEN_CLOSE_BRACE);

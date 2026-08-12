@@ -737,6 +737,28 @@ _state_tail_call(struct wi_state* state, struct wi_call_frame* frame, struct wi_
     frame->ip      = prototype->bytes.data;
 }
 
+static struct wi_object*
+_state_builtin_object(struct wi_state* state, wi_value value) {
+    if (wi_value_is_string(value)) {
+        return state->string_obj;
+    }
+
+    if (wi_value_is_array(value)) {
+        return state->array_obj;
+    }
+
+    if (wi_value_is_map(value)) {
+        return state->map_obj;
+    }
+
+    return NULL;
+}
+
+static struct wi_object*
+_state_get_object(struct wi_state* state, wi_value value) {
+    return wi_value_is_object(value) ? wi_value_as_object(value) : _state_builtin_object(state, value);
+}
+
 static void
 _state_resolve_field(struct wi_state* state, struct wi_object* object, wi_value name, wi_value* value);
 
@@ -749,15 +771,7 @@ _state_resolve_method(struct wi_state* state, wi_value receiver, wi_value name) 
         return function;
     }
 
-    struct wi_object* object = NULL;
-
-    if (wi_value_is_string(receiver)) {
-        object = state->string_obj;
-    } else if (wi_value_is_array(receiver)) {
-        object = state->array_obj;
-    } else if (wi_value_is_map(receiver)) {
-        object = state->map_obj;
-    }
+    struct wi_object* object = _state_builtin_object(state, receiver);
 
     if (!object) {
         wi_state_error(state, "value type %s has no functions", wi_value_type(receiver));
@@ -783,11 +797,12 @@ _state_resolve_field(struct wi_state* state, struct wi_object* object, wi_value 
 
 static void
 _state_set_field(struct wi_state* state, wi_value name, wi_value target) {
-    if (!wi_value_is_object(target)) {
+    struct wi_object* object = _state_get_object(state, target);
+
+    if (!object) {
         wi_state_error(state, "cannot access fields on a value of type %s", wi_value_type(target));
     }
 
-    struct wi_object* object = wi_value_as_object(target);
     wi_table_set(&object->fields, name, wi_state_top(state));
 }
 
@@ -1369,15 +1384,15 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
             _DISPATCH();
         }
         _OPCODE_LABEL(GET_FIELD) : {
-            wi_value name   = _READ_CONSTANT();
-            wi_value target = wi_state_top(state);
+            wi_value          name   = _READ_CONSTANT();
+            wi_value          target = wi_state_top(state);
+            struct wi_object* object = _state_get_object(state, target);
 
-            if (!wi_value_is_object(target)) {
+            if (!object) {
                 _ERROR("cannot access fields on a value of type %s", wi_value_type(target));
             }
 
-            struct wi_object* object = wi_value_as_object(target);
-            wi_value          value;
+            wi_value value;
             frame->ip = ip;
             _state_resolve_field(state, object, name, &value);
 
