@@ -54,8 +54,8 @@ struct wi_compiler {
     int                  slot_count;
     struct wi_map*       constants;
 
-    struct wi_compiler_local   locals[WI_LOCALS_MAX];
-    struct wi_compiler_upvalue upvalues[WI_UPVALUES_MAX];
+    struct wi_compiler_local   locals[WI_LOCAL_MAX];
+    struct wi_compiler_upvalue upvalues[WI_UPVALUE_MAX];
     int                        local_count;
     int                        scope_depth;
 

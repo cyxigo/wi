@@ -254,8 +254,8 @@ _compiler_decl_var(struct wi_compiler* compiler, struct wi_token name, wi_attrs 
         return;
     }
 
-    if (compiler->local_count >= WI_LOCALS_MAX) {
-        wi_parser_error_at(compiler->parser, name, "too many local variables (limit is %i)", WI_LOCALS_MAX);
+    if (compiler->local_count >= WI_LOCAL_MAX) {
+        wi_parser_error_at(compiler->parser, name, "too many local variables (limit is %i)", WI_LOCAL_MAX);
         return;
     }
 
@@ -374,8 +374,8 @@ _compiler_add_upvalue(struct wi_compiler* compiler, uint8_t index, bool is_local
         }
     }
 
-    if (upvalue_count >= WI_UPVALUES_MAX) {
-        wi_parser_error_at_curr(compiler->parser, "too many upvalues in a closure (limit is %i)", WI_UPVALUES_MAX);
+    if (upvalue_count >= WI_UPVALUE_MAX) {
+        wi_parser_error_at_curr(compiler->parser, "too many upvalues in a closure (limit is %i)", WI_UPVALUE_MAX);
     }
 
     struct wi_compiler_upvalue* upvalue = &compiler->upvalues[upvalue_count];

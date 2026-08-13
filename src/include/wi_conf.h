@@ -28,8 +28,8 @@ enum {
     WI_CONSTANT_MAX  = 65535, /* Maximum number of constants in a function */
     WI_JUMP_MAX      = 65535, /* Maximum jump offset */
     WI_LOOP_MAX      = 65535, /* Maximum loop offset */
-    WI_LOCALS_MAX    = 255,   /* Maximum number of local variables in a function */
-    WI_UPVALUES_MAX  = 255,   /* Maximum number of upvalues in a function (closure) */
+    WI_LOCAL_MAX     = 255,   /* Maximum number of local variables in a function */
+    WI_UPVALUE_MAX   = 255,   /* Maximum number of upvalues in a function (closure) */
     WI_PARAMETER_MAX = 255,   /* Maximum number of parameters in a function and arguments in a call */
 
     /**
