@@ -28,14 +28,14 @@ _byte_instr(const char* name, const char* arg_name, struct wi_prototype* prototy
 
 static int
 _short_instr(const char* name, const char* arg_name, struct wi_prototype* prototype, int offset) {
-    uint16_t arg = prototype->bytes.data[offset + 1] << 8 | prototype->bytes.data[offset + 2];
+    uint16_t arg = (uint16_t)(prototype->bytes.data[offset + 1] << 8 | prototype->bytes.data[offset + 2]);
     printf("%-16s %hu (%s)\n", name, arg, arg_name);
     return offset + 3;
 }
 
 static int
 _constant_instr(const char* name, const char* arg_name, struct wi_prototype* prototype, int offset) {
-    uint16_t constant = prototype->bytes.data[offset + 1] << 8 | prototype->bytes.data[offset + 2];
+    uint16_t constant = (uint16_t)(prototype->bytes.data[offset + 1] << 8 | prototype->bytes.data[offset + 2]);
     wi_value value    = prototype->constants.data[constant];
 
     printf("%-16s ", name);
@@ -48,16 +48,17 @@ _constant_instr(const char* name, const char* arg_name, struct wi_prototype* pro
 
 static int
 _jump_instr(const char* name, int sign, struct wi_prototype* prototype, int offset) {
-    uint16_t jump = prototype->bytes.data[offset + 1] << 8 | prototype->bytes.data[offset + 2];
+    uint16_t jump = (uint16_t)(prototype->bytes.data[offset + 1] << 8 | prototype->bytes.data[offset + 2]);
     printf("%-16s O:%03i -> O:%03i\n", name, offset, offset + 3 + sign * jump);
     return offset + 3;
 }
 
 static int
 _invoke_instr(const char* name, struct wi_prototype* prototype, int offset) {
-    uint16_t          name_constant = prototype->bytes.data[offset + 1] << 8 | prototype->bytes.data[offset + 2];
-    uint8_t           arg_count     = prototype->bytes.data[offset + 3];
-    struct wi_string* name_box      = wi_value_as_string(prototype->constants.data[name_constant]);
+    uint16_t name_constant =
+        (uint16_t)(prototype->bytes.data[offset + 1] << 8 | prototype->bytes.data[offset + 2]);
+    uint8_t           arg_count = prototype->bytes.data[offset + 3];
+    struct wi_string* name_box  = wi_value_as_string(prototype->constants.data[name_constant]);
 
     printf("%-16s C%05hu %s (%hhu args, including receiver)\n", name, name_constant, name_box->buf, arg_count);
     return offset + 4;
@@ -174,7 +175,7 @@ wi_prototype_disasm_instr(struct wi_prototype* prototype, int offset) {
         case WI_OP_PUSH_CLOSURE: {
             offset++;
 
-            uint16_t constant        = prototype->bytes.data[offset] << 8 | prototype->bytes.data[offset + 1];
+            uint16_t constant = (uint16_t)(prototype->bytes.data[offset] << 8 | prototype->bytes.data[offset + 1]);
             wi_value prototype_value = prototype->constants.data[constant];
 
             printf("%-16s ", "push_closure");

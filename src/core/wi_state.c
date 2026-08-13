@@ -168,6 +168,14 @@ wi_state_append_error_va(struct wi_state* state, const char* format, va_list arg
     vsnprintf(state->error + len, (size_t)add_len + 1, format, args);
 }
 
+void
+wi_state_append_error(struct wi_state* state, const char* format, ...) {
+    va_list args;
+    va_start(args, format);
+    wi_state_append_error_va(state, format, args);
+    va_end(args);
+}
+
 const char*
 wi_state_get_error(struct wi_state* state) {
     return state->oom ? state->oom : state->error;
@@ -1441,17 +1449,6 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
 #undef _LOAD_METHOD
 
     return WI_RUN_OK;
-}
-
-void
-wi_state_check_arity(struct wi_state* state, int arity, uint8_t arg_count, bool is_variadic) {
-    if (is_variadic) {
-        if (WI_UNLIKELY(arg_count < arity)) {
-            wi_state_error(state, "expected at least %i arguments but got %hhu", arity, arg_count);
-        }
-    } else if (WI_UNLIKELY(arg_count != arity)) {
-        wi_state_error(state, "expected %i arguments but got %hhu", arity, arg_count);
-    }
 }
 
 void

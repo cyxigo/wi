@@ -4,32 +4,34 @@
 #include <stdbool.h>
 #include <string.h>
 
-static inline bool
+#include "wi_util.h"
+
+WI_INLINE bool
 wi_is_digit(char c) {
     return c >= '0' && c <= '9';
 }
 
-static inline bool
+WI_INLINE bool
 wi_is_bin_digit(char c) {
     return c == '0' || c == '1';
 }
 
-static inline bool
+WI_INLINE bool
 wi_is_oct_digit(char c) {
     return c >= '0' && c <= '7';
 }
 
-static inline bool
+WI_INLINE bool
 wi_is_hex_digit(char c) {
     return wi_is_digit(c) || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
 }
 
-static inline bool
+WI_INLINE bool
 wi_is_alpha(char c) {
     return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_';
 }
 
-static inline bool
+WI_INLINE bool
 wi_is_alnum(char c) {
     return wi_is_digit(c) || wi_is_alpha(c);
 }
@@ -112,12 +114,12 @@ struct wi_token {
 
 extern const struct wi_token WI_BLANK_TOKEN;
 
-static inline bool
+WI_INLINE bool
 wi_token_lexemes_equal(struct wi_token a, struct wi_token b) {
     return a.count == b.count && memcmp(a.start, b.start, (size_t)a.count) == 0;
 }
 
-static inline struct wi_token
+WI_INLINE struct wi_token
 wi_token_from_string(const char* string) {
     return (struct wi_token){
         .kind  = WI_TOKEN_NAME,

@@ -9,10 +9,12 @@
 #define WI_NORETURN __attribute__((noreturn))
 #define WI_UNLIKELY(x) __builtin_expect(!!(x), 0)
 #define WI_LIKELY(x) __builtin_expect(!!(x), 1)
+#define WI_INLINE __attribute__((always_inline)) static inline
 #else
 #define WI_NORETURN
 #define WI_UNLIKELY(x) (x)
 #define WI_LIKELY(x) (x)
+#define WI_INLINE static inline
 #endif
 
 char*

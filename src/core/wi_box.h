@@ -27,7 +27,7 @@ struct wi_box {
     bool             is_marked;
 };
 
-static inline bool
+WI_INLINE bool
 wi_value_is_box_kind(wi_value value, enum wi_box_kind kind) {
     return wi_value_is_box(value) && wi_value_as_box(value)->kind == kind;
 }
@@ -45,17 +45,17 @@ struct wi_string {
     uint32_t      hash;
 };
 
-static inline bool
+WI_INLINE bool
 wi_value_is_string(wi_value value) {
     return wi_value_is_box_kind(value, WI_BOX_STRING);
 }
 
-static inline struct wi_string*
+WI_INLINE struct wi_string*
 wi_value_as_string(wi_value value) {
     return (struct wi_string*)wi_value_as_box(value);
 }
 
-static inline char*
+WI_INLINE char*
 wi_value_as_cstring(wi_value value) {
     return wi_value_as_string(value)->buf;
 }
@@ -67,7 +67,7 @@ wi_copy_cstring(struct wi_gc* gc, const char* chars, int count);
 struct wi_string*
 wi_take_cstring(struct wi_gc* gc, char* chars, int count);
 
-static inline struct wi_string*
+WI_INLINE struct wi_string*
 wi_make_string(struct wi_gc* gc, const char* string) {
     return wi_copy_cstring(gc, string, (int)strlen(string));
 }
@@ -77,12 +77,12 @@ struct wi_array {
     struct wi_value_buf items;
 };
 
-static inline bool
+WI_INLINE bool
 wi_value_is_array(wi_value value) {
     return wi_value_is_box_kind(value, WI_BOX_ARRAY);
 }
 
-static inline struct wi_array*
+WI_INLINE struct wi_array*
 wi_value_as_array(wi_value value) {
     return (struct wi_array*)wi_value_as_box(value);
 }
@@ -95,12 +95,12 @@ struct wi_map {
     struct wi_table items;
 };
 
-static inline bool
+WI_INLINE bool
 wi_value_is_map(wi_value value) {
     return wi_value_is_box_kind(value, WI_BOX_MAP);
 }
 
-static inline struct wi_map*
+WI_INLINE struct wi_map*
 wi_value_as_map(wi_value value) {
     return (struct wi_map*)wi_value_as_box(value);
 }
@@ -122,12 +122,12 @@ struct wi_prototype {
     int                 max_slot_count;
 };
 
-static inline bool
+WI_INLINE bool
 wi_value_is_prototype(wi_value value) {
     return wi_value_is_box_kind(value, WI_BOX_PROTOTYPE);
 }
 
-static inline struct wi_prototype*
+WI_INLINE struct wi_prototype*
 wi_value_as_prototype(wi_value value) {
     return (struct wi_prototype*)wi_value_as_box(value);
 }
@@ -148,12 +148,12 @@ struct wi_foreign {
     bool          is_variadic;
 };
 
-static inline bool
+WI_INLINE bool
 wi_value_is_foreign(wi_value value) {
     return wi_value_is_box_kind(value, WI_BOX_FOREIGN);
 }
 
-static inline struct wi_foreign*
+WI_INLINE struct wi_foreign*
 wi_value_as_foreign(wi_value value) {
     return (struct wi_foreign*)wi_value_as_box(value);
 }
@@ -178,12 +178,12 @@ struct wi_closure {
     struct wi_object* required;
 };
 
-static inline bool
+WI_INLINE bool
 wi_value_is_closure(wi_value value) {
     return wi_value_is_box_kind(value, WI_BOX_CLOSURE);
 }
 
-static inline struct wi_closure*
+WI_INLINE struct wi_closure*
 wi_value_as_closure(wi_value value) {
     return (struct wi_closure*)wi_value_as_box(value);
 }
@@ -198,12 +198,12 @@ struct wi_upvalue {
     wi_value           closed;
 };
 
-static inline bool
+WI_INLINE bool
 wi_value_is_upvalue(wi_value value) {
     return wi_value_is_box_kind(value, WI_BOX_UPVALUE);
 }
 
-static inline struct wi_upvalue*
+WI_INLINE struct wi_upvalue*
 wi_value_as_upvalue(wi_value value) {
     return (struct wi_upvalue*)wi_value_as_box(value);
 }
@@ -216,12 +216,12 @@ struct wi_object {
     struct wi_table fields;
 };
 
-static inline bool
+WI_INLINE bool
 wi_value_is_object(wi_value value) {
     return wi_value_is_box_kind(value, WI_BOX_OBJECT);
 }
 
-static inline struct wi_object*
+WI_INLINE struct wi_object*
 wi_value_as_object(wi_value value) {
     return (struct wi_object*)wi_value_as_box(value);
 }
@@ -236,12 +236,12 @@ struct wi_userdata {
     wi_userdata_finalizer_fn finalizer;
 };
 
-static inline bool
+WI_INLINE bool
 wi_value_is_userdata(wi_value value) {
     return wi_value_is_box_kind(value, WI_BOX_USERDATA);
 }
 
-static inline struct wi_userdata*
+WI_INLINE struct wi_userdata*
 wi_value_as_userdata(wi_value value) {
     return (struct wi_userdata*)wi_value_as_box(value);
 }

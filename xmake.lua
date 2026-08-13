@@ -4,14 +4,23 @@ set_version("1.0.0")
 set_description("The Wi programming language")
 set_license("MIT")
 
-function defaults()
-    set_languages("c99")
-    add_cflags("-flto -fno-stack-protector -fno-common -Wconversion -Wsign-conversion -Wfloat-conversion")
-    set_optimize("fastest")
-    set_warnings("all", "error")
+set_languages("c99")
+set_warnings("all", "error")
 
+function common()
+    if is_mode("debug") then 
+        add_cflags("-g -fno-omit-frame-pointer")
+        set_optimize("none")
+        set_symbols("debug")
+    elseif is_mode("release") then
+        add_cflags("-flto -fno-stack-protector -fno-common -Wconversion -Wsign-conversion -Wfloat-conversion")
+        set_optimize("fastest")
+        set_strip("all")
+    end
+    
     add_headerfiles("src/core/*.h", "src/std/*.h")
     add_files("src/core/*.c", "src/std/*.c")
+    add_includedirs("src/core", "src/std")
 
     set_targetdir("bin")
 end
@@ -20,12 +29,12 @@ target("wi_shared")
     set_kind("shared")
     set_group("libs")
     set_basename("wi")
-    defaults()
+    common()
 
 target("wi")
     set_kind("binary")
     set_group("apps")
-    defaults()
+    common()
 
     if is_host("windows") then 
         add_files("wi.rc")

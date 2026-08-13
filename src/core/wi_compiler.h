@@ -21,12 +21,12 @@ typedef uint8_t wi_attrs;
 /* basically copy-pasted code from wi_conf.h */
 #define WI_DEFAULT_ATTRS 0
 
-static inline void
+WI_INLINE void
 wi_attr_set(wi_attrs* attrs, enum wi_attr attr) {
     *attrs |= (wi_attrs)1 << attr;
 }
 
-static inline bool
+WI_INLINE bool
 wi_attr_is_set(wi_attrs attrs, enum wi_attr attr) {
     return attrs & ((wi_attrs)1 << attr);
 }

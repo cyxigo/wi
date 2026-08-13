@@ -34,7 +34,7 @@ wi_new_gc(wi_conf conf);
 void
 wi_delete_gc(struct wi_gc* gc);
 
-static inline void
+WI_INLINE void
 wi_gc_reset_roots(struct wi_gc* gc) {
     gc->temp_root_count = 0;
 }
@@ -44,12 +44,12 @@ wi_gc_push_root(struct wi_gc* gc, struct wi_box* root);
 
 #define WI_GC_PUSH_ROOT(gc, root) wi_gc_push_root(gc, (struct wi_box*)root)
 
-static inline void
+WI_INLINE void
 wi_gc_pop_root(struct wi_gc* gc) {
     gc->temp_root_count--;
 }
 
-static inline bool
+WI_INLINE bool
 wi_log_gc(struct wi_gc* gc) {
     return wi_conf_is_set(gc->conf, WI_CONF_LOG_GC);
 }

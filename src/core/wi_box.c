@@ -132,7 +132,7 @@ wi_prototype_instr_size(struct wi_prototype* prototype, int offset) {
     }
 
     /* WI_OP_PUSH_CLOSURE */
-    uint16_t             constant          = bytes[offset + 1] << 8 | bytes[offset + 2];
+    uint16_t             constant          = (uint16_t)(bytes[offset + 1] << 8 | bytes[offset + 2]);
     struct wi_prototype* closure_prototype = wi_value_as_prototype(prototype->constants.data[constant]);
     return 3 + closure_prototype->upvalue_count * 2;
 }

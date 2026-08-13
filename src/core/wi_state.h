@@ -23,7 +23,7 @@ typedef void* wi_lib_handle;
 #include "wi_table.h"
 #include "wi_value.h"
 
-static inline void
+WI_INLINE void
 wi_lib_close(wi_lib_handle handle) {
 #ifdef _WIN32
     FreeLibrary(handle);
@@ -134,32 +134,32 @@ struct wi_state {
     struct wi_string* error_str;
 };
 
-static inline void
+WI_INLINE void
 wi_state_push(struct wi_state* state, wi_value value) {
     *state->stack_top++ = value;
 }
 
-static inline void
+WI_INLINE void
 wi_state_drop(struct wi_state* state) {
     state->stack_top--;
 }
 
-static inline wi_value
+WI_INLINE wi_value
 wi_state_pop(struct wi_state* state) {
     return *--state->stack_top;
 }
 
-static inline wi_value
+WI_INLINE wi_value
 wi_state_peek(struct wi_state* state, int distance) {
     return state->stack_top[-distance - 1];
 }
 
-static inline wi_value
+WI_INLINE wi_value
 wi_state_top(struct wi_state* state) {
     return wi_state_peek(state, 0);
 }
 
-static inline struct wi_call_frame*
+WI_INLINE struct wi_call_frame*
 wi_state_frame(struct wi_state* state) {
     return &state->frames[state->frame_count - 1];
 }
@@ -169,7 +169,7 @@ wi_new_state(wi_conf conf);
 void
 wi_delete_state(struct wi_state* state);
 
-static inline void
+WI_INLINE void
 wi_state_reset_error(struct wi_state* state) {
     free(state->error);
     state->error = NULL;
@@ -178,14 +178,8 @@ wi_state_reset_error(struct wi_state* state) {
 
 void
 wi_state_append_error_va(struct wi_state* state, const char* format, va_list args);
-
-static inline void
-wi_state_append_error(struct wi_state* state, const char* format, ...) {
-    va_list args;
-    va_start(args, format);
-    wi_state_append_error_va(state, format, args);
-    va_end(args);
-}
+void
+wi_state_append_error(struct wi_state* state, const char* format, ...);
 
 const char*
 wi_state_get_error(struct wi_state* state);
@@ -220,8 +214,17 @@ wi_state_abort(struct wi_state* state);
 void
 wi_state_interrupt(struct wi_state* state);
 
-void
-wi_state_check_arity(struct wi_state* state, int arity, uint8_t arg_count, bool is_variadic);
+WI_INLINE void
+wi_state_check_arity(struct wi_state* state, int arity, uint8_t arg_count, bool is_variadic) {
+    if (is_variadic) {
+        if (WI_UNLIKELY(arg_count < arity)) {
+            wi_state_error(state, "expected at least %i arguments but got %hhu", arity, arg_count);
+        }
+    } else if (WI_UNLIKELY(arg_count != arity)) {
+        wi_state_error(state, "expected %i arguments but got %hhu", arity, arg_count);
+    }
+}
+
 void
 wi_state_call_foreign(struct wi_state* state, struct wi_foreign* foreign, uint8_t arg_count);
 enum wi_run_result
