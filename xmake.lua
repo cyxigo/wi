@@ -38,7 +38,7 @@ target("wi")
  
     if is_plat("windows") then 
         add_files("wi.rc")
-    elseif is_plat("linux") then 
+    elseif is_plat("linux") and os.isfile("/usr/include/readline/readline.h") then
         add_defines("WI_USE_READLINE")
         add_links("readline")
     end 
