@@ -539,22 +539,22 @@ _compiler_real_expr(struct wi_compiler* compiler) {
 }
 
 static void
-_compiler_add_esc_char(struct wi_compiler* compiler, struct wi_char_buf* chars, char c) {
+_compiler_add_esc_char(struct wi_compiler* compiler, struct wi_char_buf* buf, char c) {
     switch (c) {
         case 'n':
-            wi_char_buf_add(chars, '\n');
+            wi_char_buf_add(buf, '\n');
             break;
         case 't':
-            wi_char_buf_add(chars, '\t');
+            wi_char_buf_add(buf, '\t');
             break;
         case '\\':
-            wi_char_buf_add(chars, '\\');
+            wi_char_buf_add(buf, '\\');
             break;
         case '"':
-            wi_char_buf_add(chars, '"');
+            wi_char_buf_add(buf, '"');
             break;
         case '0':
-            wi_char_buf_add(chars, '\0');
+            wi_char_buf_add(buf, '\0');
             break;
         default:
             wi_parser_error_at_prev(compiler->parser, "invalid escape sequence \\%c", c);
@@ -565,20 +565,20 @@ _compiler_add_esc_char(struct wi_compiler* compiler, struct wi_char_buf* chars, 
 static void
 _compiler_string_expr(struct wi_compiler* compiler) {
     struct wi_token    token = compiler->parser->prev;
-    struct wi_char_buf chars;
-    wi_char_buf_init(&chars, compiler->state->gc);
-    wi_char_buf_reserve(&chars, token.count - 2);
+    struct wi_char_buf buf;
+    wi_char_buf_init(&buf, compiler->state->gc);
+    wi_char_buf_reserve(&buf, token.count - 2);
 
     for (int i = 1; i < token.count - 1; i++) {
         if (token.start[i] == '\\' && i + 1 < token.count - 1) {
-            _compiler_add_esc_char(compiler, &chars, token.start[++i]);
+            _compiler_add_esc_char(compiler, &buf, token.start[++i]);
         } else {
-            wi_char_buf_add(&chars, token.start[i]);
+            wi_char_buf_add(&buf, token.start[i]);
         }
     }
 
-    struct wi_string* string = wi_copy_cstring(compiler->state->gc, chars.data, chars.count);
-    wi_char_buf_free(&chars);
+    struct wi_string* string = wi_copy_cstring(compiler->state->gc, buf.data, buf.count);
+    wi_char_buf_free(&buf);
     _compiler_emit_push(compiler, WI_MAKE_BOX_VALUE(string));
 }
 

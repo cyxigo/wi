@@ -11,7 +11,7 @@
 #include "wi_util.h"
 
 static void
-_print_chars(char* buf, int count) {
+_print_bytes(char* buf, int count) {
     char* ptr = buf;
     char* end = buf + count;
 
@@ -51,7 +51,7 @@ wi_value_print(wi_value value) {
         printf(wi_value_as_bool(value) ? "true" : "false");
     } else if (wi_value_is_string(value)) {
         struct wi_string* string = wi_value_as_string(value);
-        _print_chars(string->buf, string->count);
+        _print_bytes(string->buf, string->count);
     } else if (wi_value_is_array(value)) {
         printf("<array %p>", (void*)wi_value_as_array(value));
     } else if (wi_value_is_map(value)) {

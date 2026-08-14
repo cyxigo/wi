@@ -8,7 +8,7 @@
 struct wi_string;
 
 uint32_t
-wi_string_hash(const char* chars, int len);
+wi_string_hash(const char* buf, int len);
 
 struct wi_entry {
     wi_value key;
@@ -37,7 +37,7 @@ wi_table_get(struct wi_table* table, wi_value key, wi_value* value);
 bool
 wi_table_delete(struct wi_table* table, wi_value key);
 struct wi_string*
-wi_table_find_string(struct wi_table* table, const char* chars, int len, uint32_t hash);
+wi_table_find_string(struct wi_table* table, const char* buf, int len, uint32_t hash);
 void
 wi_table_remove_white(struct wi_table* table);
 void

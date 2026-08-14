@@ -61,11 +61,11 @@ wi_value_as_cstring(wi_value value) {
 }
 
 struct wi_string*
-wi_new_string(struct wi_gc* gc, char* chars, int count, uint32_t hash);
+wi_new_string(struct wi_gc* gc, char* buf, int count, uint32_t hash);
 struct wi_string*
-wi_copy_cstring(struct wi_gc* gc, const char* chars, int count);
+wi_copy_cstring(struct wi_gc* gc, const char* buf, int count);
 struct wi_string*
-wi_take_cstring(struct wi_gc* gc, char* chars, int count);
+wi_take_cstring(struct wi_gc* gc, char* buf, int count);
 
 WI_INLINE struct wi_string*
 wi_make_string(struct wi_gc* gc, const char* string) {

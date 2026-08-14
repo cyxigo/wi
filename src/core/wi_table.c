@@ -10,11 +10,11 @@
 #include "wi_value.h"
 
 uint32_t
-wi_string_hash(const char* chars, int len) {
+wi_string_hash(const char* buf, int len) {
     uint32_t hash = 2166136261u;
 
     for (int i = 0; i < len; i++) {
-        hash ^= (uint8_t)chars[i];
+        hash ^= (uint8_t)buf[i];
         hash *= 16777619u;
     }
 
@@ -159,7 +159,7 @@ wi_table_delete(struct wi_table* table, wi_value key) {
 }
 
 struct wi_string*
-wi_table_find_string(struct wi_table* table, const char* chars, int len, uint32_t hash) {
+wi_table_find_string(struct wi_table* table, const char* buf, int len, uint32_t hash) {
     if (table->count == 0) {
         return NULL;
     }
@@ -176,7 +176,7 @@ wi_table_find_string(struct wi_table* table, const char* chars, int len, uint32_
         if (wi_value_is_string(entry->key)) {
             struct wi_string* key = wi_value_as_string(entry->key);
 
-            if (key->count == len && key->hash == hash && memcmp(key->buf, chars, (size_t)len) == 0) {
+            if (key->count == len && key->hash == hash && memcmp(key->buf, buf, (size_t)len) == 0) {
                 return key;
             }
         }

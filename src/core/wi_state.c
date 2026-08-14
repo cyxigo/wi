@@ -362,8 +362,8 @@ _state_concat(struct wi_state* state) {
     wi_value a = wi_state_peek(state, 1);
     wi_value b = wi_state_top(state);
 
-    char* a_chars;
-    char* b_chars;
+    char* a_buf;
+    char* b_buf;
     int   a_count;
     int   b_count;
     bool  a_owned = false;
@@ -371,51 +371,51 @@ _state_concat(struct wi_state* state) {
 
     if (wi_value_is_string(a)) {
         struct wi_string* string = wi_value_as_string(a);
-        a_chars                  = string->buf;
+        a_buf                    = string->buf;
         a_count                  = string->count;
     } else {
-        a_chars = wi_value_to_string(a);
+        a_buf = wi_value_to_string(a);
 
-        if (!a_chars) {
+        if (!a_buf) {
             wi_state_oom(state, "out of memory: failed to allocate a string for concatenation");
         }
 
-        a_count = (int)strlen(a_chars);
+        a_count = (int)strlen(a_buf);
         a_owned = true;
     }
 
     if (wi_value_is_string(b)) {
         struct wi_string* string = wi_value_as_string(b);
 
-        b_chars = string->buf;
+        b_buf   = string->buf;
         b_count = string->count;
     } else {
-        b_chars = wi_value_to_string(b);
+        b_buf = wi_value_to_string(b);
 
-        if (!b_chars) {
+        if (!b_buf) {
             wi_state_oom(state, "out of memory: failed to allocate a string for concatenation");
         }
 
-        b_count = (int)strlen(b_chars);
+        b_count = (int)strlen(b_buf);
         b_owned = true;
     }
 
-    int   len   = a_count + b_count;
-    char* chars = WI_GC_ALLOC(state->gc, char, len + 1);
+    int   len = a_count + b_count;
+    char* buf = WI_GC_ALLOC(state->gc, char, len + 1);
 
-    memcpy(chars, a_chars, (size_t)a_count);
-    memcpy(chars + a_count, b_chars, (size_t)b_count);
-    chars[len] = '\0';
+    memcpy(buf, a_buf, (size_t)a_count);
+    memcpy(buf + a_count, b_buf, (size_t)b_count);
+    buf[len] = '\0';
 
     if (a_owned) {
-        free(a_chars);
+        free(a_buf);
     }
 
     if (b_owned) {
-        free(b_chars);
+        free(b_buf);
     }
 
-    struct wi_string* result = wi_take_cstring(state->gc, chars, len);
+    struct wi_string* result = wi_take_cstring(state->gc, buf, len);
 
     wi_state_drop(state);
     wi_state_drop(state);
