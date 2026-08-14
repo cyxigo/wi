@@ -36,6 +36,6 @@ target("wi")
     set_group("apps")
     common()
 
-    if is_host("windows") then 
+    if is_plat("windows") then 
         add_files("wi.rc")
     end 
