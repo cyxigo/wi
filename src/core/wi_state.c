@@ -76,8 +76,9 @@ wi_new_state(wi_conf conf) {
         return NULL;
     }
 
-    state->error = NULL;
-    state->oom   = NULL;
+    state->error         = NULL;
+    state->oom           = NULL;
+    state->was_eof_error = false;
 
     state->conf = conf;
     state->gc   = wi_new_gc(state->conf);
@@ -179,6 +180,11 @@ wi_state_append_error(struct wi_state* state, const char* format, ...) {
 const char*
 wi_state_get_error(struct wi_state* state) {
     return state->oom ? state->oom : state->error;
+}
+
+bool
+wi_state_was_eof_error(wi_state* state) {
+    return state->was_eof_error;
 }
 
 void

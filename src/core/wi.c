@@ -1,6 +1,7 @@
 #include <signal.h>
 #include <stdarg.h>
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -50,24 +51,66 @@ _version(void) {
     printf("Wi " WI_VERSION_STRING " Copyright (C) 2026 cyxigo\n");
 }
 
+static char*
+_repl_append_line(char* buf, size_t* buf_len, char* line) {
+    size_t line_len = strlen(line);
+    /*
+        offset where to start writing new line
+        *buf_len > 0 checks whether we need a '\n' to glue onto the previous line
+    */
+    size_t new_buf_offset = *buf_len + (*buf_len > 0);
+    char*  new_buf        = realloc(buf, new_buf_offset + line_len + 1);
+
+    if (!new_buf) {
+        fprintf(stderr, "out of memory: failed to allocate the repl input buffer\n");
+        _delete_g_state();
+        exit(EXIT_FAILURE);
+    }
+
+    if (new_buf_offset) {
+        new_buf[*buf_len] = '\n';
+    }
+
+    /* write new line to the buffer! */
+    memcpy(new_buf + new_buf_offset, line, line_len + 1);
+    *buf_len = new_buf_offset + line_len;
+    free(line);
+
+    return new_buf;
+}
+
 static void
 _repl(void) {
     _version();
 
+    /* buffer for the whole repl input, multiline and not */
+    char*  buf     = NULL;
+    size_t buf_len = 0;
+
     for (;;) {
         char* line;
 
-        if (!wi_read_line(&line, "> ")) {
+        if (!wi_read_line(&line, buf ? "... " : "> ")) {
             printf("\n");
+            free(buf);
             break;
         }
 
-        wi_run_result result = wi_state_run(_g_state, "<stdin>", line);
-        free(line);
+        buf                  = _repl_append_line(buf, &buf_len, line);
+        wi_run_result result = wi_state_run(_g_state, "<stdin>", buf);
 
         if (result == WI_RUN_ERROR) {
-            _print_error();
+            if (wi_state_was_eof_error(_g_state)) {
+                /* missing ';' or unclosed '('/'['/'{' */
+                continue;
+            } else {
+                _print_error();
+            }
         }
+
+        free(buf);
+        buf     = NULL;
+        buf_len = 0;
 
         if (result == WI_RUN_ABORT) {
             break;

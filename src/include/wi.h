@@ -182,6 +182,14 @@ WI_API const char*
 wi_state_get_error(wi_state* state);
 
 /**
+ * Checks if the last compile error occurred at EOF
+ *
+ * @param state Wi state instance
+ */
+WI_API bool
+wi_state_was_eof_error(wi_state* state);
+
+/**
  * Set the `require` load callback
  *
  * @param state Wi state instance

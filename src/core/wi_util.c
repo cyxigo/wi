@@ -236,6 +236,7 @@ wi_read_line(char** line, const char* prompt) {
         return false;
     }
 
+    *line[strcspn(*line, "\r\n")] = '\0';
     return true;
 #endif
 }

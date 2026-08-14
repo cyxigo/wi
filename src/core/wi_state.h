@@ -74,6 +74,8 @@ struct wi_state {
         no, instead we use this little static string thingy
     */
     const char* oom;
+    /* this flag is set if the last compile error occured at EOF */
+    bool was_eof_error;
 
     wi_conf       conf;
     struct wi_gc* gc;
@@ -172,8 +174,9 @@ wi_delete_state(struct wi_state* state);
 WI_INLINE void
 wi_state_reset_error(struct wi_state* state) {
     free(state->error);
-    state->error = NULL;
-    state->oom   = NULL;
+    state->error         = NULL;
+    state->oom           = NULL;
+    state->was_eof_error = false;
 }
 
 void

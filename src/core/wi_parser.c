@@ -97,8 +97,12 @@ _parser_append_token_line(struct wi_parser* parser, struct wi_token token) {
 static void
 _parser_error_va(struct wi_parser* parser, struct wi_token token, const char* format, va_list args) {
     struct wi_state* state = parser->gc->state;
-
     wi_state_reset_error(state);
+
+    if (token.kind == WI_TOKEN_EOF) {
+        state->was_eof_error = true;
+    }
+
     wi_state_append_error(state, "compile error: ");
 
     if (token.kind == WI_TOKEN_ERROR) {
@@ -182,6 +186,11 @@ struct wi_token
 wi_parser_expect(struct wi_parser* parser, enum wi_token_kind kind) {
     if (wi_parser_match(parser, kind)) {
         return parser->prev;
+    }
+
+    if (wi_parser_is_at_end(parser)) {
+        wi_parser_error_at_curr(parser, "expected %s", wi_token_kind_to_string(kind));
+        return WI_BLANK_TOKEN;
     }
 
     struct wi_token* prev = &parser->prev;
