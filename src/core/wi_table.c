@@ -49,7 +49,7 @@ wi_table_free(struct wi_table* table) {
     wi_table_init(table, table->gc);
 }
 
-static inline uint32_t
+WI_INLINE uint32_t
 _hash_key(wi_value key) {
     if (WI_LIKELY(wi_value_is_string(key))) {
         return wi_value_as_string(key)->hash;
