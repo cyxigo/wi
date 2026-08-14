@@ -7,18 +7,17 @@
 # $2 - executable
 # $3 - shared library
 pack() {
-    local dir="bin/wi-$1"
-    mkdir -p "$dir/foreign"
+    mkdir -p bin
+    pushd bin
 
-    [ -f "bin/$2" ] && cp "bin/$2" "$dir/"
-    [ -f "bin/$3" ] && cp "bin/$3" "$dir/"
-    [ -d "foreign" ] && [ "$(ls -A foreign)" ] && cp -r foreign/* "$dir/foreign/"
+    rm -rf "wi-$1.zip"
+    mkdir -p "foreign"
+    zip -r "wi-$1.zip" $2 $3 "foreign"
 
-    zip -r "$dir.zip" "$dir"
-    rm -rf "$dir"
+    popd
 }
 
-pack "win64" "wi.exe" "libwi.dll" > /dev/null
+pack "win64" "wi.exe" "wi.dll" > /dev/null
 pack "linux64" "wi" "libwi.so" > /dev/null
 
 echo "done"
