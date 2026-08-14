@@ -7,8 +7,12 @@
 #include <stdlib.h>
 #include <string.h>
 
+/* for wi_read_line */
 #ifdef _WIN32
 #include <windows.h>
+#elif defined(WI_USE_READLINE) /* wi is linked with -lreadline */
+#include <readline/history.h>
+#include <readline/readline.h>
 #endif
 
 /*
@@ -162,10 +166,18 @@ wi_read_stream(FILE* stream) {
     return buf;
 }
 
+/*
+    this function is split into three versions depending on the platform and definitions:
+    on windows: use ReadConsoleW and convert input in utf-16 to utf-8
+    on linux: if WI_USE_READLINE is defined, we use the readline library and its features
+              else - fallback to fgets
+*/
 bool
-wi_read_line(char** line) {
+wi_read_line(char** line, const char* prompt) {
     /* remember what i said about platform-specific code? */
 #ifdef _WIN32
+    printf("%s", prompt);
+
     /* this mess wouldn't exist if windows api wasn't so complicated for NO reason!!! */
     HANDLE  hstdin = GetStdHandle(STD_INPUT_HANDLE);
     wchar_t wbuf[2048];
@@ -196,7 +208,21 @@ wi_read_line(char** line) {
     *line    = buf;
 
     return true;
+#elif defined(WI_USE_READLINE)
+    char* buf = readline(prompt);
+
+    if (!buf) {
+        return false;
+    }
+
+    if (strlen(buf) > 0) {
+        add_history(buf);
+    }
+
+    *line = buf;
+    return true;
 #else
+    printf("%s", prompt);
     char buf[2048];
 
     if (!fgets(buf, sizeof(buf), stdin)) {

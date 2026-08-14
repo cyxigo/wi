@@ -23,8 +23,10 @@ _base_print(struct wi_state* state, int arg_count) {
 
 static void
 _base_input(struct wi_state* state, int arg_count) {
+    const char* prompt = "";
+
     if (arg_count == 1) {
-        wi_value_print(state->ffi_stack[1]);
+        prompt = wi_slot_check_string(state, 1, NULL, NULL);
     } else if (arg_count == 0) {
         /* do nothing */
     } else {
@@ -33,7 +35,7 @@ _base_input(struct wi_state* state, int arg_count) {
 
     char* line;
 
-    if (!wi_read_line(&line)) {
+    if (!wi_read_line(&line, prompt)) {
         wi_slot_set_null(state, 0);
         return;
     }

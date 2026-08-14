@@ -855,7 +855,7 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
     frame->ip = ip; \
     wi_state_error(state, __VA_ARGS__)
 
-#ifdef __GNUC__
+#if defined(__GNUC__) || defined(__clang__)
     static void* dispatch_table[] = {
 #define WI_OPCODE(name, _, __) &&LABEL_##name,
 #include "wi_opcode.h"

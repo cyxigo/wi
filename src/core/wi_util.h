@@ -5,7 +5,7 @@
 #include <stddef.h>
 #include <stdio.h>
 
-#ifdef __GNUC__
+#if defined(__GNUC__) || defined(__clang__)
 #define WI_NORETURN __attribute__((noreturn))
 #define WI_UNLIKELY(x) __builtin_expect(!!(x), 0)
 #define WI_LIKELY(x) __builtin_expect(!!(x), 1)
@@ -32,6 +32,6 @@ wi_utf8_validate(const char* buf, int count);
 char*
 wi_read_stream(FILE* stream);
 bool
-wi_read_line(char**);
+wi_read_line(char** line, const char* prompt);
 
 #endif

@@ -55,10 +55,9 @@ _repl(void) {
     _version();
 
     for (;;) {
-        printf("> ");
         char* line;
 
-        if (!wi_read_line(&line)) {
+        if (!wi_read_line(&line, "> ")) {
             printf("\n");
             break;
         }

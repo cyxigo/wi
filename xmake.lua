@@ -35,7 +35,10 @@ target("wi")
     set_kind("binary")
     set_group("apps")
     common()
-
+ 
     if is_plat("windows") then 
         add_files("wi.rc")
+    elseif is_plat("linux") then 
+        add_defines("WI_USE_READLINE")
+        add_links("readline")
     end 
