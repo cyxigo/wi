@@ -49,9 +49,18 @@ wi_table_free(struct wi_table* table) {
     wi_table_init(table, table->gc);
 }
 
+static inline uint32_t
+_hash_key(wi_value key) {
+    if (WI_LIKELY(wi_value_is_string(key))) {
+        return wi_value_as_string(key)->hash;
+    }
+
+    return wi_value_hash(key);
+}
+
 static struct wi_entry*
 _find_entry(struct wi_entry* entries, int capacity, wi_value key) {
-    uint32_t         index     = wi_value_hash(key) & (uint32_t)(capacity - 1);
+    uint32_t         index     = _hash_key(key) & (uint32_t)(capacity - 1);
     struct wi_entry* tombstone = NULL;
 
     for (;;) {
