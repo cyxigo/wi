@@ -301,6 +301,8 @@ wi_state_error(struct wi_state* state, const char* format, ...) {
     wi_state_append_error_va(state, format, args); \
     va_end(args)
 
+    wi_state_reset_error(state);
+
     if (state->recoveries) {
         struct wi_recovery* recovery = state->recoveries;
         _state_close_upvalues(state, recovery->stack_top);
