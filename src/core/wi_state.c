@@ -649,7 +649,7 @@ _state_grow_stack(struct wi_state* state, wi_value* base, int needed) {
     return true;
 }
 
-static bool
+WI_INLINE bool
 _state_reserve_stack(struct wi_state* state, wi_value* base, int needed) {
     if (WI_UNLIKELY(base + needed > state->stack_end)) {
         return _state_grow_stack(state, base, needed);
@@ -673,7 +673,7 @@ _state_capture_overflow_ctx(struct wi_state* state) {
     }
 }
 
-static void
+WI_INLINE void
 _state_call(struct wi_state* state, struct wi_closure* closure, uint8_t arg_count) {
     struct wi_prototype* prototype = closure->prototype;
     wi_state_check_arity(state, prototype->arity, arg_count, prototype->is_variadic);
@@ -719,7 +719,7 @@ _state_call(struct wi_state* state, struct wi_closure* closure, uint8_t arg_coun
     }
 }
 
-static void
+WI_INLINE void
 _state_tail_call(struct wi_state* state, struct wi_call_frame* frame, struct wi_closure* closure,
                  uint8_t arg_count) {
     struct wi_prototype* prototype = closure->prototype;
