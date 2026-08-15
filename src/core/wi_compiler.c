@@ -1385,7 +1385,8 @@ _compiler_load_stmt(struct wi_compiler* compiler) {
     snprintf(path + path_len, remaining, "/foreign/%s.so", raw_path);
     void* lib = dlopen(path, RTLD_NOW | RTLD_GLOBAL);
 #else
-#error platform not supported by load statement
+    void* lib = NULL;
+    wi_parser_error_at_prev(compiler->parser, "load statement is not supported");
 #endif
 
     if (!lib) {
