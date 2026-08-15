@@ -728,33 +728,6 @@ static void
 _compiler_field(struct wi_compiler* compiler);
 
 static void
-_compiler_new_expr(struct wi_compiler* compiler) {
-    wi_parser_expect(compiler->parser, WI_TOKEN_NAME);
-    _compiler_var_expr(compiler);
-    _compiler_emit_opcode(compiler, WI_OP_NEW);
-
-    if (!wi_parser_match(compiler->parser, WI_TOKEN_OPEN_BRACE)) {
-        return;
-    }
-
-    while (!wi_parser_check(compiler->parser, WI_TOKEN_CLOSE_BRACE) && !wi_parser_is_at_end(compiler->parser)) {
-        struct wi_token name          = wi_parser_expect(compiler->parser, WI_TOKEN_NAME);
-        uint16_t        name_constant = _compiler_name_constant(compiler, name);
-        struct wi_token var_name      = compiler->var_name;
-        compiler->var_name            = name;
-
-        wi_parser_expect(compiler->parser, WI_TOKEN_EQUAL);
-        _compiler_expr(compiler);
-        wi_parser_expect(compiler->parser, WI_TOKEN_SEMICOLON);
-
-        _compiler_emit_opcode_short(compiler, WI_OP_INIT_FIELD, name_constant);
-        compiler->var_name = var_name;
-    }
-
-    wi_parser_expect(compiler->parser, WI_TOKEN_CLOSE_BRACE);
-}
-
-static void
 _compiler_object_expr(struct wi_compiler* compiler) {
     uint16_t field_count = 0;
     wi_parser_expect(compiler->parser, WI_TOKEN_OPEN_BRACE);
@@ -828,9 +801,6 @@ _compiler_primary_expr(struct wi_compiler* compiler) {
             break;
         case WI_TOKEN_KW_FUNCTION:
             _compiler_function_expr(compiler);
-            break;
-        case WI_TOKEN_KW_NEW:
-            _compiler_new_expr(compiler);
             break;
         case WI_TOKEN_KW_OBJECT:
             _compiler_object_expr(compiler);
@@ -912,32 +882,64 @@ _compiler_call_expr(struct wi_compiler* compiler) {
 }
 
 static void
+_compiler_unary_expr(struct wi_compiler* compiler);
+
+static void
+_compiler_new_expr(struct wi_compiler* compiler) {
+    _compiler_emit_opcode(compiler, WI_OP_NEW);
+
+    if (!wi_parser_match(compiler->parser, WI_TOKEN_OPEN_BRACE)) {
+        return;
+    }
+
+    while (!wi_parser_check(compiler->parser, WI_TOKEN_CLOSE_BRACE) && !wi_parser_is_at_end(compiler->parser)) {
+        struct wi_token name          = wi_parser_expect(compiler->parser, WI_TOKEN_NAME);
+        uint16_t        name_constant = _compiler_name_constant(compiler, name);
+        struct wi_token var_name      = compiler->var_name;
+        compiler->var_name            = name;
+
+        wi_parser_expect(compiler->parser, WI_TOKEN_EQUAL);
+        _compiler_expr(compiler);
+        wi_parser_expect(compiler->parser, WI_TOKEN_SEMICOLON);
+
+        _compiler_emit_opcode_short(compiler, WI_OP_INIT_FIELD, name_constant);
+        compiler->var_name = var_name;
+    }
+
+    wi_parser_expect(compiler->parser, WI_TOKEN_CLOSE_BRACE);
+}
+
+static void
 _compiler_unary_expr(struct wi_compiler* compiler) {
-    if (wi_parser_match(compiler->parser, WI_TOKEN_HASH)) {
-        _compiler_unary_expr(compiler);
-        _compiler_emit_opcode(compiler, WI_OP_LEN);
+    if (!(wi_parser_match(compiler->parser, WI_TOKEN_HASH) || wi_parser_match(compiler->parser, WI_TOKEN_MINUS) ||
+          wi_parser_match(compiler->parser, WI_TOKEN_TILDE) || wi_parser_match(compiler->parser, WI_TOKEN_BANG) ||
+          wi_parser_match(compiler->parser, WI_TOKEN_KW_NEW))) {
+        _compiler_call_expr(compiler);
         return;
     }
 
-    if (wi_parser_match(compiler->parser, WI_TOKEN_MINUS)) {
-        _compiler_unary_expr(compiler);
-        _compiler_emit_opcode(compiler, WI_OP_NEGATE);
-        return;
-    }
+    struct wi_token op = compiler->parser->prev;
+    _compiler_unary_expr(compiler);
 
-    if (wi_parser_match(compiler->parser, WI_TOKEN_TILDE)) {
-        _compiler_unary_expr(compiler);
-        _compiler_emit_opcode(compiler, WI_OP_BIT_NOT);
-        return;
+    switch (op.kind) {
+        case WI_TOKEN_HASH:
+            _compiler_emit_opcode(compiler, WI_OP_LEN);
+            break;
+        case WI_TOKEN_MINUS:
+            _compiler_emit_opcode(compiler, WI_OP_NEGATE);
+            break;
+        case WI_TOKEN_TILDE:
+            _compiler_emit_opcode(compiler, WI_OP_BIT_NOT);
+            break;
+        case WI_TOKEN_BANG:
+            _compiler_emit_opcode(compiler, WI_OP_LOG_NOT);
+            break;
+        case WI_TOKEN_KW_NEW:
+            _compiler_new_expr(compiler);
+            break;
+        default:
+            break; /* unreachable */
     }
-
-    if (wi_parser_match(compiler->parser, WI_TOKEN_BANG)) {
-        _compiler_unary_expr(compiler);
-        _compiler_emit_opcode(compiler, WI_OP_LOG_NOT);
-        return;
-    }
-
-    _compiler_call_expr(compiler);
 }
 
 static void

@@ -58,7 +58,7 @@ _hash_key(wi_value key) {
     return wi_value_hash(key);
 }
 
-static struct wi_entry*
+WI_INLINE struct wi_entry*
 _find_entry(struct wi_entry* entries, int capacity, wi_value key) {
     uint32_t         index     = _hash_key(key) & (uint32_t)(capacity - 1);
     struct wi_entry* tombstone = NULL;
