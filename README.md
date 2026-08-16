@@ -38,22 +38,25 @@ You can even [try Wi online!](https://cyxigo.github.io/wi/)
 
 ## Building
 
-Requires `xmake` to build and any **C99** compiler. Then simply:
+Requires [`xmake`](https://xmake.io/guide/quick-start.html#installation) and any **C99** compiler. Then simply:
 
 ```bash
 xmake
 ```
 
-For max speed and performance, it is better to use **GNU99** compatible compiler, since Wi uses many **GNU** extensions for performance tweaks.
-
-Wi has zero dependencies but it would be nice to have `readline` library if you're building Wi on Linux (Wi uses it for better REPL).
+For max speed and performance, it is better to use **GNU99** compatible compiler, since Wi uses many **GNU** extensions for performance tweaks. <br>
+Wi has zero dependencies but it would be nice to have `readline` library if you're building Wi on Linux (Wi uses it for better REPL). <br>
+This produces Wi shared library + Wi executable.
 ### WASM
-Requires [Emscripten](https://emscripten.org/docs/getting_started/downloads.html). Then:
+Requires [`emcc`](https://emscripten.org/docs/getting_started/downloads.html). Then:
 ```bash
 xmake f -p wasm
 xmake
 ```
-This produces `wi.js` + `wi.wasm`, with functions  `wi_wasm_init`/`wi_wasm_run`/`wi_wasm_get_error` (see `src/wasm/wi_wasm.c`) for embedding Wi in a web page.
+This produces `wi.js` + `wi.wasm`, with functions `wi_wasm_init`/`wi_wasm_run`/`wi_wasm_get_error` (see [`wi_wasm.c`](https://github.com/cyxigo/wi/blob/main/src/wasm/wi_wasm.c)) for embedding Wi in a web page.
+
+
+You can also use [`build.sh`](https://github.com/cyxigo/wi/blob/main/build.sh)/[`build_wasm.sh`](https://github.com/cyxigo/wi/blob/main/build_wasm.sh) utility scripts for building Wi.
 
 ## Inspiration
 
