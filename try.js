@@ -28,11 +28,14 @@ document.addEventListener("DOMContentLoaded", function () {
 
     run.addEventListener("click", function () {
         output.textContent = "";
+        output.style.color = "#3e3e3e";
+
         Module.ccall("wi_wasm_init", null, [], []);
         var result = Module.ccall("wi_wasm_run", "number", ["string"], [code.value]);
 
         if (result !== 0 /* WI_RUN_OK */) {
             output.textContent += Module.ccall("wi_wasm_get_error", "string", [], []);
+            output.style.color = "#cc0000";
         }
     });
 });
