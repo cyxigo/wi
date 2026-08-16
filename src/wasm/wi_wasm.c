@@ -28,6 +28,6 @@ wi_wasm_run(const char* src) {
 
 EMSCRIPTEN_KEEPALIVE const char*
 wi_wasm_get_error(void) {
-    const char* err = wi_state_get_error(g_state);
-    return err ? err : "";
+    const char* error = wi_state_get_error(g_state);
+    return error ? error : "";
 }
