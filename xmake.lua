@@ -26,12 +26,14 @@ function common()
 end
 
 target("wi_shared")
+    set_enabled(not is_plat("wasm"))
     set_kind("shared")
     set_group("libs")
     set_basename("wi")
     common()
 
 target("wi")
+    set_enabled(not is_plat("wasm"))
     set_kind("binary")
     set_group("apps")
     common()
@@ -42,3 +44,26 @@ target("wi")
         add_defines("WI_USE_READLINE")
         add_links("readline")
     end 
+
+target("wi_wasm")
+    set_enabled(is_plat("wasm"))
+    set_kind("binary")
+    set_group("web")
+    set_filename("wi.js")
+
+    if is_mode("debug") then
+        set_optimize("none")
+        add_ldflags("-sASSERTIONS=1", "-sSAFE_HEAP=1", "-gsource-map", {force = true})
+    elseif is_mode("release") then
+        set_optimize("fastest")
+    end
+    
+    add_ldflags(
+        "-sEXPORTED_FUNCTIONS=['_wi_wasm_init','_wi_wasm_run','_wi_wasm_get_error']",
+        "-sEXPORTED_RUNTIME_METHODS=['ccall']",
+        "-sALLOW_MEMORY_GROWTH=1", 
+        {force = true}
+    )
+
+    add_files("src/core/*.c|wi.c", "src/std/*.c", "src/wasm/wi_wasm.c")
+    add_includedirs("src/core", "src/std", "src/include")

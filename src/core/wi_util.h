@@ -17,6 +17,8 @@
 #define WI_INLINE static inline
 #endif
 
+#define WI_UNUSED(x) (void)x
+
 char*
 wi_strdup(const char* src);
 
