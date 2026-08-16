@@ -62,17 +62,28 @@ footer a {
 
 #code {
     resize: vertical;
+    overflow-y: hidden;
+    field-sizing: content;
     border: 1px solid #ddd;
     border-radius: 4px;
     padding: 12px;
     width: 90%;
     max-width: 700px;
-    min-height: 20vh;
+    min-height: 10vh;
+}
+
+#examples {
+    display: flex;
+    padding-bottom: 5px;
+}
+
+#examples a {
+    margin-left: 5px;
 }
 
 #output-container {
-    width: 80%;
-    max-width: 600px;
+    width: 90%;
+    max-width: 700px;
     min-height: 2vh;
     background-color: #ffffff;
     border: 1px solid #ddd;
@@ -84,4 +95,13 @@ footer a {
     margin: 0;
     white-space: pre-wrap;
     word-break: break-word;
+}
+
+a.button {
+    color: #3b6ec9;
+    cursor: pointer;
+}
+
+a.button:hover {
+    color: #3e3e3e;
 }

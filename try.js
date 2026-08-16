@@ -39,3 +39,32 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 });
+
+var exampleHello = function () {
+    var code = document.getElementById("code");
+    code.value = `print("Hello World!");`;
+};
+
+var exampleLoop = function () {
+    var code = document.getElementById("code");
+    code.value = `for (var i = 0; i < 5; i = i + 1) {
+    print("Looping... i: " .. i);    
+}`;
+};
+
+var examplePerson = function () {
+    var code = document.getElementById("code");
+    code.value = `var obj_person = object {
+    name = "";
+    greet = function(self) {
+        print("Hi " .. self.name .. "!");
+    };
+};
+
+var bob = new obj_person {
+    name = "Bob";
+};
+
+bob->greet();
+`;
+};
