@@ -45,11 +45,15 @@ button:hover {
     border: 1px solid #ddd;
     border-radius: 4px;
     padding: 12px;
+    width: 90%;
+    max-width: 700px;
+    min-height: 20vh;
 }
 
 #output-container {
-    width: 40vw;
-    min-height: 1vw;
+    width: 80%;
+    max-width: 600px;
+    min-height: 2vh;
     background-color: #ffffff;
     border: 1px solid #ddd;
     border-radius: 4px;
