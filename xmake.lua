@@ -9,7 +9,7 @@ set_warnings("all", "error")
 
 function common()
     add_cflags("-Wconversion -Wsign-conversion -Wfloat-conversion")
-    
+
     if is_mode("debug") then 
         add_cflags("-g -fno-omit-frame-pointer")
         set_optimize("none")

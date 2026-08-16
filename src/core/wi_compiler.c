@@ -1400,12 +1400,18 @@ _compiler_load_stmt(struct wi_compiler* compiler) {
         wi_parser_error_at_prev(compiler->parser, "failed to load foreign %s\nattempted path: %s", raw_path, path);
     }
 
-    typedef void (*_foreign_init_fn)(struct wi_state* state);
+    typedef void (*foreign_init_fn)(struct wi_state* state);
 
 #ifdef _WIN32
-    _foreign_init_fn init = (_foreign_init_fn)GetProcAddress(lib, "wi_foreign_init");
+    foreign_init_fn init = (foreign_init_fn)GetProcAddress(lib, "wi_foreign_init");
 #else
-    _foreign_init_fn init = (_foreign_init_fn)dlsym(lib, "wi_foreign_init");
+    union {
+        void*           ptr;
+        foreign_init_fn fn;
+    } sym_conv;
+
+    sym_conv.ptr         = dlsym(lib, "wi_foreign_init");
+    foreign_init_fn init = sym_conv.fn;
 #endif
 
     if (!init) {
