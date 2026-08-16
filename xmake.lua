@@ -67,3 +67,5 @@ target("wi_wasm")
 
     add_files("src/core/*.c|wi.c", "src/std/*.c", "src/wasm/wi_wasm.c")
     add_includedirs("src/core", "src/std", "src/include")
+
+    set_targetdir("bin")
