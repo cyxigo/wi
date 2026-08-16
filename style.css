@@ -36,7 +36,7 @@ button:hover {
 }
 
 #logo {
-    width: clamp(40px, 6vw, 80px);
+    width: 5em;
     height: auto;
 }
 
