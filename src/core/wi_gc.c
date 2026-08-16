@@ -223,6 +223,11 @@ static void
 _gc_mark_table(struct wi_gc* gc, struct wi_table* table) {
     for (int i = 0; i < table->capacity; i++) {
         struct wi_entry* entry = &table->entries[i];
+
+        if (wi_value_is_empty(entry->key)) {
+            continue;
+        }
+
         _gc_mark_value(gc, entry->key);
         _gc_mark_value(gc, entry->value);
     }
@@ -386,7 +391,8 @@ wi_gc_collect_garbage(struct wi_gc* gc) {
     wi_table_remove_white(&gc->strings);
     _gc_sweep(gc);
 
-    gc->next_collection = gc->bytes_allocated * WI_GC_HEAP_GROW_FACTOR;
+    size_t grown        = gc->bytes_allocated * WI_GC_HEAP_GROW_FACTOR;
+    gc->next_collection = grown > WI_GC_MIN_HEAP ? grown : WI_GC_MIN_HEAP;
 
     if (wi_log_gc(gc)) {
         printf("---  end gc  ---\n");
