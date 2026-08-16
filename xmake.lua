@@ -8,12 +8,14 @@ set_languages("c99")
 set_warnings("all", "error")
 
 function common()
+    add_cflags("-Wconversion -Wsign-conversion -Wfloat-conversion")
+    
     if is_mode("debug") then 
         add_cflags("-g -fno-omit-frame-pointer")
         set_optimize("none")
         set_symbols("debug")
     elseif is_mode("release") then
-        add_cflags("-flto -fno-stack-protector -fno-common -Wconversion -Wsign-conversion -Wfloat-conversion")
+        add_cflags("-flto -fno-stack-protector -fno-common")
         set_optimize("fastest")
         set_strip("all")
     end
