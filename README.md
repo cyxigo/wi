@@ -46,7 +46,7 @@ For max speed and performance, it is better to use **GNU99** compatible compiler
 
 Wi has zero dependencies but it would be nice to have `readline` library if you're building Wi on Linux (Wi uses it for better REPL).
 ### WASM
-Requires [Emscripten](https://emscripten.org/docs/getting_started/downloads.html) (`emcc` on `PATH`). Then:
+Requires [Emscripten](https://emscripten.org/docs/getting_started/downloads.html). Then:
 ```bash
 xmake f -p wasm
 xmake
