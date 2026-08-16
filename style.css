@@ -1,0 +1,64 @@
+body {
+    background-color: #f5f5f5;
+    font-family: "Roboto Slab", serif;
+    color: #3e3e3e;
+}
+
+hr {
+    border: none;
+    border-top: 1px solid #dddddd;
+}
+
+button {
+    color: white;
+    background-color: #3b6ec9;
+    border: none;
+    outline: none;
+    font-family: "Roboto Slab", serif;
+    font-weight: 400;
+    font-size: medium;
+    border-radius: 4px;
+    cursor: pointer;
+    padding-top: 4.5px;
+    padding-bottom: 4.5px;
+    padding-left: 9px;
+    padding-right: 9px;
+}
+
+button:hover {
+    background-color: #2a5091;
+}
+
+#logo-container {
+    display: flex;
+    align-items: center;
+    gap: 1vw;
+}
+
+#logo {
+    width: 6vw;
+    max-width: 80px;
+    height: auto;
+}
+
+#code {
+    resize: vertical;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 12px;
+}
+
+#output-container {
+    width: 40vw;
+    min-height: 1vw;
+    background-color: #ffffff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 12px;
+}
+
+#output {
+    margin: 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+}

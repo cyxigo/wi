@@ -3,9 +3,35 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@100..900&display=swap"
+            rel="stylesheet"
+        />
+        <link rel="stylesheet" href="style.css" />
+        <script src="try.js" defer></script>
+        <script src="wi.js" defer></script>
         <title>Wi Programming Language</title>
     </head>
     <body>
-        ? Huh?
+        <div id="logo-container">
+            <img src="res/wi.png" id="logo" alt="Wi logo" />
+            <h1>Wi Programming Language</h1>
+        </div>
+
+        <hr />
+
+        <h2>Try Wi!</h2>
+        <p>Write code here:</p>
+        <textarea id="code" rows="15" cols="80">print("Hello World!");</textarea>
+        <br />
+
+        <button id="run" disabled>Loading...</button>
+        <p>Output:</p>
+
+        <div id="output-container">
+            <pre id="output"></pre>
+        </div>
     </body>
 </html>
