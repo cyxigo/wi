@@ -36,8 +36,7 @@ button:hover {
 }
 
 #logo {
-    width: 6vw;
-    max-width: 80px;
+    width: clamp(40px, 6vw, 80px);
     height: auto;
 }
 
@@ -50,6 +49,7 @@ button:hover {
 
 #output-container {
     width: 40vw;
+
     min-height: 1vw;
     background-color: #ffffff;
     border: 1px solid #ddd;
