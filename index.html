@@ -16,23 +16,33 @@
         <title>Wi Programming Language</title>
     </head>
     <body>
-        <div id="logo-container">
-            <img src="res/wi.png" id="logo" alt="Wi logo" />
-            <h1>Wi Programming Language</h1>
+        <div id="content">
+            <div id="logo-container">
+                <img src="res/wi.png" id="logo" alt="Wi logo" />
+                <h1>Wi Programming Language</h1>
+            </div>
+            <button onclick="location.href = 'https://github.com/cyxigo/wi/releases/latest'">Download</button>
+            <button onclick="location.href = 'https://github.com/cyxigo/wi/wiki'">Wiki</button>
+            <button onclick="location.href = 'https://github.com/cyxigo/wi/tree/main'">Source code</button>
+            <hr />
+
+            <h2>Try Wi!</h2>
+            <p>Write code here:</p>
+            <textarea id="code">print("Hello World!");</textarea>
+            <br />
+
+            <button id="run" disabled>Loading...</button>
+            <p>Output:</p>
+
+            <div id="output-container">
+                <pre id="output"></pre>
+            </div>
         </div>
 
-        <hr />
-
-        <h2>Try Wi!</h2>
-        <p>Write code here:</p>
-        <textarea id="code">print("Hello World!");</textarea>
-        <br />
-
-        <button id="run" disabled>Loading...</button>
-        <p>Output:</p>
-
-        <div id="output-container">
-            <pre id="output"></pre>
-        </div>
+        <footer>
+            Copyright © 2026 cyxigo |
+            <a href="https://github.com/cyxigo/wi/tree/gh-pages">Source code</a>
+            | Made with ❤
+        </footer>
     </body>
 </html>
