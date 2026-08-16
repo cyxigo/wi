@@ -44,8 +44,8 @@ Requires [`xmake`](https://xmake.io/guide/quick-start.html#installation) and any
 xmake
 ```
 
-For max speed and performance, it is better to use **GNU99** compatible compiler, since Wi uses many **GNU** extensions for performance tweaks. <br>
-Wi has zero dependencies but it would be nice to have `readline` library if you're building Wi on Linux (Wi uses it for better REPL). <br>
+For max speed and performance, it is better to use **GNU99** compatible compiler, since Wi uses many **GNU** extensions for performance tweaks. Wi has zero dependencies but it would be nice to have `readline` library if you're building Wi on Linux (Wi uses it for better REPL).
+
 This produces Wi shared library + Wi executable.
 ### WASM
 Requires [`emcc`](https://emscripten.org/docs/getting_started/downloads.html). Then:
