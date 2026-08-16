@@ -494,7 +494,7 @@ _state_subscript_get(struct wi_state* state, wi_value target, wi_value index) {
         char buf[5] = {0};
         memcpy(buf, string->buf + i, cp_len);
 
-        return WI_MAKE_BOX_VALUE(wi_make_string(state->gc, buf));
+        return WI_MAKE_BOX_VALUE(wi_copy_cstring(state->gc, buf, (int)cp_len));
     }
 
     if (wi_value_is_array(target)) {
@@ -776,7 +776,7 @@ _state_resolve_method(struct wi_state* state, wi_value receiver, wi_value name) 
         object = state->map_obj;
     }
 
-    if (!object) {
+    if (WI_UNLIKELY(!object)) {
         wi_state_error(state, "value type %s has no methods", wi_value_type(receiver));
     }
 
@@ -786,7 +786,7 @@ _state_resolve_method(struct wi_state* state, wi_value receiver, wi_value name) 
 
 static void
 _state_resolve_field(struct wi_state* state, struct wi_object* object, wi_value name, wi_value* value) {
-    if (wi_table_get(&object->fields, name, value)) {
+    if (WI_LIKELY(wi_table_get(&object->fields, name, value))) {
         return;
     }
 
@@ -1376,7 +1376,7 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
             wi_value name   = _READ_CONSTANT();
             wi_value target = wi_state_top(state);
 
-            if (!wi_value_is_object(target)) {
+            if (WI_UNLIKELY(!wi_value_is_object(target))) {
                 _ERROR("cannot access fields on a value of type %s", wi_value_type(target));
             }
 

@@ -45,7 +45,7 @@ _base_input(struct wi_state* state, int arg_count) {
         wi_state_error(state, "invalid utf-8 sequence from input()");
     }
 
-    state->ffi_stack[0] = WI_MAKE_BOX_VALUE(wi_make_string(state->gc, line));
+    state->ffi_stack[0] = WI_MAKE_BOX_VALUE(wi_take_cstring(state->gc, line, (int)strlen(line)));
 }
 
 static void
