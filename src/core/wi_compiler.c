@@ -1323,6 +1323,7 @@ _compiler_load_stmt(struct wi_compiler* compiler) {
         wi_parser_error_at_prev(compiler->parser, "can only use 'load' from top-level code");
     }
 
+    struct wi_token kw = compiler->parser->prev;
     /* prepare for seeing horrifying things... platform-specific code!!! */
     struct wi_token   path_token = wi_parser_expect(compiler->parser, WI_TOKEN_LIT_STRING);
     struct wi_string* path_box = wi_copy_cstring(compiler->parser->gc, path_token.start + 1, path_token.count - 2);
@@ -1388,7 +1389,7 @@ _compiler_load_stmt(struct wi_compiler* compiler) {
     WI_UNUSED(raw_path_len);
     WI_UNUSED(path_size);
     void* lib = NULL;
-    wi_parser_error_at_prev(compiler->parser, "load statement is not supported");
+    wi_parser_error_at(compiler->parser, kw, "load statement is not supported");
 #endif
 
     if (!lib) {
