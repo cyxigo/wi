@@ -614,10 +614,7 @@ var MEMFS = {
                 stream: { llseek: MEMFS.stream_ops.llseek },
             },
             file: {
-                node: {
-                    getattr: MEMFS.node_ops.getattr,
-                    setattr: MEMFS.node_ops.setattr,
-                },
+                node: { getattr: MEMFS.node_ops.getattr, setattr: MEMFS.node_ops.setattr },
                 stream: {
                     llseek: MEMFS.stream_ops.llseek,
                     read: MEMFS.stream_ops.read,
@@ -635,10 +632,7 @@ var MEMFS = {
                 stream: {},
             },
             chrdev: {
-                node: {
-                    getattr: MEMFS.node_ops.getattr,
-                    setattr: MEMFS.node_ops.setattr,
-                },
+                node: { getattr: MEMFS.node_ops.getattr, setattr: MEMFS.node_ops.setattr },
                 stream: FS.chrdev_stream_ops,
             },
         };
@@ -859,14 +853,7 @@ var MEMFS = {
 };
 var FS_modeStringToFlags = (str) => {
     if (typeof str != "string") return str;
-    var flagModes = {
-        r: 0,
-        "r+": 2,
-        w: 512 | 64 | 1,
-        "w+": 512 | 64 | 2,
-        a: 1024 | 64 | 1,
-        "a+": 1024 | 64 | 2,
-    };
+    var flagModes = { r: 0, "r+": 2, w: 512 | 64 | 1, "w+": 512 | 64 | 2, a: 1024 | 64 | 1, "a+": 1024 | 64 | 2 };
     var flags = flagModes[str];
     if (typeof flags == "undefined") {
         throw new Error(`Unknown file open mode: ${str}`);
@@ -1703,11 +1690,7 @@ var FS = {
         return FS.stat(path, true);
     },
     doChmod(stream, node, mode, dontFollow) {
-        FS.doSetAttr(stream, node, {
-            mode: (mode & 4095) | (node.mode & ~4095),
-            ctime: Date.now(),
-            dontFollow,
-        });
+        FS.doSetAttr(stream, node, { mode: (mode & 4095) | (node.mode & ~4095), ctime: Date.now(), dontFollow });
     },
     chmod(path, mode, dontFollow) {
         var node;
@@ -1799,10 +1782,7 @@ var FS = {
             node = path;
         } else {
             isDirPath = path.endsWith("/");
-            var lookup = FS.lookupPath(path, {
-                follow: !(flags & 131072),
-                noent_okay: true,
-            });
+            var lookup = FS.lookupPath(path, { follow: !(flags & 131072), noent_okay: true });
             node = lookup.node;
             path = lookup.path;
         }
