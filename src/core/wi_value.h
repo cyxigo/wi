@@ -10,10 +10,10 @@
 
 struct wi_box;
 
-enum {
-    WI_QNAN     = 0x7ffc000000000000,
-    WI_SIGN_BIT = 0x8000000000000000,
+#define WI_QNAN 0x7ffc000000000000
+#define WI_SIGN_BIT 0x8000000000000000
 
+enum {
     WI_TAG_EMPTY = 3,
     WI_TAG_NULL  = 2,
     WI_TAG_TRUE  = 1,
