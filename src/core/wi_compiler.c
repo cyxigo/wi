@@ -938,7 +938,8 @@ _compiler_unary_expr(struct wi_compiler* compiler) {
             _compiler_new_expr(compiler);
             break;
         default:
-            break; /* unreachable */
+            WI_UNREACHABLE();
+            break;
     }
 }
 
@@ -1339,6 +1340,7 @@ _compiler_load_stmt(struct wi_compiler* compiler) {
 
     /* platform-specific code is a legitimate way of torturing */
 #ifdef _WIN32
+    WI_UNUSED(kw);
     DWORD len = GetModuleFileName(NULL, path, (DWORD)path_size);
 
     if (len < 1 || len >= path_size) {
@@ -1362,6 +1364,7 @@ _compiler_load_stmt(struct wi_compiler* compiler) {
     snprintf(path + path_len, remaining, "\\foreign\\%s.dll", raw_path);
     HMODULE lib = LoadLibraryA(path);
 #elif defined(__linux__)
+    WI_UNUSED(kw);
     ssize_t len = readlink("/proc/self/exe", path, path_size - 1);
 
     if (len == -1) {
