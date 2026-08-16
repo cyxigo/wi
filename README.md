@@ -34,6 +34,8 @@ slava->greet(); // Hello, Slava!
 - **Wi is simple**. You can learn its syntax in less than a week using its [documentation](https://github.com/cyxigo/wi/wiki).
 - **Wi is extendable**. You can easily extend Wi using its **Foreign Function Interface** and load your extensions via [`load_foreign`](https://github.com/cyxigo/wi/wiki/FFI).
 
+You can even [try Wi online!](https://cyxigo.github.io/wi/)
+
 ## Building
 
 Requires `xmake` to build and any **C99** compiler. Then simply:
