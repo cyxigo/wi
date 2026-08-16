@@ -1,3 +1,4 @@
+/* making clangd shut up */
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
 #else
@@ -9,6 +10,7 @@
 #include "../include/wi.h"
 #include "../include/wi_conf.h"
 
+/* while yes this API is dead simple, it's used only in "Try Wi online!" thingy */
 static wi_state* g_state = NULL;
 
 EMSCRIPTEN_KEEPALIVE void

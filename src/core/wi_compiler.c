@@ -1323,6 +1323,7 @@ _compiler_load_stmt(struct wi_compiler* compiler) {
         wi_parser_error_at_prev(compiler->parser, "can only use 'load' from top-level code");
     }
 
+    /* capture keyword for reporting platform unsupported error */
     struct wi_token kw = compiler->parser->prev;
     /* prepare for seeing horrifying things... platform-specific code!!! */
     struct wi_token   path_token = wi_parser_expect(compiler->parser, WI_TOKEN_LIT_STRING);
@@ -1389,7 +1390,7 @@ _compiler_load_stmt(struct wi_compiler* compiler) {
     WI_UNUSED(raw_path_len);
     WI_UNUSED(path_size);
     void* lib = NULL;
-    wi_parser_error_at(compiler->parser, kw, "load statement is not supported");
+    wi_parser_error_at(compiler->parser, kw, "load statement is not supported on this platform");
 #endif
 
     if (!lib) {
