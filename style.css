@@ -29,10 +29,6 @@ button {
     padding-right: 9px;
 }
 
-button:hover {
-    background-color: #2a5091;
-}
-
 footer {
     padding: 0.5vw;
     color: #868686;
@@ -103,6 +99,12 @@ a.button {
     cursor: pointer;
 }
 
-a.button:hover {
-    color: #3e3e3e;
+@media (hover: hover) {
+    button:hover {
+        background-color: #2a5091;
+    }
+
+    a.button:hover {
+        color: #3e3e3e;
+    }
 }
