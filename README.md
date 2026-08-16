@@ -32,7 +32,7 @@ slava->greet(); // Hello, Slava!
 - **Wi is fast**. Check out [benchmarks](https://github.com/cyxigo/wi/tree/main/test/benchmark).
 - **Wi is purely prototype-based**. Many languages use classes - Wi uses [objects](https://github.com/cyxigo/wi/wiki/Objects). You clone these objects and create whatever you want.
 - **Wi is simple**. You can learn its syntax in less than a week using its [documentation](https://github.com/cyxigo/wi/wiki).
-- **Wi is extendable**. You can easily extend Wi using its **Foreign Function Interface** and load your extensions via [`load_foreign`](https://github.com/cyxigo/wi/wiki/FFI).
+- **Wi is extendable**. You can easily extend Wi using its **Foreign Function Interface** and load your extensions via [`load`](https://github.com/cyxigo/wi/wiki/FFI) statement.
 
 You can even [try Wi online!](https://cyxigo.github.io/wi/)
 
