@@ -17,52 +17,62 @@ _math_single_arg_function(struct wi_state* state, double (*fn)(double x)) {
 
 static void
 _math_abs(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
     _math_single_arg_function(state, fabs);
 }
 
 static void
 _math_acos(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
     _math_single_arg_function(state, acos);
 }
 
 static void
 _math_asin(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
     _math_single_arg_function(state, asin);
 }
 
 static void
 _math_atan(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
     _math_single_arg_function(state, atan);
 }
 
 static void
 _math_ceil(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
     _math_single_arg_function(state, ceil);
 }
 
 static void
 _math_cos(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
     _math_single_arg_function(state, cos);
 }
 
 static void
 _math_deg(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
     wi_real rad = wi_slot_check_real(state, 1);
     wi_slot_set_real(state, 0, rad * (180.0 / M_PI));
 }
 
 static void
 _math_exp(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
     _math_single_arg_function(state, exp);
 }
 
 static void
 _math_floor(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
     _math_single_arg_function(state, floor);
 }
 
 static void
 _math_mod(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
     wi_real a = wi_slot_check_real(state, 1);
     wi_real b = wi_slot_check_real(state, 2);
     wi_slot_set_real(state, 0, fmod(a, b));
@@ -70,6 +80,7 @@ _math_mod(struct wi_state* state, int arg_count) {
 
 static void
 _math_log(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
     wi_real value = wi_slot_check_real(state, 1);
     wi_real base  = wi_slot_check_real(state, 2);
     wi_slot_set_real(state, 0, log(value) / log(base));
@@ -77,16 +88,19 @@ _math_log(struct wi_state* state, int arg_count) {
 
 static void
 _math_log10(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
     _math_single_arg_function(state, log10);
 }
 
 static void
 _math_ln(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
     _math_single_arg_function(state, log);
 }
 
 static void
 _math_max(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
     wi_real max = wi_slot_check_real(state, 1);
 
     for (int i = 1; i < arg_count; i++) {
@@ -102,6 +116,7 @@ _math_max(struct wi_state* state, int arg_count) {
 
 static void
 _math_min(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
     wi_real min = wi_slot_check_real(state, 1);
 
     for (int i = 1; i < arg_count; i++) {
@@ -117,6 +132,7 @@ _math_min(struct wi_state* state, int arg_count) {
 
 static void
 _math_pow(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
     wi_real base = wi_slot_check_real(state, 1);
     wi_real exp  = wi_slot_check_real(state, 2);
     wi_slot_set_real(state, 0, pow(base, exp));
@@ -124,32 +140,38 @@ _math_pow(struct wi_state* state, int arg_count) {
 
 static void
 _math_rad(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
     wi_real deg = wi_slot_check_real(state, 1);
     wi_slot_set_real(state, 0, deg * (M_PI / 180.0));
 }
 
 static void
 _math_random(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
     wi_slot_set_real(state, 0, (wi_real)rand() / ((wi_real)RAND_MAX + 1.0));
 }
 
 static void
 _math_round(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
     _math_single_arg_function(state, round);
 }
 
 static void
 _math_sin(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
     _math_single_arg_function(state, sin);
 }
 
 static void
 _math_sqrt(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
     _math_single_arg_function(state, sqrt);
 }
 
 static void
 _math_tan(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
     _math_single_arg_function(state, tan);
 }
 

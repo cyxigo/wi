@@ -489,7 +489,7 @@ _compiler_var(struct wi_compiler* compiler, struct wi_token name) {
 }
 
 static bool
-_compiler_check_attr(struct wi_compiler* compiler, struct wi_token token, const char* attr) {
+_check_attr(struct wi_token token, const char* attr) {
     size_t len = strlen(attr);
     return token.count == (int)len && memcmp(token.start, attr, len) == 0;
 }
@@ -505,7 +505,7 @@ _compiler_parse_attrs(struct wi_compiler* compiler) {
     do {
         struct wi_token token = wi_parser_expect(compiler->parser, WI_TOKEN_NAME);
 
-        if (_compiler_check_attr(compiler, token, "const")) {
+        if (_check_attr(token, "const")) {
             wi_attr_set(&attrs, WI_ATTR_CONST);
         } else {
             wi_parser_error_at(compiler->parser, token, "unknown attribute %.*s", token.count, token.start);
@@ -666,7 +666,7 @@ _compiler_function_expr(struct wi_compiler* outer) {
 
     if (!wi_parser_check(compiler.parser, WI_TOKEN_CLOSE_PAREN)) {
         do {
-#define _PARAMETER(void)                                                      \
+#define _PARAMETER()                                                          \
     struct wi_token name  = wi_parser_expect(compiler.parser, WI_TOKEN_NAME); \
     wi_attrs        attrs = _compiler_parse_attrs(&compiler);                 \
     _compiler_decl_var(&compiler, name, attrs);                               \
@@ -1333,7 +1333,7 @@ _compiler_load_stmt(struct wi_compiler* compiler) {
 
     struct wi_state* state = compiler->parser->gc->state;
 
-    int    raw_path_len = path_box->count;
+    size_t raw_path_len = (size_t)path_box->count;
     char*  raw_path     = path_box->buf;
     char   path[4096]; /* i assume 4kb is enough for this mess */
     size_t path_size = sizeof(path);
@@ -1403,7 +1403,13 @@ _compiler_load_stmt(struct wi_compiler* compiler) {
     typedef void (*foreign_init_fn)(struct wi_state* state);
 
 #ifdef _WIN32
-    foreign_init_fn init = (foreign_init_fn)GetProcAddress(lib, "wi_foreign_init");
+    union {
+        FARPROC         proc;
+        foreign_init_fn fn;
+    } proc_conv;
+
+    proc_conv.proc       = GetProcAddress(lib, "wi_foreign_init");
+    foreign_init_fn init = proc_conv.fn;
 #else
     union {
         void*           ptr;

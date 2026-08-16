@@ -20,6 +20,7 @@ _check_arg1_array(struct wi_state* state) {
 
 static void
 _array_copy(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
     struct wi_array* array     = _check_arg1_array(state);
     struct wi_array* new_array = wi_new_array(state->gc);
     state->ffi_stack[0]        = WI_MAKE_BOX_VALUE(new_array);
@@ -33,6 +34,7 @@ _array_copy(struct wi_state* state, int arg_count) {
 
 static void
 _array_clear(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
     struct wi_array* array = _check_arg1_array(state);
     wi_value_buf_free(&array->items);
     wi_slot_set_null(state, 0);
@@ -40,18 +42,21 @@ _array_clear(struct wi_state* state, int arg_count) {
 
 static void
 _array_capacity(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
     struct wi_array* array = _check_arg1_array(state);
     wi_slot_set_real(state, 0, array->items.capacity);
 }
 
 static void
 _array_count(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
     struct wi_array* array = _check_arg1_array(state);
     wi_slot_set_real(state, 0, array->items.count);
 }
 
 static void
 _array_reverse(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
     struct wi_array* array = _check_arg1_array(state);
     state->ffi_stack[0]    = WI_MAKE_BOX_VALUE(array);
 
@@ -64,6 +69,7 @@ _array_reverse(struct wi_state* state, int arg_count) {
 
 static void
 _array_reversed(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
     struct wi_array* array     = _check_arg1_array(state);
     struct wi_array* new_array = wi_new_array(state->gc);
     state->ffi_stack[0]        = WI_MAKE_BOX_VALUE(new_array);
@@ -80,6 +86,7 @@ _array_reversed(struct wi_state* state, int arg_count) {
 
 static void
 _array_add(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
     struct wi_array* array = _check_arg1_array(state);
     wi_value_buf_add(&array->items, state->ffi_stack[2]);
     state->ffi_stack[0] = state->ffi_stack[2];
@@ -87,6 +94,7 @@ _array_add(struct wi_state* state, int arg_count) {
 
 static void
 _array_has(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
     struct wi_array* array = _check_arg1_array(state);
     bool             found = false;
 
@@ -102,6 +110,7 @@ _array_has(struct wi_state* state, int arg_count) {
 
 static void
 _array_remove(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
     struct wi_array* array = _check_arg1_array(state);
     bool             found = false;
 
@@ -124,6 +133,7 @@ _array_remove(struct wi_state* state, int arg_count) {
 
 static void
 _array_remove_at(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
     struct wi_array* array = _check_arg1_array(state);
     int              index = (int)wi_slot_check_real(state, 2);
 
@@ -143,6 +153,7 @@ _array_remove_at(struct wi_state* state, int arg_count) {
 
 static void
 _array_pop(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
     struct wi_array* array = _check_arg1_array(state);
 
     if (array->items.count == 0) {
@@ -169,6 +180,7 @@ _array_concat(struct wi_state* state, int arg_count) {
 
 static void
 _array_slice(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
     struct wi_array* array = _check_arg1_array(state);
     int              start = (int)wi_slot_check_real(state, 2);
     int              end   = (int)wi_slot_check_real(state, 3);
@@ -189,6 +201,7 @@ _array_slice(struct wi_state* state, int arg_count) {
 
 static void
 _array_each(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
     struct wi_array*   array   = _check_arg1_array(state);
     struct wi_closure* closure = wi_slot_check_function(state, 2, 1);
 

@@ -142,22 +142,22 @@ wi_utf8_validate(const char* buf, int count) {
 char*
 wi_read_stream(FILE* stream) {
     fseek(stream, 0L, SEEK_END);
-    long fsize = ftell(stream);
+    long file_size = ftell(stream);
     rewind(stream);
 
-    if (fsize < 0) {
+    if (file_size < 0) {
         return NULL;
     }
 
-    char* buf = malloc((size_t)fsize + 1);
+    char* buf = malloc((size_t)file_size + 1);
 
     if (!buf) {
         return NULL;
     }
 
-    size_t bytes_read = fread(buf, 1, (size_t)fsize, stream);
+    size_t bytes_read = fread(buf, 1, (size_t)file_size, stream);
 
-    if (bytes_read < fsize) {
+    if (bytes_read < (size_t)file_size) {
         free(buf);
         return NULL;
     }

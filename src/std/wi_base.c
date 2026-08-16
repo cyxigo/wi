@@ -50,22 +50,26 @@ _base_input(struct wi_state* state, int arg_count) {
 
 static void
 _base_is_main(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
     struct wi_call_frame* frame = wi_state_frame(state);
     wi_slot_set_bool(state, 0, !frame->closure->required);
 }
 
 static void
 _base_exit(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
     wi_state_abort(state);
 }
 
 static void
 _base_error(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
     wi_state_error(state, "%s", wi_slot_check_string(state, 1, NULL, NULL));
 }
 
 static void
 _base_assert(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
     bool is_falsy = wi_value_is_falsy(state->ffi_stack[1]);
 
     if (is_falsy) {
@@ -111,6 +115,7 @@ _base_try(struct wi_state* state, int arg_count) {
 
 static void
 _base_type(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
     wi_slot_set_string(state, 0, wi_value_type(state->ffi_stack[1]));
 }
 
@@ -121,61 +126,73 @@ _is_type_function(struct wi_state* state, bool (*fn)(wi_value value)) {
 
 static void
 _base_is_real(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
     _is_type_function(state, wi_value_is_real);
 }
 
 static void
 _base_is_null(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
     _is_type_function(state, wi_value_is_null);
 }
 
 static void
 _base_is_bool(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
     _is_type_function(state, wi_value_is_bool);
 }
 
 static void
 _base_is_string(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
     _is_type_function(state, wi_value_is_string);
 }
 
 static void
 _base_is_array(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
     _is_type_function(state, wi_value_is_array);
 }
 
 static void
 _base_is_map(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
     _is_type_function(state, wi_value_is_map);
 }
 
 static void
 _base_is_foreign(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
     _is_type_function(state, wi_value_is_foreign);
 }
 
 static void
 _base_is_function(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
     _is_type_function(state, wi_value_is_closure);
 }
 
 static void
 _base_is_object(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
     _is_type_function(state, wi_value_is_object);
 }
 
 static void
 _base_is_userdata(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
     _is_type_function(state, wi_value_is_userdata);
 }
 
 static void
 _base_is_falsy(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
     _is_type_function(state, wi_value_is_falsy);
 }
 
 static void
 _base_to_real(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
     wi_value value = state->ffi_stack[1];
     wi_value result;
 
@@ -204,11 +221,13 @@ _base_to_real(struct wi_state* state, int arg_count) {
 
 static void
 _base_to_bool(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
     wi_slot_set_bool(state, 0, !wi_value_is_falsy(state->ffi_stack[1]));
 }
 
 static void
 _base_to_string(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
     if (wi_slot_is_string(state, 1)) {
         state->ffi_stack[0] = state->ffi_stack[1];
         return;
@@ -236,6 +255,7 @@ _check_arg1_object(struct wi_state* state) {
 
 static void
 _base_has_field(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
     struct wi_object* object = _check_arg1_object(state);
     wi_slot_check_string(state, 2, NULL, NULL);
     wi_slot_set_bool(state, 0, wi_table_get(&object->fields, state->ffi_stack[2], NULL));
@@ -243,6 +263,7 @@ _base_has_field(struct wi_state* state, int arg_count) {
 
 static void
 _base_fields(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
     struct wi_object* object = _check_arg1_object(state);
     struct wi_map*    fields = wi_new_map(state->gc);
     state->ffi_stack[0]      = WI_MAKE_BOX_VALUE(fields);
@@ -311,6 +332,7 @@ _equals(wi_value a, wi_value b) {
 
 static void
 _base_equals(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
     wi_slot_set_bool(state, 0, _equals(state->ffi_stack[1], state->ffi_stack[2]));
 }
 

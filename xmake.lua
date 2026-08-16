@@ -5,7 +5,7 @@ set_description("The Wi programming language")
 set_license("MIT")
 
 set_languages("c99")
-set_warnings("all", "error")
+set_warnings("everything", "error", "pedantic")
 
 function common()
     add_cflags("-Wconversion -Wsign-conversion -Wfloat-conversion")

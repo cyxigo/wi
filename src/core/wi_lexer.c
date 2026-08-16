@@ -170,6 +170,7 @@ _lexer_make_token(struct wi_lexer* lexer, enum wi_token_kind kind) {
 
 static struct wi_token
 _lexer_error(struct wi_lexer* lexer, const char* msg, int line, int col) {
+    WI_UNUSED(lexer);
     return (struct wi_token){
         .kind  = WI_TOKEN_ERROR,
         .start = msg,

@@ -41,6 +41,8 @@ _print_error(void) {
 
 static void
 _sigint_handler(int sig) {
+    WI_UNUSED(sig);
+
     if (_g_state) {
         wi_state_interrupt(_g_state);
     }

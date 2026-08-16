@@ -10,13 +10,13 @@
 #define WI_UNLIKELY(x) __builtin_expect(!!(x), 0)
 #define WI_LIKELY(x) __builtin_expect(!!(x), 1)
 #define WI_INLINE __attribute__((always_inline)) static inline
-#define WI_UNREACHABLE(void) __builtin_unreachable()
+#define WI_UNREACHABLE() __builtin_unreachable()
 #else
 #define WI_NORETURN
 #define WI_UNLIKELY(x) (x)
 #define WI_LIKELY(x) (x)
 #define WI_INLINE static inline
-#define WI_UNREACHABLE(void)
+#define WI_UNREACHABLE()
 #endif
 
 #define WI_UNUSED(x) (void)x

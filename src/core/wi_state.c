@@ -61,6 +61,7 @@ _state_read_file(struct wi_state* state, const char* file_path) {
 
 static bool
 _state_require_exists(struct wi_state* state, const char* path) {
+    WI_UNUSED(state);
 #ifdef _WIN32
     return _access(path, 0) == 0;
 #else
@@ -295,7 +296,7 @@ _state_close_upvalues(struct wi_state* state, wi_value* last);
 
 WI_NORETURN void
 wi_state_error(struct wi_state* state, const char* format, ...) {
-#define _APPEND_FORMAT(void)                       \
+#define _APPEND_FORMAT()                           \
     va_list args;                                  \
     va_start(args, format);                        \
     wi_state_append_error_va(state, format, args); \
@@ -854,7 +855,7 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
     register wi_value* constants = frame->closure->prototype->constants.data;
     register uint8_t*  ip        = frame->ip;
 
-#define _UPDATE_FRAME(void)                                \
+#define _UPDATE_FRAME()                                    \
     frame     = wi_state_frame(state);                     \
     constants = frame->closure->prototype->constants.data; \
     ip        = frame->ip
@@ -865,32 +866,32 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
 
 #if defined(__GNUC__) || defined(__clang__)
     static void* dispatch_table[] = {
-#define WI_OPCODE(name, _, __) &&LABEL_##name,
+#define WI_OPCODE(name, _, __) __extension__ &&LABEL_##name,
 #include "wi_opcode.h"
 #undef WI_OPCODE
     };
 
 #define _INTERPRET _DISPATCH();
-#define _DISPATCH(void) goto* dispatch_table[(opcode = _READ_BYTE())]
+#define _DISPATCH() __extension__({ goto* dispatch_table[(opcode = _READ_BYTE())]; })
 #define _OPCODE_LABEL(name) LABEL_##name
 #else
 #define _INTERPRET \
     loop:          \
     switch (opcode = _READ_BYTE())
-#define _DISPATCH(void) goto loop
+#define _DISPATCH() goto loop
 #define _OPCODE_LABEL(name) case WI_OP_##name
 #endif
 
-#define _CHECK_INTERRUPT(void)             \
+#define _CHECK_INTERRUPT()                 \
     if (WI_UNLIKELY(state->interrupted)) { \
         state->interrupted = 0;            \
         frame->ip          = ip;           \
         wi_state_abort(state);             \
     }
 
-#define _READ_BYTE(void) *ip++
-#define _READ_SHORT(void) (ip += 2, (uint16_t)(ip[-2] << 8 | ip[-1]))
-#define _READ_CONSTANT(void) constants[_READ_SHORT()]
+#define _READ_BYTE() *ip++
+#define _READ_SHORT() (ip += 2, (uint16_t)(ip[-2] << 8 | ip[-1]))
+#define _READ_CONSTANT() constants[_READ_SHORT()]
 
 #define _BINARY_OP(op, maker)                                                                     \
     do {                                                                                          \
@@ -954,7 +955,7 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
     _UPDATE_FRAME();                                                                      \
     _CHECK_INTERRUPT();
 
-#define _LOAD_METHOD(void)                                          \
+#define _LOAD_METHOD()                                              \
     wi_value name      = _READ_CONSTANT();                          \
     uint8_t  arg_count = _READ_BYTE();                              \
     wi_value receiver  = wi_state_peek(state, arg_count - 1);       \

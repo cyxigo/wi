@@ -7,6 +7,7 @@
 
 static void
 _string_sub(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
     int   len;
     int   count;
     char* string = wi_slot_check_string(state, 1, &count, &len);
@@ -26,6 +27,7 @@ _string_sub(struct wi_state* state, int arg_count) {
 
 static void
 _string_upper(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
     int   len;
     char* string = wi_slot_check_string(state, 1, &len, NULL);
     char* buf    = WI_GC_ALLOC(state->gc, char, len + 1);
@@ -40,6 +42,7 @@ _string_upper(struct wi_state* state, int arg_count) {
 
 static void
 _string_lower(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
     int   len;
     char* string = wi_slot_check_string(state, 1, &len, NULL);
     char* buf    = WI_GC_ALLOC(state->gc, char, len + 1);
@@ -54,6 +57,7 @@ _string_lower(struct wi_state* state, int arg_count) {
 
 static void
 _string_trim(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
     int   count;
     char* string = wi_slot_check_string(state, 1, &count, NULL);
     int   start  = 0;
@@ -72,6 +76,7 @@ _string_trim(struct wi_state* state, int arg_count) {
 
 static void
 _string_has(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
     int   count;
     char* string = wi_slot_check_string(state, 1, &count, NULL);
     int   target_count;
@@ -89,6 +94,7 @@ _string_has(struct wi_state* state, int arg_count) {
 
 static void
 _string_starts_with(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
     int   count;
     char* string = wi_slot_check_string(state, 1, &count, NULL);
     int   pref_count;
@@ -100,6 +106,7 @@ _string_starts_with(struct wi_state* state, int arg_count) {
 
 static void
 _string_ends_with(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
     int   count;
     char* string = wi_slot_check_string(state, 1, &count, NULL);
     int   suff_count;
@@ -111,6 +118,7 @@ _string_ends_with(struct wi_state* state, int arg_count) {
 
 static void
 _string_replace(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
     int   count;
     char* string = wi_slot_check_string(state, 1, &count, NULL);
     int   old_count;
@@ -149,6 +157,7 @@ _string_replace(struct wi_state* state, int arg_count) {
 
 static void
 _string_split(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
     int   count;
     char* string = wi_slot_check_string(state, 1, &count, NULL);
     int   sep_count;
@@ -210,6 +219,7 @@ _reverse_cp_bytes(char* start, char* buf_end) {
 
 static void
 _string_reverse(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
     int   count;
     char* string = wi_slot_check_string(state, 1, &count, NULL);
     char* buf    = WI_GC_ALLOC(state->gc, char, count + 1);
