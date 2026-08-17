@@ -809,7 +809,7 @@ _state_resolve_field(struct wi_state* state, struct wi_object* object, wi_value 
 static void
 _state_set_field(struct wi_state* state, wi_value name, wi_value target) {
     if (WI_UNLIKELY(!wi_value_is_object(target))) {
-        wi_state_error(state, "cannot access fields on a value of type %s", wi_value_type(target));
+        wi_state_error(state, "cannot use operator '.' on a value of type %s", wi_value_type(target));
     }
 
     struct wi_object* object = wi_value_as_object(target);
