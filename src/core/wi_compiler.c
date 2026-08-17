@@ -1324,14 +1324,17 @@ _compiler_load_stmt(struct wi_compiler* compiler) {
         wi_parser_error_at_prev(compiler->parser, "can only use 'load' from top-level code");
     }
 
-    /* capture keyword for reporting platform unsupported error */
-    struct wi_token kw = compiler->parser->prev;
+    /* wasm, macos, etc. */
+#if !defined(_WIN32) && !defined(__linux__)
+    wi_parser_error_at_prev(compiler->parser, "load statement is not supported on this platform");
+#else
+
     /* prepare for seeing horrifying things... platform-specific code!!! */
     struct wi_token   path_token = wi_parser_expect(compiler->parser, WI_TOKEN_LIT_STRING);
     struct wi_string* path_box = wi_copy_cstring(compiler->parser->gc, path_token.start + 1, path_token.count - 2);
     wi_parser_expect(compiler->parser, WI_TOKEN_SEMICOLON);
 
-    struct wi_state* state = compiler->parser->gc->state;
+    struct wi_state* state = compiler->state;
 
     size_t raw_path_len = (size_t)path_box->count;
     char*  raw_path     = path_box->buf;
@@ -1340,7 +1343,6 @@ _compiler_load_stmt(struct wi_compiler* compiler) {
 
     /* platform-specific code is a legitimate way of torturing */
 #ifdef _WIN32
-    WI_UNUSED(kw);
     DWORD len = GetModuleFileName(NULL, path, (DWORD)path_size);
 
     if (len < 1 || len >= path_size) {
@@ -1363,8 +1365,7 @@ _compiler_load_stmt(struct wi_compiler* compiler) {
 
     snprintf(path + path_len, remaining, "\\foreign\\%s.dll", raw_path);
     HMODULE lib = LoadLibraryA(path);
-#elif defined(__linux__)
-    WI_UNUSED(kw);
+#else  /* __linux__ */
     ssize_t len = readlink("/proc/self/exe", path, path_size - 1);
 
     if (len == -1) {
@@ -1389,12 +1390,7 @@ _compiler_load_stmt(struct wi_compiler* compiler) {
 
     snprintf(path + path_len, remaining, "/foreign/%s.so", raw_path);
     void* lib = dlopen(path, RTLD_NOW | RTLD_GLOBAL);
-#else
-    WI_UNUSED(raw_path_len);
-    WI_UNUSED(path_size);
-    void* lib = NULL;
-    wi_parser_error_at(compiler->parser, kw, "load statement is not supported on this platform");
-#endif
+#endif /* _WIN32 */
 
     if (!lib) {
         wi_parser_error_at_prev(compiler->parser, "failed to load foreign %s\nattempted path: %s", raw_path, path);
@@ -1410,7 +1406,7 @@ _compiler_load_stmt(struct wi_compiler* compiler) {
 
     proc_conv.proc       = GetProcAddress(lib, "wi_foreign_init");
     foreign_init_fn init = proc_conv.fn;
-#else
+#else  /* __linux__ */
     union {
         void*           ptr;
         foreign_init_fn fn;
@@ -1418,7 +1414,7 @@ _compiler_load_stmt(struct wi_compiler* compiler) {
 
     sym_conv.ptr         = dlsym(lib, "wi_foreign_init");
     foreign_init_fn init = sym_conv.fn;
-#endif
+#endif /* _WIN32 */
 
     if (!init) {
         wi_lib_close(lib);
@@ -1428,6 +1424,8 @@ _compiler_load_stmt(struct wi_compiler* compiler) {
     if (wi_state_add_lib(state, lib)) {
         init(state);
     }
+
+#endif /* !defined(_WIN32) && !defined(__linux__) */
 }
 
 static void
