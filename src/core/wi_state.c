@@ -480,7 +480,6 @@ _state_subscript_set(struct wi_state* state, wi_value target, wi_value index, wi
     }
 
     wi_state_error(state, "cannot use operator '[]' on a value of type %s", wi_value_type(target));
-    return;
 }
 
 static wi_value
@@ -530,7 +529,6 @@ _state_subscript_get(struct wi_state* state, wi_value target, wi_value index) {
     }
 
     wi_state_error(state, "cannot use operator '[]' on a value of type %s", wi_value_type(target));
-    return wi_make_null_value();
 }
 
 static struct wi_upvalue*
@@ -939,18 +937,18 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
         wi_state_push(state, wi_make_real_value((wi_real)(a_int op b_int)));                      \
     } while (false)
 
-#define _CALL(value)                                                         \
-    if (wi_value_is_foreign(value)) {                                        \
-        wi_state_call_foreign(state, wi_value_as_foreign(value), arg_count); \
-        _DISPATCH();                                                         \
-    }                                                                        \
-                                                                             \
-    if (WI_UNLIKELY(!wi_value_is_closure(value))) {                          \
-        _ERROR("cannot call a value of type %s", wi_value_type(value));      \
-    }                                                                        \
-                                                                             \
-    _state_call(state, wi_value_as_closure(value), arg_count);               \
-    _UPDATE_FRAME();                                                         \
+#define _CALL(value)                                                                    \
+    if (wi_value_is_foreign(value)) {                                                   \
+        wi_state_call_foreign(state, wi_value_as_foreign(value), arg_count);            \
+        _DISPATCH();                                                                    \
+    }                                                                                   \
+                                                                                        \
+    if (WI_UNLIKELY(!wi_value_is_closure(value))) {                                     \
+        _ERROR("cannot use operator '()' on a value of type %s", wi_value_type(value)); \
+    }                                                                                   \
+                                                                                        \
+    _state_call(state, wi_value_as_closure(value), arg_count);                          \
+    _UPDATE_FRAME();                                                                    \
     _CHECK_INTERRUPT();
 #define _TAIL_CALL(value)                                                                 \
     if (wi_value_is_foreign(value)) {                                                     \
@@ -963,7 +961,7 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
     }                                                                                     \
                                                                                           \
     if (WI_UNLIKELY(!wi_value_is_closure(value))) {                                       \
-        _ERROR("cannot call a value of type %s", wi_value_type(value));                   \
+        _ERROR("cannot use operator '()' on a value of type %s", wi_value_type(value));   \
     }                                                                                     \
                                                                                           \
     _state_tail_call(state, frame, wi_value_as_closure(value), arg_count);                \
@@ -1174,7 +1172,6 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
             }
 
             _ERROR("cannot use operator '#' on a value of type %s", wi_value_type(a));
-            _DISPATCH();
         }
         _OPCODE_LABEL(CONCAT) : {
             _state_concat(state);
@@ -1392,7 +1389,7 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
             wi_value target = wi_state_top(state);
 
             if (WI_UNLIKELY(!wi_value_is_object(target))) {
-                _ERROR("cannot access fields on a value of type %s", wi_value_type(target));
+                _ERROR("cannot use operator '.' on a value of type %s", wi_value_type(target));
             }
 
             struct wi_object* object = wi_value_as_object(target);

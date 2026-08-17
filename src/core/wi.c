@@ -14,7 +14,7 @@
 #include "../include/wi_conf.h"
 #include "wi_util.h"
 
-static struct wi_state* _g_state = NULL;
+static wi_state* _g_state = NULL;
 
 static bool
 _init_g_state(wi_conf conf) {
