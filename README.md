@@ -55,16 +55,11 @@ xmake
 ```
 This produces `wi.js` + `wi.wasm`, with functions `wi_wasm_init`/`wi_wasm_run`/`wi_wasm_get_error` (see [`wi_wasm.c`](https://github.com/cyxigo/wi/blob/main/src/wasm/wi_wasm.c)) for embedding Wi in a web page.
 
-
 You can also use [`build.sh`](https://github.com/cyxigo/wi/blob/main/build.sh)/[`build_wasm.sh`](https://github.com/cyxigo/wi/blob/main/build_wasm.sh) utility scripts for building Wi.
-
-## Inspiration
-
-Around three years ago, I was looking through interpreted programming languages (not many, of course) and realized that I didn't like any of them. Any. So then, in that very moment I decided - I will make my own simple and fast programming language. That day, the first Wi prototype was born (it wasn't even called Wi back then - it was something along the lines of "Weasel").
 
 ## Current project status
 
-This programming language was created by me, and only me - a single person. It's in beta and I'm working on it almost every day. The standard library isn't finished yet, but it's already quite useful. Other than the API, the code is not heavily commented, only the parts that can be really confusing (WIP).
+This programming language was created by me, and only me - a single person. It's in beta and I'm working on it almost every day. The standard library isn't finished yet, but it's already quite useful. Other than the API, the code is not heavily commented.
 
 Some parts may still need polish, and I'm very open to suggestions - if you have one, open an issue!
 
