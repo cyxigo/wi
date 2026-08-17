@@ -786,7 +786,7 @@ _state_resolve_method(struct wi_state* state, wi_value receiver, wi_value name) 
 
 static void
 _state_resolve_field(struct wi_state* state, struct wi_object* object, wi_value name, wi_value* value) {
-    if (WI_LIKELY(wi_table_get(&object->fields, name, value))) {
+    if (wi_table_get(&object->fields, name, value)) {
         return;
     }
 
@@ -1477,17 +1477,16 @@ wi_state_call(struct wi_state* state, struct wi_closure* closure, uint8_t arg_co
         wi_state_error(state, "C call stack overflow (limit is %i)", WI_CSTACK_MAX);
     }
 
-    wi_value* ffi_stack = state->ffi_stack;
-
-    int base_frame_count = state->frame_count;
+    /* same thing as wi_call! but instead storing where the ffi stack starts */
+    ptrdiff_t ffi_stack_offset = state->ffi_stack ? state->ffi_stack - state->stack : -1;
+    int       base_frame_count = state->frame_count;
     _state_call(state, closure, arg_count);
 
     state->c_call_depth++;
     enum wi_run_result result = _state_interpreter_loop(state, base_frame_count, drop_result);
     state->c_call_depth--;
 
-    state->ffi_stack = ffi_stack;
-
+    state->ffi_stack = ffi_stack_offset == -1 ? NULL : state->stack + ffi_stack_offset;
     return result;
 }
 
