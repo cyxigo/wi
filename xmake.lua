@@ -8,7 +8,7 @@ set_languages("c99")
 set_warnings("everything", "error", "pedantic")
 
 function common()
-    if is_mode("debug") then 
+    if is_mode("debug") then
         add_cflags("-g -fno-omit-frame-pointer")
         set_optimize("none")
         set_symbols("debug")
