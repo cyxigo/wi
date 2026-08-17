@@ -8,8 +8,6 @@ set_languages("c99")
 set_warnings("everything", "error", "pedantic")
 
 function common()
-    add_cflags("-Wconversion -Wsign-conversion -Wfloat-conversion")
-
     if is_mode("debug") then 
         add_cflags("-g -fno-omit-frame-pointer")
         set_optimize("none")
