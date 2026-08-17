@@ -507,11 +507,26 @@ _state_subscript_get(struct wi_state* state, wi_value target, wi_value index) {
         struct wi_map* map = wi_value_as_map(target);
         wi_value       value;
 
-        if (wi_table_get(&map->items, index, &value)) {
+        if (WI_LIKELY(wi_table_get(&map->items, index, &value))) {
             return value;
         }
 
-        wi_state_error(state, "key error");
+        char* key;
+
+        if (wi_value_is_string(index)) {
+            key = wi_value_as_cstring(index);
+        } else {
+            key = wi_value_to_string(index);
+
+            if (WI_UNLIKELY(!key)) {
+                wi_state_oom(state, "out of memory: failed to allocate key string for the error message");
+            }
+
+            /* same trick as in _state_require: use gc boxing for cleanup, since wi_state_error longjmps */
+            wi_take_cstring(state->gc, key, strlen(key));
+        }
+
+        wi_state_error(state, "map has no key %s", key);
     }
 
     wi_state_error(state, "cannot use operator '[]' on a value of type %s", wi_value_type(target));
