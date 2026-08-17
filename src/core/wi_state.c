@@ -521,8 +521,12 @@ _state_subscript_get(struct wi_state* state, wi_value target, wi_value index) {
                 wi_state_oom(state, "out of memory: failed to allocate key string for the error message");
             }
 
-            /* same trick as in _state_require: use gc boxing for cleanup, since wi_state_error longjmps */
-            wi_take_cstring(state->gc, key, strlen(key));
+            /*
+                same trick as in _state_require: use gc boxing for cleanup, since wi_state_error longjmps
+                why assign to "->buf" you may ask? because wi_take_cstring frees passed to it buffer if it's
+                interned
+            */
+            key = wi_take_cstring(state->gc, key, strlen(key))->buf;
         }
 
         wi_state_error(state, "map has no key %s", key);
