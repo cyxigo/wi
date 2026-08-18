@@ -16,7 +16,7 @@
 ```js
 var obj_person = object {
     name = "";
-    greet = function(self) {
+    greet = |self| => {
         print("Hello, " .. self.name .. "!");
     };
 };
