@@ -11,6 +11,7 @@
             rel="stylesheet"
         />
         <link rel="stylesheet" href="style.css" />
+        <link rel="stylesheet" href="token.css" />
         <script src="try.js" defer></script>
         <script src="wi.js" defer></script>
         <title>Home – Wi</title>
@@ -27,8 +28,21 @@
             <button onclick="location.href = 'https://github.com/cyxigo/wi/tree/main'">Source code</button>
             <hr />
 
-            <h1>Wi?</h1>
-            <b>Wi</b> is a small, fast, prototype-based scripting language with embedding capabilities.
+            <h2>Wi is a small, fast, prototype-based scripting language with embedding capabilities.</h2>
+            <pre>
+<span class="token-kw">var</span> <span class="token-name">obj_person</span> = <span class="token-kw">object</span> {
+    <span class="token-name">name</span> = <span class="token-string">""</span>;
+    <span class="token-name">greet</span> = <span class="token-kw">function</span>(<span class="token-name">self</span>) {
+        <span class="token-name">print</span>(<span class="token-string">"Hello, "</span> .. <span class="token-name">self</span>.<span class="token-name">name</span> .. <span class="token-lit-string">"!"</span>);
+    };
+};
+
+<span class="token-kw">var</span> <span class="token-name">slava</span> = <span class="token-kw">new</span> <span class="token-name">obj_person</span> {
+    <span class="token-name">name</span> = <span class="token-string">"Slava"</span>;
+};
+
+<span class="token-name">slava</span>-><span class="token-name">greet</span>(); <span class="token-comment">// Hello, Slava!</span>
+            </pre>
 
             <ul>
                 <li>

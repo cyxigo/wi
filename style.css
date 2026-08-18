@@ -29,6 +29,16 @@ button {
     padding-right: 9px;
 }
 
+pre {
+    overflow-y: hidden;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 12px;
+    width: 90%;
+    max-width: 700px;
+    color: #3e3e3e;
+}
+
 footer {
     padding: 0.5vw;
     color: #868686;

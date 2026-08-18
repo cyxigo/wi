@@ -1,0 +1,15 @@
+.token-name {
+    color: #2d2b55;
+}
+
+.token-kw {
+    color: #0033b3;
+}
+
+.token-string {
+    color: #22863a;
+}
+
+.token-comment {
+    color: #6a737d;
+}
