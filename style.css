@@ -37,6 +37,7 @@ pre {
     width: 90%;
     max-width: 700px;
     color: #3e3e3e;
+    min-height: 2vh;
 }
 
 footer {
@@ -86,16 +87,6 @@ footer a {
 
 #examples a {
     margin-left: 5px;
-}
-
-#output-container {
-    width: 90%;
-    max-width: 700px;
-    min-height: 2vh;
-    background-color: #ffffff;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    padding: 12px;
 }
 
 #output {
