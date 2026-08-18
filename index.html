@@ -13,36 +13,58 @@
         <link rel="stylesheet" href="style.css" />
         <script src="try.js" defer></script>
         <script src="wi.js" defer></script>
-        <title>Wi Programming Language</title>
+        <title>Home – Wi</title>
     </head>
     <body>
         <div id="content">
             <div id="logo-container">
-                <img src="res/wi.png" id="logo" alt="Wi logo" />
+                <a href="https://cyxigo.github.io/wi"><img src="res/wi.png" id="logo" alt="Wi logo" /></a>
                 <h1>Wi Programming Language</h1>
             </div>
+            <button onclick="location.href = 'https://cyxigo.github.io/wi/try'">Try</button>
             <button onclick="location.href = 'https://github.com/cyxigo/wi/releases/latest'">Download</button>
             <button onclick="location.href = 'https://github.com/cyxigo/wi/wiki'">Wiki</button>
             <button onclick="location.href = 'https://github.com/cyxigo/wi/tree/main'">Source code</button>
             <hr />
 
-            <h2>Try Wi!</h2>
-            <p>Write code here:</p>
-            <textarea id="code">print("Hello World!");</textarea>
+            <h1>Wi?</h1>
+            <b>Wi</b> is a small, fast, prototype-based scripting language with embedding capabilities.
+
+            <ul>
+                <li>
+                    <b>Wi is small.</b> The
+                    <a class="button" href="https://github.com/cyxigo/wi/tree/main/src"> entire implementation </a>
+                    takes less than 10k lines of code.
+                </li>
+                <li>
+                    <b>Wi is fast.</b> Fast single-pass compiler to bytecode with NaN boxing value representation
+                    allows Wi to
+                    <a class="button" href="https://github.com/cyxigo/wi/tree/main/test/benchmark#readme"
+                        >compete with other dynamic programming languages</a
+                    >.
+                </li>
+                <li>
+                    <b>Wi is simple.</b> You can learn its dead-simple syntax and standard library in less than a
+                    week using its
+                    <a class="button" href="https://github.com/cyxigo/wi/wiki">lovingly made documentation</a>.
+                </li>
+                <li>
+                    <b>Wi is purely prototype-based.</b> Many languages use classes – Wi uses
+                    <a class="button" href="https://github.com/cyxigo/wi/wiki/Objects"> objects </a>. You clone
+                    these objects and create whatever you want. No delegation, just pure cloning.
+                </li>
+                <li>
+                    <b>Wi is extendable.</b>
+                    <a class="button" href="https://github.com/cyxigo/wi/wiki/Wi-API-Reference">
+                        Simple and straightforward FFI
+                    </a>
+                    allows you to easily create libraries for Wi and use them with the ease of one statement.
+                </li>
+            </ul>
+
+            Want to try it? <a class="button" href="https://cyxigo.github.io/wi/try">Try it here!</a>
             <br />
-
-            <div id="examples">
-                examples:
-                <a class="button" onclick="exampleHello()">hello</a>
-                <a class="button" onclick="exampleLoop()">loop</a>
-                <a class="button" onclick="examplePerson()">person</a>
-            </div>
-            <button id="run" disabled>Loading...</button>
-            <p>Output:</p>
-
-            <div id="output-container">
-                <pre id="output"></pre>
-            </div>
+            This website is still <b>work-in-progress</b>.
         </div>
 
         <footer>

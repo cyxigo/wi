@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link rel="shortcut icon" href="res/wi-square.png" type="image/x-png" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@100..900&display=swap"
+            rel="stylesheet"
+        />
+        <link rel="stylesheet" href="style.css" />
+        <script src="try.js" defer></script>
+        <script src="wi.js" defer></script>
+        <title>Try Wi – Wi</title>
+    </head>
+    <body>
+        <div id="content">
+            <div id="logo-container">
+                <img src="res/wi.png" id="logo" alt="Wi logo" />
+                <h1>Wi Programming Language</h1>
+            </div>
+            <button onclick="location.href = 'https://cyxigo.github.io/wi/try'">Try</button>
+            <button onclick="location.href = 'https://github.com/cyxigo/wi/releases/latest'">Download</button>
+            <button onclick="location.href = 'https://github.com/cyxigo/wi/wiki'">Wiki</button>
+            <button onclick="location.href = 'https://github.com/cyxigo/wi/tree/main'">Source code</button>
+            <hr />
+
+            <h2>Try Wi</h2>
+            <p>Write code here:</p>
+            <textarea id="code">print("Hello World!");</textarea>
+            <br />
+
+            <div id="examples">
+                examples:
+                <a class="button" onclick="exampleHello()">hello</a>
+                <a class="button" onclick="exampleLoop()">loop</a>
+                <a class="button" onclick="examplePerson()">person</a>
+            </div>
+            <button id="run" disabled>Loading...</button>
+            <p>Output:</p>
+
+            <div id="output-container">
+                <pre id="output"></pre>
+            </div>
+        </div>
+
+        <footer>
+            Copyright © 2026 cyxigo |
+            <a href="https://github.com/cyxigo/wi/tree/gh-pages">Source code</a>
+            | Made with ❤
+        </footer>
+    </body>
+</html>

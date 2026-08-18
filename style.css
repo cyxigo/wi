@@ -97,6 +97,7 @@ footer a {
 a.button {
     color: #3b6ec9;
     cursor: pointer;
+    text-decoration: none;
 }
 
 @media (hover: hover) {
