@@ -56,9 +56,7 @@ var examplePerson = function () {
     var code = document.getElementById("code");
     code.value = `var obj_person = object {
     name = "";
-    greet = |self| => {
-        print("Hi " .. self.name .. "!");
-    };
+    greet = |self| => print("Hi " .. self.name .. "!");
 };
 
 var bob = new obj_person {
