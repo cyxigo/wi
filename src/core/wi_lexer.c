@@ -52,6 +52,8 @@ wi_token_kind_to_string(enum wi_token_kind kind) {
             return "#";
         case WI_TOKEN_ARROW:
             return "->";
+        case WI_TOKEN_FAT_ARROW:
+            return "=>";
         case WI_TOKEN_PERCENT:
             return "%";
         case WI_TOKEN_PLUS:
@@ -116,14 +118,12 @@ wi_token_kind_to_string(enum wi_token_kind kind) {
             return "break";
         case WI_TOKEN_KW_CONTINUE:
             return "continue";
-        case WI_TOKEN_KW_FUNCTION:
-            return "function";
         case WI_TOKEN_KW_RETURN:
             return "return";
-        case WI_TOKEN_KW_NEW:
-            return "new";
         case WI_TOKEN_KW_OBJECT:
             return "object";
+        case WI_TOKEN_KW_NEW:
+            return "new";
         case WI_TOKEN_KW_REQUIRE:
             return "require";
         case WI_TOKEN_KW_LOAD:
@@ -264,8 +264,6 @@ _lexer_name_kind(struct wi_lexer* lexer) {
                         return _lexer_check_kw(lexer, 2, 3, "lse", WI_TOKEN_KW_FALSE);
                     case 'o':
                         return _lexer_check_kw(lexer, 2, 1, "r", WI_TOKEN_KW_FOR);
-                    case 'u':
-                        return _lexer_check_kw(lexer, 2, 6, "nction", WI_TOKEN_KW_FUNCTION);
                 }
             }
 
@@ -276,8 +274,6 @@ _lexer_name_kind(struct wi_lexer* lexer) {
             return _lexer_check_kw(lexer, 1, 3, "rue", WI_TOKEN_KW_TRUE);
         case 'b':
             return _lexer_check_kw(lexer, 1, 4, "reak", WI_TOKEN_KW_BREAK);
-        case 'o':
-            return _lexer_check_kw(lexer, 1, 5, "bject", WI_TOKEN_KW_OBJECT);
         case 'c':
             return _lexer_check_kw(lexer, 1, 7, "ontinue", WI_TOKEN_KW_CONTINUE);
         case 'r':
@@ -291,6 +287,8 @@ _lexer_name_kind(struct wi_lexer* lexer) {
             }
 
             break;
+        case 'o':
+            return _lexer_check_kw(lexer, 1, 5, "bject", WI_TOKEN_KW_OBJECT);
         case 'l':
             return _lexer_check_kw(lexer, 1, 3, "oad", WI_TOKEN_KW_LOAD);
     }
@@ -503,7 +501,15 @@ wi_lexer_next(struct wi_lexer* lexer) {
         case '~':
             return _lexer_make_token(lexer, WI_TOKEN_TILDE);
         case '=':
-            return _lexer_make_token(lexer, _lexer_match(lexer, '=') ? WI_TOKEN_EQUAL_EQUAL : WI_TOKEN_EQUAL);
+            if (_lexer_match(lexer, '=')) {
+                return _lexer_make_token(lexer, WI_TOKEN_EQUAL_EQUAL);
+            } else if (_lexer_match(lexer, '>')) {
+                return _lexer_make_token(lexer, WI_TOKEN_FAT_ARROW);
+            } else {
+                return _lexer_make_token(lexer, WI_TOKEN_EQUAL);
+            }
+
+            break;
         case '!':
             return _lexer_make_token(lexer, _lexer_match(lexer, '=') ? WI_TOKEN_BANG_EQUAL : WI_TOKEN_BANG);
         case '>':

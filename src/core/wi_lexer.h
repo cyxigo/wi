@@ -57,7 +57,8 @@ enum wi_token_kind {
     WI_TOKEN_DOT_DOT,
     WI_TOKEN_DOT_DOT_DOT,
     WI_TOKEN_HASH,
-    WI_TOKEN_ARROW,
+    WI_TOKEN_ARROW,     /* -> */
+    WI_TOKEN_FAT_ARROW, /* => */
     WI_TOKEN_PERCENT,
 
     WI_TOKEN_PLUS,
@@ -93,10 +94,9 @@ enum wi_token_kind {
     WI_TOKEN_KW_FOR,
     WI_TOKEN_KW_BREAK,
     WI_TOKEN_KW_CONTINUE,
-    WI_TOKEN_KW_FUNCTION,
     WI_TOKEN_KW_RETURN,
-    WI_TOKEN_KW_NEW,
     WI_TOKEN_KW_OBJECT,
+    WI_TOKEN_KW_NEW,
     WI_TOKEN_KW_REQUIRE,
     WI_TOKEN_KW_LOAD,
 

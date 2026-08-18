@@ -1,4 +1,4 @@
-var bottom_up_tree = function(item, depth) {
+var bottom_up_tree = |item, depth| => {
     if (depth > 0) {
         var i = item + item;
         depth = depth - 1;
@@ -10,7 +10,7 @@ var bottom_up_tree = function(item, depth) {
     return [item];
 };
 
-var item_check = function(tree) {
+var item_check = |tree| => {
     if (#tree > 1) {
         return tree[0] + item_check(tree[1]) - item_check(tree[2]);
     }

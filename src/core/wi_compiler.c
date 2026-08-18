@@ -651,6 +651,8 @@ _compiler_function_expr(struct wi_compiler* outer) {
     wi_compiler_init(&compiler, outer, outer->state, outer->parser, outer->global_attrs);
     _compiler_init_local(&compiler);
 
+    bool has_params = compiler.parser->prev.kind == WI_TOKEN_PIPE;
+
     compiler.prototype->name = _compiler_get_name(compiler.outer);
 
     if (compiler.prototype->name) {
@@ -664,9 +666,8 @@ _compiler_function_expr(struct wi_compiler* outer) {
     }
 
     _compiler_begin_scope(&compiler);
-    wi_parser_expect(compiler.parser, WI_TOKEN_OPEN_PAREN);
 
-    if (!wi_parser_check(compiler.parser, WI_TOKEN_CLOSE_PAREN)) {
+    if (has_params && !wi_parser_check(compiler.parser, WI_TOKEN_PIPE)) {
         do {
 #define _PARAMETER()                                                          \
     struct wi_token name  = wi_parser_expect(compiler.parser, WI_TOKEN_NAME); \
@@ -691,9 +692,18 @@ _compiler_function_expr(struct wi_compiler* outer) {
         } while (wi_parser_match(compiler.parser, WI_TOKEN_COMMA));
     }
 
-    wi_parser_expect(compiler.parser, WI_TOKEN_CLOSE_PAREN);
-    wi_parser_expect(compiler.parser, WI_TOKEN_OPEN_BRACE);
-    _compiler_block(&compiler);
+    if (has_params) {
+        wi_parser_expect(compiler.parser, WI_TOKEN_PIPE);
+    }
+
+    wi_parser_expect(compiler.parser, WI_TOKEN_FAT_ARROW);
+
+    if (wi_parser_match(compiler.parser, WI_TOKEN_OPEN_BRACE)) {
+        _compiler_block(&compiler);
+    } else {
+        _compiler_expr(&compiler);
+        _compiler_emit_opcode(&compiler, WI_OP_RETURN);
+    }
 
     struct wi_prototype* prototype = _compiler_end(&compiler);
     uint16_t             constant  = _compiler_make_constant(outer, WI_MAKE_BOX_VALUE(prototype));
@@ -801,7 +811,8 @@ _compiler_primary_expr(struct wi_compiler* compiler) {
         case WI_TOKEN_KW_FALSE:
             _compiler_bool_expr(compiler);
             break;
-        case WI_TOKEN_KW_FUNCTION:
+        case WI_TOKEN_PIPE:
+        case WI_TOKEN_PIPE_PIPE:
             _compiler_function_expr(compiler);
             break;
         case WI_TOKEN_KW_OBJECT:
