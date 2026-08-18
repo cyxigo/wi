@@ -1,7 +1,7 @@
 <div align="center">
    <img width="200" alt="wi" src="https://github.com/user-attachments/assets/7c25acaf-bb2a-4ae7-ac22-2542f7b64676" />
 
-## Wi is a small, fast, prototype-based scripting language.
+## Wi is a small, fast, prototype-based scripting language
 
 [![GitHub release](https://img.shields.io/github/v/release/cyxigo/wi)](https://github.com/cyxigo/wi/releases/latest)
 [![GitHub last commit](https://img.shields.io/github/last-commit/cyxigo/wi)](https://github.com/cyxigo/wi/commits)
