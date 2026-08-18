@@ -29,12 +29,12 @@ slava->greet(); // Hello, Slava!
 ```
 
 - **Wi is small**. The [entire implementation](https://github.com/cyxigo/wi/tree/main/src) takes less than 10k lines of code.
-- **Wi is fast**. Check out [benchmarks](https://github.com/cyxigo/wi/tree/main/test/benchmark).
-- **Wi is purely prototype-based**. Many languages use classes - Wi uses [objects](https://github.com/cyxigo/wi/wiki/Objects). You clone these objects and create whatever you want.
-- **Wi is simple**. You can learn its syntax in less than a week using its [documentation](https://github.com/cyxigo/wi/wiki).
-- **Wi is extendable**. You can easily extend Wi using its **Foreign Function Interface** and load your extensions via [`load`](https://github.com/cyxigo/wi/wiki/FFI) statement.
+- **Wi is fast**. Fast single-pass compiler to bytecode with **NaN** boxing value representation help Wi to [compete with other dynamic programming languages](https://github.com/cyxigo/wi/tree/main/test/benchmark#readme).
+- **Wi is simple**. You can learn its dead-simple syntax and standard library in less than a week using its [lovingly made documentation](https://github.com/cyxigo/wi/wiki).
+- **Wi is purely prototype-based**. Many languages use classes – Wi uses [objects](https://github.com/cyxigo/wi/wiki/Objects). You clone these objects and create whatever you want. No delegation, just pure cloning.
+- **Wi is extendable**. [Simple and straightforward FFI](https://github.com/cyxigo/wi/wiki/Wi-API-Reference) allows you to easily create libraries for Wi and use them with the ease of [one statement](https://github.com/cyxigo/wi/wiki/FFI).
 
-You can even [try Wi online!](https://cyxigo.github.io/wi/)
+Want to try it? [Try it here!](https://cyxigo.github.io/wi/)
 
 ## Building
 
