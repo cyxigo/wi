@@ -3,12 +3,12 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "../std/wi_array.h"
 #include "../std/wi_base.h"
-#include "../std/wi_map.h"
 #include "../std/wi_math.h"
 #include "../std/wi_os.h"
-#include "../std/wi_string.h"
+#include "../stm/wi_array.h"
+#include "../stm/wi_map.h"
+#include "../stm/wi_string.h"
 #include "wi_box.h"
 #include "wi_gc.h"
 #include "wi_state.h"
@@ -17,33 +17,22 @@
 #include "wi_value.h"
 
 void
+wi_def_stm(struct wi_state* state) {
+    wi_state_def_string_stm(state);
+    wi_state_def_array_stm(state);
+    wi_state_def_map_stm(state);
+}
+
+void
 wi_def_std(struct wi_state* state) {
     wi_state_def_base_foreign(state);
     wi_state_def_os_foreign(state);
     wi_state_def_math_foreign(state);
-    wi_state_def_string_foreign(state);
-    wi_state_def_array_foreign(state);
-    wi_state_def_map_foreign(state);
-}
-
-static void
-_def_foreign(struct wi_state* state, struct wi_table* table, const char* name, wi_foreign_fn fn, int arity,
-             bool is_variadic) {
-    struct wi_string* name_box = wi_make_string(state->gc, name);
-    WI_GC_PUSH_ROOT(state->gc, name_box);
-
-    struct wi_foreign* foreign = wi_new_foreign(state->gc, fn, arity, is_variadic);
-    WI_GC_PUSH_ROOT(state->gc, foreign);
-
-    wi_table_set(table, WI_MAKE_BOX_VALUE(name_box), WI_MAKE_BOX_VALUE(foreign));
-
-    wi_gc_pop_root(state->gc);
-    wi_gc_pop_root(state->gc);
 }
 
 void
 wi_def_foreign(struct wi_state* state, const char* name, wi_foreign_fn fn, int arity, bool is_variadic) {
-    _def_foreign(state, &state->foreign, name, fn, arity, is_variadic);
+    wi_table_set_foreign(&state->foreign, name, fn, arity, is_variadic);
 }
 
 struct wi_object*
@@ -119,7 +108,8 @@ wi_object_set_field_userdata(struct wi_state* state, struct wi_object* object, c
 void
 wi_object_set_field_foreign(struct wi_state* state, struct wi_object* object, const char* name, wi_foreign_fn fn,
                             int arity, bool is_variadic) {
-    _def_foreign(state, &object->fields, name, fn, arity, is_variadic);
+    WI_UNUSED(state);
+    wi_table_set_foreign(&object->fields, name, fn, arity, is_variadic);
 }
 
 bool

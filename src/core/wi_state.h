@@ -126,9 +126,13 @@ struct wi_state {
     */
     struct wi_lib_node* libs;
 
-    struct wi_object* string_obj;
-    struct wi_object* array_obj;
-    struct wi_object* map_obj;
+    /*
+        stm - standard method library
+        methods for builtin types
+    */
+    struct wi_table stm_string;
+    struct wi_table stm_array;
+    struct wi_table stm_map;
 
     /* these are used in _base_try so we don't need to push 3 gc roots every time we need to call it */
     struct wi_string* ok_str;

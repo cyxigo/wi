@@ -270,26 +270,23 @@ _array_where(struct wi_state* state, int arg_count) {
 }
 
 void
-wi_state_def_array_foreign(struct wi_state* state) {
-    struct wi_object* object = wi_def_object(state, "array");
-
-    wi_object_set_field_foreign(state, object, "copy", _array_copy, 1, false);
-    wi_object_set_field_foreign(state, object, "clear", _array_clear, 1, false);
-    wi_object_set_field_foreign(state, object, "capacity", _array_capacity, 1, false);
-    wi_object_set_field_foreign(state, object, "count", _array_count, 1, false);
-    wi_object_set_field_foreign(state, object, "reverse", _array_reverse, 1, false);
-    wi_object_set_field_foreign(state, object, "reversed", _array_reversed, 1, false);
-    wi_object_set_field_foreign(state, object, "add", _array_add, 2, false);
-    wi_object_set_field_foreign(state, object, "has", _array_has, 2, false);
-    wi_object_set_field_foreign(state, object, "index_of", _array_index_of, 2, false);
-    wi_object_set_field_foreign(state, object, "remove", _array_remove, 2, false);
-    wi_object_set_field_foreign(state, object, "remove_at", _array_remove_at, 2, false);
-    wi_object_set_field_foreign(state, object, "pop", _array_pop, 1, false);
-    wi_object_set_field_foreign(state, object, "concat", _array_concat, 0, true);
-    wi_object_set_field_foreign(state, object, "slice", _array_slice, 3, false);
-    wi_object_set_field_foreign(state, object, "each", _array_each, 2, false);
-    wi_object_set_field_foreign(state, object, "select", _array_select, 2, false);
-    wi_object_set_field_foreign(state, object, "where", _array_where, 2, false);
-
-    state->array_obj = object;
+wi_state_def_array_stm(struct wi_state* state) {
+    struct wi_table* table = &state->stm_array;
+    wi_table_set_foreign(table, "copy", _array_copy, 1, false);
+    wi_table_set_foreign(table, "clear", _array_clear, 1, false);
+    wi_table_set_foreign(table, "capacity", _array_capacity, 1, false);
+    wi_table_set_foreign(table, "count", _array_count, 1, false);
+    wi_table_set_foreign(table, "reverse", _array_reverse, 1, false);
+    wi_table_set_foreign(table, "reversed", _array_reversed, 1, false);
+    wi_table_set_foreign(table, "add", _array_add, 2, false);
+    wi_table_set_foreign(table, "has", _array_has, 2, false);
+    wi_table_set_foreign(table, "index_of", _array_index_of, 2, false);
+    wi_table_set_foreign(table, "remove", _array_remove, 2, false);
+    wi_table_set_foreign(table, "remove_at", _array_remove_at, 2, false);
+    wi_table_set_foreign(table, "pop", _array_pop, 1, false);
+    wi_table_set_foreign(table, "concat", _array_concat, 0, true);
+    wi_table_set_foreign(table, "slice", _array_slice, 3, false);
+    wi_table_set_foreign(table, "each", _array_each, 2, false);
+    wi_table_set_foreign(table, "select", _array_select, 2, false);
+    wi_table_set_foreign(table, "where", _array_where, 2, false);
 }

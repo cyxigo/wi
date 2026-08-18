@@ -252,19 +252,16 @@ end:
 }
 
 void
-wi_state_def_string_foreign(struct wi_state* state) {
-    struct wi_object* object = wi_def_object(state, "string");
-
-    wi_object_set_field_foreign(state, object, "sub", _string_sub, 3, false);
-    wi_object_set_field_foreign(state, object, "upper", _string_upper, 1, false);
-    wi_object_set_field_foreign(state, object, "lower", _string_lower, 1, false);
-    wi_object_set_field_foreign(state, object, "trim", _string_trim, 1, false);
-    wi_object_set_field_foreign(state, object, "has", _string_has, 2, false);
-    wi_object_set_field_foreign(state, object, "starts_with", _string_starts_with, 2, false);
-    wi_object_set_field_foreign(state, object, "ends_with", _string_ends_with, 2, false);
-    wi_object_set_field_foreign(state, object, "replace", _string_replace, 3, false);
-    wi_object_set_field_foreign(state, object, "split", _string_split, 2, false);
-    wi_object_set_field_foreign(state, object, "reverse", _string_reverse, 1, false);
-
-    state->string_obj = object;
+wi_state_def_string_stm(struct wi_state* state) {
+    struct wi_table* table = &state->stm_string;
+    wi_table_set_foreign(table, "sub", _string_sub, 3, false);
+    wi_table_set_foreign(table, "upper", _string_upper, 1, false);
+    wi_table_set_foreign(table, "lower", _string_lower, 1, false);
+    wi_table_set_foreign(table, "trim", _string_trim, 1, false);
+    wi_table_set_foreign(table, "has", _string_has, 2, false);
+    wi_table_set_foreign(table, "starts_with", _string_starts_with, 2, false);
+    wi_table_set_foreign(table, "ends_with", _string_ends_with, 2, false);
+    wi_table_set_foreign(table, "replace", _string_replace, 3, false);
+    wi_table_set_foreign(table, "split", _string_split, 2, false);
+    wi_table_set_foreign(table, "reverse", _string_reverse, 1, false);
 }

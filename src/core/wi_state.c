@@ -120,9 +120,9 @@ wi_new_state(wi_conf conf) {
 
     state->libs = NULL;
 
-    state->string_obj = NULL;
-    state->array_obj  = NULL;
-    state->map_obj    = NULL;
+    wi_table_init(&state->stm_string, state->gc);
+    wi_table_init(&state->stm_array, state->gc);
+    wi_table_init(&state->stm_map, state->gc);
 
     state->ok_str    = NULL;
     state->value_str = NULL;
@@ -145,6 +145,10 @@ wi_delete_state(struct wi_state* state) {
     wi_table_free(&state->global_attrs);
     wi_table_free(&state->foreign);
     wi_table_free(&state->required);
+
+    wi_table_free(&state->stm_string);
+    wi_table_free(&state->stm_array);
+    wi_table_free(&state->stm_map);
 
     wi_delete_gc(state->gc);
 
@@ -783,21 +787,22 @@ _state_resolve_method(struct wi_state* state, wi_value receiver, wi_value name) 
         return function;
     }
 
-    struct wi_object* object = NULL;
+    struct wi_table* methods;
 
     if (wi_value_is_string(receiver)) {
-        object = state->string_obj;
+        methods = &state->stm_string;
     } else if (wi_value_is_array(receiver)) {
-        object = state->array_obj;
+        methods = &state->stm_array;
     } else if (wi_value_is_map(receiver)) {
-        object = state->map_obj;
-    }
-
-    if (WI_UNLIKELY(!object)) {
+        methods = &state->stm_map;
+    } else {
         wi_state_error(state, "value type %s has no methods", wi_value_type(receiver));
     }
 
-    _state_resolve_field(state, object, name, &function);
+    if (WI_UNLIKELY(!wi_table_get(methods, name, &function))) {
+        wi_state_error(state, "%s has no method %s", wi_value_type(receiver), wi_value_as_cstring(name));
+    }
+
     return function;
 }
 

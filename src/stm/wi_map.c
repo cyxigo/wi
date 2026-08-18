@@ -195,21 +195,18 @@ _map_where(struct wi_state* state, int arg_count) {
 }
 
 void
-wi_state_def_map_foreign(struct wi_state* state) {
-    struct wi_object* object = wi_def_object(state, "map");
-
-    wi_object_set_field_foreign(state, object, "copy", _map_copy, 1, false);
-    wi_object_set_field_foreign(state, object, "clear", _map_clear, 1, false);
-    wi_object_set_field_foreign(state, object, "capacity", _map_capacity, 1, false);
-    wi_object_set_field_foreign(state, object, "count", _map_count, 1, false);
-    wi_object_set_field_foreign(state, object, "keys", _map_keys, 1, false);
-    wi_object_set_field_foreign(state, object, "values", _map_values, 1, false);
-    wi_object_set_field_foreign(state, object, "has", _map_has, 2, false);
-    wi_object_set_field_foreign(state, object, "get_or_default", _map_get_or_default, 3, false);
-    wi_object_set_field_foreign(state, object, "remove", _map_remove, 2, false);
-    wi_object_set_field_foreign(state, object, "each", _map_each, 2, false);
-    wi_object_set_field_foreign(state, object, "select", _map_select, 3, false);
-    wi_object_set_field_foreign(state, object, "where", _map_where, 2, false);
-
-    state->map_obj = object;
+wi_state_def_map_stm(struct wi_state* state) {
+    struct wi_table* table = &state->stm_map;
+    wi_table_set_foreign(table, "copy", _map_copy, 1, false);
+    wi_table_set_foreign(table, "clear", _map_clear, 1, false);
+    wi_table_set_foreign(table, "capacity", _map_capacity, 1, false);
+    wi_table_set_foreign(table, "count", _map_count, 1, false);
+    wi_table_set_foreign(table, "keys", _map_keys, 1, false);
+    wi_table_set_foreign(table, "values", _map_values, 1, false);
+    wi_table_set_foreign(table, "has", _map_has, 2, false);
+    wi_table_set_foreign(table, "get_or_default", _map_get_or_default, 3, false);
+    wi_table_set_foreign(table, "remove", _map_remove, 2, false);
+    wi_table_set_foreign(table, "each", _map_each, 2, false);
+    wi_table_set_foreign(table, "select", _map_select, 3, false);
+    wi_table_set_foreign(table, "where", _map_where, 2, false);
 }

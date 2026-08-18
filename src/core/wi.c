@@ -24,7 +24,9 @@ _init_g_state(wi_conf conf) {
         return false;
     }
 
+    wi_def_stm(_g_state);
     wi_def_std(_g_state);
+
     return true;
 }
 

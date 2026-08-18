@@ -130,6 +130,20 @@ wi_table_set(struct wi_table* table, wi_value key, wi_value value) {
     return is_new_key;
 }
 
+void
+wi_table_set_foreign(struct wi_table* table, const char* name, wi_foreign_fn fn, int arity, bool is_variadic) {
+    struct wi_string* name_box = wi_make_string(table->gc, name);
+    WI_GC_PUSH_ROOT(table->gc, name_box);
+
+    struct wi_foreign* foreign = wi_new_foreign(table->gc, fn, arity, is_variadic);
+    WI_GC_PUSH_ROOT(table->gc, foreign);
+
+    wi_table_set(table, WI_MAKE_BOX_VALUE(name_box), WI_MAKE_BOX_VALUE(foreign));
+
+    wi_gc_pop_root(table->gc);
+    wi_gc_pop_root(table->gc);
+}
+
 bool
 wi_table_get(struct wi_table* table, wi_value key, wi_value* value) {
     if (table->count == 0) {

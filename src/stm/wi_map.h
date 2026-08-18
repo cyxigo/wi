@@ -4,6 +4,6 @@
 #include "../core/wi_state.h"
 
 void
-wi_state_def_map_foreign(struct wi_state* state);
+wi_state_def_map_stm(struct wi_state* state);
 
 #endif

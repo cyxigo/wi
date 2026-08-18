@@ -277,6 +277,10 @@ _gc_mark_roots(struct wi_gc* gc) {
     _gc_mark_table(gc, &state->required);
     _gc_mark_table(gc, &state->foreign);
 
+    _gc_mark_table(gc, &state->stm_string);
+    _gc_mark_table(gc, &state->stm_array);
+    _gc_mark_table(gc, &state->stm_map);
+
     for (struct wi_upvalue* upvalue = state->open_upvalues; upvalue; upvalue = upvalue->next) {
         _GC_MARK_BOX(gc, upvalue);
     }

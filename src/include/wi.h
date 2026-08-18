@@ -64,12 +64,21 @@ typedef char* (*wi_load_require_fn)(wi_state* state, const char* path);
 typedef bool (*wi_require_exists_fn)(wi_state* state, const char* path);
 
 /**
- * Define the standard library in a state
+ * Define the standard library (STD) in a state
  *
  * @param state Wi state instance
  */
 WI_API void
 wi_def_std(wi_state* state);
+
+/**
+ * Define the standard method library (STM) in a state - methods for builtin types:
+ * string, array, map. Only reachable via the `->` method-call operator
+ *
+ * @param state Wi state instance
+ */
+WI_API void
+wi_def_stm(wi_state* state);
 
 /**
  * Define a foreign (C) function in the state
