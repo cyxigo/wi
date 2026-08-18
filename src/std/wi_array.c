@@ -109,6 +109,22 @@ _array_has(struct wi_state* state, int arg_count) {
 }
 
 static void
+_array_index_of(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
+    struct wi_array* array = _check_arg1_array(state);
+    int              index = -1;
+
+    for (int i = 0; i < array->items.count; i++) {
+        if (wi_values_equal(array->items.data[i], state->ffi_stack[2])) {
+            index = i;
+            break;
+        }
+    }
+
+    wi_slot_set_real(state, 0, index);
+}
+
+static void
 _array_remove(struct wi_state* state, int arg_count) {
     WI_UNUSED(arg_count);
     struct wi_array* array = _check_arg1_array(state);
@@ -214,6 +230,45 @@ _array_each(struct wi_state* state, int arg_count) {
     wi_slot_set_null(state, 0);
 }
 
+static void
+_array_select(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
+    struct wi_array*   array   = _check_arg1_array(state);
+    struct wi_closure* closure = wi_slot_check_function(state, 2, 1);
+    struct wi_array*   result  = wi_new_array(state->gc);
+    state->ffi_stack[0]        = WI_MAKE_BOX_VALUE(result);
+
+    wi_value_buf_reserve(&result->items, array->items.count);
+
+    for (int i = 0; i < array->items.count; i++) {
+        wi_state_push(state, WI_MAKE_BOX_VALUE(closure));
+        wi_state_push(state, array->items.data[i]);
+        wi_state_call(state, closure, 1, false);
+        wi_value_buf_add(&result->items, wi_state_pop(state));
+    }
+}
+
+static void
+_array_where(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
+    struct wi_array*   array   = _check_arg1_array(state);
+    struct wi_closure* closure = wi_slot_check_function(state, 2, 1);
+    struct wi_array*   result  = wi_new_array(state->gc);
+    state->ffi_stack[0]        = WI_MAKE_BOX_VALUE(result);
+
+    for (int i = 0; i < array->items.count; i++) {
+        wi_value item = array->items.data[i];
+
+        wi_state_push(state, WI_MAKE_BOX_VALUE(closure));
+        wi_state_push(state, item);
+        wi_state_call(state, closure, 1, false);
+
+        if (!wi_value_is_falsy(wi_state_pop(state))) {
+            wi_value_buf_add(&result->items, item);
+        }
+    }
+}
+
 void
 wi_state_def_array_foreign(struct wi_state* state) {
     struct wi_object* object = wi_def_object(state, "array");
@@ -226,12 +281,15 @@ wi_state_def_array_foreign(struct wi_state* state) {
     wi_object_set_field_foreign(state, object, "reversed", _array_reversed, 1, false);
     wi_object_set_field_foreign(state, object, "add", _array_add, 2, false);
     wi_object_set_field_foreign(state, object, "has", _array_has, 2, false);
+    wi_object_set_field_foreign(state, object, "index_of", _array_index_of, 2, false);
     wi_object_set_field_foreign(state, object, "remove", _array_remove, 2, false);
     wi_object_set_field_foreign(state, object, "remove_at", _array_remove_at, 2, false);
     wi_object_set_field_foreign(state, object, "pop", _array_pop, 1, false);
     wi_object_set_field_foreign(state, object, "concat", _array_concat, 0, true);
     wi_object_set_field_foreign(state, object, "slice", _array_slice, 3, false);
     wi_object_set_field_foreign(state, object, "each", _array_each, 2, false);
+    wi_object_set_field_foreign(state, object, "select", _array_select, 2, false);
+    wi_object_set_field_foreign(state, object, "where", _array_where, 2, false);
 
     state->array_obj = object;
 }

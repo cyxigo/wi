@@ -136,6 +136,64 @@ _map_each(struct wi_state* state, int arg_count) {
     wi_slot_set_null(state, 0);
 }
 
+static void
+_map_select(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
+    struct wi_map* map    = _check_arg1_map(state);
+    struct wi_map* result = wi_new_map(state->gc);
+    state->ffi_stack[0]   = WI_MAKE_BOX_VALUE(result);
+    wi_table_reserve(&result->items, map->items.count);
+
+    struct wi_closure* k_closure = wi_slot_check_function(state, 2, 1);
+    struct wi_closure* v_closure = wi_slot_check_function(state, 3, 1);
+
+    for (int i = 0; i < map->items.capacity; i++) {
+        struct wi_entry* entry = &map->items.entries[i];
+
+        if (wi_value_is_empty(entry->key)) {
+            continue;
+        }
+
+        wi_state_push(state, WI_MAKE_BOX_VALUE(k_closure));
+        wi_state_push(state, entry->key);
+        wi_state_call(state, k_closure, 1, false);
+
+        wi_value key = wi_state_pop(state);
+
+        wi_state_push(state, WI_MAKE_BOX_VALUE(v_closure));
+        wi_state_push(state, entry->value);
+        wi_state_call(state, v_closure, 1, false);
+
+        wi_table_set(&result->items, key, wi_state_pop(state));
+    }
+}
+
+static void
+_map_where(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
+    struct wi_map*     map     = _check_arg1_map(state);
+    struct wi_closure* closure = wi_slot_check_function(state, 2, 2);
+    struct wi_map*     result  = wi_new_map(state->gc);
+    state->ffi_stack[0]        = WI_MAKE_BOX_VALUE(result);
+
+    for (int i = 0; i < map->items.capacity; i++) {
+        struct wi_entry* entry = &map->items.entries[i];
+
+        if (wi_value_is_empty(entry->key)) {
+            continue;
+        }
+
+        wi_state_push(state, WI_MAKE_BOX_VALUE(closure));
+        wi_state_push(state, entry->key);
+        wi_state_push(state, entry->value);
+        wi_state_call(state, closure, 2, false);
+
+        if (!wi_value_is_falsy(wi_state_pop(state))) {
+            wi_table_set(&result->items, entry->key, entry->value);
+        }
+    }
+}
+
 void
 wi_state_def_map_foreign(struct wi_state* state) {
     struct wi_object* object = wi_def_object(state, "map");
@@ -150,6 +208,8 @@ wi_state_def_map_foreign(struct wi_state* state) {
     wi_object_set_field_foreign(state, object, "get_or_default", _map_get_or_default, 3, false);
     wi_object_set_field_foreign(state, object, "remove", _map_remove, 2, false);
     wi_object_set_field_foreign(state, object, "each", _map_each, 2, false);
+    wi_object_set_field_foreign(state, object, "select", _map_select, 3, false);
+    wi_object_set_field_foreign(state, object, "where", _map_where, 2, false);
 
     state->map_obj = object;
 }
