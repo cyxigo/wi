@@ -32,8 +32,8 @@
             <pre>
 <span class="token-kw">var</span> <span class="token-name">obj_person</span> = <span class="token-kw">object</span> {
     <span class="token-name">name</span> = <span class="token-string">""</span>;
-    <span class="token-name">greet</span> = <span class="token-kw">function</span>(<span class="token-name">self</span>) {
-        <span class="token-name">print</span>(<span class="token-string">"Hello, "</span> .. <span class="token-name">self</span>.<span class="token-name">name</span> .. <span class="token-lit-string">"!"</span>);
+    <span class="token-name">greet</span> = |<span class="token-name">self</span>| => {
+        <span class="token-name">print</span>(<span class="token-string">"Hello, "</span> .. <span class="token-name">self</span>.<span class="token-name">name</span> .. <span class="token-string">"!"</span>);
     };
 };
 
