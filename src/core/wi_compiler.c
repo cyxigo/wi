@@ -651,8 +651,8 @@ _compiler_function_expr(struct wi_compiler* outer) {
     wi_compiler_init(&compiler, outer, outer->state, outer->parser, outer->global_attrs);
     _compiler_init_local(&compiler);
 
-    bool has_params = compiler.parser->prev.kind == WI_TOKEN_PIPE;
-
+    /* check if previous token is truly a | and not || (pipe pipe, empty function) */
+    bool has_params          = compiler.parser->prev.kind == WI_TOKEN_PIPE;
     compiler.prototype->name = _compiler_get_name(compiler.outer);
 
     if (compiler.prototype->name) {
@@ -811,6 +811,7 @@ _compiler_primary_expr(struct wi_compiler* compiler) {
         case WI_TOKEN_KW_FALSE:
             _compiler_bool_expr(compiler);
             break;
+        /* empty function is || which is lexed as "pipe pipe" */
         case WI_TOKEN_PIPE:
         case WI_TOKEN_PIPE_PIPE:
             _compiler_function_expr(compiler);

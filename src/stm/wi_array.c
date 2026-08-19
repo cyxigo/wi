@@ -218,13 +218,13 @@ _array_slice(struct wi_state* state, int arg_count) {
 static void
 _array_each(struct wi_state* state, int arg_count) {
     WI_UNUSED(arg_count);
-    struct wi_array*   array   = _check_arg1_array(state);
-    struct wi_closure* closure = wi_slot_check_function(state, 2, 1);
+    struct wi_array* array    = _check_arg1_array(state);
+    wi_value         callback = wi_slot_check_callback(state, 2, 1);
 
     for (int i = 0; i < array->items.count; i++) {
-        wi_state_push(state, WI_MAKE_BOX_VALUE(closure));
+        wi_state_push(state, callback);
         wi_state_push(state, array->items.data[i]);
-        wi_state_call(state, closure, 1, true);
+        wi_state_call_value(state, callback, 1, true);
     }
 
     wi_slot_set_null(state, 0);
@@ -233,17 +233,17 @@ _array_each(struct wi_state* state, int arg_count) {
 static void
 _array_select(struct wi_state* state, int arg_count) {
     WI_UNUSED(arg_count);
-    struct wi_array*   array   = _check_arg1_array(state);
-    struct wi_closure* closure = wi_slot_check_function(state, 2, 1);
-    struct wi_array*   result  = wi_new_array(state->gc);
-    state->ffi_stack[0]        = WI_MAKE_BOX_VALUE(result);
+    struct wi_array* array    = _check_arg1_array(state);
+    wi_value         callback = wi_slot_check_callback(state, 2, 1);
+    struct wi_array* result   = wi_new_array(state->gc);
+    state->ffi_stack[0]       = WI_MAKE_BOX_VALUE(result);
 
     wi_value_buf_reserve(&result->items, array->items.count);
 
     for (int i = 0; i < array->items.count; i++) {
-        wi_state_push(state, WI_MAKE_BOX_VALUE(closure));
+        wi_state_push(state, callback);
         wi_state_push(state, array->items.data[i]);
-        wi_state_call(state, closure, 1, false);
+        wi_state_call_value(state, callback, 1, false);
         wi_value_buf_add(&result->items, wi_state_pop(state));
     }
 }
@@ -251,17 +251,17 @@ _array_select(struct wi_state* state, int arg_count) {
 static void
 _array_where(struct wi_state* state, int arg_count) {
     WI_UNUSED(arg_count);
-    struct wi_array*   array   = _check_arg1_array(state);
-    struct wi_closure* closure = wi_slot_check_function(state, 2, 1);
-    struct wi_array*   result  = wi_new_array(state->gc);
-    state->ffi_stack[0]        = WI_MAKE_BOX_VALUE(result);
+    struct wi_array* array    = _check_arg1_array(state);
+    wi_value         callback = wi_slot_check_callback(state, 2, 1);
+    struct wi_array* result   = wi_new_array(state->gc);
+    state->ffi_stack[0]       = WI_MAKE_BOX_VALUE(result);
 
     for (int i = 0; i < array->items.count; i++) {
         wi_value item = array->items.data[i];
 
-        wi_state_push(state, WI_MAKE_BOX_VALUE(closure));
+        wi_state_push(state, callback);
         wi_state_push(state, item);
-        wi_state_call(state, closure, 1, false);
+        wi_state_call_value(state, callback, 1, false);
 
         if (!wi_value_is_falsy(wi_state_pop(state))) {
             wi_value_buf_add(&result->items, item);

@@ -81,24 +81,21 @@ _base_assert(struct wi_state* state, int arg_count) {
 
 static void
 _base_try(struct wi_state* state, int arg_count) {
-    struct wi_closure*   closure   = wi_slot_check_function(state, 1, -1);
-    struct wi_prototype* prototype = closure->prototype;
-    wi_state_check_arity(state, prototype->arity, (uint8_t)(arg_count - 1), prototype->is_variadic);
-
-    struct wi_object* result = wi_new_object(state->gc);
-    state->ffi_stack[0]      = WI_MAKE_BOX_VALUE(result);
+    wi_value          callback = wi_slot_check_callback(state, 1, (uint8_t)(arg_count - 1));
+    struct wi_object* result   = wi_new_object(state->gc);
+    state->ffi_stack[0]        = WI_MAKE_BOX_VALUE(result);
     wi_table_reserve(&result->fields, 3);
 
     struct wi_recovery* recovery = wi_state_push_recovery(state);
 
     if (setjmp(recovery->jmp) == WI_JMP_OK) {
-        wi_state_push(state, WI_MAKE_BOX_VALUE(closure));
+        wi_state_push(state, callback);
 
         for (int i = 0; i < arg_count - 1; i++) {
             wi_state_push(state, state->ffi_stack[i + 2]);
         }
 
-        wi_state_call(state, closure, (uint8_t)(arg_count - 1), false);
+        wi_state_call_value(state, callback, (uint8_t)(arg_count - 1), false);
         wi_value call_value = wi_state_pop(state);
 
         wi_table_set(&result->fields, WI_MAKE_BOX_VALUE(state->ok_str), wi_make_true_value());
