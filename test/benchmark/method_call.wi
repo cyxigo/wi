@@ -7,7 +7,7 @@ var obj_toggle = object {
         self.state = !self.state;
         return self;
     };
-};w
+};
 
 var new_toggle = |start_state| => {
     return new obj_toggle { 
