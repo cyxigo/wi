@@ -286,14 +286,11 @@ wi_call(struct wi_state* state, uint8_t arg_count, char** error) {
     if (setjmp(recovery->jmp) == WI_JMP_OK) {
         wi_value value = wi_state_peek(state, arg_count);
 
-        if (wi_value_is_foreign(value)) {
-            wi_state_call_foreign(state, wi_value_as_foreign(value), arg_count);
-        } else if (wi_value_is_closure(value)) {
-            wi_state_call(state, wi_value_as_closure(value), arg_count, false);
-        } else {
+        if (!wi_value_is_foreign(value) && !wi_value_is_closure(value)) {
             wi_state_error(state, "cannot call a value of type %s", wi_value_type(value));
         }
 
+        wi_state_call(state, value, arg_count, false);
         failed = false;
     } else {
         failed = true;

@@ -1494,10 +1494,22 @@ wi_state_call_foreign(struct wi_state* state, struct wi_foreign* foreign, uint8_
 }
 
 enum wi_run_result
-wi_state_call(struct wi_state* state, struct wi_closure* closure, uint8_t arg_count, bool drop_result) {
+wi_state_call(struct wi_state* state, wi_value callable, uint8_t arg_count, bool drop_result) {
+    if (wi_value_is_foreign(callable)) {
+        wi_state_call_foreign(state, wi_value_as_foreign(callable), arg_count);
+
+        if (drop_result) {
+            wi_state_drop(state);
+        }
+
+        return WI_RUN_OK;
+    }
+
     if (state->c_call_depth == WI_CSTACK_MAX) {
         wi_state_error(state, "C call stack overflow (limit is %i)", WI_CSTACK_MAX);
     }
+
+    struct wi_closure* closure = wi_value_as_closure(callable);
 
     /* same thing as wi_call! but instead storing where the ffi stack starts */
     ptrdiff_t ffi_stack_offset = state->ffi_stack ? state->ffi_stack - state->stack : -1;
@@ -1510,21 +1522,6 @@ wi_state_call(struct wi_state* state, struct wi_closure* closure, uint8_t arg_co
 
     state->ffi_stack = ffi_stack_offset == -1 ? NULL : state->stack + ffi_stack_offset;
     return result;
-}
-
-enum wi_run_result
-wi_state_call_value(struct wi_state* state, wi_value callable, uint8_t arg_count, bool drop_result) {
-    if (wi_value_is_foreign(callable)) {
-        wi_state_call_foreign(state, wi_value_as_foreign(callable), arg_count);
-
-        if (drop_result) {
-            wi_state_drop(state);
-        }
-
-        return WI_RUN_OK;
-    }
-
-    return wi_state_call(state, wi_value_as_closure(callable), arg_count, drop_result);
 }
 
 enum wi_run_result

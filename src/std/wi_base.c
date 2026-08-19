@@ -95,7 +95,7 @@ _base_try(struct wi_state* state, int arg_count) {
             wi_state_push(state, state->ffi_stack[i + 2]);
         }
 
-        wi_state_call_value(state, callback, (uint8_t)(arg_count - 1), false);
+        wi_state_call(state, callback, (uint8_t)(arg_count - 1), false);
         wi_value call_value = wi_state_pop(state);
 
         wi_table_set(&result->fields, WI_MAKE_BOX_VALUE(state->ok_str), wi_make_true_value());

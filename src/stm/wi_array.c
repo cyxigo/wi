@@ -224,7 +224,7 @@ _array_each(struct wi_state* state, int arg_count) {
     for (int i = 0; i < array->items.count; i++) {
         wi_state_push(state, callback);
         wi_state_push(state, array->items.data[i]);
-        wi_state_call_value(state, callback, 1, true);
+        wi_state_call(state, callback, 1, true);
     }
 
     wi_slot_set_null(state, 0);
@@ -243,7 +243,7 @@ _array_select(struct wi_state* state, int arg_count) {
     for (int i = 0; i < array->items.count; i++) {
         wi_state_push(state, callback);
         wi_state_push(state, array->items.data[i]);
-        wi_state_call_value(state, callback, 1, false);
+        wi_state_call(state, callback, 1, false);
         wi_value_buf_add(&result->items, wi_state_pop(state));
     }
 }
@@ -261,7 +261,7 @@ _array_where(struct wi_state* state, int arg_count) {
 
         wi_state_push(state, callback);
         wi_state_push(state, item);
-        wi_state_call_value(state, callback, 1, false);
+        wi_state_call(state, callback, 1, false);
 
         if (!wi_value_is_falsy(wi_state_pop(state))) {
             wi_value_buf_add(&result->items, item);

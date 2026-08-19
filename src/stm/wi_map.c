@@ -130,7 +130,7 @@ _map_each(struct wi_state* state, int arg_count) {
         wi_state_push(state, callback);
         wi_state_push(state, entry->key);
         wi_state_push(state, entry->value);
-        wi_state_call_value(state, callback, 2, true);
+        wi_state_call(state, callback, 2, true);
     }
 
     wi_slot_set_null(state, 0);
@@ -156,13 +156,13 @@ _map_select(struct wi_state* state, int arg_count) {
 
         wi_state_push(state, k_callback);
         wi_state_push(state, entry->key);
-        wi_state_call_value(state, k_callback, 1, false);
+        wi_state_call(state, k_callback, 1, false);
 
         wi_value key = wi_state_pop(state);
 
         wi_state_push(state, v_callback);
         wi_state_push(state, entry->value);
-        wi_state_call_value(state, v_callback, 1, false);
+        wi_state_call(state, v_callback, 1, false);
 
         wi_table_set(&result->items, key, wi_state_pop(state));
     }
@@ -186,7 +186,7 @@ _map_where(struct wi_state* state, int arg_count) {
         wi_state_push(state, callback);
         wi_state_push(state, entry->key);
         wi_state_push(state, entry->value);
-        wi_state_call_value(state, callback, 2, false);
+        wi_state_call(state, callback, 2, false);
 
         if (!wi_value_is_falsy(wi_state_pop(state))) {
             wi_table_set(&result->items, entry->key, entry->value);

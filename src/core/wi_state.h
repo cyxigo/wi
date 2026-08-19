@@ -235,9 +235,7 @@ wi_state_check_arity(struct wi_state* state, int arity, uint8_t arg_count, bool 
 void
 wi_state_call_foreign(struct wi_state* state, struct wi_foreign* foreign, uint8_t arg_count);
 enum wi_run_result
-wi_state_call(struct wi_state* state, struct wi_closure* closure, uint8_t arg_count, bool drop_result);
-enum wi_run_result
-wi_state_call_value(struct wi_state* state, wi_value callable, uint8_t arg_count, bool drop_result);
+wi_state_call(struct wi_state* state, wi_value callable, uint8_t arg_count, bool drop_result);
 
 enum wi_run_result
 wi_state_run(struct wi_state* state, const char* file_path, const char* src);
