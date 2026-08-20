@@ -118,7 +118,7 @@ function initRuntime() {
     runtimeInitialized = true;
     if (!Module["noFSInit"] && !FS.initialized) FS.init();
     TTY.init();
-    wasmExports["z"]();
+    wasmExports["A"]();
     FS.ignorePermissions = false;
 }
 function postRun() {
@@ -2928,6 +2928,11 @@ FS.staticInit();
     }
 }
 Module["ccall"] = ccall;
+function _print_warnings(warnings) {
+    if (Module.printWarn) {
+        Module.printWarn(UTF8ToString(warnings));
+    }
+}
 var _wi_wasm_init,
     _wi_wasm_run,
     _wi_wasm_get_error,
@@ -2940,15 +2945,15 @@ var _wi_wasm_init,
     wasmMemory,
     wasmTable;
 function assignWasmExports(wasmExports) {
-    _wi_wasm_init = Module["_wi_wasm_init"] = wasmExports["B"];
-    _wi_wasm_run = Module["_wi_wasm_run"] = wasmExports["C"];
-    _wi_wasm_get_error = Module["_wi_wasm_get_error"] = wasmExports["D"];
-    _setThrew = wasmExports["E"];
-    __emscripten_stack_restore = wasmExports["F"];
-    __emscripten_stack_alloc = wasmExports["G"];
-    _emscripten_stack_get_current = wasmExports["H"];
-    memory = wasmMemory = wasmExports["y"];
-    __indirect_function_table = wasmTable = wasmExports["A"];
+    _wi_wasm_init = Module["_wi_wasm_init"] = wasmExports["C"];
+    _wi_wasm_run = Module["_wi_wasm_run"] = wasmExports["D"];
+    _wi_wasm_get_error = Module["_wi_wasm_get_error"] = wasmExports["E"];
+    _setThrew = wasmExports["F"];
+    __emscripten_stack_restore = wasmExports["G"];
+    __emscripten_stack_alloc = wasmExports["H"];
+    _emscripten_stack_get_current = wasmExports["I"];
+    memory = wasmMemory = wasmExports["z"];
+    __indirect_function_table = wasmTable = wasmExports["B"];
 }
 var wasmImports = {
     x: ___syscall_faccessat,
@@ -2956,6 +2961,7 @@ var wasmImports = {
     t: ___syscall_ioctl,
     u: ___syscall_openat,
     n: __emscripten_throw_longjmp,
+    y: _print_warnings,
     w: _clock_time_get,
     v: _emscripten_date_now,
     o: _emscripten_resize_heap,
@@ -2966,13 +2972,13 @@ var wasmImports = {
     p: _fd_seek,
     i: _fd_write,
     d: invoke_ii,
-    e: invoke_iii,
-    f: invoke_iiii,
+    f: invoke_iii,
+    g: invoke_iiii,
     l: invoke_iiiii,
     m: invoke_iijii,
     c: invoke_iijj,
     k: invoke_jiii,
-    g: invoke_vi,
+    e: invoke_vi,
     a: invoke_vii,
     b: invoke_viii,
 };

@@ -5,6 +5,11 @@ var Module = {
     printErr: function (text) {
         document.getElementById("output").textContent += text + "\n";
     },
+    printWarn: function (text) {
+        var output = document.getElementById("output");
+        output.textContent += text;
+        output.style.color = "#b58900";
+    },
     onAbort: function (what) {
         var run = document.getElementById("run");
         run.textContent = "Failed to load";
