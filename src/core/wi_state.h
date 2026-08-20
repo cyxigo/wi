@@ -69,6 +69,7 @@ struct wi_recovery {
 
 struct wi_state {
     char* error;
+    char* warnings;
     /*
         this is separated because... we are out of memory, what would we do? allocate MORE memory?
         no, instead we use this little static string thingy
@@ -80,6 +81,7 @@ struct wi_state {
     wi_conf       conf;
     struct wi_gc* gc;
 
+    wi_on_compile_fn     on_compile;
     wi_load_require_fn   load_require;
     wi_require_exists_fn require_exists;
 
@@ -183,14 +185,32 @@ wi_state_reset_error(struct wi_state* state) {
     state->was_eof_error = false;
 }
 
+WI_INLINE void
+wi_state_reset_warnings(struct wi_state* state) {
+    free(state->warnings);
+    state->warnings = NULL;
+}
+
+void
+wi_state_append_to(struct wi_state* state, char** t_buf, const char* format, ...);
+
 void
 wi_state_append_error_va(struct wi_state* state, const char* format, va_list args);
 void
 wi_state_append_error(struct wi_state* state, const char* format, ...);
 
+void
+wi_state_append_warning_va(struct wi_state* state, const char* format, va_list args);
+void
+wi_state_append_warning(struct wi_state* state, const char* format, ...);
+
 const char*
 wi_state_get_error(struct wi_state* state);
+const char*
+wi_state_get_warnings(struct wi_state* state);
 
+void
+wi_state_set_on_compile_fn(struct wi_state* state, wi_on_compile_fn fn);
 void
 wi_state_set_require_load_fn(struct wi_state* state, wi_load_require_fn fn);
 void

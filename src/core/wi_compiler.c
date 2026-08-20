@@ -75,6 +75,8 @@ wi_compiler_init(struct wi_compiler* compiler, struct wi_compiler* outer, struct
     local->name                     = WI_BLANK_TOKEN;
     local->depth                    = 0;
     local->is_captured              = false;
+    local->used                     = true;
+    local->attrs                    = WI_DEFAULT_ATTRS;
 }
 
 static const int _opcode_effects[] = {
@@ -276,6 +278,7 @@ _compiler_decl_var(struct wi_compiler* compiler, struct wi_token name, wi_attrs 
     local->name                     = name;
     local->depth                    = -1;
     local->is_captured              = false;
+    local->used                     = false;
     local->attrs                    = attrs;
 }
 
@@ -313,12 +316,23 @@ _compiler_begin_scope(struct wi_compiler* compiler) {
 }
 
 static void
+_compiler_warn_unused(struct wi_compiler* compiler, struct wi_compiler_local* local) {
+    if (!local->used && !wi_attr_is_set(local->attrs, WI_ATTR_UNUSED)) {
+        wi_parser_warning_at(compiler->parser, local->name, "local variable %.*s was defined but not used",
+                             local->name.count, local->name.start);
+    }
+}
+
+static void
 _compiler_end_scope(struct wi_compiler* compiler) {
     compiler->scope_depth--;
+    struct wi_compiler_local* local;
 
     while (compiler->local_count > 0 &&
-           compiler->locals[compiler->local_count - 1].depth > compiler->scope_depth) {
-        if (compiler->locals[compiler->local_count - 1].is_captured) {
+           ((local = &compiler->locals[compiler->local_count - 1]))->depth > compiler->scope_depth) {
+        _compiler_warn_unused(compiler, local);
+
+        if (local->is_captured) {
             _compiler_emit_opcode(compiler, WI_OP_CLOSE_UPVALUE);
         } else {
             _compiler_emit_opcode(compiler, WI_OP_POP);
@@ -352,6 +366,8 @@ _compiler_resolve_local(struct wi_compiler* compiler, struct wi_token name, wi_a
                 wi_parser_error_at(compiler->parser, name, "cannot use local variable inside its own initializer");
                 return -1;
             }
+
+            local->used = true;
 
             if (attrs) {
                 *attrs = local->attrs;
@@ -458,6 +474,10 @@ _compiler_var(struct wi_compiler* compiler, struct wi_token name) {
         attrs = (wi_attrs)wi_value_as_real(attrs_value);
     }
 
+    if (wi_attr_is_set(attrs, WI_ATTR_DEPRECATED)) {
+        wi_parser_warning_at(compiler->parser, name, "use of deprecated variable %.*s", name.count, name.start);
+    }
+
     if (wi_parser_match(compiler->parser, WI_TOKEN_EQUAL)) {
         if (wi_attr_is_set(attrs, WI_ATTR_CONST)) {
             wi_parser_error_at_prev(compiler->parser, "cannot reassign <const> variable %.*s", name.count,
@@ -509,6 +529,10 @@ _compiler_parse_attrs(struct wi_compiler* compiler) {
 
         if (_check_attr(token, "const")) {
             wi_attr_set(&attrs, WI_ATTR_CONST);
+        } else if (_check_attr(token, "unused")) {
+            wi_attr_set(&attrs, WI_ATTR_UNUSED);
+        } else if (_check_attr(token, "deprecated")) {
+            wi_attr_set(&attrs, WI_ATTR_DEPRECATED);
         } else {
             wi_parser_error_at(compiler->parser, token, "unknown attribute %.*s", token.count, token.start);
         }
@@ -703,6 +727,10 @@ _compiler_function_expr(struct wi_compiler* outer) {
     } else {
         _compiler_expr(&compiler);
         _compiler_emit_opcode(&compiler, WI_OP_RETURN);
+    }
+
+    for (int i = 1; i < compiler.local_count; i++) {
+        _compiler_warn_unused(&compiler, &compiler.locals[i]);
     }
 
     struct wi_prototype* prototype = _compiler_end(&compiler);

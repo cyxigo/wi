@@ -10,10 +10,12 @@
 
 /*
     a whole variables attributes system just for one silly shallow <const>?
-    might need to add more to justify this!
+    NO! there are 3!! <unused> and <deprecated> too!
 */
 enum wi_attr {
     WI_ATTR_CONST,
+    WI_ATTR_UNUSED,
+    WI_ATTR_DEPRECATED,
 };
 
 typedef uint8_t wi_attrs;
@@ -35,6 +37,7 @@ struct wi_compiler_local {
     struct wi_token name;
     int             depth; /* -1 = uninitialized */
     bool            is_captured;
+    bool            used;
     wi_attrs        attrs;
 };
 

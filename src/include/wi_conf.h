@@ -50,9 +50,10 @@ enum {
  * Configuration flags for the Wi state
  */
 typedef enum wi_conf_flag {
-    WI_CONF_PRINT_CODE, /* Print bytecode after compilation */
-    WI_CONF_STRESS_GC,  /* Run garbage collection on every allocation */
-    WI_CONF_LOG_GC,     /* Log garbage collection */
+    WI_CONF_PRINT_CODE,  /* Print bytecode after compilation */
+    WI_CONF_STRESS_GC,   /* Run garbage collection on every allocation */
+    WI_CONF_LOG_GC,      /* Log garbage collection */
+    WI_CONF_NO_WARNINGS, /* Suppress compiler warnings */
 } wi_conf_flag;
 
 /**

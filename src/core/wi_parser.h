@@ -31,6 +31,9 @@ WI_NORETURN void
 wi_parser_error_at_curr(struct wi_parser* parser, const char* format, ...);
 
 void
+wi_parser_warning_at(struct wi_parser* parser, struct wi_token token, const char* format, ...);
+
+void
 wi_parser_advance(struct wi_parser* parser);
 bool
 wi_parser_check(struct wi_parser* parser, enum wi_token_kind kind);

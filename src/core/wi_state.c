@@ -41,6 +41,12 @@ _state_reset_stack(struct wi_state* state) {
     state->open_upvalues  = NULL;
 }
 
+static void
+_state_on_compile(struct wi_state* state) {
+    WI_UNUSED(state);
+    /* do nothing */
+}
+
 static char*
 _state_read_file(struct wi_state* state, const char* file_path) {
     FILE* file = fopen(file_path, "rb");
@@ -78,6 +84,7 @@ wi_new_state(wi_conf conf) {
     }
 
     state->error         = NULL;
+    state->warnings      = NULL;
     state->oom           = NULL;
     state->was_eof_error = false;
 
@@ -91,6 +98,7 @@ wi_new_state(wi_conf conf) {
 
     state->gc->state = state;
 
+    state->on_compile     = _state_on_compile;
     state->load_require   = _state_read_file;
     state->require_exists = _state_require_exists;
 
@@ -138,6 +146,8 @@ wi_new_state(wi_conf conf) {
 void
 wi_delete_state(struct wi_state* state) {
     wi_state_reset_error(state);
+    wi_state_reset_warnings(state);
+
     free(state->frames);
     free(state->stack);
 
@@ -156,22 +166,36 @@ wi_delete_state(struct wi_state* state) {
     free(state);
 }
 
-void
-wi_state_append_error_va(struct wi_state* state, const char* format, va_list args) {
+static void
+_state_append(struct wi_state* state, char** t_buf, const char* format, va_list args) {
     va_list args_copy;
     va_copy(args_copy, args);
     int add_len = vsnprintf(NULL, 0, format, args_copy);
     va_end(args_copy);
 
-    size_t len = state->error ? strlen(state->error) : 0;
-    char*  buf = realloc(state->error, len + (size_t)add_len + 1);
+    size_t len = *t_buf ? strlen(*t_buf) : 0;
+    char*  buf = realloc(*t_buf, len + (size_t)add_len + 1);
 
     if (WI_UNLIKELY(!buf)) {
-        wi_state_oom(state, "out of memory: failed to allocate error message");
+        /* is diagnostic a good word here? i guess */
+        wi_state_oom(state, "out of memory: failed to allocate diagnostic message");
     }
 
-    state->error = buf;
-    vsnprintf(state->error + len, (size_t)add_len + 1, format, args);
+    *t_buf = buf;
+    vsnprintf(*t_buf + len, (size_t)add_len + 1, format, args);
+}
+
+void
+wi_state_append_to(struct wi_state* state, char** t_buf, const char* format, ...) {
+    va_list args;
+    va_start(args, format);
+    _state_append(state, t_buf, format, args);
+    va_end(args);
+}
+
+void
+wi_state_append_error_va(struct wi_state* state, const char* format, va_list args) {
+    _state_append(state, &state->error, format, args);
 }
 
 void
@@ -182,14 +206,37 @@ wi_state_append_error(struct wi_state* state, const char* format, ...) {
     va_end(args);
 }
 
+void
+wi_state_append_warning_va(struct wi_state* state, const char* format, va_list args) {
+    _state_append(state, &state->warnings, format, args);
+}
+
+void
+wi_state_append_warning(struct wi_state* state, const char* format, ...) {
+    va_list args;
+    va_start(args, format);
+    wi_state_append_warning_va(state, format, args);
+    va_end(args);
+}
+
 const char*
 wi_state_get_error(struct wi_state* state) {
     return state->oom ? state->oom : state->error;
 }
 
+const char*
+wi_state_get_warnings(struct wi_state* state) {
+    return state->warnings;
+}
+
 bool
 wi_state_was_eof_error(wi_state* state) {
     return state->was_eof_error;
+}
+
+void
+wi_state_set_on_compile_fn(struct wi_state* state, wi_on_compile_fn fn) {
+    state->on_compile = fn;
 }
 
 void
@@ -851,6 +898,8 @@ _state_require(struct wi_state* state, wi_value path_value) {
         wi_gc_pop_root(state->gc); /* object */
         wi_state_error(state, "failed to compile script %s", path);
     }
+
+    state->on_compile(state);
 
     wi_gc_pop_root(state->gc); /* src_box */
     WI_GC_PUSH_ROOT(state->gc, prototype);
@@ -1527,6 +1576,8 @@ wi_state_call(struct wi_state* state, wi_value callable, uint8_t arg_count, bool
 enum wi_run_result
 wi_state_run(struct wi_state* state, const char* file_path, const char* src) {
     wi_state_reset_error(state);
+    wi_state_reset_warnings(state);
+
     state->interrupted = 0;
     /* set early so we can catch compiler/parser oom */
     int jmp_result = setjmp(state->jmp);
@@ -1544,6 +1595,8 @@ wi_state_run(struct wi_state* state, const char* file_path, const char* src) {
     if (!prototype) {
         return WI_RUN_ERROR;
     }
+
+    state->on_compile(state);
 
     WI_GC_PUSH_ROOT(state->gc, prototype);
     struct wi_closure* closure = wi_new_closure(state->gc, prototype, &state->globals);

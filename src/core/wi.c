@@ -6,6 +6,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "wi_state.h"
+
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -16,6 +18,15 @@
 
 static wi_state* _g_state = NULL;
 
+static void
+_on_compile(wi_state* state) {
+    const char* warnings = wi_state_get_warnings(state);
+
+    if (warnings) {
+        printf("%s", warnings);
+    }
+}
+
 static bool
 _init_g_state(wi_conf conf) {
     _g_state = wi_new_state(conf);
@@ -23,6 +34,8 @@ _init_g_state(wi_conf conf) {
     if (!_g_state) {
         return false;
     }
+
+    wi_state_set_on_compile_fn(_g_state, _on_compile);
 
     wi_def_stm(_g_state);
     wi_def_std(_g_state);
@@ -165,6 +178,7 @@ _help(const char* exec_path) {
     printf("    -pc   --print-code        print bytecode after compilation\n");
     printf("    -sgc  --stress-gc         run garbage collection on every allocation\n");
     printf("    -lgc  --log-gc            log garbage collection\n");
+    printf("    -nw   --no-warnings       suppress compiler warnings\n");
     printf("    --                        treat all remaining arguments as script arguments\n");
 }
 
@@ -233,6 +247,11 @@ _parse_flags(int argc, const char* argv[], wi_conf* conf, const char** file_path
 
         if (strcmp(arg, "-lgc") == 0 || strcmp(arg, "--log-gc") == 0) {
             wi_conf_set(conf, WI_CONF_LOG_GC);
+            continue;
+        }
+
+        if (strcmp(arg, "-nw") == 0 || strcmp(arg, "--no-warnings") == 0) {
+            wi_conf_set(conf, WI_CONF_NO_WARNINGS);
             continue;
         }
 

@@ -52,6 +52,12 @@ typedef void (*wi_foreign_fn)(wi_state* state, int arg_count);
 typedef void (*wi_userdata_finalizer_fn)(void* data);
 
 /**
+ * Function called right after a successful compilation of a script.
+ * Use example: print all warnings
+ */
+typedef void (*wi_on_compile_fn)(wi_state* state);
+
+/**
  * Function called in the `require` statement. Use this in a custom virtual filesystem (your app, for example).
  * Must return Wi code
  */
@@ -191,12 +197,34 @@ WI_API const char*
 wi_state_get_error(wi_state* state);
 
 /**
+ * Get compiler warnings collected during the last `wi_state_run` call.
+ *
+ * Warnings from every function and every `require`d script compiled during that call are
+ * concatenated into one string
+ *
+ * @param state Wi state instance
+ * @return Warning messages, `NULL` if none occurred
+ */
+WI_API const char*
+wi_state_get_warnings(wi_state* state);
+
+/**
  * Checks if the last compile error occurred at EOF
  *
  * @param state Wi state instance
  */
 WI_API bool
 wi_state_was_eof_error(wi_state* state);
+
+/**
+ * Set the callback invoked right after a successful compilation of a script (main script or a
+ * `require`d one). Useful for e.g. printing warnings via `wi_state_get_warnings`
+ *
+ * @param state Wi state instance
+ * @param fn Callback function
+ */
+WI_API void
+wi_state_set_on_compile_fn(wi_state* state, wi_on_compile_fn fn);
 
 /**
  * Set the `require` load callback
