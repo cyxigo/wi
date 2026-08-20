@@ -71,3 +71,13 @@ var bob = new obj_person {
 bob->greet();
 `;
 };
+
+var examplePipeline = function () {
+    var code = document.getElementById("code");
+    code.value = `var numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+numbers
+    ->where(|x| => x % 2 == 0) // Where... only evens
+    ->select(|x| => x ** 2) // Select... squares
+    ->each(|x| => print("Number: " .. x)); // Each... print!
+`;
+};
