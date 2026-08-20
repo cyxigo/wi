@@ -51,7 +51,7 @@ Requires [`emcc`](https://emscripten.org/docs/getting_started/downloads.html). T
 xmake f -p wasm
 xmake
 ```
-This produces `wi.js` + `wi.wasm`, with functions `wi_wasm_init`/`wi_wasm_run`/`wi_wasm_get_error` (see [`wi_wasm.c`](https://github.com/cyxigo/wi/blob/main/src/wasm/wi_wasm.c)) for embedding Wi in a web page.
+This produces `wi.js` + `wi.wasm` (for functions see [`wi_wasm.c`](https://github.com/cyxigo/wi/blob/main/src/wasm/wi_wasm.c)) for embedding Wi in a web page.
 
 You can also use [`build.sh`](https://github.com/cyxigo/wi/blob/main/build.sh)/[`build_wasm.sh`](https://github.com/cyxigo/wi/blob/main/build_wasm.sh) utility scripts for building Wi.
 
