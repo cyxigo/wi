@@ -57,8 +57,8 @@ You can also use [`build.sh`](https://github.com/cyxigo/wi/blob/main/build.sh)/[
 
 ## Current project status
 
-This programming language was created by me, and only me - a single person. It's in beta and I'm working on it almost every day. The standard library isn't finished yet, but it's already quite useful. Other than the API, the code is not heavily commented.
+This programming language was created by me, and only me – a single person. It's in beta and I'm working on it almost every day. The standard library isn't finished yet, but it's already quite useful. Other than the API, the code is not heavily commented.
 
-Some parts may still need polish, and I'm very open to suggestions - if you have one, open an issue!
+Some parts may still need polish, and I'm very open to suggestions – if you have one, open an issue!
 
-No AI was used in the creation of this project - only me, my horrid laptop, my favorite book (Crafting Interpreters), Googling, and stuff.
+No AI was used in the creation of this project – only me, my horrid laptop, my favorite book (Crafting Interpreters), Googling, and stuff.
