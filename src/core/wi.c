@@ -6,8 +6,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "wi_state.h"
-
 #ifdef _WIN32
 #include <windows.h>
 #endif
