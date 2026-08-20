@@ -217,8 +217,8 @@ WI_API bool
 wi_state_was_eof_error(wi_state* state);
 
 /**
- * Set the callback invoked right after a successful compilation of a script (main script or a
- * `require`d one). Useful for e.g. printing warnings via `wi_state_get_warnings`
+ * Set the callback invoked right after a successful compilation of a script (main script or a `require`d one).
+ * Useful for e.g. printing warnings via `wi_state_get_warnings`
  *
  * @param state Wi state instance
  * @param fn Callback function
