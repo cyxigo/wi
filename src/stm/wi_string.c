@@ -1,6 +1,7 @@
 #include "wi_string.h"
 
 #include <ctype.h>
+#include <stdbool.h>
 #include <stddef.h>
 
 #include "../include/wi.h"
@@ -90,6 +91,29 @@ _string_has(struct wi_state* state, int arg_count) {
     }
 
     wi_slot_set_bool(state, 0, found);
+}
+
+static void
+_string_index_of(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
+    int   count;
+    char* string = wi_slot_check_string(state, 1, &count, NULL);
+    int   target_count;
+    char* target = wi_slot_check_string(state, 2, &target_count, NULL);
+
+    if (target_count == 0) {
+        wi_slot_set_real(state, 0, 0);
+        return;
+    }
+
+    for (int i = 0; i + target_count <= count; i++) {
+        if (memcmp(string + i, target, (size_t)target_count) == 0) {
+            wi_slot_set_real(state, 0, wi_utf8_len(string, i));
+            return;
+        }
+    }
+
+    wi_slot_set_real(state, 0, -1);
 }
 
 static void
@@ -259,6 +283,7 @@ wi_state_def_string_stm(struct wi_state* state) {
     wi_table_set_foreign(table, "lower", _string_lower, 1, false);
     wi_table_set_foreign(table, "trim", _string_trim, 1, false);
     wi_table_set_foreign(table, "has", _string_has, 2, false);
+    wi_table_set_foreign(table, "index_of", _string_index_of, 2, false);
     wi_table_set_foreign(table, "starts_with", _string_starts_with, 2, false);
     wi_table_set_foreign(table, "ends_with", _string_ends_with, 2, false);
     wi_table_set_foreign(table, "replace", _string_replace, 3, false);
