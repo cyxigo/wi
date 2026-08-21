@@ -12,7 +12,7 @@ I don't have many interpreted languages installed: Wi, Lua (5.4.7), Python (3.13
 
 ## Method call
 
-- Wi: 0.151s
+- Wi: 0.149s
 - Ruby: 0.151s
 - Wren: 0.159s
 - Lua: 0.206s
@@ -28,7 +28,7 @@ I don't have many interpreted languages installed: Wi, Lua (5.4.7), Python (3.13
 
 ## For
 
-- Wi: 0.075s
+- Wi: 0.074s
 - Lua: 0.085s
 - Ruby: 0.103s
 - Python: 0.116s

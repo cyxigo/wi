@@ -62,20 +62,6 @@ wi_delete_gc(struct wi_gc* gc) {
     free(gc);
 }
 
-void
-wi_gc_push_root(struct wi_gc* gc, struct wi_box* root) {
-    if (WI_UNLIKELY(gc->temp_root_count + 1 > gc->temp_root_capacity)) {
-        gc->temp_root_capacity = WI_GROW_CAPACITY(gc->temp_root_capacity);
-        gc->temp_roots         = realloc(gc->temp_roots, sizeof(struct wi_box*) * (size_t)gc->temp_root_capacity);
-
-        if (!gc->temp_roots) {
-            wi_state_oom(gc->state, "out of memory: failed to allocate garbage collector temp roots");
-        }
-    }
-
-    gc->temp_roots[gc->temp_root_count++] = root;
-}
-
 void*
 wi_gc_realloc(struct wi_gc* gc, void* ptr, size_t old_size, size_t new_size) {
     gc->bytes_allocated += new_size - old_size;
@@ -103,7 +89,7 @@ wi_gc_realloc(struct wi_gc* gc, void* ptr, size_t old_size, size_t new_size) {
 
 static void
 _gc_free_box(struct wi_gc* gc, struct wi_box* box) {
-    if (wi_log_gc(gc)) {
+    if (WI_UNLIKELY(wi_log_gc(gc))) {
         printf("free box at %p of kind %d\n", (void*)box, box->kind);
     }
 
@@ -177,7 +163,7 @@ _gc_mark_box(struct wi_gc* gc, struct wi_box* box) {
         return;
     }
 
-    if (wi_log_gc(gc)) {
+    if (WI_UNLIKELY(wi_log_gc(gc))) {
         printf("marked box at %p ", (void*)box);
         wi_value_print(WI_MAKE_BOX_VALUE(box));
         printf("\n");
@@ -292,7 +278,7 @@ _gc_mark_roots(struct wi_gc* gc) {
 
 static void
 _gc_blacken_box(struct wi_gc* gc, struct wi_box* box) {
-    if (wi_log_gc(gc)) {
+    if (WI_UNLIKELY(wi_log_gc(gc))) {
         printf("blacken box at %p ", (void*)box);
         wi_value_print(WI_MAKE_BOX_VALUE(box));
         printf("\n");
@@ -386,7 +372,7 @@ void
 wi_gc_collect_garbage(struct wi_gc* gc) {
     size_t before = gc->bytes_allocated;
 
-    if (wi_log_gc(gc)) {
+    if (WI_UNLIKELY(wi_log_gc(gc))) {
         printf("--- begin gc ---\n");
     }
 
@@ -398,7 +384,7 @@ wi_gc_collect_garbage(struct wi_gc* gc) {
     size_t grown        = gc->bytes_allocated * WI_GC_HEAP_GROW_FACTOR;
     gc->next_collection = grown > WI_GC_MIN_HEAP ? grown : WI_GC_MIN_HEAP;
 
-    if (wi_log_gc(gc)) {
+    if (WI_UNLIKELY(wi_log_gc(gc))) {
         printf("---  end gc  ---\n");
         printf("     collected %zu bytes (from %zu to %zu) next at %zu\n", before - gc->bytes_allocated, before,
                gc->bytes_allocated, gc->next_collection);

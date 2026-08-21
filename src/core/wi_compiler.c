@@ -928,7 +928,20 @@ _compiler_unary_expr(struct wi_compiler* compiler);
 
 static void
 _compiler_new_expr(struct wi_compiler* compiler) {
-    _compiler_emit_opcode(compiler, WI_OP_NEW);
+    uint16_t count = 0;
+
+    do {
+        _compiler_unary_expr(compiler);
+
+        if (count == UINT16_MAX) {
+            wi_parser_error_at_curr(compiler->parser, "cannot merge more than %i objects in a 'new' expression",
+                                    UINT16_MAX);
+        }
+
+        count++;
+    } while (wi_parser_match(compiler->parser, WI_TOKEN_COMMA));
+
+    _compiler_emit_opcode_short(compiler, WI_OP_NEW, count);
 
     if (!wi_parser_match(compiler->parser, WI_TOKEN_OPEN_BRACE)) {
         return;
@@ -953,9 +966,13 @@ _compiler_new_expr(struct wi_compiler* compiler) {
 
 static void
 _compiler_unary_expr(struct wi_compiler* compiler) {
+    if (wi_parser_match(compiler->parser, WI_TOKEN_KW_NEW)) {
+        _compiler_new_expr(compiler);
+        return;
+    }
+
     if (!(wi_parser_match(compiler->parser, WI_TOKEN_HASH) || wi_parser_match(compiler->parser, WI_TOKEN_MINUS) ||
-          wi_parser_match(compiler->parser, WI_TOKEN_TILDE) || wi_parser_match(compiler->parser, WI_TOKEN_BANG) ||
-          wi_parser_match(compiler->parser, WI_TOKEN_KW_NEW))) {
+          wi_parser_match(compiler->parser, WI_TOKEN_TILDE) || wi_parser_match(compiler->parser, WI_TOKEN_BANG))) {
         _compiler_call_expr(compiler);
         return;
     }
@@ -975,9 +992,6 @@ _compiler_unary_expr(struct wi_compiler* compiler) {
             break;
         case WI_TOKEN_BANG:
             _compiler_emit_opcode(compiler, WI_OP_LOG_NOT);
-            break;
-        case WI_TOKEN_KW_NEW:
-            _compiler_new_expr(compiler);
             break;
         default:
             WI_UNREACHABLE();

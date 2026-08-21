@@ -256,8 +256,6 @@ wi_value_to_string(wi_value value) {
     return wi_strdup("<unknown>");
 }
 
-WI_DEF_BUF(wi_value, value)
-
 wi_real
 wi_string_to_real(const char* string, int len, char** end_ptr) {
     if (len > 2 && string[0] == '0') {

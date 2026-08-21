@@ -500,7 +500,7 @@ _state_push_array(struct wi_state* state, int item_count) {
     wi_gc_pop_root(state->gc);
 }
 
-static int
+WI_INLINE int
 _state_validate_index(struct wi_state* state, const char* target, wi_value value, int count) {
     if (WI_UNLIKELY(!wi_value_is_real(value))) {
         wi_state_error(state, "%s index must be a real, got %s", target, wi_value_type(value));
@@ -822,8 +822,14 @@ _state_tail_call(struct wi_state* state, struct wi_call_frame* frame, struct wi_
     frame->ip      = prototype->bytes.data;
 }
 
-static void
-_state_resolve_field(struct wi_state* state, struct wi_object* object, wi_value name, wi_value* value);
+WI_INLINE void
+_state_resolve_field(struct wi_state* state, struct wi_object* object, wi_value name, wi_value* value) {
+    if (wi_table_get(&object->fields, name, value)) {
+        return;
+    }
+
+    wi_state_error(state, "object has no field %s", wi_value_as_cstring(name));
+}
 
 static wi_value
 _state_resolve_method(struct wi_state* state, wi_value receiver, wi_value name) {
@@ -853,16 +859,7 @@ _state_resolve_method(struct wi_state* state, wi_value receiver, wi_value name) 
     return function;
 }
 
-static void
-_state_resolve_field(struct wi_state* state, struct wi_object* object, wi_value name, wi_value* value) {
-    if (wi_table_get(&object->fields, name, value)) {
-        return;
-    }
-
-    wi_state_error(state, "object has no field %s", wi_value_as_cstring(name));
-}
-
-static void
+WI_INLINE void
 _state_set_field(struct wi_state* state, wi_value name, wi_value target) {
     if (WI_UNLIKELY(!wi_value_is_object(target))) {
         wi_state_error(state, "cannot use operator '.' on a value of type %s", wi_value_type(target));
@@ -1470,21 +1467,32 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
             _DISPATCH();
         }
         _OPCODE_LABEL(NEW) : {
-            wi_value target = wi_state_top(state);
+            uint16_t          count = _READ_SHORT();
+            wi_value*         start = state->stack_top - count;
+            struct wi_object* clone = wi_new_object(state->gc);
+            WI_GC_PUSH_ROOT(state->gc, clone);
 
-            if (!wi_value_is_object(target)) {
-                _ERROR("cannot use operator 'new' on a value of type %s", wi_value_type(target));
+            for (uint16_t i = 0; i < count; i++) {
+                wi_value value = start[i];
+
+                if (WI_UNLIKELY(!wi_value_is_object(value))) {
+                    _ERROR("cannot use operator 'new' on a value of type %s", wi_value_type(value));
+                }
+
+                struct wi_table* fields = &wi_value_as_object(value)->fields;
+
+                for (int j = 0; j < fields->capacity; j++) {
+                    struct wi_entry* entry = &fields->entries[j];
+
+                    if (!wi_value_is_empty(entry->key)) {
+                        wi_table_set(&clone->fields, entry->key, entry->value);
+                    }
+                }
             }
 
-            struct wi_object* object = wi_value_as_object(target);
-            struct wi_object* clone  = wi_new_object(state->gc);
-
-            WI_GC_PUSH_ROOT(state->gc, clone);
-            wi_table_copy(&object->fields, &clone->fields);
-            wi_gc_pop_root(state->gc);
-
-            wi_state_pop(state);
+            state->stack_top = start;
             wi_state_push(state, WI_MAKE_BOX_VALUE(clone));
+            wi_gc_pop_root(state->gc);
             _DISPATCH();
         }
         _OPCODE_LABEL(REQUIRE) : {

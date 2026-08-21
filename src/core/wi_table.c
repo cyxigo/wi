@@ -146,17 +146,17 @@ wi_table_set_foreign(struct wi_table* table, const char* name, wi_foreign_fn fn,
 
 bool
 wi_table_get(struct wi_table* table, wi_value key, wi_value* value) {
-    if (table->count == 0) {
+    if (WI_UNLIKELY(table->count == 0)) {
         return false;
     }
 
     struct wi_entry* entry = _find_entry(table->entries, table->capacity, key);
 
-    if (wi_value_is_empty(entry->key)) {
+    if (WI_UNLIKELY(wi_value_is_empty(entry->key))) {
         return false;
     }
 
-    if (value) {
+    if (WI_LIKELY(value)) {
         *value = entry->value;
     }
 

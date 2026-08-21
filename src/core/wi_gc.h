@@ -39,8 +39,22 @@ wi_gc_reset_roots(struct wi_gc* gc) {
     gc->temp_root_count = 0;
 }
 
-void
-wi_gc_push_root(struct wi_gc* gc, struct wi_box* root);
+WI_NORETURN void
+wi_state_oom(struct wi_state* state, const char* what);
+
+WI_INLINE void
+wi_gc_push_root(struct wi_gc* gc, struct wi_box* root) {
+    if (WI_UNLIKELY(gc->temp_root_count + 1 > gc->temp_root_capacity)) {
+        gc->temp_root_capacity = WI_GROW_CAPACITY(gc->temp_root_capacity);
+        gc->temp_roots         = realloc(gc->temp_roots, sizeof(struct wi_box*) * (size_t)gc->temp_root_capacity);
+
+        if (!gc->temp_roots) {
+            wi_state_oom(gc->state, "out of memory: failed to allocate garbage collector temp roots");
+        }
+    }
+
+    gc->temp_roots[gc->temp_root_count++] = root;
+}
 
 #define WI_GC_PUSH_ROOT(gc, root) wi_gc_push_root(gc, (struct wi_box*)root)
 

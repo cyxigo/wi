@@ -19,7 +19,7 @@ wi_new_box(struct wi_gc* gc, size_t size, enum wi_box_kind kind) {
     box->is_marked = false;
     gc->boxes      = box;
 
-    if (wi_log_gc(gc)) {
+    if (WI_UNLIKELY(wi_log_gc(gc))) {
         printf("allocate box at %p (%zu bytes) of kind %d\n", (void*)box, size, kind);
     }
 

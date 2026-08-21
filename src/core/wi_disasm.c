@@ -219,7 +219,7 @@ wi_prototype_disasm_instr(struct wi_prototype* prototype, int offset) {
         case WI_OP_TAIL_INVOKE:
             return _invoke_instr("tail_invoke", prototype, offset);
         case WI_OP_NEW:
-            return _simple_instr(offset, "new");
+            return _short_instr("new", "object count", prototype, offset);
     }
 
     printf("invalid opcode %hhu\n", opcode);
