@@ -225,6 +225,7 @@ _base_to_bool(struct wi_state* state, int arg_count) {
 static void
 _base_to_string(struct wi_state* state, int arg_count) {
     WI_UNUSED(arg_count);
+
     if (wi_slot_is_string(state, 1)) {
         state->ffi_stack[0] = state->ffi_stack[1];
         return;

@@ -58,7 +58,7 @@ static void
 _array_reverse(struct wi_state* state, int arg_count) {
     WI_UNUSED(arg_count);
     struct wi_array* array = _check_arg1_array(state);
-    state->ffi_stack[0]    = WI_MAKE_BOX_VALUE(array);
+    state->ffi_stack[0]    = state->ffi_stack[1];
 
     for (int i = 0, j = array->items.count - 1; i < j; i++, j--) {
         wi_value temp        = array->items.data[i];
@@ -269,6 +269,59 @@ _array_where(struct wi_state* state, int arg_count) {
     }
 }
 
+static void
+_aqsort_swap(wi_value* buf, int i, int j) {
+    wi_value temp = buf[i];
+    buf[i]        = buf[j];
+    buf[j]        = temp;
+}
+
+static int
+_aqsort_partition(struct wi_state* state, struct wi_array* array, wi_value callback, int lo, int hi) {
+    wi_value* buf = array->items.data;
+    wi_value  pi  = buf[hi];
+    int       i   = lo - 1;
+
+    for (int j = lo; j < hi; j++) {
+        wi_state_push(state, callback);
+        wi_state_push(state, buf[j]);
+        wi_state_push(state, pi);
+        wi_state_call(state, callback, 2, false);
+
+        if (!wi_value_is_falsy(wi_state_pop(state))) {
+            i++;
+            _aqsort_swap(buf, i, j);
+        }
+    }
+
+    _aqsort_swap(buf, i + 1, hi);
+    return i + 1;
+}
+
+static void
+_aqsort(struct wi_state* state, wi_value callback, struct wi_array* array, int lo, int hi) {
+    if (lo >= hi) {
+        return;
+    }
+
+    int pi = _aqsort_partition(state, array, callback, lo, hi);
+    _aqsort(state, callback, array, lo, pi - 1);
+    _aqsort(state, callback, array, pi + 1, hi);
+}
+
+static void
+_array_sort(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
+    struct wi_array* array    = _check_arg1_array(state);
+    wi_value         callback = wi_slot_check_callback(state, 2, 2);
+
+    if (array->items.count > 1) {
+        _aqsort(state, callback, array, 0, array->items.count - 1);
+    }
+
+    state->ffi_stack[0] = state->ffi_stack[1];
+}
+
 void
 wi_state_def_array_stm(struct wi_state* state) {
     struct wi_table* table = &state->stm_array;
@@ -289,4 +342,5 @@ wi_state_def_array_stm(struct wi_state* state) {
     wi_table_set_foreign(table, "each", _array_each, 2, false);
     wi_table_set_foreign(table, "select", _array_select, 2, false);
     wi_table_set_foreign(table, "where", _array_where, 2, false);
+    wi_table_set_foreign(table, "sort", _array_sort, 2, false);
 }
