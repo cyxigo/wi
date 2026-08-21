@@ -158,13 +158,14 @@ _map_select(struct wi_state* state, int arg_count) {
         wi_state_push(state, entry->key);
         wi_state_call(state, k_callback, 1, false);
 
-        wi_value key = wi_state_pop(state);
-
         wi_state_push(state, v_callback);
         wi_state_push(state, entry->value);
         wi_state_call(state, v_callback, 1, false);
 
-        wi_table_set(&result->items, key, wi_state_pop(state));
+        wi_value value = wi_state_pop(state);
+        wi_value key   = wi_state_pop(state);
+
+        wi_table_set(&result->items, key, value);
     }
 }
 
