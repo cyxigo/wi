@@ -46,6 +46,15 @@ _math_ceil(struct wi_state* state, int arg_count) {
 }
 
 static void
+_math_clamp(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
+    wi_real real = wi_slot_check_real(state, 1);
+    wi_real min  = wi_slot_check_real(state, 2);
+    wi_real max  = wi_slot_check_real(state, 3);
+    wi_slot_set_real(state, 0, real < min ? min : real > max ? max : real);
+}
+
+static void
 _math_cos(struct wi_state* state, int arg_count) {
     WI_UNUSED(arg_count);
     _math_single_arg_function(state, cos);
@@ -158,6 +167,13 @@ _math_round(struct wi_state* state, int arg_count) {
 }
 
 static void
+_math_sign(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
+    wi_real real = wi_slot_check_real(state, 1);
+    wi_slot_set_real(state, 0, real > 0 ? 1 : real < 0 ? -1 : 0);
+}
+
+static void
 _math_sin(struct wi_state* state, int arg_count) {
     WI_UNUSED(arg_count);
     _math_single_arg_function(state, sin);
@@ -189,6 +205,7 @@ wi_state_def_math_foreign(struct wi_state* state) {
     wi_object_set_field_foreign(state, object, "asin", _math_asin, 1, false);
     wi_object_set_field_foreign(state, object, "atan", _math_atan, 1, false);
     wi_object_set_field_foreign(state, object, "ceil", _math_ceil, 1, false);
+    wi_object_set_field_foreign(state, object, "clamp", _math_clamp, 3, false);
     wi_object_set_field_foreign(state, object, "cos", _math_cos, 1, false);
     wi_object_set_field_foreign(state, object, "deg", _math_deg, 1, false);
     wi_object_set_field_foreign(state, object, "exp", _math_exp, 1, false);
@@ -204,6 +221,7 @@ wi_state_def_math_foreign(struct wi_state* state) {
     wi_object_set_field_foreign(state, object, "random", _math_random, 0, false);
     wi_object_set_field_foreign(state, object, "round", _math_round, 1, false);
     wi_object_set_field_foreign(state, object, "sin", _math_sin, 1, false);
+    wi_object_set_field_foreign(state, object, "sign", _math_sign, 1, false);
     wi_object_set_field_foreign(state, object, "sqrt", _math_sqrt, 1, false);
     wi_object_set_field_foreign(state, object, "tan", _math_tan, 1, false);
 }
