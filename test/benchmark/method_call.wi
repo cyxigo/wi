@@ -9,12 +9,6 @@ var obj_toggle = object {
     };
 };
 
-var new_toggle = |start_state| => {
-    return new obj_toggle { 
-        state = start_state; 
-    };
-};  
-
 var obj_nth_toggle = new obj_toggle {
     count_max = 0;
     count = 0;
@@ -30,18 +24,13 @@ var obj_nth_toggle = new obj_toggle {
     };
 };
 
-var new_nth_toggle = |start_state, max_counter| => {
-    return new obj_nth_toggle {
-        state = start_state;
-        count_max = max_counter;
-    };
-};
-
 var main = || => {
     var start = os.clock();
     var n = 100000;
     var val = true;
-    var t = new_toggle(val);
+    var t = new obj_toggle {
+        state = val; 
+    };
 
     for (var i = 0; i < n; i = i + 1) {
         val = t->activate()->value();
@@ -57,7 +46,10 @@ var main = || => {
     }
 
     print(t->value());
-    var nt = new_nth_toggle(val, 3);
+    var nt = new obj_nth_toggle {
+        state = val;
+        count_max = 3;
+    };
 
     for (var i = 0; i < n; i = i + 1) {
         val = nt->activate()->value();
