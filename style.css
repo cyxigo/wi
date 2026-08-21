@@ -41,10 +41,11 @@ pre {
 }
 
 footer {
-    padding: 0.5vw;
+    padding: clamp(0.5rem, 2vw, 0.6rem);
     color: #868686;
     background-color: #3e3e3e;
     text-align: center;
+    font-size: clamp(0.75rem, 2.5vw, 1rem);
 }
 
 footer a {
@@ -60,6 +61,10 @@ footer a {
     display: flex;
     align-items: center;
     gap: 1vw;
+}
+
+#logo-container h1 {
+    font-size: clamp(1.5rem, 4vw, 2rem);
 }
 
 #logo {
