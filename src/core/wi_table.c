@@ -220,6 +220,7 @@ wi_table_remove_white(struct wi_table* table) {
         if (wi_value_is_box(entry->key) && !wi_value_as_box(entry->key)->is_marked) {
             entry->key   = empty;
             entry->value = true_;
+            table->live_count--;
         }
     }
 }
