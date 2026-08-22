@@ -41,7 +41,7 @@ pre {
 }
 
 footer {
-    padding: clamp(0.5rem, 2vw, 0.6rem);
+    padding: clamp(0.5rem, 2vw, 0.5rem);
     color: #868686;
     background-color: #3e3e3e;
     text-align: center;
