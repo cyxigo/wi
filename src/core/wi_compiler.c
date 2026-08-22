@@ -1324,8 +1324,8 @@ _compiler_for_stmt(struct wi_compiler* compiler) {
         _compiler_patch_jump(compiler, exit_jump);
     }
 
-    _compiler_end_scope(compiler);
     _compiler_end_loop(compiler);
+    _compiler_end_scope(compiler);
 
     compiler->innermost_loop_start       = enclosing_start;
     compiler->innermost_loop_scope_depth = enclosing_scope_depth;
