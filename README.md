@@ -13,7 +13,7 @@
 
 </div>
 
-```js
+```scala
 var obj_person = object {
     name = "";
     greet = |self| => print("Hello, " .. self.name .. "!");
