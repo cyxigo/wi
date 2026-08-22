@@ -27,33 +27,31 @@ _string_sub(struct wi_state* state, int arg_count) {
 }
 
 static void
-_string_upper(struct wi_state* state, int arg_count) {
-    WI_UNUSED(arg_count);
-    int   len;
-    char* string = wi_slot_check_string(state, 1, &len, NULL);
-    char* buf    = WI_GC_ALLOC(state->gc, char, len + 1);
+_string_case_mod(struct wi_state* state, int (*mod_fn)(int c)) {
+    int   count;
+    char* string = wi_slot_check_string(state, 1, &count, NULL);
+    char* buf    = WI_GC_ALLOC(state->gc, char, count + 1);
 
-    for (int i = 0; i < len; i++) {
-        buf[i] = (char)toupper(string[i]);
+    for (int i = 0; i < count; i++) {
+        unsigned char c = (unsigned char)string[i];
+        /* skip utf-8 characters... for now at least */
+        buf[i] = c < 0x80 ? (char)mod_fn(c) : (char)c;
     }
 
-    buf[len]            = '\0';
-    state->ffi_stack[0] = WI_MAKE_BOX_VALUE(wi_take_cstring(state->gc, buf, len));
+    buf[count]          = '\0';
+    state->ffi_stack[0] = WI_MAKE_BOX_VALUE(wi_take_cstring(state->gc, buf, count));
+}
+
+static void
+_string_upper(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
+    _string_case_mod(state, toupper);
 }
 
 static void
 _string_lower(struct wi_state* state, int arg_count) {
     WI_UNUSED(arg_count);
-    int   len;
-    char* string = wi_slot_check_string(state, 1, &len, NULL);
-    char* buf    = WI_GC_ALLOC(state->gc, char, len + 1);
-
-    for (int i = 0; i < len; i++) {
-        buf[i] = (char)tolower(string[i]);
-    }
-
-    buf[len]            = '\0';
-    state->ffi_stack[0] = WI_MAKE_BOX_VALUE(wi_take_cstring(state->gc, buf, len));
+    _string_case_mod(state, tolower);
 }
 
 static void
