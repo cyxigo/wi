@@ -1,37 +1,37 @@
 var Module = {
-    print: function (text) {
+    print: (text) => {
         document.getElementById("output").textContent += text + "\n";
     },
-    printErr: function (text) {
+    printErr: (text) => {
         document.getElementById("output").textContent += text + "\n";
     },
-    printWarn: function (text) {
+    printWarn: (text) => {
         var output = document.getElementById("output");
         output.textContent += text;
         output.style.color = "#b58900";
     },
-    onAbort: function (what) {
+    onAbort: (what) => {
         var run = document.getElementById("run");
         run.textContent = "Failed to load";
         document.getElementById("output").textContent = "wasm load failed: " + what;
     },
-    onRuntimeInitialized: function () {
+    onRuntimeInitialized: () => {
         var run = document.getElementById("run");
         run.disabled = false;
         run.textContent = "Run";
     },
 };
 
-Module.stdin = function () {
+Module.stdin = () => {
     return null;
 };
 
-document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", () => {
     var code = document.getElementById("code");
     var run = document.getElementById("run");
     var output = document.getElementById("output");
 
-    run.addEventListener("click", function () {
+    run.addEventListener("click", () => {
         output.textContent = "";
         output.style.color = "#3e3e3e";
 
@@ -45,19 +45,19 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 });
 
-var exampleHello = function () {
+var exampleHello = () => {
     var code = document.getElementById("code");
     code.value = `print("Hello World!");`;
 };
 
-var exampleLoop = function () {
+var exampleLoop = () => {
     var code = document.getElementById("code");
     code.value = `for (var i = 0; i < 5; i = i + 1) {
     print("Looping... i: " .. i);    
 }`;
 };
 
-var examplePerson = function () {
+var examplePerson = () => {
     var code = document.getElementById("code");
     code.value = `var obj_person = object {
     name = "";
@@ -72,7 +72,7 @@ bob->greet();
 `;
 };
 
-var examplePipeline = function () {
+var examplePipeline = () => {
     var code = document.getElementById("code");
     code.value = `var numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 numbers
@@ -80,4 +80,32 @@ numbers
     ->select(|x| => x ** 2) // Select... squares
     ->each(|x| => print("Number: " .. x)); // Each... print!
 `;
+};
+
+var exampleMerging = () => {
+    var code = document.getElementById("code");
+    code.value = `var obj_contact = object {
+    email = "";
+    phone = "";
+};
+
+var obj_address = object {
+    street = "";
+    city = "";
+};
+
+var obj_person = new obj_contact, obj_address {
+    name = "";
+    show_info = |self| => {
+        print(self.name .. " lives in " .. self.city .. ", email: " .. self.email);
+    };
+};
+
+var alice = new obj_person {
+    name = "Alice";
+    email = "alice@work.com";
+    city = "New York";
+};
+
+alice->show_info();`;
 };
