@@ -141,6 +141,17 @@ _string_ends_with(struct wi_state* state, int arg_count) {
 }
 
 static void
+_string_compare(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
+    int   a_count;
+    char* a = wi_slot_check_string(state, 1, &a_count, NULL);
+    int   b_count;
+    char* b = wi_slot_check_string(state, 2, &b_count, NULL);
+
+    wi_slot_set_bool(state, 0, a_count == b_count && memcmp(a, b, (size_t)a_count) == 0);
+}
+
+static void
 _string_replace(struct wi_state* state, int arg_count) {
     WI_UNUSED(arg_count);
     int   count;
@@ -286,6 +297,7 @@ wi_state_def_string_stm(struct wi_state* state) {
     wi_table_set_foreign(table, "index_of", _string_index_of, 2, false);
     wi_table_set_foreign(table, "starts_with", _string_starts_with, 2, false);
     wi_table_set_foreign(table, "ends_with", _string_ends_with, 2, false);
+    wi_table_set_foreign(table, "compare", _string_compare, 2, false);
     wi_table_set_foreign(table, "replace", _string_replace, 3, false);
     wi_table_set_foreign(table, "split", _string_split, 2, false);
     wi_table_set_foreign(table, "reverse", _string_reverse, 1, false);
