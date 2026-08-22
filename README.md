@@ -26,7 +26,7 @@ var slava = new obj_person {
 slava->greet(); // Hello, Slava!
 ```
 
-- **Wi is small**. The [entire implementation](https://github.com/cyxigo/wi/tree/main/src) takes less than 10k lines of code.
+- **Wi is small**. The [entire implementation](https://github.com/cyxigo/wi/tree/main/src) takes less than 15,000 lines of code.
 - **Wi is fast**. Fast single-pass compiler to bytecode with **NaN** boxing value representation help Wi to [compete with other dynamic programming languages](https://github.com/cyxigo/wi/tree/main/test/benchmark#readme).
 - **Wi is simple**. You can learn its dead-simple syntax and standard library in less than a week using its [lovingly made documentation](https://github.com/cyxigo/wi/wiki).
 - **Wi is purely prototype-based**. Many languages use classes – Wi uses [objects](https://github.com/cyxigo/wi/wiki/Objects). You clone these objects and create whatever you want. No delegation, just pure cloning.
