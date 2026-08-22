@@ -304,13 +304,17 @@ _aqsort_partition(struct wi_state* state, struct wi_array* array, wi_value callb
 
 static void
 _aqsort(struct wi_state* state, wi_value callback, struct wi_array* array, int lo, int hi) {
-    if (lo >= hi) {
-        return;
-    }
+    while (lo < hi) { /* loop for tail recursion */
+        int pi = _aqsort_partition(state, array, callback, lo, hi);
 
-    int pi = _aqsort_partition(state, array, callback, lo, hi);
-    _aqsort(state, callback, array, lo, pi - 1);
-    _aqsort(state, callback, array, pi + 1, hi);
+        if (pi - lo < hi - pi) {
+            _aqsort(state, callback, array, lo, pi - 1);
+            lo = pi + 1;
+        } else {
+            _aqsort(state, callback, array, pi + 1, hi);
+            hi = pi - 1;
+        }
+    }
 }
 
 static void
