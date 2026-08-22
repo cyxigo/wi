@@ -53,17 +53,6 @@ _jump_instr(const char* name, int sign, struct wi_prototype* prototype, int offs
     return offset + 3;
 }
 
-static int
-_invoke_instr(const char* name, struct wi_prototype* prototype, int offset) {
-    uint16_t name_constant =
-        (uint16_t)(prototype->bytes.data[offset + 1] << 8 | prototype->bytes.data[offset + 2]);
-    uint8_t           arg_count = prototype->bytes.data[offset + 3];
-    struct wi_string* name_box  = wi_value_as_string(prototype->constants.data[name_constant]);
-
-    printf("%-16s C%05hu %s (%hhu args, including receiver)\n", name, name_constant, name_box->buf, arg_count);
-    return offset + 4;
-}
-
 int
 wi_prototype_disasm_instr(struct wi_prototype* prototype, int offset) {
     printf("%04i ", offset);
@@ -206,20 +195,18 @@ wi_prototype_disasm_instr(struct wi_prototype* prototype, int offset) {
             return _simple_instr(offset, "return");
         case WI_OP_PUSH_OBJECT:
             return _short_instr("push_object", "field count", prototype, offset);
-        case WI_OP_REQUIRE:
-            return _constant_instr("require", "path", prototype, offset);
         case WI_OP_INIT_FIELD:
             return _constant_instr("init_field", "field name", prototype, offset);
         case WI_OP_SET_FIELD:
             return _constant_instr("set_field", "field name", prototype, offset);
         case WI_OP_GET_FIELD:
             return _constant_instr("get_field", "field name", prototype, offset);
-        case WI_OP_INVOKE:
-            return _invoke_instr("invoke", prototype, offset);
-        case WI_OP_TAIL_INVOKE:
-            return _invoke_instr("tail_invoke", prototype, offset);
+        case WI_OP_LOAD_METHOD:
+            return _constant_instr("load_method", "method name", prototype, offset);
         case WI_OP_NEW:
             return _short_instr("new", "object count", prototype, offset);
+        case WI_OP_REQUIRE:
+            return _constant_instr("require", "path", prototype, offset);
     }
 
     printf("invalid opcode %hhu\n", opcode);

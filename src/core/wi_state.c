@@ -992,50 +992,6 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
         wi_state_push(state, wi_make_real_value((wi_real)(a_int op b_int)));                      \
     } while (false)
 
-#define _CALL(value)                                                                    \
-    if (wi_value_is_foreign(value)) {                                                   \
-        wi_state_call_foreign(state, wi_value_as_foreign(value), arg_count);            \
-        _DISPATCH();                                                                    \
-    }                                                                                   \
-                                                                                        \
-    if (WI_UNLIKELY(!wi_value_is_closure(value))) {                                     \
-        _ERROR("cannot use operator '()' on a value of type %s", wi_value_type(value)); \
-    }                                                                                   \
-                                                                                        \
-    _state_call(state, wi_value_as_closure(value), arg_count);                          \
-    _UPDATE_FRAME();                                                                    \
-    _CHECK_INTERRUPT();
-#define _TAIL_CALL(value)                                                                 \
-    if (wi_value_is_foreign(value)) {                                                     \
-        wi_state_call_foreign(state, wi_value_as_foreign(value), arg_count);              \
-        /*                                                                                \
-            we can't reuse the call frame because well... it does not exist to begin with \
-            so we use WI_OP_RETURN, which, removes the frame!                             \
-        */                                                                                \
-        goto _op_return;                                                                  \
-    }                                                                                     \
-                                                                                          \
-    if (WI_UNLIKELY(!wi_value_is_closure(value))) {                                       \
-        _ERROR("cannot use operator '()' on a value of type %s", wi_value_type(value));   \
-    }                                                                                     \
-                                                                                          \
-    _state_tail_call(state, frame, wi_value_as_closure(value), arg_count);                \
-    _UPDATE_FRAME();                                                                      \
-    _CHECK_INTERRUPT();
-
-#define _LOAD_METHOD()                                              \
-    wi_value name      = _READ_CONSTANT();                          \
-    uint8_t  arg_count = _READ_BYTE();                              \
-    wi_value receiver  = wi_state_peek(state, arg_count - 1);       \
-    frame->ip          = ip;                                        \
-                                                                    \
-    wi_value method = _state_resolve_method(state, receiver, name); \
-                                                                    \
-    wi_value* args = state->stack_top - arg_count;                  \
-    memmove(args + 1, args, sizeof(wi_value) * arg_count);          \
-    args[0] = method;                                               \
-    state->stack_top++
-
     _INTERPRET {
         _OPCODE_LABEL(PUSH) : {
             wi_state_push(state, _READ_CONSTANT());
@@ -1364,7 +1320,18 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
             wi_value value     = wi_state_peek(state, arg_count);
             frame->ip          = ip;
 
-            _CALL(value);
+            if (wi_value_is_foreign(value)) {
+                wi_state_call_foreign(state, wi_value_as_foreign(value), arg_count);
+                _DISPATCH();
+            }
+
+            if (WI_UNLIKELY(!wi_value_is_closure(value))) {
+                _ERROR("cannot use operator '()' on a value of type %s", wi_value_type(value));
+            }
+
+            _state_call(state, wi_value_as_closure(value), arg_count);
+            _UPDATE_FRAME();
+            _CHECK_INTERRUPT();
             _DISPATCH();
         }
         _OPCODE_LABEL(TAIL_CALL) : {
@@ -1372,7 +1339,23 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
             wi_value value     = wi_state_peek(state, arg_count);
             frame->ip          = ip;
 
-            _TAIL_CALL(value);
+            if (wi_value_is_foreign(value)) {
+                wi_state_call_foreign(state, wi_value_as_foreign(value), arg_count);
+                /*
+                    we can't reuse the call frame because well... it does not exist to begin with
+                    so we use WI_OP_RETURN, which, removes the frame!
+                */
+                goto _op_return;
+            }
+
+            if (WI_UNLIKELY(!wi_value_is_closure(value))) {
+                _ERROR("cannot use operator '()' on a value of type %s", wi_value_type(value));
+            }
+
+            _state_tail_call(state, frame, wi_value_as_closure(value), arg_count);
+            _UPDATE_FRAME();
+            _CHECK_INTERRUPT();
+
             _DISPATCH();
         }
     _op_return:
@@ -1456,14 +1439,14 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
             wi_state_push(state, value);
             _DISPATCH();
         }
-        _OPCODE_LABEL(INVOKE) : {
-            _LOAD_METHOD();
-            _CALL(method);
-            _DISPATCH();
-        }
-        _OPCODE_LABEL(TAIL_INVOKE) : {
-            _LOAD_METHOD();
-            _TAIL_CALL(method);
+        _OPCODE_LABEL(LOAD_METHOD) : {
+            wi_value name     = _READ_CONSTANT();
+            wi_value receiver = wi_state_top(state);
+            frame->ip         = ip;
+            wi_value method   = _state_resolve_method(state, receiver, name);
+
+            state->stack_top[-1] = method;
+            wi_state_push(state, receiver);
             _DISPATCH();
         }
         _OPCODE_LABEL(NEW) : {
@@ -1529,11 +1512,6 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
 
 #undef _BINARY_OP
 #undef _BIT_OP
-
-#undef _CALL
-#undef _TAIL_CALL
-
-#undef _LOAD_METHOD
 
     return WI_RUN_OK;
 }
