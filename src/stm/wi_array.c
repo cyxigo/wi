@@ -279,8 +279,12 @@ _aqsort_swap(wi_value* buf, int i, int j) {
 static int
 _aqsort_partition(struct wi_state* state, struct wi_array* array, wi_value callback, int lo, int hi) {
     wi_value* buf = array->items.data;
-    wi_value  pi  = buf[hi];
-    int       i   = lo - 1;
+
+    int pii = lo + rand() % (hi - lo + 1);
+    _aqsort_swap(buf, pii, hi);
+
+    wi_value pi = buf[hi];
+    int      i  = lo - 1;
 
     for (int j = lo; j < hi; j++) {
         wi_state_push(state, callback);
