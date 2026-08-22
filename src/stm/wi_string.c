@@ -146,7 +146,8 @@ _string_compare(struct wi_state* state, int arg_count) {
     int   b_count;
     char* b = wi_slot_check_string(state, 2, &b_count, NULL);
 
-    wi_slot_set_bool(state, 0, a_count == b_count && memcmp(a, b, (size_t)a_count) == 0);
+    int cmp = memcmp(a, b, (size_t)(a_count < b_count ? a_count : b_count));
+    wi_slot_set_bool(state, 0, (cmp != 0 ? cmp : a_count - b_count) < 0);
 }
 
 static void
