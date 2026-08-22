@@ -2,7 +2,9 @@
 #define WI_PARSER_H
 
 #include <setjmp.h>
+#include <stdint.h>
 
+#include "../include/wi_conf.h"
 #include "wi_buf.h"
 #include "wi_lexer.h"
 #include "wi_util.h"
@@ -16,6 +18,8 @@ struct wi_parser {
     struct wi_token curr;
     struct wi_token next;
     struct wi_token last;
+
+    uint8_t c_depth;
 };
 
 struct wi_parser*
@@ -29,6 +33,20 @@ WI_NORETURN void
 wi_parser_error_at_prev(struct wi_parser* parser, const char* format, ...);
 WI_NORETURN void
 wi_parser_error_at_curr(struct wi_parser* parser, const char* format, ...);
+
+WI_INLINE void
+wi_parser_enter(struct wi_parser* parser) {
+    if (WI_UNLIKELY(parser->c_depth == WI_CSTACK_MAX)) {
+        wi_parser_error_at_curr(parser, "C stack overflow (limit is %i)", WI_CSTACK_MAX);
+    }
+
+    parser->c_depth++;
+}
+
+WI_INLINE void
+wi_parser_leave(struct wi_parser* parser) {
+    parser->c_depth--;
+}
 
 void
 wi_parser_warning_at(struct wi_parser* parser, struct wi_token token, const char* format, ...);

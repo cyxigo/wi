@@ -101,7 +101,7 @@ struct wi_state {
     struct wi_call_frame* frames;
     int                   frame_capacity;
     int                   frame_count;
-    uint8_t               c_call_depth;
+    uint8_t               c_depth;
 
     wi_value* stack;
     int       stack_capacity;

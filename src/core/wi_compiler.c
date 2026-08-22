@@ -966,19 +966,24 @@ _compiler_new_expr(struct wi_compiler* compiler) {
 
 static void
 _compiler_unary_expr(struct wi_compiler* compiler) {
+    wi_parser_enter(compiler->parser);
+
     if (wi_parser_match(compiler->parser, WI_TOKEN_KW_NEW)) {
         _compiler_new_expr(compiler);
+        wi_parser_leave(compiler->parser);
         return;
     }
 
     if (!(wi_parser_match(compiler->parser, WI_TOKEN_HASH) || wi_parser_match(compiler->parser, WI_TOKEN_MINUS) ||
           wi_parser_match(compiler->parser, WI_TOKEN_TILDE) || wi_parser_match(compiler->parser, WI_TOKEN_BANG))) {
         _compiler_call_expr(compiler);
+        wi_parser_leave(compiler->parser);
         return;
     }
 
     struct wi_token op = compiler->parser->prev;
     _compiler_unary_expr(compiler);
+    wi_parser_leave(compiler->parser);
 
     switch (op.kind) {
         case WI_TOKEN_HASH:
@@ -1001,12 +1006,15 @@ _compiler_unary_expr(struct wi_compiler* compiler) {
 
 static void
 _compiler_power_expr(struct wi_compiler* compiler) {
+    wi_parser_enter(compiler->parser);
     _compiler_unary_expr(compiler);
 
     if (wi_parser_match(compiler->parser, WI_TOKEN_STAR_STAR)) {
         _compiler_power_expr(compiler);
         _compiler_emit_opcode(compiler, WI_OP_POWER);
     }
+
+    wi_parser_leave(compiler->parser);
 }
 
 static void
@@ -1174,7 +1182,9 @@ _compiler_assignment_expr(struct wi_compiler* compiler) {
 
 static void
 _compiler_expr(struct wi_compiler* compiler) {
+    wi_parser_enter(compiler->parser);
     _compiler_assignment_expr(compiler);
+    wi_parser_leave(compiler->parser);
 }
 
 static void
@@ -1486,6 +1496,8 @@ _compiler_load_stmt(struct wi_compiler* compiler) {
 
 static void
 _compiler_stmt(struct wi_compiler* compiler) {
+    wi_parser_enter(compiler->parser);
+
     switch (compiler->parser->curr.kind) {
         case WI_TOKEN_OPEN_BRACE:
             wi_parser_advance(compiler->parser);
@@ -1527,6 +1539,8 @@ _compiler_stmt(struct wi_compiler* compiler) {
             _compiler_expr_stmt(compiler);
             break;
     }
+
+    wi_parser_leave(compiler->parser);
 }
 
 struct wi_prototype*

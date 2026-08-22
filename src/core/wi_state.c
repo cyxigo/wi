@@ -37,7 +37,7 @@ _state_reset_stack(struct wi_state* state) {
     state->stack_top      = state->stack;
     state->ffi_stack      = NULL;
     state->frame_count    = 0;
-    state->c_call_depth   = 0;
+    state->c_depth        = 0;
     state->open_upvalues  = NULL;
 }
 
@@ -319,7 +319,7 @@ wi_state_push_recovery(struct wi_state* state) {
     state->recoveries            = recovery;
 
     recovery->frame_count     = state->frame_count;
-    recovery->c_call_depth    = state->c_call_depth;
+    recovery->c_call_depth    = state->c_depth;
     recovery->stack_top       = state->stack_top;
     recovery->ffi_stack       = state->ffi_stack;
     recovery->temp_root_count = state->gc->temp_root_count;
@@ -360,7 +360,7 @@ wi_state_error(struct wi_state* state, const char* format, ...) {
         _state_close_upvalues(state, recovery->stack_top);
 
         state->frame_count         = recovery->frame_count;
-        state->c_call_depth        = recovery->c_call_depth;
+        state->c_depth             = recovery->c_call_depth;
         state->stack_top           = recovery->stack_top;
         state->ffi_stack           = recovery->ffi_stack;
         state->gc->temp_root_count = recovery->temp_root_count;
@@ -1562,8 +1562,8 @@ wi_state_call(struct wi_state* state, wi_value callable, uint8_t arg_count, bool
         return WI_RUN_OK;
     }
 
-    if (state->c_call_depth == WI_CSTACK_MAX) {
-        wi_state_error(state, "C call stack overflow (limit is %i)", WI_CSTACK_MAX);
+    if (state->c_depth == WI_CSTACK_MAX) {
+        wi_state_error(state, "C stack overflow (limit is %i)", WI_CSTACK_MAX);
     }
 
     struct wi_closure* closure = wi_value_as_closure(callable);
@@ -1573,9 +1573,9 @@ wi_state_call(struct wi_state* state, wi_value callable, uint8_t arg_count, bool
     int       base_frame_count = state->frame_count;
     _state_call(state, closure, arg_count);
 
-    state->c_call_depth++;
+    state->c_depth++;
     enum wi_run_result result = _state_interpreter_loop(state, base_frame_count, drop_result);
-    state->c_call_depth--;
+    state->c_depth--;
 
     state->ffi_stack = ffi_stack_offset == -1 ? NULL : state->stack + ffi_stack_offset;
     return result;

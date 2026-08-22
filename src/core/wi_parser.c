@@ -27,6 +27,8 @@ wi_new_parser(struct wi_lexer* lexer, struct wi_gc* gc) {
     parser->next = wi_lexer_next(parser->lexer);
     parser->last = WI_BLANK_TOKEN;
 
+    parser->c_depth = 0;
+
     return parser;
 }
 
