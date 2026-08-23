@@ -31,6 +31,7 @@ enum {
     WI_LOCAL_MAX     = 255,   /* Maximum number of local variables in a function */
     WI_UPVALUE_MAX   = 255,   /* Maximum number of upvalues in a function (closure) */
     WI_PARAMETER_MAX = 255,   /* Maximum number of parameters in a function and arguments in a call */
+    WI_INTERP_MAX    = 8,     /* Maximum depth of string interpolation */
 
     /**
      * Garbage Collector settings

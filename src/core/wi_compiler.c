@@ -575,6 +575,9 @@ _compiler_add_esc_char(struct wi_compiler* compiler, struct wi_char_buf* buf, ch
         case '0':
             wi_char_buf_add(buf, '\0');
             break;
+        case '$':
+            wi_char_buf_add(buf, '$');
+            break;
         default:
             wi_parser_error_at_prev(compiler->parser, "invalid escape sequence \\%c", c);
             break;
@@ -582,14 +585,13 @@ _compiler_add_esc_char(struct wi_compiler* compiler, struct wi_char_buf* buf, ch
 }
 
 static void
-_compiler_string_expr(struct wi_compiler* compiler) {
-    struct wi_token    token = compiler->parser->prev;
+_compiler_push_string(struct wi_compiler* compiler, struct wi_token token) {
     struct wi_char_buf buf;
     wi_char_buf_init(&buf, compiler->state->gc);
-    wi_char_buf_reserve(&buf, token.count - 2);
+    wi_char_buf_reserve(&buf, token.count);
 
-    for (int i = 1; i < token.count - 1; i++) {
-        if (token.start[i] == '\\' && i + 1 < token.count - 1) {
+    for (int i = 0; i < token.count; i++) {
+        if (token.start[i] == '\\' && i + 1 < token.count) {
             _compiler_add_esc_char(compiler, &buf, token.start[++i]);
         } else {
             wi_char_buf_add(&buf, token.start[i]);
@@ -599,6 +601,37 @@ _compiler_string_expr(struct wi_compiler* compiler) {
     struct wi_string* string = wi_copy_cstring(compiler->state->gc, buf.data, buf.count);
     wi_char_buf_free(&buf);
     _compiler_emit_push(compiler, WI_MAKE_BOX_VALUE(string));
+}
+
+static void
+_compiler_string_expr(struct wi_compiler* compiler) {
+    _compiler_push_string(compiler, compiler->parser->prev);
+}
+
+static void
+_compiler_interp_expr(struct wi_compiler* compiler) {
+    /* compile first part of the string, i.e. everything that comes before ${...} */
+    _compiler_push_string(compiler, compiler->parser->prev);
+
+    for (;;) {
+        /* compile whatever is between ${ and } */
+        _compiler_expr(compiler);
+        _compiler_emit_opcode(compiler, WI_OP_CONCAT); /* glue it onto result */
+
+        /* did we hit that last WI_TOKEN_STRING? no? then it's just another part */
+        if (!wi_parser_match(compiler->parser, WI_TOKEN_INTERP)) {
+            break;
+        }
+
+        /* compile another part of the string */
+        _compiler_push_string(compiler, compiler->parser->prev);
+        _compiler_emit_opcode(compiler, WI_OP_CONCAT);
+    }
+
+    /* at long last, the last part of the string! a regular WI_TOKEN_STRING */
+    wi_parser_expect(compiler->parser, WI_TOKEN_STRING);
+    _compiler_push_string(compiler, compiler->parser->prev);
+    _compiler_emit_opcode(compiler, WI_OP_CONCAT);
 }
 
 static void
@@ -815,6 +848,9 @@ _compiler_primary_expr(struct wi_compiler* compiler) {
             break;
         case WI_TOKEN_STRING:
             _compiler_string_expr(compiler);
+            break;
+        case WI_TOKEN_INTERP:
+            _compiler_interp_expr(compiler);
             break;
         case WI_TOKEN_OPEN_PAREN:
             _compiler_group_expr(compiler);
@@ -1153,19 +1189,9 @@ _compiler_log_or_expr(struct wi_compiler* compiler) {
 }
 
 static void
-_compiler_concat_expr(struct wi_compiler* compiler) {
-    _compiler_log_or_expr(compiler);
-
-    while (wi_parser_match(compiler->parser, WI_TOKEN_DOT_DOT)) {
-        _compiler_log_or_expr(compiler);
-        _compiler_emit_opcode(compiler, WI_OP_CONCAT);
-    }
-}
-
-static void
 _compiler_assignment_expr(struct wi_compiler* compiler) {
     if (!wi_parser_check(compiler->parser, WI_TOKEN_NAME) || compiler->parser->next.kind != WI_TOKEN_EQUAL) {
-        _compiler_concat_expr(compiler);
+        _compiler_log_or_expr(compiler);
         return;
     }
 

@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <string.h>
 
+#include "../include/wi_conf.h"
 #include "wi_util.h"
 
 WI_INLINE bool
@@ -42,6 +43,20 @@ enum wi_token_kind {
 
     WI_TOKEN_REAL,
     WI_TOKEN_STRING,
+    /*
+        there is not a SINGLE sane, completely normal and adequate way to implement string interpolation.
+        how Wi does it?
+        "x is ${x} and y is {y}!" gets lexed into:
+        WI_TOKEN_INTERP "x is "
+        WI_TOKEN_NAME x
+        WI_TOKEN_INTERP " and y is "
+        WI_TOKEN_NAME y
+        WI_TOKEN_STRING "!"
+        so WI_TOKEN_STRING means both:
+        - a good old string
+        - the last section of an interpolated string
+    */
+    WI_TOKEN_INTERP,
 
     WI_TOKEN_OPEN_PAREN,
     WI_TOKEN_CLOSE_PAREN,
@@ -53,7 +68,6 @@ enum wi_token_kind {
     WI_TOKEN_SEMICOLON,
     WI_TOKEN_COMMA,
     WI_TOKEN_DOT,
-    WI_TOKEN_DOT_DOT,
     WI_TOKEN_DOT_DOT_DOT,
     WI_TOKEN_HASH,
     WI_TOKEN_AT,
@@ -142,6 +156,14 @@ struct wi_lexer {
     int         line;
     int         start_col;
     int         curr_col;
+
+    /*
+        this array tracks how much there are } to end the { in string interpolation, but why?
+        because interpolation can include something like { "x": 10 } - suddenly, a map!
+        and so we can check "does this } end string interpolation OR something else?"
+    */
+    int interp_braces[WI_INTERP_MAX];
+    int interp_depth;
 };
 
 void

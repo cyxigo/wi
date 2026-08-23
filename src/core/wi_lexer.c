@@ -24,6 +24,8 @@ wi_token_kind_to_string(enum wi_token_kind kind) {
             return "real";
         case WI_TOKEN_STRING:
             return "string";
+        case WI_TOKEN_INTERP:
+            return "string interpolation";
         case WI_TOKEN_OPEN_PAREN:
             return "(";
         case WI_TOKEN_CLOSE_PAREN:
@@ -42,8 +44,6 @@ wi_token_kind_to_string(enum wi_token_kind kind) {
             return ",";
         case WI_TOKEN_DOT:
             return ".";
-        case WI_TOKEN_DOT_DOT:
-            return "..";
         case WI_TOKEN_DOT_DOT_DOT:
             return "...";
         case WI_TOKEN_AT:
@@ -141,13 +141,14 @@ wi_token_kind_to_string(enum wi_token_kind kind) {
 
 void
 wi_lexer_init(struct wi_lexer* lexer, const char* file_path, const char* src) {
-    lexer->file_path = file_path;
-    lexer->src       = src;
-    lexer->start     = src;
-    lexer->curr      = src;
-    lexer->line      = 1;
-    lexer->start_col = 1;
-    lexer->curr_col  = 1;
+    lexer->file_path    = file_path;
+    lexer->src          = src;
+    lexer->start        = src;
+    lexer->curr         = src;
+    lexer->line         = 1;
+    lexer->start_col    = 1;
+    lexer->curr_col     = 1;
+    lexer->interp_depth = 0;
 }
 
 static struct wi_token
@@ -359,10 +360,32 @@ _lexer_real(struct wi_lexer* lexer) {
 
 static struct wi_token
 _lexer_string(struct wi_lexer* lexer) {
+    /* skip first character, i.e. " */
+    lexer->start     = lexer->curr;
+    lexer->start_col = lexer->curr_col;
+
     int line = lexer->line;
     int col  = lexer->curr_col - 1;
 
     while (_lexer_peek(lexer) != '"' && !_lexer_is_at_end(lexer)) {
+        if (_lexer_check(lexer, '$') && _lexer_peek_next(lexer) == '{') {
+            if (lexer->interp_depth == WI_INTERP_MAX) {
+                /*
+                    we can't format lexer errors so we have to use the ancient technique called
+                    "just type the limit in the string"
+                */
+                return _lexer_error(lexer, "string interpolation nested too deeply (limit is 8)", line, col);
+            }
+
+            struct wi_token token = _lexer_make_token(lexer, WI_TOKEN_INTERP);
+
+            _lexer_advance(lexer); /* $ */
+            _lexer_advance(lexer); /* { */
+            lexer->interp_braces[lexer->interp_depth++] = 1;
+
+            return token;
+        }
+
         if (_lexer_check(lexer, '\\') && _lexer_peek_next(lexer) != '\0') {
             _lexer_advance(lexer);
         }
@@ -374,8 +397,9 @@ _lexer_string(struct wi_lexer* lexer) {
         return _lexer_error(lexer, "unfinished string", line, col);
     }
 
-    _lexer_advance(lexer);
-    return _lexer_make_token(lexer, WI_TOKEN_STRING);
+    struct wi_token token = _lexer_make_token(lexer, WI_TOKEN_STRING);
+    _lexer_advance(lexer); /* " */
+    return token;
 }
 
 static void
@@ -461,8 +485,23 @@ wi_lexer_next(struct wi_lexer* lexer) {
         case ']':
             return _lexer_make_token(lexer, WI_TOKEN_CLOSE_BRACKET);
         case '{':
+            /* are we in the middle of string interpolation? then increase amount of the { */
+            if (lexer->interp_depth > 0) {
+                lexer->interp_braces[lexer->interp_depth - 1]++;
+            }
+
             return _lexer_make_token(lexer, WI_TOKEN_OPEN_BRACE);
         case '}':
+            /*
+                are we in the middle of string interpolation AND this is the last }?
+                then this interpolation ends NOW!!
+                + lex the trailing part
+            */
+            if (lexer->interp_depth > 0 && --lexer->interp_braces[lexer->interp_depth - 1] == 0) {
+                lexer->interp_depth--;
+                return _lexer_string(lexer);
+            }
+
             return _lexer_make_token(lexer, WI_TOKEN_CLOSE_BRACE);
         case ';':
             return _lexer_make_token(lexer, WI_TOKEN_SEMICOLON);
@@ -474,7 +513,7 @@ wi_lexer_next(struct wi_lexer* lexer) {
                     return _lexer_make_token(lexer, WI_TOKEN_DOT_DOT_DOT);
                 }
 
-                return _lexer_make_token(lexer, WI_TOKEN_DOT_DOT);
+                break;
             }
 
             return _lexer_make_token(lexer, WI_TOKEN_DOT);
