@@ -774,7 +774,7 @@ _compiler_object_expr(struct wi_compiler* compiler) {
         struct wi_token var_name   = compiler->var_name;
         compiler->var_name         = field_name;
 
-        wi_parser_expect(compiler->parser, WI_TOKEN_EQUAL);
+        wi_parser_expect(compiler->parser, WI_TOKEN_COLON);
 
         uint16_t constant = _compiler_name_constant(compiler, field_name);
         _compiler_emit_opcode_short(compiler, WI_OP_PUSH, constant);
@@ -946,7 +946,7 @@ _compiler_new_expr(struct wi_compiler* compiler) {
         struct wi_token var_name      = compiler->var_name;
         compiler->var_name            = name;
 
-        wi_parser_expect(compiler->parser, WI_TOKEN_EQUAL);
+        wi_parser_expect(compiler->parser, WI_TOKEN_COLON);
         _compiler_expr(compiler);
         wi_parser_expect(compiler->parser, WI_TOKEN_SEMICOLON);
 

@@ -3,11 +3,11 @@ main := || => {
     n := 100000;
     val := true;
     t := object {
-        state = val;
-        value = |self| => {
+        state: val;
+        value: |self| => {
             return self.state;
         };
-        activate = |self| => {
+        activate: |self| => {
             self.state = !self.state;
             return self;
         };
@@ -28,10 +28,10 @@ main := || => {
 
     print(t->value());
     nt := new t {
-        state = val;
-        count_max = 3;
-        count = 0;
-        activate = |self| => {
+        state: val;
+        count_max: 3;
+        count: 0;
+        activate: |self| => {
             self.count = self.count + 1;
 
             if (self.count >= self.count_max) {
