@@ -791,7 +791,7 @@ _compiler_object_expr(struct wi_compiler* compiler) {
 
 static void
 _compiler_require_expr(struct wi_compiler* compiler) {
-    struct wi_token   path     = wi_parser_expect(compiler->parser, WI_TOKEN_LIT_STRING);
+    struct wi_token   path     = wi_parser_expect(compiler->parser, WI_TOKEN_STRING);
     struct wi_string* path_box = wi_copy_cstring(compiler->state->gc, path.start + 1, path.count - 2);
 
     if (!compiler->state->require_exists(compiler->state, path_box->buf)) {
@@ -810,10 +810,10 @@ _compiler_primary_expr(struct wi_compiler* compiler) {
         case WI_TOKEN_NAME:
             _compiler_var_expr(compiler);
             break;
-        case WI_TOKEN_LIT_REAL:
+        case WI_TOKEN_REAL:
             _compiler_real_expr(compiler);
             break;
-        case WI_TOKEN_LIT_STRING:
+        case WI_TOKEN_STRING:
             _compiler_string_expr(compiler);
             break;
         case WI_TOKEN_OPEN_PAREN:
@@ -1384,7 +1384,7 @@ _compiler_load_stmt(struct wi_compiler* compiler) {
 #else
 
     /* prepare for seeing horrifying things... platform-specific code!!! */
-    struct wi_token   path_token = wi_parser_expect(compiler->parser, WI_TOKEN_LIT_STRING);
+    struct wi_token   path_token = wi_parser_expect(compiler->parser, WI_TOKEN_STRING);
     struct wi_string* path_box = wi_copy_cstring(compiler->parser->gc, path_token.start + 1, path_token.count - 2);
     wi_parser_expect(compiler->parser, WI_TOKEN_SEMICOLON);
 

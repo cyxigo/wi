@@ -20,9 +20,9 @@ wi_token_kind_to_string(enum wi_token_kind kind) {
             return "";
         case WI_TOKEN_NAME:
             return "name";
-        case WI_TOKEN_LIT_REAL:
+        case WI_TOKEN_REAL:
             return "real";
-        case WI_TOKEN_LIT_STRING:
+        case WI_TOKEN_STRING:
             return "string";
         case WI_TOKEN_OPEN_PAREN:
             return "(";
@@ -331,7 +331,7 @@ _lexer_non_dec_real(struct wi_lexer* lexer) {
         _lexer_advance(lexer);
     }
 
-    return _lexer_make_token(lexer, WI_TOKEN_LIT_REAL);
+    return _lexer_make_token(lexer, WI_TOKEN_REAL);
 }
 
 static struct wi_token
@@ -354,7 +354,7 @@ _lexer_real(struct wi_lexer* lexer) {
         } while (wi_is_digit(_lexer_peek(lexer)));
     }
 
-    return _lexer_make_token(lexer, WI_TOKEN_LIT_REAL);
+    return _lexer_make_token(lexer, WI_TOKEN_REAL);
 }
 
 static struct wi_token
@@ -375,7 +375,7 @@ _lexer_string(struct wi_lexer* lexer) {
     }
 
     _lexer_advance(lexer);
-    return _lexer_make_token(lexer, WI_TOKEN_LIT_STRING);
+    return _lexer_make_token(lexer, WI_TOKEN_STRING);
 }
 
 static void
