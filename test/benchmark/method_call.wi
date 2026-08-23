@@ -1,8 +1,8 @@
-var main = || => {
-    var start = os.clock();
-    var n = 100000;
-    var val = true;
-    var t = object {
+main := || => {
+    start := os.clock();
+    n := 100000;
+    val := true;
+    t := object {
         state = val;
         value = |self| => {
             return self.state;
@@ -13,7 +13,7 @@ var main = || => {
         };
     };
 
-    for (var i = 0; i < n; i = i + 1) {
+    for (i := 0; i < n; i = i + 1) {
         val = t->activate()->value();
         val = t->activate()->value();
         val = t->activate()->value();
@@ -27,8 +27,7 @@ var main = || => {
     }
 
     print(t->value());
-
-    var nt = new t {
+    nt := new t {
         state = val;
         count_max = 3;
         count = 0;
@@ -44,7 +43,7 @@ var main = || => {
         };
     };
 
-    for (var i = 0; i < n; i = i + 1) {
+    for (i := 0; i < n; i = i + 1) {
         val = nt->activate()->value();
         val = nt->activate()->value();
         val = nt->activate()->value();

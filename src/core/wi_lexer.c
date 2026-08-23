@@ -36,8 +36,6 @@ wi_token_kind_to_string(enum wi_token_kind kind) {
             return "{";
         case WI_TOKEN_CLOSE_BRACE:
             return "}";
-        case WI_TOKEN_COLON:
-            return ":";
         case WI_TOKEN_SEMICOLON:
             return ";";
         case WI_TOKEN_COMMA:
@@ -88,6 +86,10 @@ wi_token_kind_to_string(enum wi_token_kind kind) {
             return "!";
         case WI_TOKEN_BANG_EQUAL:
             return "!=";
+        case WI_TOKEN_COLON:
+            return ":";
+        case WI_TOKEN_COLON_EQUAL:
+            return ":=";
         case WI_TOKEN_GREATER:
             return ">";
         case WI_TOKEN_GREATER_GREATER:
@@ -100,8 +102,6 @@ wi_token_kind_to_string(enum wi_token_kind kind) {
             return "<<";
         case WI_TOKEN_LESS_EQUAL:
             return "<=";
-        case WI_TOKEN_KW_VAR:
-            return "var";
         case WI_TOKEN_KW_IF:
             return "if";
         case WI_TOKEN_KW_ELSE:
@@ -242,8 +242,6 @@ _lexer_check_kw(struct wi_lexer* lexer, int start, int len, const char* rest, en
 static enum wi_token_kind
 _lexer_name_kind(struct wi_lexer* lexer) {
     switch (lexer->start[0]) {
-        case 'v':
-            return _lexer_check_kw(lexer, 1, 2, "ar", WI_TOKEN_KW_VAR);
         case 'i':
             return _lexer_check_kw(lexer, 1, 1, "f", WI_TOKEN_KW_IF);
         case 'e':
@@ -466,8 +464,6 @@ wi_lexer_next(struct wi_lexer* lexer) {
             return _lexer_make_token(lexer, WI_TOKEN_OPEN_BRACE);
         case '}':
             return _lexer_make_token(lexer, WI_TOKEN_CLOSE_BRACE);
-        case ':':
-            return _lexer_make_token(lexer, WI_TOKEN_COLON);
         case ';':
             return _lexer_make_token(lexer, WI_TOKEN_SEMICOLON);
         case ',':
@@ -516,6 +512,8 @@ wi_lexer_next(struct wi_lexer* lexer) {
             break;
         case '!':
             return _lexer_make_token(lexer, _lexer_match(lexer, '=') ? WI_TOKEN_BANG_EQUAL : WI_TOKEN_BANG);
+        case ':':
+            return _lexer_make_token(lexer, _lexer_match(lexer, '=') ? WI_TOKEN_COLON_EQUAL : WI_TOKEN_COLON);
         case '>':
             if (_lexer_match(lexer, '>')) {
                 return _lexer_make_token(lexer, WI_TOKEN_GREATER_GREATER);

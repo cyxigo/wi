@@ -113,7 +113,7 @@ struct wi_state {
     /*
         this table is used by the compiler for two purposes:
         1. track globals definition and redefinition
-        2. track globals attributes, such as <const>
+        2. track globals attributes, such as @const
     */
     struct wi_table    global_attrs;
     struct wi_table    foreign;

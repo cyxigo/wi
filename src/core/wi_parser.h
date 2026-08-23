@@ -2,6 +2,7 @@
 #define WI_PARSER_H
 
 #include <setjmp.h>
+#include <stdbool.h>
 #include <stdint.h>
 
 #include "../include/wi_conf.h"
@@ -55,6 +56,17 @@ void
 wi_parser_advance(struct wi_parser* parser);
 bool
 wi_parser_check(struct wi_parser* parser, enum wi_token_kind kind);
+
+/*
+ * check NAME := and NAME @
+ * both, unmistakenly, are variable declarations
+ */
+WI_INLINE bool
+wi_parser_check_decl(struct wi_parser* parser) {
+    return wi_parser_check(parser, WI_TOKEN_NAME) &&
+           (parser->next.kind == WI_TOKEN_COLON_EQUAL || parser->next.kind == WI_TOKEN_AT);
+}
+
 bool
 wi_parser_match(struct wi_parser* parser, enum wi_token_kind kind);
 bool

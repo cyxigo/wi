@@ -1195,13 +1195,13 @@ _compiler_block_stmt(struct wi_compiler* compiler) {
 }
 
 static void
-_compiler_var_stmt(struct wi_compiler* compiler) {
+_compiler_decl_stmt(struct wi_compiler* compiler) {
     struct wi_token name  = wi_parser_expect(compiler->parser, WI_TOKEN_NAME);
     wi_attrs        attrs = _compiler_parse_attrs(compiler);
     compiler->var_name    = name;
     _compiler_decl_var(compiler, name, attrs);
 
-    wi_parser_expect(compiler->parser, WI_TOKEN_EQUAL);
+    wi_parser_expect(compiler->parser, WI_TOKEN_COLON_EQUAL);
     _compiler_expr(compiler);
     wi_parser_expect(compiler->parser, WI_TOKEN_SEMICOLON);
 
@@ -1257,8 +1257,8 @@ _compiler_for_init(struct wi_compiler* compiler) {
         return;
     }
 
-    if (wi_parser_match(compiler->parser, WI_TOKEN_KW_VAR)) {
-        _compiler_var_stmt(compiler);
+    if (wi_parser_check_decl(compiler->parser)) {
+        _compiler_decl_stmt(compiler);
     } else {
         _compiler_expr_stmt(compiler);
     }
@@ -1486,14 +1486,16 @@ static void
 _compiler_stmt(struct wi_compiler* compiler) {
     wi_parser_enter(compiler->parser);
 
+    if (wi_parser_check_decl(compiler->parser)) {
+        _compiler_decl_stmt(compiler);
+        wi_parser_leave(compiler->parser);
+        return;
+    }
+
     switch (compiler->parser->curr.kind) {
         case WI_TOKEN_OPEN_BRACE:
             wi_parser_advance(compiler->parser);
             _compiler_block_stmt(compiler);
-            break;
-        case WI_TOKEN_KW_VAR:
-            wi_parser_advance(compiler->parser);
-            _compiler_var_stmt(compiler);
             break;
         case WI_TOKEN_KW_IF:
             wi_parser_advance(compiler->parser);
