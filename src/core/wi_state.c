@@ -896,10 +896,10 @@ _state_require(struct wi_state* state, wi_value path_value) {
         wi_state_error(state, "failed to compile script %s", path);
     }
 
-    state->on_compile(state);
-
     wi_gc_pop_root(state->gc); /* src_box */
     WI_GC_PUSH_ROOT(state->gc, prototype);
+
+    state->on_compile(state);
 
     wi_table_set(&state->required, path_value, WI_MAKE_BOX_VALUE(object));
 
@@ -1582,9 +1582,9 @@ wi_state_run(struct wi_state* state, const char* file_path, const char* src) {
         return WI_RUN_ERROR;
     }
 
+    WI_GC_PUSH_ROOT(state->gc, prototype);
     state->on_compile(state);
 
-    WI_GC_PUSH_ROOT(state->gc, prototype);
     struct wi_closure* closure = wi_new_closure(state->gc, prototype, &state->globals);
     wi_gc_pop_root(state->gc);
 
