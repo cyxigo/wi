@@ -691,7 +691,7 @@ _compiler_null_expr(struct wi_compiler* compiler) {
 
 static void
 _compiler_bool_expr(struct wi_compiler* compiler) {
-    uint8_t opcode = compiler->parser->prev.kind == WI_TOKEN_KW_TRUE ? WI_OP_PUSH_TRUE : WI_OP_PUSH_FALSE;
+    uint8_t opcode = compiler->parser->prev.kind == WI_TOKEN_TRUE ? WI_OP_PUSH_TRUE : WI_OP_PUSH_FALSE;
     _compiler_emit_opcode(compiler, opcode);
 }
 
@@ -861,11 +861,11 @@ _compiler_primary_expr(struct wi_compiler* compiler) {
         case WI_TOKEN_OPEN_BRACE:
             _compiler_map_expr(compiler);
             break;
-        case WI_TOKEN_KW_NULL:
+        case WI_TOKEN_NULL:
             _compiler_null_expr(compiler);
             break;
-        case WI_TOKEN_KW_TRUE:
-        case WI_TOKEN_KW_FALSE:
+        case WI_TOKEN_TRUE:
+        case WI_TOKEN_FALSE:
             _compiler_bool_expr(compiler);
             break;
         /* empty function is || which is lexed as "pipe pipe" */
@@ -873,10 +873,10 @@ _compiler_primary_expr(struct wi_compiler* compiler) {
         case WI_TOKEN_PIPE_PIPE:
             _compiler_function_expr(compiler);
             break;
-        case WI_TOKEN_KW_OBJECT:
+        case WI_TOKEN_OBJECT:
             _compiler_object_expr(compiler);
             break;
-        case WI_TOKEN_KW_REQUIRE:
+        case WI_TOKEN_REQUIRE:
             _compiler_require_expr(compiler);
             break;
         default:
@@ -997,7 +997,7 @@ static void
 _compiler_unary_expr(struct wi_compiler* compiler) {
     wi_parser_enter(compiler->parser);
 
-    if (wi_parser_match(compiler->parser, WI_TOKEN_KW_NEW)) {
+    if (wi_parser_match(compiler->parser, WI_TOKEN_NEW)) {
         _compiler_new_expr(compiler);
         wi_parser_leave(compiler->parser);
         return;
@@ -1247,7 +1247,7 @@ _compiler_if_stmt(struct wi_compiler* compiler) {
     int else_jump = _compiler_emit_jump(compiler, WI_OP_JUMP);
     _compiler_patch_jump(compiler, then_jump);
 
-    if (wi_parser_match(compiler->parser, WI_TOKEN_KW_ELSE)) {
+    if (wi_parser_match(compiler->parser, WI_TOKEN_ELSE)) {
         _compiler_stmt(compiler);
     }
 
@@ -1523,31 +1523,31 @@ _compiler_stmt(struct wi_compiler* compiler) {
             wi_parser_advance(compiler->parser);
             _compiler_block_stmt(compiler);
             break;
-        case WI_TOKEN_KW_IF:
+        case WI_TOKEN_IF:
             wi_parser_advance(compiler->parser);
             _compiler_if_stmt(compiler);
             break;
-        case WI_TOKEN_KW_WHILE:
+        case WI_TOKEN_WHILE:
             wi_parser_advance(compiler->parser);
             _compiler_while_stmt(compiler);
             break;
-        case WI_TOKEN_KW_FOR:
+        case WI_TOKEN_FOR:
             wi_parser_advance(compiler->parser);
             _compiler_for_stmt(compiler);
             break;
-        case WI_TOKEN_KW_BREAK:
+        case WI_TOKEN_BREAK:
             wi_parser_advance(compiler->parser);
             _compiler_break_stmt(compiler);
             break;
-        case WI_TOKEN_KW_CONTINUE:
+        case WI_TOKEN_CONTINUE:
             wi_parser_advance(compiler->parser);
             _compiler_continue_stmt(compiler);
             break;
-        case WI_TOKEN_KW_RETURN:
+        case WI_TOKEN_RETURN:
             wi_parser_advance(compiler->parser);
             _compiler_return_stmt(compiler);
             break;
-        case WI_TOKEN_KW_LOAD:
+        case WI_TOKEN_LOAD:
             wi_parser_advance(compiler->parser);
             _compiler_load_stmt(compiler);
             break;
