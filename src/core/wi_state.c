@@ -30,7 +30,15 @@
 #include "wi_value.h"
 
 static void
-_state_reset_stack(struct wi_state* state) {
+_state_reset(struct wi_state* state) {
+    struct wi_recovery* recovery = state->recoveries;
+
+    while (recovery) {
+        struct wi_recovery* next = recovery->next;
+        free(recovery);
+        recovery = next;
+    }
+
     state->recoveries     = NULL;
     state->recovery_count = 0;
     state->stack_end      = state->stack + state->stack_capacity;
@@ -107,6 +115,8 @@ wi_new_state(wi_conf conf) {
 
     state->interrupted = 0;
 
+    state->recoveries = NULL;
+
     state->frames         = NULL;
     state->frame_capacity = 0;
 
@@ -119,7 +129,7 @@ wi_new_state(wi_conf conf) {
         return NULL;
     }
 
-    _state_reset_stack(state);
+    _state_reset(state);
 
     wi_table_init(&state->globals, state->gc);
     wi_table_init(&state->global_attrs, state->gc);
@@ -390,7 +400,7 @@ wi_state_error(struct wi_state* state, const char* format, ...) {
         }
     }
 
-    _state_reset_stack(state);
+    _state_reset(state);
     wi_gc_reset_roots(state->gc);
     longjmp(state->jmp, WI_JMP_ERROR);
 
@@ -400,14 +410,14 @@ wi_state_error(struct wi_state* state, const char* format, ...) {
 WI_NORETURN void
 wi_state_oom(struct wi_state* state, const char* what) {
     state->oom = what;
-    _state_reset_stack(state);
+    _state_reset(state);
     wi_gc_reset_roots(state->gc);
     longjmp(state->jmp, WI_JMP_ERROR);
 }
 
 WI_NORETURN void
 wi_state_abort(struct wi_state* state) {
-    _state_reset_stack(state);
+    _state_reset(state);
     wi_gc_reset_roots(state->gc);
     longjmp(state->jmp, WI_JMP_ABORT);
 }
