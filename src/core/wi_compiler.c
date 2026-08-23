@@ -480,8 +480,7 @@ _compiler_var(struct wi_compiler* compiler, struct wi_token name) {
 
     if (wi_parser_match(compiler->parser, WI_TOKEN_EQUAL)) {
         if (wi_attr_is_set(attrs, WI_ATTR_CONST)) {
-            wi_parser_error_at_prev(compiler->parser, "cannot reassign <const> variable %.*s", name.count,
-                                    name.start);
+            wi_parser_error_at_prev(compiler->parser, "cannot reassign variable %.*s", name.count, name.start);
         }
 
         compiler->var_name = name;
@@ -518,13 +517,9 @@ _check_attr(struct wi_token token, const char* attr) {
 
 static wi_attrs
 _compiler_parse_attrs(struct wi_compiler* compiler) {
-    if (!wi_parser_match(compiler->parser, WI_TOKEN_LESS)) {
-        return WI_DEFAULT_ATTRS;
-    }
-
     wi_attrs attrs = WI_DEFAULT_ATTRS;
 
-    do {
+    while (wi_parser_match(compiler->parser, WI_TOKEN_AT)) {
         struct wi_token token = wi_parser_expect(compiler->parser, WI_TOKEN_NAME);
 
         if (_check_attr(token, "const")) {
@@ -536,9 +531,7 @@ _compiler_parse_attrs(struct wi_compiler* compiler) {
         } else {
             wi_parser_error_at(compiler->parser, token, "unknown attribute %.*s", token.count, token.start);
         }
-
-        wi_parser_expect(compiler->parser, WI_TOKEN_GREATER);
-    } while (wi_parser_match(compiler->parser, WI_TOKEN_LESS));
+    }
 
     return attrs;
 }

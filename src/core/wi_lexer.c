@@ -48,6 +48,8 @@ wi_token_kind_to_string(enum wi_token_kind kind) {
             return "..";
         case WI_TOKEN_DOT_DOT_DOT:
             return "...";
+        case WI_TOKEN_AT:
+            return "@";
         case WI_TOKEN_HASH:
             return "#";
         case WI_TOKEN_ARROW:
@@ -480,6 +482,8 @@ wi_lexer_next(struct wi_lexer* lexer) {
             }
 
             return _lexer_make_token(lexer, WI_TOKEN_DOT);
+        case '@':
+            return _lexer_make_token(lexer, WI_TOKEN_AT);
         case '#':
             return _lexer_make_token(lexer, WI_TOKEN_HASH);
         case '%':

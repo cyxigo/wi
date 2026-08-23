@@ -57,6 +57,7 @@ enum wi_token_kind {
     WI_TOKEN_DOT_DOT,
     WI_TOKEN_DOT_DOT_DOT,
     WI_TOKEN_HASH,
+    WI_TOKEN_AT,
     WI_TOKEN_ARROW,     /* -> */
     WI_TOKEN_FAT_ARROW, /* => */
     WI_TOKEN_PERCENT,

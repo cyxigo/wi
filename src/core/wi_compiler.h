@@ -9,8 +9,8 @@
 #include "wi_table.h"
 
 /*
-    a whole variables attributes system just for one silly shallow <const>?
-    NO! there are 3!! <unused> and <deprecated> too!
+    a whole variables attributes system just for one silly shallow @const?
+    NO! there are 3!! @unused and @deprecated too!
 */
 enum wi_attr {
     WI_ATTR_CONST,
