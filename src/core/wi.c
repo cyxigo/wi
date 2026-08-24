@@ -49,7 +49,7 @@ _delete_g_state(void) {
 
 static void
 _print_error(void) {
-    printf("%s", wi_state_get_error(_g_state));
+    fprintf(stderr, "%s", wi_state_get_error(_g_state));
 }
 
 static void
