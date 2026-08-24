@@ -153,7 +153,7 @@ _read_file(const char* file_path) {
 
 static void
 _help(const char* exec_path) {
-    printf("%s [script] [option]\n", exec_path);
+    printf("usage: %s [script] [options]\n", exec_path);
     printf("options:\n");
     printf("    -h    --help              show this help message\n");
     printf("    -v    --version           show version information\n");
