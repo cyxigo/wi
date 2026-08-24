@@ -148,10 +148,14 @@ wi_is_string(struct wi_state* state) {
     return wi_value_is_string(wi_state_top(state));
 }
 
+static bool
+_is_userdata(wi_value value, const char* name) {
+    return wi_value_is_userdata(value) && strcmp(wi_value_as_userdata(value)->name->buf, name) == 0;
+}
+
 bool
 wi_is_userdata(struct wi_state* state, const char* name) {
-    wi_value top = wi_state_top(state);
-    return wi_value_is_userdata(top) && strcmp(wi_value_as_userdata(top)->name->buf, name) == 0;
+    return _is_userdata(wi_state_top(state), name);
 }
 
 void
@@ -261,19 +265,12 @@ wi_check_string(struct wi_state* state, int* count, int* len) {
 
 void*
 wi_check_userdata(struct wi_state* state, const char* name) {
-    wi_value value = wi_state_pop(state);
-
-    if (!wi_value_is_userdata(value)) {
-        wi_state_error(state, "expected a value of type userdata but got %s", wi_value_type(value));
+    if (!wi_is_userdata(state, name)) {
+        wi_state_error(state, "expected a value of type userdata %s but got %s", name,
+                       wi_value_type(wi_state_pop(state)));
     }
 
-    struct wi_userdata* userdata = wi_value_as_userdata(value);
-
-    if (strcmp(userdata->name->buf, name) != 0) {
-        wi_state_error(state, "expected userdata %s but got %s", name, userdata->name->buf);
-    }
-
-    return userdata->data;
+    return wi_value_as_userdata(wi_state_pop(state))->data;
 }
 
 bool
@@ -338,8 +335,8 @@ wi_slot_is_string(struct wi_state* state, int slot) {
 }
 
 bool
-wi_slot_is_userdata(struct wi_state* state, int slot) {
-    return wi_value_is_userdata(state->ffi_stack[slot]);
+wi_slot_is_userdata(struct wi_state* state, int slot, const char* name) {
+    return _is_userdata(state->ffi_stack[slot], name);
 }
 
 void
@@ -442,17 +439,12 @@ wi_slot_check_string(struct wi_state* state, int slot, int* count, int* len) {
 
 void*
 wi_slot_check_userdata(struct wi_state* state, int slot, const char* name) {
-    if (!wi_slot_is_userdata(state, slot)) {
-        wi_state_error(state, "bad argument %i - expected a value of type userdata but got %s", slot,
-                       wi_value_type(state->ffi_stack[slot]));
+    wi_value value = state->ffi_stack[slot];
+
+    if (!wi_slot_is_userdata(state, slot, name)) {
+        wi_state_error(state, "bad argument %i - expected a value of type userdata %s but got %s", slot, name,
+                       wi_value_type(value));
     }
 
-    struct wi_userdata* userdata = wi_value_as_userdata(state->ffi_stack[slot]);
-
-    if (strcmp(userdata->name->buf, name) != 0) {
-        wi_state_error(state, "bad argument %i - expected userdata %s but got %s", slot, name,
-                       userdata->name->buf);
-    }
-
-    return userdata->data;
+    return wi_value_as_userdata(value)->data;
 }

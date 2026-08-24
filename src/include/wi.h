@@ -543,9 +543,10 @@ wi_slot_is_string(wi_state* state, int slot);
  *
  * @param state Wi state instance
  * @param slot Slot index (0-[arg_count])
+ * @param name Userdata name, used for type-checking
  */
 WI_API bool
-wi_slot_is_userdata(wi_state* state, int slot);
+wi_slot_is_userdata(wi_state* state, int slot, const char* name);
 
 /**
  * Store a real value in a slot
