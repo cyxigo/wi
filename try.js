@@ -52,59 +52,57 @@ var exampleHello = () => {
 
 var exampleLoop = () => {
     var code = document.getElementById("code");
-    code.value = `for (var i = 0; i < 5; i = i + 1) {
-    print("Looping... i: " .. i);    
+    code.value = `for (i := 0; i < 5; i = i + 1) {
+    print("Looping... i: \${i}");
 }`;
 };
 
 var examplePerson = () => {
     var code = document.getElementById("code");
-    code.value = `var obj_person = object {
-    name = "";
-    greet = |self| => print("Hi " .. self.name .. "!");
+    code.value = `obj_person := object {
+    name: "";
+    greet: |self| => print("Hi \${self.name}!");
 };
 
-var bob = new obj_person {
-    name = "Bob";
+bob := new obj_person {
+    name: "Bob";
 };
 
-bob->greet();
-`;
+bob->greet();`;
 };
 
 var examplePipeline = () => {
     var code = document.getElementById("code");
-    code.value = `var numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+    code.value = `numbers := [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 numbers
     ->where(|x| => x % 2 == 0) // Where... only evens
     ->select(|x| => x ** 2) // Select... squares
-    ->each(|x| => print("Number: " .. x)); // Each... print!
-`;
+    ->each(|x| => print("Number: \${x}")); // Each... print!`;
 };
 
 var exampleMerging = () => {
     var code = document.getElementById("code");
-    code.value = `var obj_contact = object {
-    email = "";
-    phone = "";
+    code.value = `obj_contact := object {
+    email: "";
+    phone: "";
 };
 
-var obj_address = object {
-    street = "";
-    city = "";
+obj_address := object {
+    street: "";
+    city: "";
 };
 
-var obj_person = new obj_contact, obj_address {
-    name = "";
-    show_info = |self| => {
-        print(self.name .. " lives in " .. self.city .. ", email: " .. self.email);
+obj_person := new obj_contact, obj_address {
+    name: "";
+    show_info: |self| => {
+        print("\${self.name} lives in \${self.city}, email: \${self.email}");
     };
 };
 
-var alice = new obj_person {
-    name = "Alice";
-    email = "alice@work.com";
-    city = "New York";
+alice := new obj_person {
+    name: "Alice";
+    email: "alice@work.com";
+    city:"New York";
 };
 
 alice->show_info();`;

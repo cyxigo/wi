@@ -38,17 +38,16 @@
 
             <h2>Wi is a small, fast, embeddable, prototype-based scripting language</h2>
             <pre>
-<span class="token-kw">var</span> <span class="token-name">obj_person</span> = <span class="token-kw">object</span> {
-    <span class="token-name">name</span> = <span class="token-string">""</span>;
-    <span class="token-name">greet</span> = |<span class="token-name">self</span>| => <span class="token-name">print</span>(<span class="token-string">"Hello, "</span> .. <span class="token-name">self</span>.<span class="token-name">name</span> .. <span class="token-string">"!"</span>);
+<span class="token-name">obj_person</span> := <span class="token-kw">object</span> {
+    <span class="token-name">name</span>: <span class="token-string">""</span>;
+    <span class="token-name">greet</span>: |<span class="token-name">self</span>| => <span class="token-name">print</span>(<span class="token-string">"Hello, </span>${self.name}<span class="token-string">!"</span>);
 };
 
-<span class="token-kw">var</span> <span class="token-name">slava</span> = <span class="token-kw">new</span> <span class="token-name">obj_person</span> {
-    <span class="token-name">name</span> = <span class="token-string">"Slava"</span>;
+<span class="token-name">slava</span> := <span class="token-kw">new</span> <span class="token-name">obj_person</span> {
+    <span class="token-name">name</span>: <span class="token-string">"Slava"</span>;
 };
 
-<span class="token-name">slava</span>-><span class="token-name">greet</span>(); <span class="token-comment">// Hello, Slava!</span>
-            </pre>
+<span class="token-name">slava</span>-><span class="token-name">greet</span>(); <span class="token-comment">// Hello, Slava!</span></pre>
 
             <ul>
                 <li>
