@@ -368,6 +368,10 @@ _lexer_string(struct wi_lexer* lexer) {
     int col  = lexer->curr_col - 1;
 
     while (_lexer_peek(lexer) != '"' && !_lexer_is_at_end(lexer)) {
+        if (_lexer_check(lexer, '\n')) {
+            return _lexer_error(lexer, "unfinished string", line, col);
+        }
+
         if (_lexer_check(lexer, '$') && _lexer_peek_next(lexer) == '{') {
             if (lexer->interp_depth == WI_INTERP_MAX) {
                 /*
