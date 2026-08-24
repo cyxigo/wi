@@ -46,7 +46,7 @@ enum wi_token_kind {
     /*
         there is not a SINGLE sane, completely normal and adequate way to implement string interpolation.
         how Wi does it?
-        "x is ${x} and y is {y}!" gets lexed into:
+        "x is ${x} and y is ${y}!" gets lexed into:
         WI_TOKEN_INTERP "x is "
         WI_TOKEN_NAME x
         WI_TOKEN_INTERP " and y is "
