@@ -378,7 +378,7 @@ wi_state_error(struct wi_state* state, const char* format, ...) {
         _APPEND_FORMAT();
         recovery->error = wi_make_string(state->gc, state->error);
 
-        longjmp(recovery->jmp, WI_JMP_ERROR);
+        longjmp(recovery->jmp, WI_RUN_ERROR);
     }
 
     wi_state_append_error(state, "runtime error: ");
@@ -402,7 +402,7 @@ wi_state_error(struct wi_state* state, const char* format, ...) {
 
     _state_reset(state);
     wi_gc_reset_roots(state->gc);
-    longjmp(state->jmp, WI_JMP_ERROR);
+    longjmp(state->jmp, WI_RUN_ERROR);
 
 #undef _APPEND_FORMAT
 }
@@ -412,14 +412,14 @@ wi_state_oom(struct wi_state* state, const char* what) {
     state->oom = what;
     _state_reset(state);
     wi_gc_reset_roots(state->gc);
-    longjmp(state->jmp, WI_JMP_ERROR);
+    longjmp(state->jmp, WI_RUN_ERROR);
 }
 
 WI_NORETURN void
 wi_state_abort(struct wi_state* state) {
     _state_reset(state);
     wi_gc_reset_roots(state->gc);
-    longjmp(state->jmp, WI_JMP_ABORT);
+    longjmp(state->jmp, WI_RUN_ABORT);
 }
 
 void
@@ -1578,11 +1578,11 @@ wi_state_run(struct wi_state* state, const char* file_path, const char* src) {
     /* set early so we can catch compiler/parser oom */
     int jmp_result = setjmp(state->jmp);
 
-    if (jmp_result == WI_JMP_ABORT) {
+    if (jmp_result == WI_RUN_ABORT) {
         return WI_RUN_ABORT;
     }
 
-    if (jmp_result != WI_JMP_OK) {
+    if (jmp_result != WI_RUN_OK) {
         return WI_RUN_ERROR;
     }
 

@@ -88,7 +88,7 @@ _base_try(struct wi_state* state, int arg_count) {
 
     struct wi_recovery* recovery = wi_state_push_recovery(state);
 
-    if (setjmp(recovery->jmp) == WI_JMP_OK) {
+    if (setjmp(recovery->jmp) == WI_RUN_OK) {
         wi_state_push(state, callback);
 
         for (int i = 0; i < arg_count - 1; i++) {

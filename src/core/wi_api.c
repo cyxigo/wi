@@ -289,7 +289,7 @@ wi_call(struct wi_state* state, uint8_t arg_count, char** error) {
     struct wi_recovery* recovery = wi_state_push_recovery(state);
     bool                failed;
 
-    if (setjmp(recovery->jmp) == WI_JMP_OK) {
+    if (setjmp(recovery->jmp) == WI_RUN_OK) {
         wi_value value = wi_state_peek(state, arg_count);
 
         if (!wi_value_is_foreign(value) && !wi_value_is_closure(value)) {

@@ -49,13 +49,6 @@ struct wi_call_frame {
     wi_value*          slots;
 };
 
-/* mirrors wi_run_result */
-enum {
-    WI_JMP_OK    = 0,
-    WI_JMP_ERROR = 1,
-    WI_JMP_ABORT = 2,
-};
-
 struct wi_recovery {
     struct wi_recovery* next;
     jmp_buf             jmp;

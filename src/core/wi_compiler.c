@@ -1603,7 +1603,7 @@ wi_compile(struct wi_state* state, const char* file_path, const char* src, struc
     */
     struct wi_lib_node* libs = state->libs;
 
-    if (setjmp(compiler->parser->error_jmp) == WI_JMP_OK) {
+    if (setjmp(compiler->parser->error_jmp) == WI_RUN_OK) {
         while (!wi_parser_is_at_end(compiler->parser)) {
             _compiler_stmt(compiler);
         }
