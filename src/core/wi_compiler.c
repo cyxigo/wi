@@ -825,7 +825,7 @@ _compiler_object_expr(struct wi_compiler* compiler) {
 static void
 _compiler_require_expr(struct wi_compiler* compiler) {
     struct wi_token   path     = wi_parser_expect(compiler->parser, WI_TOKEN_STRING);
-    struct wi_string* path_box = wi_copy_cstring(compiler->state->gc, path.start + 1, path.count - 2);
+    struct wi_string* path_box = wi_copy_cstring(compiler->state->gc, path.start, path.count);
 
     if (!compiler->state->require_exists(compiler->state, path_box->buf)) {
         wi_parser_error_at(compiler->parser, path, "file %s does not exist", path_box->buf);
