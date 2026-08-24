@@ -31,7 +31,7 @@ start := os.clock();
 {
     stretch_depth := max_depth + 1;
     stretch_tree := bottom_up_tree(0, stretch_depth);
-    print("stretch tree of depth " .. stretch_depth .. " check: " .. item_check(stretch_tree));
+    print("stretch tree of depth ${stretch_depth} check: ${item_check(stretch_tree)}");
 }
 
 long_lived_tree := bottom_up_tree(0, max_depth);
@@ -44,9 +44,9 @@ for (depth := min_depth; depth <= max_depth; depth = depth + 2) {
         check = check + item_check(bottom_up_tree(1, depth)) + 
                 item_check(bottom_up_tree(-1, depth));
     }
-    
-    print(iterations * 2 .. " trees of depth " .. depth .. " check: " .. check);
+
+    print("${iterations * 2} trees of depth ${depth} check: ${check}");
 }
 
-print("long lived tree of depth " .. max_depth .. " check: " .. item_check(long_lived_tree));
-print("elapsed: " .. (os.clock() - start));
+print("long lived tree of depth ${max_depth} check: ${item_check(long_lived_tree)}");
+print("elapsed ${os.clock() - start}");
