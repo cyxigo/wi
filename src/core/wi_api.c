@@ -231,6 +231,15 @@ wi_check_real(struct wi_state* state) {
     return wi_value_as_real(value);
 }
 
+void
+wi_check_null(wi_state* state) {
+    wi_value value = wi_state_pop(state);
+
+    if (!wi_value_is_null(value)) {
+        wi_state_error(state, "expected a value of type null but got %s", wi_value_type(value));
+    }
+}
+
 bool
 wi_check_bool(struct wi_state* state) {
     wi_value value = wi_state_pop(state);
@@ -405,6 +414,14 @@ wi_slot_check_real(struct wi_state* state, int slot) {
     }
 
     return wi_slot_get_real(state, slot);
+}
+
+void
+wi_slot_check_null(wi_state* state, int slot) {
+    if (!wi_slot_is_null(state, slot)) {
+        wi_state_error(state, "bad argument %i - expected a value of type null but got %s", slot,
+                       wi_value_type(state->ffi_stack[slot]));
+    }
 }
 
 bool

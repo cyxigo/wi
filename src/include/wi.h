@@ -458,6 +458,14 @@ WI_API wi_real
 wi_check_real(wi_state* state);
 
 /**
+ * Pop a null value from the stack with type-checking
+ *
+ * @param state Wi state instance
+ */
+WI_API void
+wi_check_null(wi_state* state);
+
+/**
  * Pop a boolean value from the stack with type-checking
  *
  * @param state Wi state instance
@@ -651,6 +659,15 @@ wi_slot_get_userdata(wi_state* state, int slot);
  */
 WI_API wi_real
 wi_slot_check_real(wi_state* state, int slot);
+
+/**
+ * Type-check if a slot has null value
+ *
+ * @param state Wi state instance
+ * @param slot Slot index (0-[arg_count])
+ */
+WI_API void
+wi_slot_check_null(wi_state* state, int slot);
 
 /**
  * Get a boolean value from a slot with type-checking
