@@ -26,4 +26,5 @@ I don't have many interpreted languages installed: Wi, Lua (5.4.7), Python (3.13
 - Ruby: 0.152
 - Lua: 0.203
 
-As you can see, Wi **is** fast - not the **fastest**, but **fast**. There are a lot of things to optimize and work on, and Wi is in beta, sooo... Yeah... These numbers heavily depend on your OS, CPU and many many many other thingies.
+As you can see, Wi **is** fast – not the **fastest**, but **fast**. Around Lua performance. <br />
+There a lot of things to optimize and work on, Wi is still in beta you know.
