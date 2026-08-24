@@ -222,6 +222,11 @@ _lexer_peek_next(struct wi_lexer* lexer) {
 }
 
 static bool
+_lexer_check_next(struct wi_lexer* lexer, char c) {
+    return _lexer_peek_next(lexer) == c;
+}
+
+static bool
 _lexer_match(struct wi_lexer* lexer, char c) {
     if (!_lexer_check(lexer, c)) {
         return false;
@@ -372,7 +377,7 @@ _lexer_string(struct wi_lexer* lexer) {
             return _lexer_error(lexer, "unfinished string", line, col);
         }
 
-        if (_lexer_check(lexer, '$') && _lexer_peek_next(lexer) == '{') {
+        if (_lexer_check(lexer, '$') && _lexer_check_next(lexer, '{')) {
             if (lexer->interp_depth == WI_INTERP_MAX) {
                 /*
                     we can't format lexer errors so we have to use the ancient technique called
@@ -390,7 +395,7 @@ _lexer_string(struct wi_lexer* lexer) {
             return token;
         }
 
-        if (_lexer_check(lexer, '\\') && _lexer_peek_next(lexer) != '\0') {
+        if (_lexer_check(lexer, '\\') && !_lexer_check_next(lexer, '\0')) {
             _lexer_advance(lexer);
         }
 
@@ -407,6 +412,13 @@ _lexer_string(struct wi_lexer* lexer) {
 }
 
 static void
+_lexer_skip_line(struct wi_lexer* lexer) {
+    while (!_lexer_check(lexer, '\n') && !_lexer_is_at_end(lexer)) {
+        _lexer_advance(lexer);
+    }
+}
+
+static void
 _lexer_skip_whitespace(struct wi_lexer* lexer) {
     for (;;) {
         char c = _lexer_peek(lexer);
@@ -418,17 +430,23 @@ _lexer_skip_whitespace(struct wi_lexer* lexer) {
             case '\n':
                 _lexer_advance(lexer);
                 break;
+            case '#':
+                /* skip shebang */
+                if (lexer->line == 1 && _lexer_check_next(lexer, '!')) {
+                    _lexer_skip_line(lexer);
+                    break;
+                }
+
+                return;
             case '/':
-                if (_lexer_peek_next(lexer) == '/') {
-                    while (!_lexer_check(lexer, '\n') && !_lexer_is_at_end(lexer)) {
-                        _lexer_advance(lexer);
-                    }
-                } else if (_lexer_peek_next(lexer) == '*') {
+                if (_lexer_check_next(lexer, '/')) {
+                    _lexer_skip_line(lexer);
+                } else if (_lexer_check_next(lexer, '*')) {
                     _lexer_advance(lexer);
                     _lexer_advance(lexer);
 
                     while (!_lexer_is_at_end(lexer)) {
-                        if (_lexer_check(lexer, '*') && _lexer_peek_next(lexer) == '/') {
+                        if (_lexer_check(lexer, '*') && _lexer_check_next(lexer, '/')) {
                             _lexer_advance(lexer);
                             _lexer_advance(lexer);
                             break;
