@@ -187,44 +187,9 @@ wi_push_userdata(struct wi_state* state, const char* name, void* userdata, wi_us
 
 wi_real
 wi_pop_real(struct wi_state* state) {
-    return wi_value_as_real(wi_state_pop(state));
-}
-
-void
-wi_pop_null(struct wi_state* state) {
-    wi_state_drop(state);
-}
-
-bool
-wi_pop_bool(struct wi_state* state) {
-    return wi_value_as_bool(wi_state_pop(state));
-}
-
-char*
-wi_pop_string(struct wi_state* state, int* count, int* len) {
-    struct wi_string* string = wi_value_as_string(wi_state_pop(state));
-
-    if (count) {
-        *count = string->count;
-    }
-
-    if (len) {
-        *len = string->len;
-    }
-
-    return string->buf;
-}
-
-void*
-wi_pop_userdata(struct wi_state* state) {
-    return wi_value_as_userdata(wi_state_pop(state))->data;
-}
-
-wi_real
-wi_check_real(struct wi_state* state) {
     wi_value value = wi_state_pop(state);
 
-    if (!wi_value_is_real(value)) {
+    if (WI_UNLIKELY(!wi_value_is_real(value))) {
         wi_state_error(state, "expected a value of type real but got %s", wi_value_type(value));
     }
 
@@ -232,19 +197,19 @@ wi_check_real(struct wi_state* state) {
 }
 
 void
-wi_check_null(wi_state* state) {
+wi_pop_null(struct wi_state* state) {
     wi_value value = wi_state_pop(state);
 
-    if (!wi_value_is_null(value)) {
+    if (WI_UNLIKELY(!wi_value_is_null(value))) {
         wi_state_error(state, "expected a value of type null but got %s", wi_value_type(value));
     }
 }
 
 bool
-wi_check_bool(struct wi_state* state) {
+wi_pop_bool(struct wi_state* state) {
     wi_value value = wi_state_pop(state);
 
-    if (!wi_value_is_bool(value)) {
+    if (WI_UNLIKELY(!wi_value_is_bool(value))) {
         wi_state_error(state, "expected a value of type bool but got %s", wi_value_type(value));
     }
 
@@ -252,10 +217,10 @@ wi_check_bool(struct wi_state* state) {
 }
 
 char*
-wi_check_string(struct wi_state* state, int* count, int* len) {
+wi_pop_string(struct wi_state* state, int* count, int* len) {
     wi_value value = wi_state_pop(state);
 
-    if (!wi_value_is_string(value)) {
+    if (WI_UNLIKELY(!wi_value_is_string(value))) {
         wi_state_error(state, "expected a value of type string but got %s", wi_value_type(value));
     }
 
@@ -273,8 +238,8 @@ wi_check_string(struct wi_state* state, int* count, int* len) {
 }
 
 void*
-wi_check_userdata(struct wi_state* state, const char* name) {
-    if (!wi_is_userdata(state, name)) {
+wi_pop_userdata(struct wi_state* state, const char* name) {
+    if (WI_UNLIKELY(!wi_is_userdata(state, name))) {
         wi_state_error(state, "expected a value of type userdata %s but got %s", name,
                        wi_value_type(wi_state_pop(state)));
     }
@@ -292,7 +257,7 @@ wi_call(struct wi_state* state, uint8_t arg_count, char** error) {
     if (setjmp(recovery->jmp) == WI_RUN_OK) {
         wi_value value = wi_state_peek(state, arg_count);
 
-        if (!wi_value_is_foreign(value) && !wi_value_is_closure(value)) {
+        if (WI_UNLIKELY(!wi_value_is_foreign(value) && !wi_value_is_closure(value))) {
             wi_state_error(state, "cannot call a value of type %s", wi_value_type(value));
         }
 
@@ -378,65 +343,35 @@ wi_slot_set_userdata(struct wi_state* state, int slot, const char* name, void* u
 
 wi_real
 wi_slot_get_real(struct wi_state* state, int slot) {
-    return wi_value_as_real(state->ffi_stack[slot]);
-}
-
-bool
-wi_slot_get_bool(struct wi_state* state, int slot) {
-    return wi_value_as_bool(state->ffi_stack[slot]);
-}
-
-char*
-wi_slot_get_string(struct wi_state* state, int slot, int* count, int* len) {
-    struct wi_string* string = wi_value_as_string(state->ffi_stack[slot]);
-
-    if (count) {
-        *count = string->count;
-    }
-
-    if (len) {
-        *len = string->len;
-    }
-
-    return string->buf;
-}
-
-void*
-wi_slot_get_userdata(struct wi_state* state, int slot) {
-    return wi_value_as_userdata(state->ffi_stack[slot])->data;
-}
-
-wi_real
-wi_slot_check_real(struct wi_state* state, int slot) {
-    if (!wi_slot_is_real(state, slot)) {
+    if (WI_UNLIKELY(!wi_slot_is_real(state, slot))) {
         wi_state_error(state, "bad argument %i - expected a value of type real but got %s", slot,
                        wi_value_type(state->ffi_stack[slot]));
     }
 
-    return wi_slot_get_real(state, slot);
+    return wi_value_as_real(state->ffi_stack[slot]);
 }
 
 void
-wi_slot_check_null(wi_state* state, int slot) {
-    if (!wi_slot_is_null(state, slot)) {
+wi_slot_get_null(wi_state* state, int slot) {
+    if (WI_UNLIKELY(!wi_slot_is_null(state, slot))) {
         wi_state_error(state, "bad argument %i - expected a value of type null but got %s", slot,
                        wi_value_type(state->ffi_stack[slot]));
     }
 }
 
 bool
-wi_slot_check_bool(struct wi_state* state, int slot) {
-    if (!wi_slot_is_bool(state, slot)) {
+wi_slot_get_bool(struct wi_state* state, int slot) {
+    if (WI_UNLIKELY(!wi_slot_is_bool(state, slot))) {
         wi_state_error(state, "bad argument %i - expected a value of type bool but got %s", slot,
                        wi_value_type(state->ffi_stack[slot]));
     }
 
-    return wi_slot_get_bool(state, slot);
+    return wi_value_as_bool(state->ffi_stack[slot]);
 }
 
 char*
-wi_slot_check_string(struct wi_state* state, int slot, int* count, int* len) {
-    if (!wi_slot_is_string(state, slot)) {
+wi_slot_get_string(struct wi_state* state, int slot, int* count, int* len) {
+    if (WI_UNLIKELY(!wi_slot_is_string(state, slot))) {
         wi_state_error(state, "bad argument %i - expected a value of type string but got %s", slot,
                        wi_value_type(state->ffi_stack[slot]));
     }
@@ -455,10 +390,10 @@ wi_slot_check_string(struct wi_state* state, int slot, int* count, int* len) {
 }
 
 void*
-wi_slot_check_userdata(struct wi_state* state, int slot, const char* name) {
+wi_slot_get_userdata(struct wi_state* state, int slot, const char* name) {
     wi_value value = state->ffi_stack[slot];
 
-    if (!wi_slot_is_userdata(state, slot, name)) {
+    if (WI_UNLIKELY(!wi_slot_is_userdata(state, slot, name))) {
         wi_state_error(state, "bad argument %i - expected a value of type userdata %s but got %s", slot, name,
                        wi_value_type(value));
     }

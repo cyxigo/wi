@@ -87,7 +87,7 @@ WI_API void
 wi_def_stm(wi_state* state);
 
 /**
- * Define a foreign (C) function in the state
+ * Define a foreign (C) function in the state (global)
  *
  * @param state Wi state instance
  * @param name Function name
@@ -408,7 +408,7 @@ WI_API void
 wi_push_userdata(wi_state* state, const char* name, void* userdata, wi_userdata_finalizer_fn finalizer);
 
 /**
- * Pop a real value from the stack
+ * Pop a real value from the stack with type-checking
  *
  * @param state Wi state instance
  */
@@ -416,7 +416,7 @@ WI_API wi_real
 wi_pop_real(wi_state* state);
 
 /**
- * Pop a null value from the stack
+ * Pop a null value from the stack with type-checking
  *
  * @param state Wi state instance
  */
@@ -424,54 +424,12 @@ WI_API void
 wi_pop_null(wi_state* state);
 
 /**
- * Pop a boolean value from the stack
- *
- * @param state Wi state instance
- */
-WI_API bool
-wi_pop_bool(wi_state* state);
-
-/**
- * Pop a string value from the stack
- *
- * @param state Wi state instance
- * @param count Optional pointer to store the string byte count, can be `NULL`
- * @param len Optional pointer to store the string length (codepoint count), can be `NULL`
- */
-WI_API char*
-wi_pop_string(wi_state* state, int* count, int* len);
-
-/**
- * Pop userdata from the stack
- *
- * @param state Wi state instance
- */
-WI_API void*
-wi_pop_userdata(wi_state* state);
-
-/**
- * Pop a real value from the stack with type-checking
- *
- * @param state Wi state instance
- */
-WI_API wi_real
-wi_check_real(wi_state* state);
-
-/**
- * Pop a null value from the stack with type-checking
- *
- * @param state Wi state instance
- */
-WI_API void
-wi_check_null(wi_state* state);
-
-/**
  * Pop a boolean value from the stack with type-checking
  *
  * @param state Wi state instance
  */
 WI_API bool
-wi_check_bool(wi_state* state);
+wi_pop_bool(wi_state* state);
 
 /**
  * Pop a string value from the stack with type-checking
@@ -481,7 +439,7 @@ wi_check_bool(wi_state* state);
  * @param len Optional pointer to store the string length (codepoint count), can be `NULL`
  */
 WI_API char*
-wi_check_string(wi_state* state, int* count, int* len);
+wi_pop_string(wi_state* state, int* count, int* len);
 
 /**
  * Pop userdata from the stack with type-checking
@@ -490,13 +448,12 @@ wi_check_string(wi_state* state, int* count, int* len);
  * @param name Userdata name, used for type-checking
  */
 WI_API void*
-wi_check_userdata(wi_state* state, const char* name);
+wi_pop_userdata(wi_state* state, const char* name);
 
 /**
  * Call a Wi function, is protected.
  *
- * Leaves the result on the stack top, which needs to be explicitly popped via one of `wi_pop_X` or `wi_check_X`
- * functions
+ * Leaves the result on the stack top, which needs to be explicitly popped via one of the `wi_pop_X` functions
  *
  * @param state Wi state instance
  * @param arg_count Argument count
@@ -609,7 +566,7 @@ wi_slot_set_userdata(wi_state* state, int slot, const char* name, void* userdata
                      wi_userdata_finalizer_fn finalizer);
 
 /**
- * Get a real value from a slot
+ * Get a real value from a slot with type-checking
  *
  * @param state Wi state instance
  * @param slot Slot index (0-[arg_count])
@@ -619,55 +576,13 @@ WI_API wi_real
 wi_slot_get_real(wi_state* state, int slot);
 
 /**
- * Get a boolean value from a slot
- *
- * @param state Wi state instance
- * @param slot Slot index (0-[arg_count])
- * @return Boolean stored in a slot
- */
-WI_API bool
-wi_slot_get_bool(wi_state* state, int slot);
-
-/**
- * Get a string value from a slot
- *
- * @param state Wi state instance
- * @param slot Slot index (0-[arg_count])
- * @param count Optional pointer to store the string byte count, can be `NULL`
- * @param len Optional pointer to store the string length (codepoint count), can be `NULL`
- * @return String stored in a slot
- */
-WI_API char*
-wi_slot_get_string(wi_state* state, int slot, int* count, int* len);
-
-/**
- * Get userdata from a slot
- *
- * @param state Wi state instance
- * @param slot Slot index (0-[arg_count])
- * @return Userdata stored in a slot
- */
-WI_API void*
-wi_slot_get_userdata(wi_state* state, int slot);
-
-/**
- * Get a real value from a slot with type-checking
- *
- * @param state Wi state instance
- * @param slot Slot index (0-[arg_count])
- * @return Real stored in a slot
- */
-WI_API wi_real
-wi_slot_check_real(wi_state* state, int slot);
-
-/**
  * Type-check if a slot has null value
  *
  * @param state Wi state instance
  * @param slot Slot index (0-[arg_count])
  */
-WI_API void
-wi_slot_check_null(wi_state* state, int slot);
+void
+wi_slot_get_null(wi_state* state, int slot);
 
 /**
  * Get a boolean value from a slot with type-checking
@@ -677,7 +592,7 @@ wi_slot_check_null(wi_state* state, int slot);
  * @return Boolean stored in a slot
  */
 WI_API bool
-wi_slot_check_bool(wi_state* state, int slot);
+wi_slot_get_bool(wi_state* state, int slot);
 
 /**
  * Get a string value from a slot with type-checking
@@ -689,7 +604,7 @@ wi_slot_check_bool(wi_state* state, int slot);
  * @return String stored in a slot
  */
 WI_API char*
-wi_slot_check_string(wi_state* state, int slot, int* count, int* len);
+wi_slot_get_string(wi_state* state, int slot, int* count, int* len);
 
 /**
  * Get userdata from a slot with type-checking
@@ -700,6 +615,6 @@ wi_slot_check_string(wi_state* state, int slot, int* count, int* len);
  * @return Userdata stored in a slot
  */
 WI_API void*
-wi_slot_check_userdata(wi_state* state, int slot, const char* name);
+wi_slot_get_userdata(wi_state* state, int slot, const char* name);
 
 #endif

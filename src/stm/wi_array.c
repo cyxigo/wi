@@ -151,7 +151,7 @@ static void
 _array_remove_at(struct wi_state* state, int arg_count) {
     WI_UNUSED(arg_count);
     struct wi_array* array = _check_arg1_array(state);
-    int              index = (int)wi_slot_check_real(state, 2);
+    int              index = (int)wi_slot_get_real(state, 2);
 
     if (index < 0 || index >= array->items.count) {
         wi_state_error(state, "array index out of range: %i", index);
@@ -198,8 +198,8 @@ static void
 _array_slice(struct wi_state* state, int arg_count) {
     WI_UNUSED(arg_count);
     struct wi_array* array = _check_arg1_array(state);
-    int              start = (int)wi_slot_check_real(state, 2);
-    int              end   = (int)wi_slot_check_real(state, 3);
+    int              start = (int)wi_slot_get_real(state, 2);
+    int              end   = (int)wi_slot_get_real(state, 3);
 
     if (start < 0 || start > array->items.count || end < 0 || end > array->items.count || start > end) {
         wi_state_error(state, "array slice bounds out of range: %i to %i", start, end);

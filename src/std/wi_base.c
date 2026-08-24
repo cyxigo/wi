@@ -26,7 +26,7 @@ _base_input(struct wi_state* state, int arg_count) {
     const char* prompt = "";
 
     if (arg_count == 1) {
-        prompt = wi_slot_check_string(state, 1, NULL, NULL);
+        prompt = wi_slot_get_string(state, 1, NULL, NULL);
     } else if (arg_count == 0) {
         /* do nothing */
     } else {
@@ -64,7 +64,7 @@ _base_exit(struct wi_state* state, int arg_count) {
 static void
 _base_error(struct wi_state* state, int arg_count) {
     WI_UNUSED(arg_count);
-    wi_state_error(state, "%s", wi_slot_check_string(state, 1, NULL, NULL));
+    wi_state_error(state, "%s", wi_slot_get_string(state, 1, NULL, NULL));
 }
 
 static void
@@ -73,7 +73,7 @@ _base_assert(struct wi_state* state, int arg_count) {
     bool is_falsy = wi_value_is_falsy(state->ffi_stack[1]);
 
     if (is_falsy) {
-        wi_state_error(state, "%s", wi_slot_check_string(state, 2, NULL, NULL));
+        wi_state_error(state, "%s", wi_slot_get_string(state, 2, NULL, NULL));
     }
 
     wi_slot_set_bool(state, 0, !is_falsy);
@@ -255,7 +255,7 @@ static void
 _base_has_field(struct wi_state* state, int arg_count) {
     WI_UNUSED(arg_count);
     struct wi_object* object = _check_arg1_object(state);
-    wi_slot_check_string(state, 2, NULL, NULL);
+    wi_slot_get_string(state, 2, NULL, NULL);
     wi_slot_set_bool(state, 0, wi_table_get(&object->fields, state->ffi_stack[2], NULL));
 }
 
