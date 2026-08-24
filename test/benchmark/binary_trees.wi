@@ -49,4 +49,4 @@ for (depth := min_depth; depth <= max_depth; depth = depth + 2) {
 }
 
 print("long lived tree of depth ${max_depth} check: ${item_check(long_lived_tree)}");
-print("elapsed ${os.clock() - start}");
+print("elapsed: ${os.clock() - start}");

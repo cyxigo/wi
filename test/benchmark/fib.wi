@@ -12,4 +12,4 @@ for (i := 0; i < 5; i = i + 1) {
     print(fib(28));
 }
 
-print("elapsed ${os.clock() - start}");
+print("elapsed: ${os.clock() - start}");

@@ -12,4 +12,4 @@ for (i := 0; i < #arr; i = i + 1) {
 }
 
 print(sum);
-print("elapsed ${os.clock() - start}");
+print("elapsed: ${os.clock() - start}");
