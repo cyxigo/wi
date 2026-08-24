@@ -14,13 +14,13 @@
 </div>
 
 ```scala
-var obj_person = object {
-    name = "";
-    greet = |self| => print("Hello, " .. self.name .. "!");
+obj_person := object {
+    name: "";
+    greet: |self| => print("Hello, ${self.name}!");
 };
 
-var slava = new obj_person {
-    name = "Slava";
+slava := new obj_person {
+    name: "Slava";
 };
 
 slava->greet(); // Hello, Slava!
