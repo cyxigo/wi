@@ -25,22 +25,6 @@ _on_compile(wi_state* state) {
     }
 }
 
-static bool
-_init_g_state(wi_conf conf) {
-    _g_state = wi_new_state(conf);
-
-    if (!_g_state) {
-        return false;
-    }
-
-    wi_state_set_on_compile_fn(_g_state, _on_compile);
-
-    wi_def_stm(_g_state);
-    wi_def_std(_g_state);
-
-    return true;
-}
-
 static void
 _delete_g_state(void) {
     wi_delete_state(_g_state);
@@ -279,10 +263,17 @@ main(int argc, const char* argv[]) {
     const char** script_argv = NULL;
     _parse_flags(argc, argv, &conf, &file_path, &script_argc, &script_argv);
 
-    if (!_init_g_state(conf)) {
-        fprintf(stderr, "memory error: failed to allocate a state\n");
+    _g_state = wi_new_state(conf);
+
+    if (!_g_state) {
+        fprintf(stderr, "out of memory: failed to allocate a state\n");
         return EXIT_FAILURE;
     }
+
+    wi_state_set_on_compile_fn(_g_state, _on_compile);
+
+    wi_def_stm(_g_state);
+    wi_def_std(_g_state);
 
     if (!file_path) {
         _repl();
