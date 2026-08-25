@@ -285,6 +285,28 @@ end:
     state->ffi_stack[0] = WI_MAKE_BOX_VALUE(wi_take_cstring(state->gc, buf, count));
 }
 
+static void
+_string_each(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
+    int      count;
+    char*    string   = wi_slot_get_string(state, 1, &count, NULL);
+    wi_value callback = wi_slot_check_callback(state, 2, 1);
+
+    for (size_t i = 0; i < (size_t)count;) {
+        size_t cp_len = wi_utf8_cp_len(string[i]);
+        char   buf[5] = {0};
+        memcpy(buf, string + i, cp_len);
+
+        wi_state_push(state, callback);
+        wi_state_push(state, WI_MAKE_BOX_VALUE(wi_copy_cstring(state->gc, buf, (int)cp_len)));
+        wi_state_call(state, callback, 1, true);
+
+        i += cp_len;
+    }
+
+    wi_slot_set_null(state, 0);
+}
+
 void
 wi_state_def_string_stm(struct wi_state* state) {
     struct wi_table* table = &state->stm_string;
@@ -300,4 +322,5 @@ wi_state_def_string_stm(struct wi_state* state) {
     wi_table_set_foreign(table, "replace", _string_replace, 3, false);
     wi_table_set_foreign(table, "split", _string_split, 2, false);
     wi_table_set_foreign(table, "reverse", _string_reverse, 1, false);
+    wi_table_set_foreign(table, "each", _string_each, 2, false);
 }
