@@ -60,6 +60,18 @@ wi_value_as_cstring(wi_value value) {
     return wi_value_as_string(value)->buf;
 }
 
+WI_INLINE uint32_t
+wi_string_hash(const char* buf, int len) {
+    uint32_t hash = 2166136261u;
+
+    for (int i = 0; i < len; i++) {
+        hash ^= (uint8_t)buf[i];
+        hash *= 16777619u;
+    }
+
+    return hash;
+}
+
 struct wi_string*
 wi_new_string(struct wi_gc* gc, char* buf, int count, uint32_t hash);
 struct wi_string*

@@ -9,18 +9,6 @@
 #include "wi_util.h"
 #include "wi_value.h"
 
-uint32_t
-wi_string_hash(const char* buf, int len) {
-    uint32_t hash = 2166136261u;
-
-    for (int i = 0; i < len; i++) {
-        hash ^= (uint8_t)buf[i];
-        hash *= 16777619u;
-    }
-
-    return hash;
-}
-
 const double WI_TABLE_MAX_LOAD = 0.75;
 
 static void
@@ -109,7 +97,7 @@ _table_adjust_capacity(struct wi_table* table, int capacity) {
 bool
 wi_table_set(struct wi_table* table, wi_value key, wi_value value) {
     if (WI_UNLIKELY(table->count + 1 > table->capacity * WI_TABLE_MAX_LOAD)) {
-        int capacity = WI_GROW_CAPACITY(table->capacity);
+        int capacity = WI_TABLE_GROW_CAPACITY(table->capacity);
         _table_adjust_capacity(table, capacity);
     }
 
@@ -235,7 +223,7 @@ wi_table_reserve(struct wi_table* table, int count) {
     int capacity = table->capacity;
 
     while (needed > capacity * WI_TABLE_MAX_LOAD) {
-        capacity = WI_GROW_CAPACITY(capacity);
+        capacity = WI_TABLE_GROW_CAPACITY(capacity);
     }
 
     if (capacity > table->capacity) {

@@ -1465,20 +1465,34 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
             struct wi_object* clone = wi_new_object(state->gc);
             WI_GC_PUSH_ROOT(state->gc, clone);
 
-            for (uint16_t i = 0; i < count; i++) {
-                wi_value value = start[i];
+            /*
+                most of the time we clone a single object rather than merge multiple ones
+                so a simple optimization here is to use wi_table_copy for simple cloning
+            */
+            if (WI_LIKELY(count == 1)) {
+                wi_value value = start[0];
 
                 if (WI_UNLIKELY(!wi_value_is_object(value))) {
                     _ERROR("cannot use operator 'new' on a value of type %s", wi_value_type(value));
                 }
 
-                struct wi_table* fields = &wi_value_as_object(value)->fields;
+                wi_table_copy(&wi_value_as_object(value)->fields, &clone->fields);
+            } else {
+                for (uint16_t i = 0; i < count; i++) {
+                    wi_value value = start[i];
 
-                for (int j = 0; j < fields->capacity; j++) {
-                    struct wi_entry* entry = &fields->entries[j];
+                    if (WI_UNLIKELY(!wi_value_is_object(value))) {
+                        _ERROR("cannot use operator 'new' on a value of type %s", wi_value_type(value));
+                    }
 
-                    if (!wi_value_is_empty(entry->key)) {
-                        wi_table_set(&clone->fields, entry->key, entry->value);
+                    struct wi_table* fields = &wi_value_as_object(value)->fields;
+
+                    for (int j = 0; j < fields->capacity; j++) {
+                        struct wi_entry* entry = &fields->entries[j];
+
+                        if (!wi_value_is_empty(entry->key)) {
+                            wi_table_set(&clone->fields, entry->key, entry->value);
+                        }
                     }
                 }
             }

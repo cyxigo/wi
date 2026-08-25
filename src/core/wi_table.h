@@ -7,8 +7,17 @@
 
 struct wi_string;
 
-uint32_t
-wi_string_hash(const char* buf, int len);
+/*
+    tables grow from a smaller floor than our good old buffers because most of the tables
+    are used for object's fields, and objects rarely carry more than 8 fields
+    so we start at 4 instead, might need to tune this a bit though
+*/
+enum {
+    WI_TABLE_MIN_CAPACITY = 4,
+};
+
+#define WI_TABLE_GROW_CAPACITY(capacity) \
+    ((capacity) < WI_TABLE_MIN_CAPACITY ? WI_TABLE_MIN_CAPACITY : (capacity) * WI_BUF_CAPACITY_FACTOR)
 
 struct wi_entry {
     wi_value key;
