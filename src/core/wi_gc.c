@@ -493,8 +493,7 @@ wi_gc_collect_minor(struct wi_gc* gc) {
     _gc_mark(gc);
     _gc_sweep_young(gc);
 
-    gc->remembered_count = 0;
-    gc->young_bytes      = 0;
+    gc->young_bytes = 0;
 
     if (WI_UNLIKELY(wi_log_gc(gc))) {
         printf("---  end minor gc  ---\n");
@@ -516,11 +515,9 @@ wi_gc_collect_major(struct wi_gc* gc) {
     _gc_sweep_old(gc);
     _gc_sweep_young(gc);
 
-    gc->remembered_count = 0;
-    gc->young_bytes      = 0;
-
-    size_t grown   = gc->bytes_allocated * gc->heap_grow_factor;
-    gc->next_major = grown > gc->min_heap ? grown : gc->min_heap;
+    gc->young_bytes = 0;
+    size_t grown    = gc->bytes_allocated * gc->heap_grow_factor;
+    gc->next_major  = grown > gc->min_heap ? grown : gc->min_heap;
 
     if (WI_UNLIKELY(wi_log_gc(gc))) {
         printf("---  end major gc  ---\n");
