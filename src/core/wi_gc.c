@@ -55,65 +55,6 @@ wi_new_gc(wi_conf conf) {
 }
 
 static void
-_gc_free_box(struct wi_gc* gc, struct wi_box* box);
-
-static void
-_gc_free_list(struct wi_gc* gc, struct wi_box* box) {
-    while (box) {
-        struct wi_box* next = box->next;
-        _gc_free_box(gc, box);
-        box = next;
-    }
-}
-
-void
-wi_delete_gc(struct wi_gc* gc) {
-    _gc_free_list(gc, gc->young);
-    _gc_free_list(gc, gc->old);
-
-    free(gc->gray_stack);
-    free(gc->remembered);
-    free(gc->temp_roots);
-    wi_table_free(&gc->strings);
-    free(gc);
-}
-
-void*
-wi_gc_realloc(struct wi_gc* gc, void* ptr, size_t old_size, size_t new_size) {
-    gc->bytes_allocated += new_size - old_size;
-
-    if (new_size > old_size) {
-        gc->young_bytes += new_size - old_size;
-
-        if (WI_UNLIKELY(wi_conf_is_set(gc->conf, WI_CONF_STRESS_GC))) {
-            wi_gc_collect_major(gc);
-        } else if (!gc->compiler && gc->young_bytes > gc->young_max) {
-            /*
-                why !gc->compiler you may ask? because installing 3 gazillion write barriers in
-                the compiler would be so so painful and the benefit of minor collections at
-                compile-time is almost none to zero!
-            */
-            wi_gc_collect_minor(gc);
-        } else if (gc->bytes_allocated > gc->next_major) {
-            wi_gc_collect_major(gc);
-        }
-    }
-
-    if (new_size == 0) {
-        free(ptr);
-        return NULL;
-    }
-
-    void* result = realloc(ptr, new_size);
-
-    if (WI_UNLIKELY(!result)) {
-        wi_state_oom(gc->state, "out of memory: failed to allocate memory in the garbage collector");
-    }
-
-    return result;
-}
-
-static void
 _gc_free_box(struct wi_gc* gc, struct wi_box* box) {
     if (WI_UNLIKELY(wi_log_gc(gc))) {
         printf("free box at %p of kind %d\n", (void*)box, box->kind);
@@ -177,6 +118,62 @@ _gc_free_box(struct wi_gc* gc, struct wi_box* box) {
             break;
         }
     }
+}
+
+static void
+_gc_free_list(struct wi_gc* gc, struct wi_box* box) {
+    while (box) {
+        struct wi_box* next = box->next;
+        _gc_free_box(gc, box);
+        box = next;
+    }
+}
+
+void
+wi_delete_gc(struct wi_gc* gc) {
+    _gc_free_list(gc, gc->young);
+    _gc_free_list(gc, gc->old);
+
+    free(gc->gray_stack);
+    free(gc->remembered);
+    free(gc->temp_roots);
+    wi_table_free(&gc->strings);
+    free(gc);
+}
+
+void*
+wi_gc_realloc(struct wi_gc* gc, void* ptr, size_t old_size, size_t new_size) {
+    gc->bytes_allocated += new_size - old_size;
+
+    if (new_size > old_size) {
+        gc->young_bytes += new_size - old_size;
+
+        if (WI_UNLIKELY(wi_conf_is_set(gc->conf, WI_CONF_STRESS_GC))) {
+            wi_gc_collect_major(gc);
+        } else if (!gc->compiler && gc->young_bytes > gc->young_max) {
+            /*
+                why !gc->compiler you may ask? because installing 3 gazillion write barriers in
+                the compiler would be so so painful and the benefit of minor collections at
+                compile-time is almost none to zero!
+            */
+            wi_gc_collect_minor(gc);
+        } else if (gc->bytes_allocated > gc->next_major) {
+            wi_gc_collect_major(gc);
+        }
+    }
+
+    if (new_size == 0) {
+        free(ptr);
+        return NULL;
+    }
+
+    void* result = realloc(ptr, new_size);
+
+    if (WI_UNLIKELY(!result)) {
+        wi_state_oom(gc->state, "out of memory: failed to allocate memory in the garbage collector");
+    }
+
+    return result;
 }
 
 static void
