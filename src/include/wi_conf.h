@@ -34,11 +34,11 @@ enum {
     WI_INTERP_MAX    = 8,     /* Maximum depth of string interpolation */
 
     /**
-     * Garbage Collector settings
+     * Default GC settings, reconfigurable via wi_tune_gc
      */
     WI_GC_MIN_HEAP         = 10485760, /* Total heap size before the first major collection (`10MB`) */
     WI_GC_HEAP_GROW_FACTOR = 2,        /* Heap growth factor per major collection */
-    WI_GC_YOUNG_MAX        = 1048576,  /* Young generation size before a minor collection runs (`1MB`) */
+    WI_GC_YOUNG_MAX        = 1048576,  /* Young generation size before a minor collection (`1MB`) */
 
     /**
      * VM limits

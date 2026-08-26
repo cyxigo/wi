@@ -118,6 +118,15 @@ wi_object_set_field_foreign(struct wi_state* state, struct wi_object* object, co
     _set_field(state, object, name, WI_MAKE_BOX_VALUE(foreign));
 }
 
+void
+wi_tune_gc(struct wi_state* state, size_t min_heap, size_t heap_grow_factor, size_t young_max) {
+    struct wi_gc* gc     = state->gc;
+    gc->min_heap         = min_heap;
+    gc->heap_grow_factor = heap_grow_factor < 1 ? 1 : heap_grow_factor;
+    gc->young_max        = young_max;
+    gc->next_major       = min_heap;
+}
+
 bool
 wi_find_function(struct wi_state* state, const char* name) {
     struct wi_string* name_box = wi_make_string(state->gc, name);
@@ -358,7 +367,7 @@ wi_slot_get_real(struct wi_state* state, int slot) {
 }
 
 void
-wi_slot_get_null(wi_state* state, int slot) {
+wi_slot_get_null(struct wi_state* state, int slot) {
     if (WI_UNLIKELY(!wi_slot_is_null(state, slot))) {
         wi_state_error(state, "bad argument %i - expected a value of type null but got %s", slot,
                        wi_value_type(state->ffi_stack[slot]));

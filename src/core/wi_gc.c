@@ -24,6 +24,10 @@ wi_new_gc(wi_conf conf) {
 
     gc->conf = conf;
 
+    gc->min_heap         = WI_GC_MIN_HEAP;
+    gc->heap_grow_factor = WI_GC_HEAP_GROW_FACTOR;
+    gc->young_max        = WI_GC_YOUNG_MAX;
+
     gc->state    = NULL;
     gc->compiler = NULL;
 
@@ -31,7 +35,7 @@ wi_new_gc(wi_conf conf) {
     gc->old             = NULL;
     gc->young_bytes     = 0;
     gc->bytes_allocated = 0;
-    gc->next_major      = WI_GC_MIN_HEAP;
+    gc->next_major      = gc->min_heap;
     gc->minor           = false;
 
     gc->gray_stack    = NULL;
@@ -83,7 +87,7 @@ wi_gc_realloc(struct wi_gc* gc, void* ptr, size_t old_size, size_t new_size) {
 
         if (WI_UNLIKELY(wi_conf_is_set(gc->conf, WI_CONF_STRESS_GC))) {
             wi_gc_collect_major(gc);
-        } else if (!gc->compiler && gc->young_bytes > WI_GC_YOUNG_MAX) {
+        } else if (!gc->compiler && gc->young_bytes > gc->young_max) {
             /*
                 why !gc->compiler you may ask? because installing 3 gazillion write barriers in
                 the compiler would be so so painful and the benefit of minor collections at
@@ -515,8 +519,8 @@ wi_gc_collect_major(struct wi_gc* gc) {
     gc->remembered_count = 0;
     gc->young_bytes      = 0;
 
-    size_t grown   = gc->bytes_allocated * WI_GC_HEAP_GROW_FACTOR;
-    gc->next_major = grown > WI_GC_MIN_HEAP ? grown : WI_GC_MIN_HEAP;
+    size_t grown   = gc->bytes_allocated * gc->heap_grow_factor;
+    gc->next_major = grown > gc->min_heap ? grown : gc->min_heap;
 
     if (WI_UNLIKELY(wi_log_gc(gc))) {
         printf("---  end major gc  ---\n");

@@ -11,6 +11,10 @@
 struct wi_gc {
     wi_conf conf;
 
+    size_t min_heap;
+    size_t heap_grow_factor;
+    size_t young_max;
+
     struct wi_state*    state;
     struct wi_compiler* compiler;
 

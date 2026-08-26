@@ -2,6 +2,7 @@
 #define WI_H
 
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 
 #include "wi_conf.h"
@@ -168,6 +169,18 @@ wi_object_set_field_userdata(wi_state* state, wi_object* object, const char* fie
 WI_API void
 wi_object_set_field_foreign(wi_state* state, wi_object* object, const char* name, wi_foreign_fn fn, int arity,
                             bool is_variadic);
+
+/**
+ * Tune the garbage collector's generational thresholds. Call right after `wi_new_state`, before
+ * any `wi_state_run`. For default settings, see `wi_conf.h`
+ *
+ * @param state Wi state instance
+ * @param min_heap Total heap size before the first major collection
+ * @param heap_grow_factor Heap growth factor per major collection
+ * @param young_max Young generation size before a minor collection
+ */
+WI_API void
+wi_tune_gc(wi_state* state, size_t min_heap, size_t heap_grow_factor, size_t young_max);
 
 /**
  * Create a new Wi state instance
