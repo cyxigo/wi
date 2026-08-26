@@ -16,7 +16,7 @@ for file in test/benchmark/*.wi; do
     perf record -g -o $data wi $file > /dev/null 2>&1
     perf report -i $data > $txt
     cat $file >> $txt
-
+    
     echo "[$count/$total] profiled $file > $txt"
 
     rm -f $data

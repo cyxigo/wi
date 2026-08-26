@@ -198,22 +198,6 @@ wi_table_find_string(struct wi_table* table, const char* buf, int len, uint32_t 
 }
 
 void
-wi_table_remove_white(struct wi_table* table) {
-    wi_value empty = wi_make_empty_value();
-    wi_value true_ = wi_make_true_value();
-
-    for (int i = 0; i < table->capacity; i++) {
-        struct wi_entry* entry = &table->entries[i];
-
-        if (wi_value_is_box(entry->key) && !wi_value_as_box(entry->key)->is_marked) {
-            entry->key   = empty;
-            entry->value = true_;
-            table->live_count--;
-        }
-    }
-}
-
-void
 wi_table_reserve(struct wi_table* table, int count) {
     if (count <= 0) {
         return;

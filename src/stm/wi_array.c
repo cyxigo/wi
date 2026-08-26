@@ -89,6 +89,7 @@ _array_add(struct wi_state* state, int arg_count) {
     WI_UNUSED(arg_count);
     struct wi_array* array = _check_arg1_array(state);
     wi_value_buf_add(&array->items, state->ffi_stack[2]);
+    WI_GC_WRITE_BARRIER(state->gc, array, state->ffi_stack[2]);
     state->ffi_stack[0] = state->ffi_stack[2];
 }
 

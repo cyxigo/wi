@@ -352,8 +352,18 @@ wi_state_pop_recovery(struct wi_state* state) {
     state->recovery_count--;
 }
 
-static void
-_state_close_upvalues(struct wi_state* state, wi_value* last);
+WI_INLINE void
+_state_close_upvalues(struct wi_state* state, wi_value* last) {
+    while (state->open_upvalues && state->open_upvalues->location >= last) {
+        struct wi_upvalue* upvalue = state->open_upvalues;
+
+        upvalue->closed   = *upvalue->location;
+        upvalue->location = &upvalue->closed;
+        WI_GC_WRITE_BARRIER(state->gc, upvalue, upvalue->closed);
+
+        state->open_upvalues = upvalue->next;
+    }
+}
 
 WI_NORETURN void
 wi_state_error(struct wi_state* state, const char* format, ...) {
@@ -531,12 +541,18 @@ _state_subscript_set(struct wi_state* state, wi_value target, wi_value index, wi
         struct wi_array* array = wi_value_as_array(target);
         int              i     = _state_validate_index(state, "array", index, array->items.count);
         array->items.data[i]   = value;
+        WI_GC_WRITE_BARRIER(state->gc, array, value);
         return;
     }
 
     if (wi_value_is_map(target)) {
         struct wi_map* map = wi_value_as_map(target);
-        wi_table_set(&map->items, index, value);
+
+        if (wi_table_set(&map->items, index, value)) {
+            WI_GC_WRITE_BARRIER(state->gc, map, index);
+        }
+
+        WI_GC_WRITE_BARRIER(state->gc, map, value);
         return;
     }
 
@@ -620,18 +636,6 @@ _state_capture_upvalue(struct wi_state* state, wi_value* local) {
     }
 
     return new_upvalue;
-}
-
-static void
-_state_close_upvalues(struct wi_state* state, wi_value* last) {
-    while (state->open_upvalues && state->open_upvalues->location >= last) {
-        struct wi_upvalue* upvalue = state->open_upvalues;
-
-        upvalue->closed   = *upvalue->location;
-        upvalue->location = &upvalue->closed;
-
-        state->open_upvalues = upvalue->next;
-    }
 }
 
 /*
@@ -876,7 +880,19 @@ _state_set_field(struct wi_state* state, wi_value name, wi_value target) {
     }
 
     struct wi_object* object = wi_value_as_object(target);
-    wi_table_set(&object->fields, name, wi_state_top(state));
+    wi_value          value  = wi_state_top(state);
+    /* literal black magic to just make the compiler optimize the hell out of write barriers */
+    bool is_new_key = wi_table_set(&object->fields, name, value);
+
+    if (WI_LIKELY(!object->box.is_old)) {
+        return;
+    }
+
+    if (is_new_key) {
+        WI_GC_WRITE_BARRIER(state->gc, object, name);
+    }
+
+    WI_GC_WRITE_BARRIER(state->gc, object, value);
 }
 
 static struct wi_closure*
@@ -915,6 +931,7 @@ _state_require(struct wi_state* state, wi_value path_value) {
 
     struct wi_closure* closure = wi_new_closure(state->gc, prototype, &object->fields);
     closure->required          = object;
+    closure->is_main           = true;
 
     wi_gc_pop_root(state->gc); /* prototype */
     wi_gc_pop_root(state->gc); /* object */
@@ -1024,12 +1041,25 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
             _DISPATCH();
         }
         _OPCODE_LABEL(DEF_GLOBAL) : {
-            wi_table_set(frame->closure->globals, _READ_CONSTANT(), wi_state_top(state));
+            wi_value name = _READ_CONSTANT();
+            wi_table_set(frame->closure->globals, name, wi_state_top(state));
+
+            if (WI_UNLIKELY(frame->closure->required)) {
+                WI_GC_WRITE_BARRIER(state->gc, frame->closure->required, name);
+                WI_GC_WRITE_BARRIER(state->gc, frame->closure->required, wi_state_top(state));
+            }
+
             wi_state_drop(state);
             _DISPATCH();
         }
         _OPCODE_LABEL(SET_GLOBAL) : {
-            wi_table_set(frame->closure->globals, _READ_CONSTANT(), wi_state_top(state));
+            wi_value name = _READ_CONSTANT();
+            wi_table_set(frame->closure->globals, name, wi_state_top(state));
+
+            if (WI_UNLIKELY(frame->closure->required)) {
+                WI_GC_WRITE_BARRIER(state->gc, frame->closure->required, wi_state_top(state));
+            }
+
             _DISPATCH();
         }
         _OPCODE_LABEL(GET_GLOBAL) : {
@@ -1297,6 +1327,7 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
         _OPCODE_LABEL(PUSH_CLOSURE) : {
             struct wi_prototype* prototype = wi_value_as_prototype(_READ_CONSTANT());
             struct wi_closure*   closure   = wi_new_closure(state->gc, prototype, frame->closure->globals);
+            closure->required              = frame->closure->required;
             wi_state_push(state, WI_MAKE_BOX_VALUE(closure));
 
             for (int i = 0; i < closure->upvalue_count; i++) {
@@ -1308,12 +1339,17 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
                 } else {
                     closure->upvalues[i] = frame->closure->upvalues[index];
                 }
+
+                WI_GC_WRITE_BARRIER(state->gc, closure, WI_MAKE_BOX_VALUE(closure->upvalues[i]));
             }
 
             _DISPATCH();
         }
         _OPCODE_LABEL(STORE_UPVALUE) : {
-            *frame->closure->upvalues[_READ_BYTE()]->location = wi_state_top(state);
+            struct wi_upvalue* upvalue = frame->closure->upvalues[_READ_BYTE()];
+            wi_value           value   = wi_state_top(state);
+            *upvalue->location         = value;
+            WI_GC_WRITE_BARRIER(state->gc, upvalue, value);
             _DISPATCH();
         }
         _OPCODE_LABEL(LOAD_UPVALUE) : {
@@ -1376,7 +1412,7 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
 
             state->stack_top = frame->slots;
 
-            if (frame->closure->required) {
+            if (frame->closure->required && frame->closure->is_main) {
                 wi_state_push(state, WI_MAKE_BOX_VALUE(frame->closure->required));
             } else {
                 wi_state_push(state, result);
@@ -1610,6 +1646,7 @@ wi_state_run(struct wi_state* state, const char* file_path, const char* src) {
     state->on_compile(state);
 
     struct wi_closure* closure = wi_new_closure(state->gc, prototype, &state->globals);
+    closure->is_main           = true;
     wi_gc_pop_root(state->gc);
 
     wi_state_push(state, WI_MAKE_BOX_VALUE(closure));

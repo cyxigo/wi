@@ -50,8 +50,6 @@ wi_table_delete(struct wi_table* table, wi_value key);
 struct wi_string*
 wi_table_find_string(struct wi_table* table, const char* buf, int len, uint32_t hash);
 void
-wi_table_remove_white(struct wi_table* table);
-void
 wi_table_reserve(struct wi_table* table, int count);
 void
 wi_table_copy(struct wi_table* src, struct wi_table* dest);

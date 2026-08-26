@@ -25,6 +25,8 @@ struct wi_box {
     enum wi_box_kind kind;
     struct wi_box*   next;
     bool             is_marked;
+    bool             is_old;
+    bool             is_remembered;
 };
 
 WI_INLINE bool
@@ -188,6 +190,7 @@ struct wi_closure {
         turn into objects, so if this field is set - script is not main (was required)
     */
     struct wi_object* required;
+    bool              is_main; /* is this closure a main closure? (the one that runs the script) */
 };
 
 WI_INLINE bool

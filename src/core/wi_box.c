@@ -14,10 +14,12 @@ struct wi_box*
 wi_new_box(struct wi_gc* gc, size_t size, enum wi_box_kind kind) {
     struct wi_box* box = wi_gc_realloc(gc, NULL, 0, size);
 
-    box->kind      = kind;
-    box->next      = gc->boxes;
-    box->is_marked = false;
-    gc->boxes      = box;
+    box->kind          = kind;
+    box->next          = gc->young;
+    box->is_marked     = false;
+    box->is_old        = false;
+    box->is_remembered = false;
+    gc->young          = box;
 
     if (WI_UNLIKELY(wi_log_gc(gc))) {
         printf("allocate box at %p (%zu bytes) of kind %d\n", (void*)box, size, kind);
@@ -112,6 +114,7 @@ wi_prototype_add_byte(struct wi_prototype* prototype, uint8_t byte, int line) {
 int
 wi_prototype_add_constant(struct wi_prototype* prototype, wi_value value) {
     wi_value_buf_add(&prototype->constants, value);
+    WI_GC_WRITE_BARRIER(prototype->constants.gc, prototype, value);
     return prototype->constants.count - 1;
 }
 
@@ -163,6 +166,7 @@ wi_new_closure(struct wi_gc* gc, struct wi_prototype* prototype, struct wi_table
     closure->upvalue_count = prototype->upvalue_count;
     closure->globals       = globals;
     closure->required      = NULL;
+    closure->is_main       = false;
 
     return closure;
 }

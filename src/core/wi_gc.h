@@ -14,13 +14,32 @@ struct wi_gc {
     struct wi_state*    state;
     struct wi_compiler* compiler;
 
-    struct wi_box* boxes;
-    size_t         bytes_allocated;
-    size_t         next_collection;
+    /*
+        generational garbage collector!
+        two generations, boxes start out young
+        the first time one survives a collection (minor or major), it's promoted to old
+        a minor collection only ever walks young
+        a major collection walks both!
+    */
+    struct wi_box* young;
+    struct wi_box* old;
+    size_t         young_bytes;     /* how many alllocated bytes are young boxes */
+    size_t         bytes_allocated; /* how many bytes allocated... at all */
+    size_t         next_major;      /* when to do major collection, checking both young and old */
+    bool           minor;           /* is the collection currently in progress a minor one? */
 
     struct wi_box** gray_stack;
     int             gray_capacity;
     int             gray_count;
+
+    /*
+        what if the only thing keeping young box alive is a reference to it from old box?
+        we absolutely can't afford to scan old boxes in minor collections
+        so we have this: list of "remembered parents", old boxes that have references to young boxes
+    */
+    struct wi_box** remembered;
+    int             remembered_capacity;
+    int             remembered_count;
 
     struct wi_box** temp_roots;
     int             temp_root_capacity;
@@ -71,7 +90,30 @@ wi_log_gc(struct wi_gc* gc) {
 void*
 wi_gc_realloc(struct wi_gc* gc, void* ptr, size_t old_size, size_t new_size);
 void
-wi_gc_collect_garbage(struct wi_gc* gc);
+wi_gc_remember(struct wi_gc* gc, struct wi_box* parent);
+
+/*
+    needs to be called when an existing box's field is set to a value that MIGHT be another box
+    if the parent is old and the value is a young box, then the parent gets remembered
+    the next minor collection checks those remembered parents
+    any function that mutates an existing box's contents must call this
+*/
+WI_INLINE void
+wi_gc_write_barrier(struct wi_gc* gc, struct wi_box* parent, wi_value value) {
+    if (WI_LIKELY(!parent->is_old || parent->is_remembered || !wi_value_is_box(value) ||
+                  wi_value_as_box(value)->is_old)) {
+        return;
+    }
+
+    wi_gc_remember(gc, parent);
+}
+
+#define WI_GC_WRITE_BARRIER(gc, parent, value) wi_gc_write_barrier(gc, (struct wi_box*)(parent), value)
+
+void
+wi_gc_collect_minor(struct wi_gc* gc);
+void
+wi_gc_collect_major(struct wi_gc* gc);
 
 #define WI_GC_ALLOC(gc, type, count) wi_gc_realloc(gc, NULL, 0, sizeof(type) * (size_t)(count))
 #define WI_GC_ALLOC_ARRAY(gc, type, ptr, old_count, new_count) \

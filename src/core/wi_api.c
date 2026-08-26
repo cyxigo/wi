@@ -59,9 +59,15 @@ _set_field(struct wi_state* state, struct wi_object* object, const char* name, w
         WI_GC_PUSH_ROOT(state->gc, wi_value_as_box(value));
     }
 
-    struct wi_string* name_box = wi_make_string(state->gc, name);
+    struct wi_string* name_box   = wi_make_string(state->gc, name);
+    wi_value          name_value = WI_MAKE_BOX_VALUE(name_box);
     WI_GC_PUSH_ROOT(state->gc, name_box);
-    wi_table_set(&object->fields, WI_MAKE_BOX_VALUE(name_box), value);
+
+    if (wi_table_set(&object->fields, name_value, value)) {
+        WI_GC_WRITE_BARRIER(state->gc, object, name_value);
+    }
+
+    WI_GC_WRITE_BARRIER(state->gc, object, value);
 
     if (is_box) {
         wi_gc_pop_root(state->gc);
@@ -108,8 +114,8 @@ wi_object_set_field_userdata(struct wi_state* state, struct wi_object* object, c
 void
 wi_object_set_field_foreign(struct wi_state* state, struct wi_object* object, const char* name, wi_foreign_fn fn,
                             int arity, bool is_variadic) {
-    WI_UNUSED(state);
-    wi_table_set_foreign(&object->fields, name, fn, arity, is_variadic);
+    struct wi_foreign* foreign = wi_new_foreign(state->gc, fn, arity, is_variadic);
+    _set_field(state, object, name, WI_MAKE_BOX_VALUE(foreign));
 }
 
 bool

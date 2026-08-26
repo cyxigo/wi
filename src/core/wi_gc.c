@@ -27,13 +27,20 @@ wi_new_gc(wi_conf conf) {
     gc->state    = NULL;
     gc->compiler = NULL;
 
-    gc->boxes           = NULL;
+    gc->young           = NULL;
+    gc->old             = NULL;
+    gc->young_bytes     = 0;
     gc->bytes_allocated = 0;
-    gc->next_collection = WI_GC_MIN_HEAP;
+    gc->next_major      = WI_GC_MIN_HEAP;
+    gc->minor           = false;
 
     gc->gray_stack    = NULL;
     gc->gray_capacity = 0;
     gc->gray_count    = 0;
+
+    gc->remembered          = NULL;
+    gc->remembered_capacity = 0;
+    gc->remembered_count    = 0;
 
     gc->temp_roots         = NULL;
     gc->temp_root_capacity = 0;
@@ -46,17 +53,22 @@ wi_new_gc(wi_conf conf) {
 static void
 _gc_free_box(struct wi_gc* gc, struct wi_box* box);
 
-void
-wi_delete_gc(struct wi_gc* gc) {
-    struct wi_box* box = gc->boxes;
-
+static void
+_gc_free_list(struct wi_gc* gc, struct wi_box* box) {
     while (box) {
         struct wi_box* next = box->next;
         _gc_free_box(gc, box);
         box = next;
     }
+}
+
+void
+wi_delete_gc(struct wi_gc* gc) {
+    _gc_free_list(gc, gc->young);
+    _gc_free_list(gc, gc->old);
 
     free(gc->gray_stack);
+    free(gc->remembered);
     free(gc->temp_roots);
     wi_table_free(&gc->strings);
     free(gc);
@@ -67,9 +79,19 @@ wi_gc_realloc(struct wi_gc* gc, void* ptr, size_t old_size, size_t new_size) {
     gc->bytes_allocated += new_size - old_size;
 
     if (new_size > old_size) {
-        if (WI_UNLIKELY(wi_conf_is_set(gc->conf, WI_CONF_STRESS_GC)) ||
-            gc->bytes_allocated > gc->next_collection) {
-            wi_gc_collect_garbage(gc);
+        gc->young_bytes += new_size - old_size;
+
+        if (WI_UNLIKELY(wi_conf_is_set(gc->conf, WI_CONF_STRESS_GC))) {
+            wi_gc_collect_major(gc);
+        } else if (!gc->compiler && gc->young_bytes > WI_GC_YOUNG_MAX) {
+            /*
+                why !gc->compiler you may ask? because installing 3 gazillion writing barries in
+                the compiler would be so so painful and the benefit of minor collections at
+                compile-time is almost none to zero!
+            */
+            wi_gc_collect_minor(gc);
+        } else if (gc->bytes_allocated > gc->next_major) {
+            wi_gc_collect_major(gc);
         }
     }
 
@@ -155,11 +177,7 @@ _gc_free_box(struct wi_gc* gc, struct wi_box* box) {
 
 static void
 _gc_mark_box(struct wi_gc* gc, struct wi_box* box) {
-    if (!box) {
-        return;
-    }
-
-    if (box->is_marked) {
+    if (!box || box->is_marked || (gc->minor && box->is_old)) {
         return;
     }
 
@@ -335,6 +353,62 @@ _gc_blacken_box(struct wi_gc* gc, struct wi_box* box) {
 
 #undef _GC_MARK_BOX
 
+void
+wi_gc_remember(struct wi_gc* gc, struct wi_box* parent) {
+    parent->is_remembered = true;
+
+    if (WI_UNLIKELY(gc->remembered_count + 1 > gc->remembered_capacity)) {
+        gc->remembered_capacity = WI_GROW_CAPACITY(gc->remembered_capacity);
+        gc->remembered = realloc(gc->remembered, sizeof(struct wi_box*) * (size_t)gc->remembered_capacity);
+
+        if (WI_UNLIKELY(!gc->remembered)) {
+            wi_state_oom(gc->state, "out of memory: failed to allocate garbage collector remembered set");
+        }
+    }
+
+    gc->remembered[gc->remembered_count++] = parent;
+}
+
+static void
+_gc_mark_remembered(struct wi_gc* gc) {
+    for (int i = 0; i < gc->remembered_count; i++) {
+        _gc_blacken_box(gc, gc->remembered[i]);
+    }
+}
+
+static void
+_gc_clear_remembered(struct wi_gc* gc) {
+    while (gc->remembered_count > 0) {
+        struct wi_box* box = gc->remembered[--gc->remembered_count];
+        box->is_remembered = false;
+    }
+}
+
+static void
+_gc_remove_weak(struct wi_gc* gc) {
+    struct wi_table* table = &gc->strings;
+    wi_value         empty = wi_make_empty_value();
+    wi_value         true_ = wi_make_true_value();
+
+    for (int i = 0; i < table->capacity; i++) {
+        struct wi_entry* entry = &table->entries[i];
+
+        if (!wi_value_is_box(entry->key)) {
+            continue;
+        }
+
+        struct wi_box* box = wi_value_as_box(entry->key);
+
+        if (box->is_marked || (gc->minor && box->is_old)) {
+            continue;
+        }
+
+        entry->key   = empty;
+        entry->value = true_;
+        table->live_count--;
+    }
+}
+
 static void
 _gc_trace_refs(struct wi_gc* gc) {
     while (gc->gray_count > 0) {
@@ -344,9 +418,31 @@ _gc_trace_refs(struct wi_gc* gc) {
 }
 
 static void
-_gc_sweep(struct wi_gc* gc) {
+_gc_sweep_young(struct wi_gc* gc) {
+    struct wi_box* box = gc->young;
+
+    while (box) {
+        struct wi_box* next = box->next;
+
+        if (box->is_marked) {
+            box->is_marked = false;
+            box->is_old    = true;
+            box->next      = gc->old;
+            gc->old        = box;
+        } else {
+            _gc_free_box(gc, box);
+        }
+
+        box = next;
+    }
+
+    gc->young = NULL;
+}
+
+static void
+_gc_sweep_old(struct wi_gc* gc) {
     struct wi_box* prev = NULL;
-    struct wi_box* box  = gc->boxes;
+    struct wi_box* box  = gc->old;
 
     while (box) {
         if (box->is_marked) {
@@ -360,7 +456,7 @@ _gc_sweep(struct wi_gc* gc) {
             if (prev) {
                 prev->next = box;
             } else {
-                gc->boxes = box;
+                gc->old = box;
             }
 
             _gc_free_box(gc, unreached);
@@ -368,25 +464,63 @@ _gc_sweep(struct wi_gc* gc) {
     }
 }
 
-void
-wi_gc_collect_garbage(struct wi_gc* gc) {
-    size_t before = gc->bytes_allocated;
+static void
+_gc_mark(struct wi_gc* gc) {
+    _gc_mark_roots(gc);
 
-    if (WI_UNLIKELY(wi_log_gc(gc))) {
-        printf("--- begin gc ---\n");
+    if (gc->minor) {
+        _gc_mark_remembered(gc);
     }
 
-    _gc_mark_roots(gc);
     _gc_trace_refs(gc);
-    wi_table_remove_white(&gc->strings);
-    _gc_sweep(gc);
+    _gc_remove_weak(gc);
+    _gc_clear_remembered(gc);
+}
 
-    size_t grown        = gc->bytes_allocated * WI_GC_HEAP_GROW_FACTOR;
-    gc->next_collection = grown > WI_GC_MIN_HEAP ? grown : WI_GC_MIN_HEAP;
+void
+wi_gc_collect_minor(struct wi_gc* gc) {
+    size_t before = gc->bytes_allocated;
+    gc->minor     = true;
 
     if (WI_UNLIKELY(wi_log_gc(gc))) {
-        printf("---  end gc  ---\n");
+        printf("--- begin minor gc ---\n");
+    }
+
+    _gc_mark(gc);
+    _gc_sweep_young(gc);
+
+    gc->remembered_count = 0;
+    gc->young_bytes      = 0;
+
+    if (WI_UNLIKELY(wi_log_gc(gc))) {
+        printf("---  end minor gc  ---\n");
+        printf("     collected %zu bytes (from %zu to %zu)\n", before - gc->bytes_allocated, before,
+               gc->bytes_allocated);
+    }
+}
+
+void
+wi_gc_collect_major(struct wi_gc* gc) {
+    size_t before = gc->bytes_allocated;
+    gc->minor     = false;
+
+    if (WI_UNLIKELY(wi_log_gc(gc))) {
+        printf("--- begin major gc ---\n");
+    }
+
+    _gc_mark(gc);
+    _gc_sweep_old(gc);
+    _gc_sweep_young(gc);
+
+    gc->remembered_count = 0;
+    gc->young_bytes      = 0;
+
+    size_t grown   = gc->bytes_allocated * WI_GC_HEAP_GROW_FACTOR;
+    gc->next_major = grown > WI_GC_MIN_HEAP ? grown : WI_GC_MIN_HEAP;
+
+    if (WI_UNLIKELY(wi_log_gc(gc))) {
+        printf("---  end major gc  ---\n");
         printf("     collected %zu bytes (from %zu to %zu) next at %zu\n", before - gc->bytes_allocated, before,
-               gc->bytes_allocated, gc->next_collection);
+               gc->bytes_allocated, gc->next_major);
     }
 }
