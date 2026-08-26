@@ -85,7 +85,7 @@ wi_gc_realloc(struct wi_gc* gc, void* ptr, size_t old_size, size_t new_size) {
             wi_gc_collect_major(gc);
         } else if (!gc->compiler && gc->young_bytes > WI_GC_YOUNG_MAX) {
             /*
-                why !gc->compiler you may ask? because installing 3 gazillion writing barries in
+                why !gc->compiler you may ask? because installing 3 gazillion write barriers in
                 the compiler would be so so painful and the benefit of minor collections at
                 compile-time is almost none to zero!
             */
