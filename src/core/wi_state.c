@@ -960,9 +960,11 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
     constants = frame->closure->prototype->constants.data; \
     ip        = frame->ip
 
-#define _ERROR(...) \
-    frame->ip = ip; \
-    wi_state_error(state, __VA_ARGS__)
+#define _ERROR(...)                         \
+    do {                                    \
+        frame->ip = ip;                     \
+        wi_state_error(state, __VA_ARGS__); \
+    } while (false)
 
 #if defined(__GNUC__) || defined(__clang__)
     static void* dispatch_table[] = {
