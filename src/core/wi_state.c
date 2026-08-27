@@ -523,7 +523,7 @@ _state_push_array(struct wi_state* state, int item_count) {
 WI_INLINE int
 _state_validate_index(struct wi_state* state, const char* target, wi_value value, int count) {
     if (WI_UNLIKELY(!wi_value_is_real(value))) {
-        wi_state_error(state, "%s index must be a real, got %s", target, wi_value_type(value));
+        wi_state_error(state, "%s index must be a real but got %s", target, wi_value_type(value));
     }
 
     int index = (int)wi_value_as_real(value);

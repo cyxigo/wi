@@ -307,6 +307,80 @@ _string_each(struct wi_state* state, int arg_count) {
     wi_slot_set_null(state, 0);
 }
 
+static void
+_string_select(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
+    int      count;
+    char*    string   = wi_slot_get_string(state, 1, &count, NULL);
+    wi_value callback = wi_slot_check_callback(state, 2, 1);
+
+    struct wi_char_buf buf;
+    wi_char_buf_init(&buf, state->gc);
+
+    for (size_t i = 0; i < (size_t)count;) {
+        size_t cp_len    = wi_utf8_cp_len(string[i]);
+        char   cp_buf[5] = {0};
+        memcpy(cp_buf, string + i, cp_len);
+
+        wi_state_push(state, callback);
+        wi_state_push(state, WI_MAKE_BOX_VALUE(wi_copy_cstring(state->gc, cp_buf, (int)cp_len)));
+        wi_state_call(state, callback, 1, false);
+
+        /* s prefix here is for "selected" */
+        wi_value s_value = wi_state_top(state);
+
+        if (!wi_value_is_string(s_value)) {
+            wi_char_buf_free(&buf);
+            wi_state_error(state, "callback must return a string but got %s", wi_value_type(s_value));
+        }
+
+        struct wi_string* s_box = wi_value_as_string(s_value);
+
+        for (int j = 0; j < s_box->count; j++) {
+            wi_char_buf_add(&buf, s_box->buf[j]);
+        }
+
+        wi_state_drop(state);
+        i += cp_len;
+    }
+
+    state->ffi_stack[0] = WI_MAKE_BOX_VALUE(wi_copy_cstring(state->gc, buf.data, buf.count));
+    wi_char_buf_free(&buf);
+}
+
+static void
+_string_where(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
+    int      count;
+    char*    string   = wi_slot_get_string(state, 1, &count, NULL);
+    wi_value callback = wi_slot_check_callback(state, 2, 1);
+
+    struct wi_char_buf buf;
+    wi_char_buf_init(&buf, state->gc);
+
+    for (size_t i = 0; i < (size_t)count;) {
+        size_t cp_len    = wi_utf8_cp_len(string[i]);
+        char   cp_buf[5] = {0};
+        memcpy(cp_buf, string + i, cp_len);
+
+        wi_state_push(state, callback);
+        wi_value arg = WI_MAKE_BOX_VALUE(wi_copy_cstring(state->gc, cp_buf, (int)cp_len));
+        wi_state_push(state, arg);
+        wi_state_call(state, callback, 1, false);
+
+        if (!wi_value_is_falsy(wi_state_pop(state))) {
+            for (size_t j = 0; j < cp_len; j++) {
+                wi_char_buf_add(&buf, cp_buf[j]);
+            }
+        }
+
+        i += cp_len;
+    }
+
+    state->ffi_stack[0] = WI_MAKE_BOX_VALUE(wi_copy_cstring(state->gc, buf.data, buf.count));
+    wi_char_buf_free(&buf);
+}
+
 void
 wi_state_def_string_stm(struct wi_state* state) {
     struct wi_table* table = &state->stm_string;
@@ -323,4 +397,6 @@ wi_state_def_string_stm(struct wi_state* state) {
     wi_table_set_foreign(table, "split", _string_split, 2, false);
     wi_table_set_foreign(table, "reverse", _string_reverse, 1, false);
     wi_table_set_foreign(table, "each", _string_each, 2, false);
+    wi_table_set_foreign(table, "select", _string_select, 2, false);
+    wi_table_set_foreign(table, "where", _string_where, 2, false);
 }
