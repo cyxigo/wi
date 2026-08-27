@@ -12,13 +12,28 @@
 #include "../include/wi.h"
 
 static void
-_base_print(struct wi_state* state, int arg_count) {
+_print(struct wi_state* state, int arg_count, bool newline) {
     for (int i = 0; i < arg_count; i++) {
         wi_value_print(state->ffi_stack[i + 1]);
+
+        if (!newline) {
+            continue;
+        }
+
         printf("\n");
     }
 
     wi_slot_set_null(state, 0);
+}
+
+static void
+_base_print(struct wi_state* state, int arg_count) {
+    _print(state, arg_count, false);
+}
+
+static void
+_base_puts(struct wi_state* state, int arg_count) {
+    _print(state, arg_count, true);
 }
 
 static void
@@ -337,6 +352,7 @@ _base_equals(struct wi_state* state, int arg_count) {
 void
 wi_state_def_std_base(struct wi_state* state) {
     wi_def_foreign(state, "print", _base_print, 0, true);
+    wi_def_foreign(state, "puts", _base_puts, 0, true);
     wi_def_foreign(state, "input", _base_input, 0, true);
     wi_def_foreign(state, "is_main", _base_is_main, 0, false);
     wi_def_foreign(state, "exit", _base_exit, 0, false);
