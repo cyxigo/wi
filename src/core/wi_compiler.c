@@ -50,19 +50,20 @@ wi_delete_compiler(struct wi_compiler* compiler) {
 void
 wi_compiler_init(struct wi_compiler* compiler, struct wi_compiler* outer, struct wi_state* state,
                  struct wi_parser* parser, struct wi_table* global_attrs) {
-    compiler->outer               = outer;
-    compiler->state               = state;
-    compiler->state->gc->compiler = compiler;
-    compiler->parser              = parser;
-    compiler->var_name            = WI_BLANK_TOKEN;
+    compiler->outer        = outer;
+    compiler->state        = state;
+    compiler->gc           = state->gc;
+    compiler->gc->compiler = compiler;
+    compiler->parser       = parser;
+    compiler->var_name     = WI_BLANK_TOKEN;
 
     compiler->global_attrs       = global_attrs;
     compiler->prototype          = NULL;
     compiler->constants          = NULL;
-    compiler->prototype          = wi_new_prototype(compiler->state->gc, compiler->parser->lexer->file_path);
+    compiler->prototype          = wi_new_prototype(compiler->gc, compiler->parser->lexer->file_path);
     compiler->prototype->is_main = compiler->outer == NULL;
     compiler->slot_count         = 0;
-    compiler->constants          = wi_new_map(compiler->state->gc);
+    compiler->constants          = wi_new_map(compiler->gc);
 
     compiler->local_count = 0;
     compiler->scope_depth = 0;
@@ -196,7 +197,7 @@ _compiler_make_constant(struct wi_compiler* compiler, wi_value value) {
     bool is_box = wi_value_is_box(value);
 
     if (is_box) {
-        WI_GC_PUSH_ROOT(compiler->state->gc, wi_value_as_box(value));
+        WI_GC_PUSH_ROOT(compiler->gc, wi_value_as_box(value));
     }
 
     wi_value existing;
@@ -218,7 +219,7 @@ _compiler_make_constant(struct wi_compiler* compiler, wi_value value) {
     }
 
     if (is_box) {
-        wi_gc_pop_root(compiler->state->gc);
+        wi_gc_pop_root(compiler->gc);
     }
 
     return result;
@@ -226,7 +227,7 @@ _compiler_make_constant(struct wi_compiler* compiler, wi_value value) {
 
 static uint16_t
 _compiler_name_constant(struct wi_compiler* compiler, struct wi_token name) {
-    wi_value value = WI_MAKE_BOX_VALUE(wi_copy_cstring(compiler->state->gc, name.start, name.count));
+    wi_value value = WI_MAKE_BOX_VALUE(wi_copy_cstring(compiler->gc, name.start, name.count));
     return _compiler_make_constant(compiler, value);
 }
 
@@ -240,11 +241,11 @@ _compiler_end(struct wi_compiler* compiler) {
     _compiler_emit_return(compiler);
     struct wi_prototype* prototype = compiler->prototype;
 
-    if (wi_conf_is_set(compiler->state->gc->conf, WI_CONF_PRINT_CODE)) {
+    if (wi_conf_is_set(compiler->gc->conf, WI_CONF_PRINT_CODE)) {
         wi_prototype_disasm(prototype);
     }
 
-    compiler->state->gc->compiler = compiler->outer;
+    compiler->gc->compiler = compiler->outer;
     return prototype;
 }
 
@@ -301,14 +302,14 @@ _compiler_def_var(struct wi_compiler* compiler, struct wi_token name, wi_attrs a
         return;
     }
 
-    struct wi_string* name_box = wi_copy_cstring(compiler->state->gc, name.start, name.count);
-    WI_GC_PUSH_ROOT(compiler->parser->gc, name_box);
+    struct wi_string* name_box = wi_copy_cstring(compiler->gc, name.start, name.count);
+    WI_GC_PUSH_ROOT(compiler->gc, name_box);
 
     if (!wi_table_set(compiler->global_attrs, WI_MAKE_BOX_VALUE(name_box), wi_make_real_value(attrs))) {
         wi_parser_error_at(compiler->parser, name, "variable %s is already defined", name_box->buf);
     }
 
-    wi_gc_pop_root(compiler->parser->gc);
+    wi_gc_pop_root(compiler->gc);
     uint16_t constant = _compiler_make_constant(compiler, WI_MAKE_BOX_VALUE(name_box));
     _compiler_emit_opcode_short(compiler, WI_OP_DEF_GLOBAL, constant);
 }
@@ -450,7 +451,7 @@ _compiler_var(struct wi_compiler* compiler, struct wi_token name) {
     } else {
         set_op      = WI_OP_SET_GLOBAL;
         get_op      = WI_OP_GET_GLOBAL;
-        global_name = wi_copy_cstring(compiler->state->gc, name.start, name.count);
+        global_name = wi_copy_cstring(compiler->gc, name.start, name.count);
         arg         = (int)_compiler_make_constant(compiler, WI_MAKE_BOX_VALUE(global_name));
     }
 
@@ -545,7 +546,7 @@ _compiler_get_name(struct wi_compiler* compiler) {
         return NULL;
     }
 
-    return wi_copy_cstring(compiler->state->gc, compiler->var_name.start, compiler->var_name.count);
+    return wi_copy_cstring(compiler->gc, compiler->var_name.start, compiler->var_name.count);
 }
 
 static void
@@ -590,7 +591,7 @@ _compiler_add_esc_char(struct wi_compiler* compiler, struct wi_char_buf* buf, ch
 static void
 _compiler_push_string(struct wi_compiler* compiler, struct wi_token token) {
     struct wi_char_buf buf;
-    wi_char_buf_init(&buf, compiler->state->gc);
+    wi_char_buf_init(&buf, compiler->gc);
     wi_char_buf_reserve(&buf, token.count);
 
     for (int i = 0; i < token.count; i++) {
@@ -601,7 +602,7 @@ _compiler_push_string(struct wi_compiler* compiler, struct wi_token token) {
         }
     }
 
-    struct wi_string* string = wi_copy_cstring(compiler->state->gc, buf.data, buf.count);
+    struct wi_string* string = wi_copy_cstring(compiler->gc, buf.data, buf.count);
     wi_char_buf_free(&buf);
     _compiler_emit_push(compiler, WI_MAKE_BOX_VALUE(string));
 }
@@ -828,7 +829,7 @@ _compiler_object_expr(struct wi_compiler* compiler) {
 static void
 _compiler_require_expr(struct wi_compiler* compiler) {
     struct wi_token   path     = wi_parser_expect(compiler->parser, WI_TOKEN_STRING);
-    struct wi_string* path_box = wi_copy_cstring(compiler->state->gc, path.start, path.count);
+    struct wi_string* path_box = wi_copy_cstring(compiler->gc, path.start, path.count);
 
     if (!compiler->state->require_exists(compiler->state, path_box->buf)) {
         wi_parser_error_at(compiler->parser, path, "file %s does not exist", path_box->buf);
@@ -1414,7 +1415,7 @@ _compiler_load_stmt(struct wi_compiler* compiler) {
 
     /* prepare for seeing horrifying things... platform-specific code!!! */
     struct wi_token   path_token = wi_parser_expect(compiler->parser, WI_TOKEN_STRING);
-    struct wi_string* path_box   = wi_copy_cstring(compiler->parser->gc, path_token.start, path_token.count);
+    struct wi_string* path_box   = wi_copy_cstring(compiler->gc, path_token.start, path_token.count);
     wi_parser_expect(compiler->parser, WI_TOKEN_SEMICOLON);
 
     struct wi_state* state = compiler->state;

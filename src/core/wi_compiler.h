@@ -49,6 +49,7 @@ struct wi_compiler_upvalue {
 struct wi_compiler {
     struct wi_compiler* outer;
     struct wi_state*    state;
+    struct wi_gc*       gc;
     struct wi_parser*   parser;
     struct wi_token     var_name;
 
