@@ -1411,7 +1411,7 @@ _compiler_load_stmt(struct wi_compiler* compiler) {
 
     /* prepare for seeing horrifying things... platform-specific code!!! */
     struct wi_token   path_token = wi_parser_expect(compiler->parser, WI_TOKEN_STRING);
-    struct wi_string* path_box = wi_copy_cstring(compiler->parser->gc, path_token.start + 1, path_token.count - 2);
+    struct wi_string* path_box   = wi_copy_cstring(compiler->parser->gc, path_token.start, path_token.count);
     wi_parser_expect(compiler->parser, WI_TOKEN_SEMICOLON);
 
     struct wi_state* state = compiler->state;
