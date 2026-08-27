@@ -125,7 +125,7 @@ _compiler_emit_opcode_short(struct wi_compiler* compiler, uint8_t opcode, uint16
 
 static int
 _compiler_emit_jump(struct wi_compiler* compiler, uint8_t opcode) {
-    _compiler_emit_byte(compiler, opcode);
+    _compiler_emit_opcode(compiler, opcode);
     _compiler_emit_bytes(compiler, 0xff, 0xff);
     return compiler->prototype->bytes.count - 2;
 }
