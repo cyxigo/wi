@@ -148,10 +148,6 @@ wi_value_as_prototype(wi_value value) {
 
 struct wi_prototype*
 wi_new_prototype(struct wi_gc* gc, const char* fpath);
-void
-wi_prototype_add_byte(struct wi_prototype* prototype, uint8_t byte, int line);
-int
-wi_prototype_add_constant(struct wi_prototype* prototype, wi_value value);
 int
 wi_prototype_instr_size(struct wi_prototype* prototype, int offset);
 

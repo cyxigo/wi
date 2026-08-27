@@ -87,7 +87,9 @@ static const int _opcode_effects[] = {
 
 static void
 _compiler_emit_byte(struct wi_compiler* compiler, uint8_t byte) {
-    wi_prototype_add_byte(compiler->prototype, byte, compiler->parser->curr.line);
+    struct wi_prototype* prototype = compiler->prototype;
+    wi_byte_buf_add(&prototype->bytes, byte);
+    wi_int_buf_add(&prototype->lines, compiler->parser->curr.line);
 }
 
 static void
@@ -203,15 +205,16 @@ _compiler_make_constant(struct wi_compiler* compiler, wi_value value) {
     if (wi_table_get(&compiler->constants->items, value, &existing)) {
         result = (uint16_t)wi_value_as_real(existing);
     } else {
-        int constant = wi_prototype_add_constant(compiler->prototype, value);
+        wi_value_buf_add(&compiler->prototype->constants, value);
+        int index = compiler->prototype->constants.count - 1;
 
-        if (constant > WI_CONSTANT_MAX) {
+        if (index > WI_CONSTANT_MAX) {
             wi_parser_error_at_curr(compiler->parser, "too many constants in a prototype (limit is %i)",
                                     WI_CONSTANT_MAX);
         }
 
-        wi_table_set(&compiler->constants->items, value, wi_make_real_value(constant));
-        result = (uint16_t)constant;
+        wi_table_set(&compiler->constants->items, value, wi_make_real_value(index));
+        result = (uint16_t)index;
     }
 
     if (is_box) {

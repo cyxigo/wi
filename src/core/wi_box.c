@@ -105,19 +105,6 @@ wi_new_prototype(struct wi_gc* gc, const char* file_path) {
     return prototype;
 }
 
-void
-wi_prototype_add_byte(struct wi_prototype* prototype, uint8_t byte, int line) {
-    wi_byte_buf_add(&prototype->bytes, byte);
-    wi_int_buf_add(&prototype->lines, line);
-}
-
-int
-wi_prototype_add_constant(struct wi_prototype* prototype, wi_value value) {
-    wi_value_buf_add(&prototype->constants, value);
-    WI_GC_WRITE_BARRIER(prototype->constants.gc, prototype, value);
-    return prototype->constants.count - 1;
-}
-
 int
 wi_prototype_instr_size(struct wi_prototype* prototype, int offset) {
     static const int opcode_sizes[] = {
