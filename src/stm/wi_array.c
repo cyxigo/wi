@@ -188,10 +188,15 @@ _array_concat(struct wi_state* state, int arg_count) {
 
     for (int i = 0; i < arg_count; i++) {
         struct wi_array* array = _check_arg_array(state, i + 1);
+        int              count = array->items.count;
 
-        for (int j = 0; j < array->items.count; j++) {
-            wi_value_buf_add(&result->items, array->items.data[j]);
+        if (count == 0) {
+            continue;
         }
+
+        wi_value_buf_reserve(&result->items, count);
+        memcpy(result->items.data + result->items.count, array->items.data, sizeof(wi_value) * (size_t)count);
+        result->items.count += count;
     }
 }
 
