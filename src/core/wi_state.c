@@ -325,8 +325,13 @@ wi_state_push_recovery(struct wi_state* state) {
     }
 
     struct wi_recovery* recovery = malloc(sizeof(struct wi_recovery));
-    recovery->next               = state->recoveries;
-    state->recoveries            = recovery;
+
+    if (!recovery) {
+        wi_state_oom(state, "out of memory: failed to allocate an error buffer");
+    }
+
+    recovery->next    = state->recoveries;
+    state->recoveries = recovery;
 
     recovery->frame_count     = state->frame_count;
     recovery->c_call_depth    = state->c_depth;
