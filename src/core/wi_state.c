@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #ifdef _WIN32
 #include <io.h>
@@ -149,6 +150,8 @@ wi_new_state(wi_conf conf) {
     state->ok_str    = wi_copy_cstring(state->gc, "ok", 2);
     state->value_str = wi_copy_cstring(state->gc, "value", 5);
     state->error_str = wi_copy_cstring(state->gc, "error", 5);
+
+    srand((unsigned)time(NULL));
 
     return state;
 }

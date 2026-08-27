@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "../std/wi_base.h"
+#include "../std/wi_io.h"
 #include "../std/wi_math.h"
 #include "../std/wi_os.h"
 #include "../stm/wi_array.h"
@@ -18,16 +19,17 @@
 
 void
 wi_def_stm(struct wi_state* state) {
-    wi_state_def_string_stm(state);
-    wi_state_def_array_stm(state);
-    wi_state_def_map_stm(state);
+    wi_state_def_stm_string(state);
+    wi_state_def_stm_array(state);
+    wi_state_def_stm_map(state);
 }
 
 void
 wi_def_std(struct wi_state* state) {
-    wi_state_def_base_foreign(state);
-    wi_state_def_os_foreign(state);
-    wi_state_def_math_foreign(state);
+    wi_state_def_std_base(state);
+    wi_state_def_std_os(state);
+    wi_state_def_std_io(state);
+    wi_state_def_std_math(state);
 }
 
 void

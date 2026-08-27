@@ -382,7 +382,7 @@ _string_where(struct wi_state* state, int arg_count) {
 }
 
 void
-wi_state_def_string_stm(struct wi_state* state) {
+wi_state_def_stm_string(struct wi_state* state) {
     struct wi_table* table = &state->stm_string;
     wi_table_set_foreign(table, "sub", _string_sub, 3, false);
     wi_table_set_foreign(table, "upper", _string_upper, 1, false);

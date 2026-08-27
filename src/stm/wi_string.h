@@ -4,6 +4,6 @@
 #include "../core/wi_state.h"
 
 void
-wi_state_def_string_stm(struct wi_state* state);
+wi_state_def_stm_string(struct wi_state* state);
 
 #endif

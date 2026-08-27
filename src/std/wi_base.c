@@ -335,7 +335,7 @@ _base_equals(struct wi_state* state, int arg_count) {
 }
 
 void
-wi_state_def_base_foreign(struct wi_state* state) {
+wi_state_def_std_base(struct wi_state* state) {
     wi_def_foreign(state, "print", _base_print, 0, true);
     wi_def_foreign(state, "input", _base_input, 0, true);
     wi_def_foreign(state, "is_main", _base_is_main, 0, false);

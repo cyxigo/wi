@@ -58,7 +58,7 @@ _os_args(struct wi_state* state, int arg_count) {
 }
 
 void
-wi_state_def_os_foreign(struct wi_state* state) {
+wi_state_def_std_os(struct wi_state* state) {
     struct wi_object* object = wi_def_object(state, "os");
 
     wi_object_set_field_foreign(state, object, "clock", _os_clock, 0, false);

@@ -4,6 +4,6 @@
 #include "../core/wi_state.h"
 
 void
-wi_state_def_os_foreign(struct wi_state* state);
+wi_state_def_std_os(struct wi_state* state);
 
 #endif

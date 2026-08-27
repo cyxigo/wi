@@ -155,7 +155,7 @@ wi_read_stream(FILE* stream) {
         return NULL;
     }
 
-    size_t bytes_read = fread(buf, 1, (size_t)file_size, stream);
+    size_t bytes_read = fread(buf, sizeof(char), (size_t)file_size, stream);
 
     if (bytes_read < (size_t)file_size) {
         free(buf);

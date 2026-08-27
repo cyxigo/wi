@@ -337,7 +337,7 @@ _array_sort(struct wi_state* state, int arg_count) {
 }
 
 void
-wi_state_def_array_stm(struct wi_state* state) {
+wi_state_def_stm_array(struct wi_state* state) {
     struct wi_table* table = &state->stm_array;
     wi_table_set_foreign(table, "copy", _array_copy, 1, false);
     wi_table_set_foreign(table, "clear", _array_clear, 1, false);

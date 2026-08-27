@@ -1,9 +1,7 @@
 #include "wi_gc.h"
 
-#include <assert.h>
 #include <stdbool.h>
 #include <stddef.h>
-#include <stdio.h>
 #include <stdlib.h>
 
 #include "../include/wi_conf.h"

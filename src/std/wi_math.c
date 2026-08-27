@@ -3,7 +3,6 @@
 #include <math.h>
 #include <stdbool.h>
 #include <stdlib.h>
-#include <time.h>
 
 #include "../include/wi.h"
 
@@ -192,8 +191,7 @@ _math_tan(struct wi_state* state, int arg_count) {
 }
 
 void
-wi_state_def_math_foreign(struct wi_state* state) {
-    srand((unsigned)time(NULL));
+wi_state_def_std_math(struct wi_state* state) {
     struct wi_object* object = wi_def_object(state, "math");
 
     wi_object_set_field_real(state, object, "E", M_E);

@@ -196,7 +196,7 @@ _map_where(struct wi_state* state, int arg_count) {
 }
 
 void
-wi_state_def_map_stm(struct wi_state* state) {
+wi_state_def_stm_map(struct wi_state* state) {
     struct wi_table* table = &state->stm_map;
     wi_table_set_foreign(table, "copy", _map_copy, 1, false);
     wi_table_set_foreign(table, "clear", _map_clear, 1, false);
