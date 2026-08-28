@@ -68,7 +68,7 @@ wi_value_print(wi_value value) {
         printf("<object %p>", (void*)wi_value_as_object(value));
     } else if (wi_value_is_userdata(value)) {
         struct wi_userdata* userdata = wi_value_as_userdata(value);
-        printf("<userdata %p (%s)>", (void*)userdata, userdata->name->buf);
+        printf("<%s %p>", userdata->name->buf, (void*)userdata);
     } else {
         printf("<unknown>");
     }
@@ -163,7 +163,7 @@ wi_value_type(wi_value value) {
     }
 
     if (wi_value_is_userdata(value)) {
-        return "userdata";
+        return wi_value_as_userdata(value)->name->buf;
     }
 
     return "unknown";
@@ -250,7 +250,7 @@ wi_value_to_string(wi_value value) {
 
     if (wi_value_is_userdata(value)) {
         struct wi_userdata* userdata = wi_value_as_userdata(value);
-        return _format("<userdata %p (%s)>", (void*)userdata, userdata->name->buf);
+        return _format("<%s %p>", userdata->name->buf, (void*)userdata);
     }
 
     return wi_strdup("<unknown>");

@@ -256,8 +256,7 @@ wi_pop_string(struct wi_state* state, int* count, int* len) {
 void*
 wi_pop_userdata(struct wi_state* state, const char* name) {
     if (WI_UNLIKELY(!wi_is_userdata(state, name))) {
-        wi_state_error(state, "expected a value of type userdata %s but got %s", name,
-                       wi_value_type(wi_state_pop(state)));
+        wi_state_error(state, "expected a value of type %s but got %s", name, wi_value_type(wi_state_pop(state)));
     }
 
     return wi_value_as_userdata(wi_state_pop(state))->data;
@@ -410,7 +409,7 @@ wi_slot_get_userdata(struct wi_state* state, int slot, const char* name) {
     wi_value value = state->ffi_stack[slot];
 
     if (WI_UNLIKELY(!wi_slot_is_userdata(state, slot, name))) {
-        wi_state_error(state, "bad argument %i - expected a value of type userdata %s but got %s", slot, name,
+        wi_state_error(state, "bad argument %i - expected a value of type %s but got %s", slot, name,
                        wi_value_type(value));
     }
 
