@@ -594,7 +594,7 @@ wi_slot_get_real(wi_state* state, int slot);
  * @param state Wi state instance
  * @param slot Slot index (0-[arg_count])
  */
-void
+WI_API void
 wi_slot_get_null(wi_state* state, int slot);
 
 /**
