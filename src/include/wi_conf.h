@@ -34,7 +34,7 @@ enum {
     WI_INTERP_MAX    = 8,     /* Maximum depth of string interpolation */
 
     /**
-     * Default GC settings, reconfigurable via wi_tune_gc
+     * Default GC settings, reconfigurable via wi_state_tune_gc
      */
     WI_GC_MIN_HEAP         = 10485760, /* Total heap size before the first major collection (`10MB`) */
     WI_GC_HEAP_GROW_FACTOR = 2,        /* Heap growth factor per major collection */

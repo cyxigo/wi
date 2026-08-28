@@ -18,6 +18,15 @@
 #include "wi_value.h"
 
 void
+wi_state_tune_gc(struct wi_state* state, size_t min_heap, size_t heap_grow_factor, size_t young_max) {
+    struct wi_gc* gc     = state->gc;
+    gc->min_heap         = min_heap;
+    gc->heap_grow_factor = heap_grow_factor < 1 ? 1 : heap_grow_factor;
+    gc->young_max        = young_max;
+    gc->next_major       = min_heap;
+}
+
+void
 wi_def_stm(struct wi_state* state) {
     wi_state_def_stm_string(state);
     wi_state_def_stm_array(state);
@@ -79,18 +88,17 @@ _set_field(struct wi_state* state, struct wi_object* object, const char* name, w
 }
 
 void
-wi_object_set_field_real(struct wi_state* state, struct wi_object* object, const char* name, wi_real real) {
+wi_object_set_real(struct wi_state* state, struct wi_object* object, const char* name, wi_real real) {
     _set_field(state, object, name, wi_make_real_value(real));
 }
 
 void
-wi_object_set_field_bool(struct wi_state* state, struct wi_object* object, const char* name, bool boolean) {
+wi_object_set_bool(struct wi_state* state, struct wi_object* object, const char* name, bool boolean) {
     _set_field(state, object, name, wi_make_bool_value(boolean));
 }
 
 void
-wi_object_set_field_string(struct wi_state* state, struct wi_object* object, const char* name,
-                           const char* string) {
+wi_object_set_string(struct wi_state* state, struct wi_object* object, const char* name, const char* string) {
     struct wi_string* box = wi_make_string(state->gc, string);
     _set_field(state, object, name, WI_MAKE_BOX_VALUE(box));
 }
@@ -107,26 +115,17 @@ _new_userdata(struct wi_state* state, const char* name, void* userdata, wi_userd
 }
 
 void
-wi_object_set_field_userdata(struct wi_state* state, struct wi_object* object, const char* field_name,
-                             const char* name, void* userdata, wi_userdata_finalizer_fn finalizer) {
+wi_object_set_userdata(struct wi_state* state, struct wi_object* object, const char* field_name, const char* name,
+                       void* userdata, wi_userdata_finalizer_fn finalizer) {
     struct wi_userdata* box = _new_userdata(state, name, userdata, finalizer);
     _set_field(state, object, field_name, WI_MAKE_BOX_VALUE(box));
 }
 
 void
-wi_object_set_field_foreign(struct wi_state* state, struct wi_object* object, const char* name, wi_foreign_fn fn,
-                            int arity, bool is_variadic) {
+wi_object_set_foreign(struct wi_state* state, struct wi_object* object, const char* name, wi_foreign_fn fn,
+                      int arity, bool is_variadic) {
     struct wi_foreign* foreign = wi_new_foreign(state->gc, fn, arity, is_variadic);
     _set_field(state, object, name, WI_MAKE_BOX_VALUE(foreign));
-}
-
-void
-wi_tune_gc(struct wi_state* state, size_t min_heap, size_t heap_grow_factor, size_t young_max) {
-    struct wi_gc* gc     = state->gc;
-    gc->min_heap         = min_heap;
-    gc->heap_grow_factor = heap_grow_factor < 1 ? 1 : heap_grow_factor;
-    gc->young_max        = young_max;
-    gc->next_major       = min_heap;
 }
 
 bool

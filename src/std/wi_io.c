@@ -191,8 +191,8 @@ void
 wi_state_def_std_io(struct wi_state* state) {
     struct wi_object* object = wi_def_object(state, "io");
 
-    wi_object_set_field_foreign(state, object, "open", _io_open, 2, false);
-    wi_object_set_field_foreign(state, object, "close", _io_close, 1, false);
-    wi_object_set_field_foreign(state, object, "read", _io_read, 1, false);
-    wi_object_set_field_foreign(state, object, "write", _io_write, 2, false);
+    wi_object_set_foreign(state, object, "open", _io_open, 2, false);
+    wi_object_set_foreign(state, object, "close", _io_close, 1, false);
+    wi_object_set_foreign(state, object, "read", _io_read, 1, false);
+    wi_object_set_foreign(state, object, "write", _io_write, 2, false);
 }

@@ -71,118 +71,6 @@ typedef char* (*wi_load_require_fn)(wi_state* state, const char* path);
 typedef bool (*wi_require_exists_fn)(wi_state* state, const char* path);
 
 /**
- * Define the standard library (STD) in a state
- *
- * @param state Wi state instance
- */
-WI_API void
-wi_def_std(wi_state* state);
-
-/**
- * Define the standard method library (STM) in a state - methods for builtin types:
- * string, array, map. Only reachable via the `->` method-call operator
- *
- * @param state Wi state instance
- */
-WI_API void
-wi_def_stm(wi_state* state);
-
-/**
- * Define a foreign (C) function in the state (global)
- *
- * @param state Wi state instance
- * @param name Function name
- * @param fn Pointer to the C function implementation
- * @param arity Function's arity (number of arguments it expects)
- * @param is_variadic Whether function is variadic or not
- */
-WI_API void
-wi_def_foreign(wi_state* state, const char* name, wi_foreign_fn fn, int arity, bool is_variadic);
-
-/**
- * Define an object in the state (global)
- *
- * @param state Wi state instance
- * @param name Object name
- * @return Pointer to the created object
- */
-WI_API wi_object*
-wi_def_object(wi_state* state, const char* name);
-
-/**
- * Set a real field on an object
- *
- * @param state Wi state instance
- * @param object Target object
- * @param name Field name
- * @param real Value to set
- */
-WI_API void
-wi_object_set_field_real(wi_state* state, wi_object* object, const char* name, wi_real real);
-
-/**
- * Set a boolean field on an object
- *
- * @param state Wi state instance
- * @param object Target object
- * @param name Field name
- * @param boolean Value to set
- */
-WI_API void
-wi_object_set_field_bool(wi_state* state, wi_object* object, const char* name, bool boolean);
-
-/**
- * Set a string field on an object
- *
- * @param state Wi state instance
- * @param object Target object
- * @param name Field name
- * @param string String (**must** be valid UTF-8, invalid - undefined behaviour)
- */
-WI_API void
-wi_object_set_field_string(wi_state* state, wi_object* object, const char* name, const char* string);
-
-/**
- * Set userdata as a field on an object
- *
- * @param state Wi state instance
- * @param object Target object
- * @param field_name Field name
- * @param name Userdata name, used for type-checking
- * @param userdata Pointer to userdata
- * @param finalizer Userdata finalizer
- */
-WI_API void
-wi_object_set_field_userdata(wi_state* state, wi_object* object, const char* field_name, const char* name,
-                             void* userdata, wi_userdata_finalizer_fn finalizer);
-
-/**
- * Set a foreign (C) function as a field on an object
- *
- * @param state Wi state instance
- * @param object Target object
- * @param name Field name
- * @param fn Pointer to the C function implementation
- * @param arity Function's arity (number of arguments it expects)
- * @param is_variadic Whether function is variadic or not
- */
-WI_API void
-wi_object_set_field_foreign(wi_state* state, wi_object* object, const char* name, wi_foreign_fn fn, int arity,
-                            bool is_variadic);
-
-/**
- * Tune the garbage collector's generational thresholds. Call right after `wi_new_state`, before
- * any `wi_state_run`. For default settings, see `wi_conf.h`
- *
- * @param state Wi state instance
- * @param min_heap Total heap size before the first major collection
- * @param heap_grow_factor Heap growth factor per major collection
- * @param young_max Young generation size before a minor collection
- */
-WI_API void
-wi_tune_gc(wi_state* state, size_t min_heap, size_t heap_grow_factor, size_t young_max);
-
-/**
  * Create a new Wi state instance
  *
  * @param conf Wi configuration, see `wi_conf.h` for more
@@ -199,6 +87,18 @@ wi_new_state(wi_conf conf);
  */
 WI_API void
 wi_delete_state(wi_state* state);
+
+/**
+ * Tune the garbage collector's generational thresholds. Call right after `wi_new_state`, before
+ * any `wi_state_run`. For default settings, see `wi_conf.h`
+ *
+ * @param state Wi state instance
+ * @param min_heap Total heap size before the first major collection
+ * @param heap_grow_factor Heap growth factor per major collection
+ * @param young_max Young generation size before a minor collection
+ */
+WI_API void
+wi_state_tune_gc(wi_state* state, size_t min_heap, size_t heap_grow_factor, size_t young_max);
 
 /**
  * Get the error message from the last compile or runtime error
@@ -309,6 +209,106 @@ wi_state_interrupt(wi_state* state);
  */
 WI_API wi_run_result
 wi_state_run(wi_state* state, const char* file_path, const char* src);
+
+/**
+ * Define the standard library (STD) in a state
+ *
+ * @param state Wi state instance
+ */
+WI_API void
+wi_def_std(wi_state* state);
+
+/**
+ * Define the standard method library (STM) in a state - methods for builtin types:
+ * string, array, map. Only reachable via the `->` method-call operator
+ *
+ * @param state Wi state instance
+ */
+WI_API void
+wi_def_stm(wi_state* state);
+
+/**
+ * Define a foreign (C) function in the state (global)
+ *
+ * @param state Wi state instance
+ * @param name Function name
+ * @param fn Pointer to the C function implementation
+ * @param arity Function's arity (number of arguments it expects)
+ * @param is_variadic Whether function is variadic or not
+ */
+WI_API void
+wi_def_foreign(wi_state* state, const char* name, wi_foreign_fn fn, int arity, bool is_variadic);
+
+/**
+ * Define an object in the state (global)
+ *
+ * @param state Wi state instance
+ * @param name Object name
+ * @return Pointer to the created object
+ */
+WI_API wi_object*
+wi_def_object(wi_state* state, const char* name);
+
+/**
+ * Set a real field on an object
+ *
+ * @param state Wi state instance
+ * @param object Target object
+ * @param name Field name
+ * @param real Value to set
+ */
+WI_API void
+wi_object_set_real(wi_state* state, wi_object* object, const char* name, wi_real real);
+
+/**
+ * Set a boolean field on an object
+ *
+ * @param state Wi state instance
+ * @param object Target object
+ * @param name Field name
+ * @param boolean Value to set
+ */
+WI_API void
+wi_object_set_bool(wi_state* state, wi_object* object, const char* name, bool boolean);
+
+/**
+ * Set a string field on an object
+ *
+ * @param state Wi state instance
+ * @param object Target object
+ * @param name Field name
+ * @param string String (**must** be valid UTF-8, invalid - undefined behaviour)
+ */
+WI_API void
+wi_object_set_string(wi_state* state, wi_object* object, const char* name, const char* string);
+
+/**
+ * Set userdata as a field on an object
+ *
+ * @param state Wi state instance
+ * @param object Target object
+ * @param field_name Field name
+ * @param name Userdata name, used for type-checking
+ * @param userdata Pointer to userdata
+ * @param finalizer Userdata finalizer
+ */
+WI_API void
+wi_object_set_userdata(wi_state* state, wi_object* object, const char* field_name, const char* name,
+                       void* userdata, wi_userdata_finalizer_fn finalizer);
+
+/**
+ * Set a foreign (C) function as a field on an object
+ *
+ * @param state Wi state instance
+ * @param object Target object
+ * @param name Field name
+ * @param fn Pointer to the C function implementation
+ * @param arity Function's arity (number of arguments it expects)
+ * @param is_variadic Whether function is variadic or not
+ */
+WI_API void
+wi_object_set_foreign(wi_state* state, wi_object* object, const char* name, wi_foreign_fn fn, int arity,
+                      bool is_variadic);
 
 /**
  * Function calling API. Example:
