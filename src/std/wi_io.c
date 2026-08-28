@@ -5,13 +5,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#ifdef _WIN32
-#include <fileapi.h>
-#include <io.h>
-#else
-#include <sys/stat.h>
-#endif
-
 struct wi_file {
     FILE* ptr;
     char* path;
@@ -34,6 +27,13 @@ _file_finalizer(void* data) {
     free(file->path);
     free(file->mode);
     free(file);
+}
+
+static void
+_file_check_open(struct wi_state* state, struct wi_file* file) {
+    if (!file->ptr) {
+        wi_state_error(state, "file %s is closed", file->path);
+    }
 }
 
 static void
@@ -95,67 +95,10 @@ _io_close(struct wi_state* state, int arg_count) {
 }
 
 static void
-_io_read(struct wi_state* state, int arg_count) {
-    WI_UNUSED(arg_count);
-    struct wi_file* file = wi_slot_get_userdata(state, 1, "file");
-
-    if (file->mode[0] != 'r' && !file->updating) {
-        wi_state_error(state, "file %s was not opened for reading (mode %s)", file->path, file->mode);
-    }
-
-    long size;
-
-#ifdef _WIN32
-    int desc = _fileno(file->ptr);
-
-    if (desc == -1) {
-        wi_state_error(state, "failed to get file descriptor (file %s)", file->path);
-    }
-
-    HANDLE handle = (HANDLE)_get_osfhandle(desc);
-
-    if (handle == INVALID_HANDLE_VALUE) {
-        wi_state_error(state, "failed to get os handle (file %s)", file->path);
-    }
-
-    LARGE_INTEGER w_size;
-
-    if (GetFileSizeEx(handle, &w_size)) {
-        size = w_size.QuadPart;
-    } else {
-        wi_state_error(state, "failed to get file size (file %s)", file->path);
-    }
-#else
-    struct stat st;
-
-    if (stat(file->path, &st) == 0) {
-        size = st.st_size;
-    } else {
-        wi_state_error(state, "failed to get file size (file %s)", file->path);
-    }
-#endif
-
-    char* content = malloc(size + 1);
-
-    if (!content) {
-        wi_state_oom(state, "out of memory: failed to allocate file contents");
-    }
-
-    size_t read = fread(content, sizeof(char), (size_t)size, file->ptr);
-
-    if (read < (size_t)size) {
-        free(content);
-        wi_state_error(state, "failed to read file %s", file->path);
-    }
-
-    content[read]       = '\0';
-    state->ffi_stack[0] = WI_MAKE_BOX_VALUE(wi_take_cstring(state->gc, content, size));
-}
-
-static void
 _io_write(struct wi_state* state, int arg_count) {
     WI_UNUSED(arg_count);
     struct wi_file* file = wi_slot_get_userdata(state, 1, "file");
+    _file_check_open(state, file);
 
     if (file->mode[0] != 'w' && file->mode[0] != 'a' && !file->updating) {
         wi_state_error(state, "file %s was not opened for writing (mode %s)", file->path, file->mode);
@@ -170,8 +113,13 @@ _io_write(struct wi_state* state, int arg_count) {
         content = wi_slot_get_string(state, 2, &count, NULL);
     } else {
         content = wi_value_to_string(arg2);
-        count   = (int)strlen(content);
-        owned   = true;
+
+        if (!content) {
+            wi_state_oom(state, "out of memory: failed to allocate file contents");
+        }
+
+        count = (int)strlen(content);
+        owned = true;
     }
 
     size_t written = fwrite(content, sizeof(char), (size_t)count, file->ptr);
@@ -187,12 +135,47 @@ _io_write(struct wi_state* state, int arg_count) {
     wi_slot_set_null(state, 0);
 }
 
+static void
+_io_read(struct wi_state* state, int arg_count) {
+    WI_UNUSED(arg_count);
+    struct wi_file* file = wi_slot_get_userdata(state, 1, "file");
+    _file_check_open(state, file);
+
+    if (file->mode[0] != 'r' && !file->updating) {
+        wi_state_error(state, "file %s was not opened for reading (mode %s)", file->path, file->mode);
+    }
+
+    fseek(file->ptr, 0L, SEEK_END);
+    long size = ftell(file->ptr);
+    rewind(file->ptr);
+
+    if (size < 0) {
+        wi_state_error(state, "failed to get file size (file %s)", file->path);
+    }
+
+    char* content = malloc((size_t)size + 1);
+
+    if (!content) {
+        wi_state_oom(state, "out of memory: failed to allocate file contents");
+    }
+
+    size_t read = fread(content, sizeof(char), (size_t)size, file->ptr);
+
+    if (read < (size_t)size) {
+        free(content);
+        wi_state_error(state, "failed to read file %s", file->path);
+    }
+
+    content[read]       = '\0';
+    state->ffi_stack[0] = WI_MAKE_BOX_VALUE(wi_take_cstring(state->gc, content, (int)read));
+}
+
 void
 wi_state_def_std_io(struct wi_state* state) {
     struct wi_object* object = wi_def_object(state, "io");
 
     wi_object_set_foreign(state, object, "open", _io_open, 2, false);
     wi_object_set_foreign(state, object, "close", _io_close, 1, false);
-    wi_object_set_foreign(state, object, "read", _io_read, 1, false);
     wi_object_set_foreign(state, object, "write", _io_write, 2, false);
+    wi_object_set_foreign(state, object, "read", _io_read, 1, false);
 }
