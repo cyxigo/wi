@@ -13,7 +13,7 @@
 #include "wi_value.h"
 
 struct wi_gc*
-wi_new_gc(wi_conf conf) {
+wi_new_gc(wi_conf* conf) {
     struct wi_gc* gc = malloc(sizeof(struct wi_gc));
 
     if (!gc) {
@@ -55,7 +55,7 @@ wi_new_gc(wi_conf conf) {
 static void
 _gc_free_box(struct wi_gc* gc, struct wi_box* box) {
     if (WI_UNLIKELY(wi_log_gc(gc))) {
-        printf("free box at %p of kind %d\n", (void*)box, box->kind);
+        gc->state->out("free box at %p of kind %d\n", (void*)box, box->kind);
     }
 
     switch (box->kind) {
@@ -181,9 +181,9 @@ _gc_mark_box(struct wi_gc* gc, struct wi_box* box) {
     }
 
     if (WI_UNLIKELY(wi_log_gc(gc))) {
-        printf("marked box at %p ", (void*)box);
-        wi_value_print(WI_MAKE_BOX_VALUE(box));
-        printf("\n");
+        gc->state->out("marked box at %p ", (void*)box);
+        wi_value_print(gc->state, WI_MAKE_BOX_VALUE(box));
+        gc->state->out("\n");
     }
 
     box->is_marked = true;
@@ -296,9 +296,9 @@ _gc_mark_roots(struct wi_gc* gc) {
 static void
 _gc_blacken_box(struct wi_gc* gc, struct wi_box* box) {
     if (WI_UNLIKELY(wi_log_gc(gc))) {
-        printf("blacken box at %p ", (void*)box);
-        wi_value_print(WI_MAKE_BOX_VALUE(box));
-        printf("\n");
+        gc->state->out("blacken box at %p ", (void*)box);
+        wi_value_print(gc->state, WI_MAKE_BOX_VALUE(box));
+        gc->state->out("\n");
     }
 
     switch (box->kind) {
@@ -482,7 +482,7 @@ wi_gc_collect_minor(struct wi_gc* gc) {
     gc->minor     = true;
 
     if (WI_UNLIKELY(wi_log_gc(gc))) {
-        printf("--- begin minor gc ---\n");
+        gc->state->out("--- begin minor gc ---\n");
     }
 
     _gc_mark(gc);
@@ -491,9 +491,9 @@ wi_gc_collect_minor(struct wi_gc* gc) {
     gc->young_bytes = 0;
 
     if (WI_UNLIKELY(wi_log_gc(gc))) {
-        printf("---  end minor gc  ---\n");
-        printf("     collected %zu bytes (from %zu to %zu)\n", before - gc->bytes_allocated, before,
-               gc->bytes_allocated);
+        gc->state->out("---  end minor gc  ---\n");
+        gc->state->out("     collected %zu bytes (from %zu to %zu)\n", before - gc->bytes_allocated, before,
+                       gc->bytes_allocated);
     }
 }
 
@@ -503,7 +503,7 @@ wi_gc_collect_major(struct wi_gc* gc) {
     gc->minor     = false;
 
     if (WI_UNLIKELY(wi_log_gc(gc))) {
-        printf("--- begin major gc ---\n");
+        gc->state->out("--- begin major gc ---\n");
     }
 
     _gc_mark(gc);
@@ -515,8 +515,8 @@ wi_gc_collect_major(struct wi_gc* gc) {
     gc->next_major  = grown > gc->min_heap ? grown : gc->min_heap;
 
     if (WI_UNLIKELY(wi_log_gc(gc))) {
-        printf("---  end major gc  ---\n");
-        printf("     collected %zu bytes (from %zu to %zu) next at %zu\n", before - gc->bytes_allocated, before,
-               gc->bytes_allocated, gc->next_major);
+        gc->state->out("---  end major gc  ---\n");
+        gc->state->out("     collected %zu bytes (from %zu to %zu) next at %zu\n", before - gc->bytes_allocated,
+                       before, gc->bytes_allocated, gc->next_major);
     }
 }

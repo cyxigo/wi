@@ -56,6 +56,7 @@ typedef enum wi_conf_flag {
     WI_CONF_STRESS_GC,   /* Run garbage collection on every allocation */
     WI_CONF_LOG_GC,      /* Log garbage collection */
     WI_CONF_NO_WARNINGS, /* Suppress compiler warnings */
+    WI_CONF_REPL,        /* Set Wi in REPL mode */
 } wi_conf_flag;
 
 /**
@@ -87,8 +88,8 @@ wi_conf_set(wi_conf* conf, wi_conf_flag flag) {
  * @return `true` if the flag is set, `false` otherwise
  */
 static inline bool
-wi_conf_is_set(wi_conf conf, wi_conf_flag flag) {
-    return conf & ((wi_conf)1 << flag);
+wi_conf_is_set(wi_conf* conf, wi_conf_flag flag) {
+    return *conf & ((wi_conf)1 << flag);
 }
 
 #endif

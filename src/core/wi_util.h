@@ -1,9 +1,12 @@
 #ifndef WI_UTIL_H
 #define WI_UTIL_H
 
+#include <stdarg.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
+
+#include "../include/wi.h"
 
 #if defined(__GNUC__) || defined(__clang__)
 #define WI_NORETURN __attribute__((noreturn))
@@ -20,6 +23,13 @@
 #endif
 
 #define WI_UNUSED(x) (void)x
+
+char*
+wi_vasprintf(const char* format, va_list args);
+char*
+wi_sprintf(const char* format, ...);
+void
+wi_vprintf(wi_print_fn print, const char* format, va_list args);
 
 char*
 wi_strdup(const char* src);

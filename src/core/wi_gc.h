@@ -9,7 +9,7 @@
 #include "wi_table.h"
 
 struct wi_gc {
-    wi_conf conf;
+    wi_conf* conf;
 
     size_t min_heap;
     size_t heap_grow_factor;
@@ -53,7 +53,7 @@ struct wi_gc {
 };
 
 struct wi_gc*
-wi_new_gc(wi_conf conf);
+wi_new_gc(wi_conf* conf);
 void
 wi_delete_gc(struct wi_gc* gc);
 

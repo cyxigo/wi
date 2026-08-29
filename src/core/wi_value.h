@@ -123,7 +123,7 @@ wi_values_equal(wi_value a, wi_value b) {
 }
 
 void
-wi_value_print(wi_value value);
+wi_value_print(struct wi_state* state, wi_value value);
 uint32_t
 wi_value_hash(wi_value value);
 const char*

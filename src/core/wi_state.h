@@ -61,18 +61,12 @@ struct wi_recovery {
 };
 
 struct wi_state {
-    char* error;
-    char* warnings;
-    /*
-        this is separated because... we are out of memory, what would we do? allocate MORE memory?
-        no, instead we use this little static string thingy
-    */
-    const char* oom;
-    /* this flag is set if the last compile error occured at EOF */
-    bool was_eof_error;
-
-    wi_conf       conf;
+    wi_conf*      conf;
     struct wi_gc* gc;
+
+    bool        was_eof_error;
+    wi_print_fn out;
+    wi_print_fn error;
 
     wi_on_compile_fn     on_compile;
     wi_load_require_fn   load_require;
@@ -166,48 +160,19 @@ wi_state_frame(struct wi_state* state) {
 }
 
 struct wi_state*
-wi_new_state(wi_conf conf);
+wi_new_state(wi_conf* conf);
 void
 wi_delete_state(struct wi_state* state);
 
-WI_INLINE void
-wi_state_reset_error(struct wi_state* state) {
-    free(state->error);
-    state->error         = NULL;
-    state->oom           = NULL;
-    state->was_eof_error = false;
-}
-
-WI_INLINE void
-wi_state_reset_warnings(struct wi_state* state) {
-    free(state->warnings);
-    state->warnings = NULL;
-}
+void
+wi_state_tune_gc(wi_state* state, size_t min_heap, size_t heap_grow_factor, size_t young_max);
+bool
+wi_state_was_eof_error(wi_state* state);
 
 void
-wi_state_append_to(struct wi_state* state, char** t_buf, const char* format, ...);
-
-void
-wi_state_append_error_va(struct wi_state* state, const char* format, va_list args);
-void
-wi_state_append_error(struct wi_state* state, const char* format, ...);
-
-void
-wi_state_append_warning_va(struct wi_state* state, const char* format, va_list args);
-void
-wi_state_append_warning(struct wi_state* state, const char* format, ...);
-
-const char*
-wi_state_get_error(struct wi_state* state);
-const char*
-wi_state_get_warnings(struct wi_state* state);
-
-void
-wi_state_set_on_compile_fn(struct wi_state* state, wi_on_compile_fn fn);
-void
-wi_state_set_require_load_fn(struct wi_state* state, wi_load_require_fn fn);
-void
-wi_state_set_require_exists_fn(struct wi_state* state, wi_require_exists_fn fn);
+wi_state_set_callbacks(struct wi_state* state, wi_print_fn out_fn, wi_print_fn error_fn,
+                       wi_on_compile_fn on_compile_fn, wi_load_require_fn load_require_fn,
+                       wi_require_exists_fn require_exists_fn);
 
 void
 wi_state_set_args(struct wi_state* state, int argc, const char** argv);

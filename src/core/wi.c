@@ -17,23 +17,9 @@
 static wi_state* _g_state = NULL;
 
 static void
-_on_compile(wi_state* state) {
-    const char* warnings = wi_state_get_warnings(state);
-
-    if (warnings) {
-        printf("%s", warnings);
-    }
-}
-
-static void
 _delete_g_state(void) {
     wi_delete_state(_g_state);
     _g_state = NULL;
-}
-
-static void
-_print_error(void) {
-    fprintf(stderr, "%s", wi_state_get_error(_g_state));
 }
 
 static void
@@ -98,13 +84,9 @@ _repl(void) {
         buf                  = _repl_append_line(buf, &buf_len, line);
         wi_run_result result = wi_state_run(_g_state, "<stdin>", buf);
 
-        if (result == WI_RUN_ERROR) {
-            if (wi_state_was_eof_error(_g_state)) {
-                /* missing ';' or unclosed '('/'['/'{' */
-                continue;
-            } else {
-                _print_error();
-            }
+        if (result == WI_RUN_ERROR && wi_state_was_eof_error(_g_state)) {
+            /* missing ';' or unclosed '('/'['/'{' */
+            continue;
         }
 
         free(buf);
@@ -263,19 +245,18 @@ main(int argc, const char* argv[]) {
     const char** script_argv = NULL;
     _parse_flags(argc, argv, &conf, &file_path, &script_argc, &script_argv);
 
-    _g_state = wi_new_state(conf);
+    _g_state = wi_new_state(&conf);
 
     if (!_g_state) {
         fprintf(stderr, "out of memory: failed to allocate a state\n");
         return EXIT_FAILURE;
     }
 
-    wi_state_set_on_compile_fn(_g_state, _on_compile);
-
     wi_def_stm(_g_state);
     wi_def_std(_g_state);
 
     if (!file_path) {
+        wi_conf_set(&conf, WI_CONF_REPL);
         _repl();
         return EXIT_SUCCESS;
     }
@@ -284,11 +265,6 @@ main(int argc, const char* argv[]) {
 
     wi_state_set_args(_g_state, script_argc, script_argv);
     wi_run_result result = wi_state_run(_g_state, file_path, src);
-
-    if (result == WI_RUN_ERROR) {
-        _print_error();
-    }
-
     free(src);
     _delete_g_state();
 

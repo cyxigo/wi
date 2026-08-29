@@ -54,16 +54,15 @@ _digit_count(int n) {
 }
 
 static void
-_parser_append_token_line(struct wi_parser* parser, char** t_buf, struct wi_token token) {
+_parser_print_token_line(struct wi_parser* parser, wi_print_fn fn, struct wi_token token) {
     if (token.kind == WI_TOKEN_BLANK) {
         return;
     }
 
-    struct wi_state* state      = parser->gc->state;
-    const char*      src        = parser->lexer->src;
-    const char*      line_start = src;
-    int              line       = 1;
-    const char*      ptr        = src;
+    const char* src        = parser->lexer->src;
+    const char* line_start = src;
+    int         line       = 1;
+    const char* ptr        = src;
 
     while (*ptr && line < token.line) {
         if (*ptr == '\n') {
@@ -82,41 +81,44 @@ _parser_append_token_line(struct wi_parser* parser, char** t_buf, struct wi_toke
 
     int line_width = _digit_count(token.line);
 
-    wi_state_append_to(state, t_buf, " %*s | \n", line_width, "");
-    wi_state_append_to(state, t_buf, " %*i | %.*s\n", line_width, token.line, (int)(line_end - line_start),
-                       line_start);
-    wi_state_append_to(state, t_buf, " %*s | %*s", line_width, "", token.col - 1, "");
+    fn(" %*s | \n", line_width, "");
+    fn(" %*i | %.*s\n", line_width, token.line, (int)(line_end - line_start), line_start);
+    fn(" %*s | %*s", line_width, "", token.col - 1, "");
 
     int caret_count = wi_utf8_len(token.start, token.count);
 
     for (int i = 0; i < caret_count; i++) {
-        wi_state_append_to(state, t_buf, "^");
+        fn("^");
     }
 
-    wi_state_append_to(state, t_buf, "\n");
+    fn("\n");
 }
 
 static void
 _parser_error_va(struct wi_parser* parser, struct wi_token token, const char* format, va_list args) {
     struct wi_state* state = parser->gc->state;
-    wi_state_reset_error(state);
 
     if (token.kind == WI_TOKEN_EOF) {
         state->was_eof_error = true;
+
+        if (wi_conf_is_set(state->conf, WI_CONF_REPL)) {
+            goto end; /* skip printing */
+        }
     }
 
-    wi_state_append_error(state, "compile error: ");
+    state->error("compile error: ");
 
     if (token.kind == WI_TOKEN_ERROR) {
-        wi_state_append_error(state, "%s\n", token.start);
+        state->error("%s\n", token.start);
     } else {
-        wi_state_append_error_va(state, format, args);
-        wi_state_append_error(state, "\n");
+        wi_vprintf(state->error, format, args);
+        state->error("\n");
     }
 
-    _parser_append_token_line(parser, &state->error, token.kind == WI_TOKEN_EOF ? parser->last : token);
-    wi_state_append_error(state, "   --> %s:%i:%i\n", parser->lexer->file_path, token.line, token.col);
+    _parser_print_token_line(parser, state->error, token.kind == WI_TOKEN_EOF ? parser->last : token);
+    state->error("   --> %s:%i:%i\n", parser->lexer->file_path, token.line, token.col);
 
+end:
     wi_gc_reset_roots(parser->gc);
 }
 
@@ -155,17 +157,16 @@ wi_parser_warning_at(struct wi_parser* parser, struct wi_token token, const char
         return;
     }
 
-    wi_state_append_warning(state, "compile warning: ");
+    state->out("compile warning: ");
 
     va_list args;
     va_start(args, format);
-    wi_state_append_warning_va(state, format, args);
+    wi_vprintf(state->out, format, args);
     va_end(args);
 
-    wi_state_append_warning(state, "\n");
-
-    _parser_append_token_line(parser, &state->warnings, token);
-    wi_state_append_warning(state, "   --> %s:%i:%i\n", parser->lexer->file_path, token.line, token.col);
+    state->out("\n");
+    _parser_print_token_line(parser, state->out, token);
+    state->out("   --> %s:%i:%i\n", parser->lexer->file_path, token.line, token.col);
 }
 
 void

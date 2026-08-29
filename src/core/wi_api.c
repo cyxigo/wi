@@ -18,15 +18,6 @@
 #include "wi_value.h"
 
 void
-wi_state_tune_gc(struct wi_state* state, size_t min_heap, size_t heap_grow_factor, size_t young_max) {
-    struct wi_gc* gc     = state->gc;
-    gc->min_heap         = min_heap;
-    gc->heap_grow_factor = heap_grow_factor < 1 ? 1 : heap_grow_factor;
-    gc->young_max        = young_max;
-    gc->next_major       = min_heap;
-}
-
-void
 wi_def_stm(struct wi_state* state) {
     wi_state_def_stm_string(state);
     wi_state_def_stm_array(state);

@@ -5,7 +5,6 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <stdio.h>
 #include <string.h>
 
 #include "../core/wi_state.h"
@@ -14,13 +13,13 @@
 static void
 _print(struct wi_state* state, int arg_count, bool newline) {
     for (int i = 0; i < arg_count; i++) {
-        wi_value_print(state->ffi_stack[i + 1]);
+        wi_value_print(state, state->ffi_stack[i + 1]);
 
         if (!newline) {
             continue;
         }
 
-        printf("\n");
+        state->out("\n");
     }
 
     wi_slot_set_null(state, 0);

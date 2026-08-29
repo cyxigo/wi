@@ -242,7 +242,7 @@ _compiler_end(struct wi_compiler* compiler) {
     struct wi_prototype* prototype = compiler->prototype;
 
     if (wi_conf_is_set(compiler->gc->conf, WI_CONF_PRINT_CODE)) {
-        wi_prototype_disasm(prototype);
+        wi_prototype_disasm(compiler->state, prototype);
     }
 
     compiler->gc->compiler = compiler->outer;
@@ -1567,9 +1567,8 @@ struct wi_prototype*
 wi_compile(struct wi_state* state, const char* file_path, const char* src, struct wi_table* globals) {
     if (!wi_utf8_validate(src, (int)strlen(src))) {
         /* we can't use amazing wi_parser_X functions so... we do it the barbaric way... */
-        wi_state_reset_error(state);
-        wi_state_append_error(state, "compile error: invalid utf-8 sequence\n");
-        wi_state_append_error(state, "   --> %s\n", file_path);
+        state->error("compile error: invalid utf-8 sequence\n");
+        state->error("   --> %s\n", file_path);
         return NULL;
     }
 

@@ -7,11 +7,12 @@
 #include "wi_box.h"
 #include "wi_buf.h"
 #include "wi_gc.h" /* IWYU pragma: keep */
+#include "wi_state.h"
 #include "wi_table.h"
 #include "wi_util.h"
 
 static void
-_print_bytes(char* buf, int count) {
+_print_bytes(struct wi_state* state, char* buf, int count) {
     char* ptr = buf;
     char* end = buf + count;
 
@@ -19,58 +20,58 @@ _print_bytes(char* buf, int count) {
         char* nul = memchr(ptr, '\0', (size_t)(end - ptr));
 
         if (!nul) {
-            fwrite(ptr, 1, (size_t)(end - ptr), stdout);
+            state->out("%.*s", end - ptr, ptr);
             return;
         }
 
         if (nul > ptr) {
-            fwrite(ptr, 1, (size_t)(nul - ptr), stdout);
+            state->out("%.*s", nul - ptr, ptr);
         }
 
-        printf(" ");
+        state->out(" ");
         ptr = nul + 1;
     }
 }
 
 static void
-_print_function(struct wi_prototype* prototype) {
+_print_function(struct wi_state* state, struct wi_prototype* prototype) {
     if (prototype->is_main) {
-        printf("<main function %p (%s)>", (void*)prototype, prototype->file_path);
+        state->out("<main function %p (%s)>", (void*)prototype, prototype->file_path);
     } else {
-        printf("<function %p>", (void*)prototype);
+        state->out("<function %p>", (void*)prototype);
     }
 }
 
 void
-wi_value_print(wi_value value) {
+wi_value_print(struct wi_state* state, wi_value value) {
     if (wi_value_is_real(value)) {
-        printf(WI_REAL_FORMAT, wi_value_as_real(value));
+        state->out(WI_REAL_FORMAT, wi_value_as_real(value));
     } else if (wi_value_is_null(value)) {
-        printf("null");
+        state->out("null");
     } else if (wi_value_is_bool(value)) {
-        printf(wi_value_as_bool(value) ? "true" : "false");
+        state->out(wi_value_as_bool(value) ? "true" : "false");
     } else if (wi_value_is_string(value)) {
         struct wi_string* string = wi_value_as_string(value);
-        _print_bytes(string->buf, string->count);
+        _print_bytes(state, string->buf, string->count);
     } else if (wi_value_is_array(value)) {
-        printf("<array %p>", (void*)wi_value_as_array(value));
+        state->out("<array %p>", (void*)wi_value_as_array(value));
     } else if (wi_value_is_map(value)) {
-        printf("<map %p>", (void*)wi_value_as_map(value));
+        state->out("<map %p>", (void*)wi_value_as_map(value));
     } else if (wi_value_is_prototype(value)) {
-        _print_function(wi_value_as_prototype(value));
+        _print_function(state, wi_value_as_prototype(value));
     } else if (wi_value_is_foreign(value)) {
-        printf("<foreign %p>", (void*)wi_value_as_foreign(value));
+        state->out("<foreign %p>", (void*)wi_value_as_foreign(value));
     } else if (wi_value_is_closure(value)) {
-        _print_function(wi_value_as_closure(value)->prototype);
+        _print_function(state, wi_value_as_closure(value)->prototype);
     } else if (wi_value_is_upvalue(value)) {
-        printf("<upvalue %p>", (void*)wi_value_as_upvalue(value));
+        state->out("<upvalue %p>", (void*)wi_value_as_upvalue(value));
     } else if (wi_value_is_object(value)) {
-        printf("<object %p>", (void*)wi_value_as_object(value));
+        state->out("<object %p>", (void*)wi_value_as_object(value));
     } else if (wi_value_is_userdata(value)) {
         struct wi_userdata* userdata = wi_value_as_userdata(value);
-        printf("<%s %p>", userdata->name->buf, (void*)userdata);
+        state->out("<%s %p>", userdata->name->buf, (void*)userdata);
     } else {
-        printf("<unknown>");
+        state->out("<unknown>");
     }
 }
 
@@ -170,42 +171,18 @@ wi_value_type(wi_value value) {
 }
 
 static char*
-_format(const char* format, ...) {
-    va_list args;
-    va_start(args, format);
-    int needed = vsnprintf(NULL, 0, format, args);
-    va_end(args);
-
-    if (needed < 0) {
-        return NULL;
-    }
-
-    char* buf = malloc((size_t)needed + 1);
-
-    if (!buf) {
-        return NULL;
-    }
-
-    va_start(args, format);
-    vsnprintf(buf, (size_t)needed + 1, format, args);
-    va_end(args);
-
-    return buf;
-}
-
-static char*
 _function_to_string(struct wi_prototype* prototype) {
     if (prototype->is_main) {
-        return _format("<main function %p (%s)>", (void*)prototype, prototype->file_path);
+        return wi_sprintf("<main function %p (%s)>", (void*)prototype, prototype->file_path);
     }
 
-    return _format("<function %p>", (void*)prototype);
+    return wi_sprintf("<function %p>", (void*)prototype);
 }
 
 char*
 wi_value_to_string(wi_value value) {
     if (wi_value_is_real(value)) {
-        return _format(WI_REAL_FORMAT, wi_value_as_real(value));
+        return wi_sprintf(WI_REAL_FORMAT, wi_value_as_real(value));
     }
 
     if (wi_value_is_null(value)) {
@@ -221,11 +198,11 @@ wi_value_to_string(wi_value value) {
     }
 
     if (wi_value_is_array(value)) {
-        return _format("<array %p>", (void*)wi_value_as_array(value));
+        return wi_sprintf("<array %p>", (void*)wi_value_as_array(value));
     }
 
     if (wi_value_is_map(value)) {
-        return _format("<map %p>", (void*)wi_value_as_map(value));
+        return wi_sprintf("<map %p>", (void*)wi_value_as_map(value));
     }
 
     if (wi_value_is_prototype(value)) {
@@ -233,7 +210,7 @@ wi_value_to_string(wi_value value) {
     }
 
     if (wi_value_is_foreign(value)) {
-        return _format("<foreign %p>", (void*)wi_value_as_foreign(value));
+        return wi_sprintf("<foreign %p>", (void*)wi_value_as_foreign(value));
     }
 
     if (wi_value_is_closure(value)) {
@@ -241,16 +218,16 @@ wi_value_to_string(wi_value value) {
     }
 
     if (wi_value_is_upvalue(value)) {
-        return _format("<upvalue %p>", (void*)wi_value_as_upvalue(value));
+        return wi_sprintf("<upvalue %p>", (void*)wi_value_as_upvalue(value));
     }
 
     if (wi_value_is_object(value)) {
-        return _format("<object %p>", (void*)wi_value_as_object(value));
+        return wi_sprintf("<object %p>", (void*)wi_value_as_object(value));
     }
 
     if (wi_value_is_userdata(value)) {
         struct wi_userdata* userdata = wi_value_as_userdata(value);
-        return _format("<%s %p>", userdata->name->buf, (void*)userdata);
+        return wi_sprintf("<%s %p>", userdata->name->buf, (void*)userdata);
     }
 
     return wi_strdup("<unknown>");

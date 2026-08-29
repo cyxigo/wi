@@ -30,6 +30,11 @@ typedef double wi_real;
 typedef struct wi_object wi_object;
 
 /**
+ * Opaque Wi state handle
+ */
+typedef struct wi_state wi_state;
+
+/**
  * The result of running Wi code
  */
 typedef enum wi_run_result {
@@ -38,23 +43,11 @@ typedef enum wi_run_result {
     WI_RUN_ABORT, /* Execution was aborted early via `wi_state_abort` */
 } wi_run_result;
 
-/**
- * Opaque Wi state handle
- */
-typedef struct wi_state wi_state;
-
-/**
- * Foreign (C) function pointer, called from Wi scripts
- */
-typedef void (*wi_foreign_fn)(wi_state* state, int arg_count);
-/**
- * Userdata finalizer - function called when the userdata gets collected by GC
- */
-typedef void (*wi_userdata_finalizer_fn)(void* data);
+/* Callback to print... something. Used by Wi for standard/error output printing */
+typedef void (*wi_print_fn)(const char* format, ...);
 
 /**
  * Function called right after a successful compilation of a script.
- * Use example: print all warnings
  */
 typedef void (*wi_on_compile_fn)(wi_state* state);
 
@@ -71,6 +64,15 @@ typedef char* (*wi_load_require_fn)(wi_state* state, const char* path);
 typedef bool (*wi_require_exists_fn)(wi_state* state, const char* path);
 
 /**
+ * Foreign (C) function pointer, called from Wi scripts
+ */
+typedef void (*wi_foreign_fn)(wi_state* state, int arg_count);
+/**
+ * Userdata finalizer - function called when the userdata gets collected by GC
+ */
+typedef void (*wi_userdata_finalizer_fn)(void* data);
+
+/**
  * Create a new Wi state instance
  *
  * @param conf Wi configuration, see `wi_conf.h` for more
@@ -78,7 +80,7 @@ typedef bool (*wi_require_exists_fn)(wi_state* state, const char* path);
  * @note Must be freed via `wi_delete_state`
  */
 WI_API wi_state*
-wi_new_state(wi_conf conf);
+wi_new_state(wi_conf* conf);
 
 /**
  * Delete a Wi state instance and free all associated memory
@@ -101,27 +103,6 @@ WI_API void
 wi_state_tune_gc(wi_state* state, size_t min_heap, size_t heap_grow_factor, size_t young_max);
 
 /**
- * Get the error message from the last compile or runtime error
- *
- * @param state Wi state instance
- * @return Error message, `NULL` if none occurred
- */
-WI_API const char*
-wi_state_get_error(wi_state* state);
-
-/**
- * Get compiler warnings collected during the last `wi_state_run` call.
- *
- * Warnings from every function and every `require`d script compiled during that call are
- * concatenated into one string
- *
- * @param state Wi state instance
- * @return Warning messages, `NULL` if none occurred
- */
-WI_API const char*
-wi_state_get_warnings(wi_state* state);
-
-/**
  * Checks if the last compile error occurred at EOF
  *
  * @param state Wi state instance
@@ -130,32 +111,19 @@ WI_API bool
 wi_state_was_eof_error(wi_state* state);
 
 /**
- * Set the callback invoked right after a successful compilation of a script (main script or a `require`d one).
- * Useful for e.g. printing warnings via `wi_state_get_warnings`
+ * Set the state callbacks. Safe to pass `NULL` for each. For more info about callbacks, check their definitions
  *
  * @param state Wi state instance
- * @param fn Callback function
+ * @param out_fn Standard output callback
+ * @param error_fn Error output callback
+ * @param on_compile_fn On compile callback
+ * @param load_require_fn Load require callback
+ * @param require_exists_fn Require existance check callback
  */
 WI_API void
-wi_state_set_on_compile_fn(wi_state* state, wi_on_compile_fn fn);
-
-/**
- * Set the `require` load callback
- *
- * @param state Wi state instance
- * @param fn Load callback function
- */
-WI_API void
-wi_state_set_require_load_fn(wi_state* state, wi_load_require_fn fn);
-
-/**
- * Set the `require` existence check callback
- *
- * @param state Wi state instance
- * @param fn Existence check callback function
- */
-WI_API void
-wi_state_set_require_exists_fn(wi_state* state, wi_require_exists_fn fn);
+wi_state_set_callbacks(struct wi_state* state, wi_print_fn out_fn, wi_print_fn error_fn,
+                       wi_on_compile_fn on_compile_fn, wi_load_require_fn load_require_fn,
+                       wi_require_exists_fn require_exists_fn);
 
 /**
  * Set the command line arguments that will be available to Wi scripts via os.args
@@ -171,7 +139,7 @@ wi_state_set_args(wi_state* state, int argc, const char** argv);
  * Throw a runtime error in the state
  *
  * @param state Wi state instance
- * @param format `printf` format string
+ * @param format Format string
  * @param ... Format arguments
  */
 WI_API void

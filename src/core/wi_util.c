@@ -16,6 +16,68 @@
 #endif
 
 /*
+    a bit modified vasprintf for wi needs
+    e.g. returns char* instead of taking char** parameter and returning an int
+    also creates a copy of args so it's safe to pass them directly
+    and is a bit safer
+*/
+char*
+wi_vasprintf(const char* format, va_list args) {
+    va_list args_copy;
+    va_copy(args_copy, args);
+    int len = vsnprintf(NULL, 0, format, args_copy);
+    va_end(args_copy);
+
+    if (WI_UNLIKELY(len < 0)) {
+        return NULL;
+    }
+
+    char* buf = malloc(len + 1);
+
+    if (WI_UNLIKELY(!buf)) {
+        return NULL;
+    }
+
+    va_copy(args_copy, args);
+    int written = vsnprintf(buf, len + 1, format, args_copy);
+    va_end(args_copy);
+
+    if (written < 0) {
+        free(buf);
+        return NULL;
+    }
+
+    return buf;
+}
+
+/*
+    a bit modified sprintf for wi needs
+    e.g. returns char* instead of taking char** parameter and returning an int
+    and is a bit safer (uses wi_vasprintf)
+*/
+char*
+wi_sprintf(const char* format, ...) {
+    va_list args;
+    va_start(args, format);
+    char* buf = wi_vasprintf(format, args);
+    va_end(args);
+    return buf;
+}
+
+/* a little wrapper around printing callbacks so we can pass va_list directly (uses wi_vasprintf) */
+void
+wi_vprintf(wi_print_fn fn, const char* format, va_list args) {
+    char* buf = wi_vasprintf(format, args);
+
+    if (!buf) {
+        return;
+    }
+
+    fn("%s", buf);
+    free(buf);
+}
+
+/*
     got tired from using tons of macros to provide strdup...
     so here's this little function thingy! plain as day, simple as it gets!
 */

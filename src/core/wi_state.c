@@ -51,6 +51,22 @@ _state_reset(struct wi_state* state) {
 }
 
 static void
+_state_out(const char* format, ...) {
+    va_list args;
+    va_start(args, format);
+    vprintf(format, args);
+    va_end(args);
+}
+
+static void
+_state_error(const char* format, ...) {
+    va_list args;
+    va_start(args, format);
+    vfprintf(stderr, format, args);
+    va_end(args);
+}
+
+static void
 _state_on_compile(struct wi_state* state) {
     WI_UNUSED(state);
     /* do nothing */
@@ -85,17 +101,12 @@ _state_require_exists(struct wi_state* state, const char* path) {
 }
 
 struct wi_state*
-wi_new_state(wi_conf conf) {
+wi_new_state(wi_conf* conf) {
     struct wi_state* state = malloc(sizeof(struct wi_state));
 
     if (!state) {
         return NULL;
     }
-
-    state->error         = NULL;
-    state->warnings      = NULL;
-    state->oom           = NULL;
-    state->was_eof_error = false;
 
     state->conf = conf;
     state->gc   = wi_new_gc(state->conf);
@@ -106,6 +117,10 @@ wi_new_state(wi_conf conf) {
     }
 
     state->gc->state = state;
+
+    state->was_eof_error = false;
+    state->out           = _state_out;
+    state->error         = _state_error;
 
     state->on_compile     = _state_on_compile;
     state->load_require   = _state_read_file;
@@ -158,9 +173,6 @@ wi_new_state(wi_conf conf) {
 
 void
 wi_delete_state(struct wi_state* state) {
-    wi_state_reset_error(state);
-    wi_state_reset_warnings(state);
-
     free(state->frames);
     free(state->stack);
 
@@ -179,67 +191,13 @@ wi_delete_state(struct wi_state* state) {
     free(state);
 }
 
-static void
-_state_append(struct wi_state* state, char** t_buf, const char* format, va_list args) {
-    va_list args_copy;
-    va_copy(args_copy, args);
-    int add_len = vsnprintf(NULL, 0, format, args_copy);
-    va_end(args_copy);
-
-    size_t len = *t_buf ? strlen(*t_buf) : 0;
-    char*  buf = realloc(*t_buf, len + (size_t)add_len + 1);
-
-    if (WI_UNLIKELY(!buf)) {
-        /* is diagnostic a good word here? i guess */
-        wi_state_oom(state, "out of memory: failed to allocate diagnostic message");
-    }
-
-    *t_buf = buf;
-    vsnprintf(*t_buf + len, (size_t)add_len + 1, format, args);
-}
-
 void
-wi_state_append_to(struct wi_state* state, char** t_buf, const char* format, ...) {
-    va_list args;
-    va_start(args, format);
-    _state_append(state, t_buf, format, args);
-    va_end(args);
-}
-
-void
-wi_state_append_error_va(struct wi_state* state, const char* format, va_list args) {
-    _state_append(state, &state->error, format, args);
-}
-
-void
-wi_state_append_error(struct wi_state* state, const char* format, ...) {
-    va_list args;
-    va_start(args, format);
-    wi_state_append_error_va(state, format, args);
-    va_end(args);
-}
-
-void
-wi_state_append_warning_va(struct wi_state* state, const char* format, va_list args) {
-    _state_append(state, &state->warnings, format, args);
-}
-
-void
-wi_state_append_warning(struct wi_state* state, const char* format, ...) {
-    va_list args;
-    va_start(args, format);
-    wi_state_append_warning_va(state, format, args);
-    va_end(args);
-}
-
-const char*
-wi_state_get_error(struct wi_state* state) {
-    return state->oom ? state->oom : state->error;
-}
-
-const char*
-wi_state_get_warnings(struct wi_state* state) {
-    return state->warnings;
+wi_state_tune_gc(struct wi_state* state, size_t min_heap, size_t heap_grow_factor, size_t young_max) {
+    struct wi_gc* gc     = state->gc;
+    gc->min_heap         = min_heap;
+    gc->heap_grow_factor = heap_grow_factor < 1 ? 1 : heap_grow_factor;
+    gc->young_max        = young_max;
+    gc->next_major       = min_heap;
 }
 
 bool
@@ -248,18 +206,28 @@ wi_state_was_eof_error(wi_state* state) {
 }
 
 void
-wi_state_set_on_compile_fn(struct wi_state* state, wi_on_compile_fn fn) {
-    state->on_compile = fn;
-}
+wi_state_set_callbacks(struct wi_state* state, wi_print_fn out_fn, wi_print_fn error_fn,
+                       wi_on_compile_fn on_compile_fn, wi_load_require_fn load_require_fn,
+                       wi_require_exists_fn require_exists_fn) {
+    if (out_fn) {
+        state->out = out_fn;
+    }
 
-void
-wi_state_set_require_load_fn(struct wi_state* state, wi_load_require_fn fn) {
-    state->load_require = fn;
-}
+    if (error_fn) {
+        state->error = error_fn;
+    }
 
-void
-wi_state_set_require_exists_fn(struct wi_state* state, wi_require_exists_fn fn) {
-    state->require_exists = fn;
+    if (on_compile_fn) {
+        state->on_compile = on_compile_fn;
+    }
+
+    if (load_require_fn) {
+        state->load_require = load_require_fn;
+    }
+
+    if (require_exists_fn) {
+        state->require_exists = require_exists_fn;
+    }
 }
 
 void
@@ -375,13 +343,8 @@ _state_close_upvalues(struct wi_state* state, wi_value* last) {
 
 WI_NORETURN void
 wi_state_error(struct wi_state* state, const char* format, ...) {
-#define _APPEND_FORMAT()                           \
-    va_list args;                                  \
-    va_start(args, format);                        \
-    wi_state_append_error_va(state, format, args); \
-    va_end(args)
-
-    wi_state_reset_error(state);
+    va_list args;
+    va_start(args, format);
 
     if (state->recoveries) {
         struct wi_recovery* recovery = state->recoveries;
@@ -393,28 +356,34 @@ wi_state_error(struct wi_state* state, const char* format, ...) {
         state->ffi_stack           = recovery->ffi_stack;
         state->gc->temp_root_count = recovery->temp_root_count;
 
-        _APPEND_FORMAT();
-        recovery->error = wi_make_string(state->gc, state->error);
+        char* error = wi_vasprintf(format, args);
 
+        if (WI_UNLIKELY(!error)) {
+            wi_state_oom(state, "failed to allocate an error message");
+        }
+
+        recovery->error = wi_take_cstring(state->gc, error, (int)strlen(error));
+        va_end(args);
         longjmp(recovery->jmp, WI_RUN_ERROR);
     }
 
-    wi_state_append_error(state, "runtime error: ");
-    _APPEND_FORMAT();
-    wi_state_append_error(state, "\n");
+    state->error("runtime error: ");
+    wi_vprintf(state->error, format, args);
+    va_end(args);
+    state->error("\n");
 
     for (int i = state->frame_count - 1; i >= 0; i--) {
         struct wi_call_frame* frame     = &state->frames[i];
         struct wi_prototype*  prototype = frame->closure->prototype;
         int                   line      = prototype->lines.data[frame->ip - prototype->bytes.data - 1];
-        wi_state_append_error(state, "   --> %s:%i", prototype->file_path, line);
+        state->error("   --> %s:%i", prototype->file_path, line);
 
         if (prototype->is_main) {
-            wi_state_append_error(state, " in main function\n");
+            state->error(" in main function\n");
         } else if (prototype->name) {
-            wi_state_append_error(state, " in %s()\n", prototype->name->buf);
+            state->error(" in %s()\n", prototype->name->buf);
         } else {
-            wi_state_append_error(state, " in anonymous function\n");
+            state->error(" in anonymous function\n");
         }
     }
 
@@ -427,10 +396,10 @@ wi_state_error(struct wi_state* state, const char* format, ...) {
 
 WI_NORETURN void
 wi_state_oom(struct wi_state* state, const char* what) {
-    state->oom = what;
+    state->error("out of memory: %s\n", what);
     _state_reset(state);
     wi_gc_reset_roots(state->gc);
-    longjmp(state->jmp, WI_RUN_ERROR);
+    longjmp(state->jmp, WI_RUN_ABORT);
 }
 
 WI_NORETURN void
@@ -1631,10 +1600,8 @@ wi_state_call(struct wi_state* state, wi_value callable, uint8_t arg_count, bool
 
 enum wi_run_result
 wi_state_run(struct wi_state* state, const char* file_path, const char* src) {
-    wi_state_reset_error(state);
-    wi_state_reset_warnings(state);
-
-    state->interrupted = 0;
+    state->was_eof_error = false;
+    state->interrupted   = 0;
     /* set early so we can catch compiler/parser oom */
     int jmp_result = setjmp(state->jmp);
 
