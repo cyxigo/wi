@@ -37,7 +37,11 @@ target("wi")
     set_kind("binary")
     set_group("apps")
     common()
- 
+
+    if is_plat("linux") then
+        add_ldflags("-rdynamic", {force = true})
+    end
+     
     if is_plat("windows") then 
         add_files("windows/wi.rc")
     elseif is_plat("linux") and os.isfile("/usr/include/readline/readline.h") then
