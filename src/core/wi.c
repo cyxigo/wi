@@ -161,7 +161,7 @@ _flag_parse_error(const char* exec_path, const char* format, ...) {
 }
 
 static void
-_parse_flags(int argc, const char* argv[], wi_conf* conf, const char** file_path, int* script_argc,
+_parse_flags(int argc, const char** argv, wi_conf* conf, const char** file_path, int* script_argc,
              const char*** script_argv) {
     bool script_args = false;
 
@@ -231,8 +231,8 @@ _parse_flags(int argc, const char* argv[], wi_conf* conf, const char** file_path
     }
 }
 
-extern int
-main(int argc, const char* argv[]) {
+int
+main(int argc, const char** argv) {
 #ifdef _WIN32
     SetConsoleOutputCP(CP_UTF8);
     SetConsoleCP(CP_UTF8);
