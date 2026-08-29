@@ -61,7 +61,7 @@ The Wi source code is organized into the following directories:
 | Directory  | Description                                                  |
 | ---------- | ------------------------------------------------------------ |
 | `include`  | Public API headers (`wi_conf.h`, `wi.h`, `wi.hpp`)           |
-| `src/core` | Core components – compiler, VM, GC, API implementation, ect. |
+| `src/core` | Core components – compiler, VM, GC, API implementation, etc. |
 | `src/std`  | Standard library implementation                              |
 | `src/stm`  | Standard method library implementation                       |
 | `src/wasm` | WASM embedding functions                                     |
