@@ -118,7 +118,7 @@ wi_state_was_eof_error(wi_state* state);
  * @param error_fn Error output callback
  * @param on_compile_fn On compile callback
  * @param load_require_fn Load require callback
- * @param require_exists_fn Require existance check callback
+ * @param require_exists_fn Require existence check callback
  */
 WI_API void
 wi_state_set_callbacks(struct wi_state* state, wi_print_fn out_fn, wi_print_fn error_fn,
