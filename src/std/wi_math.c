@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
-#include "../include/wi.h"
+#include "../../include/wi.h"
 
 #define M_E 2.7182818284590452354
 #define M_PI 3.14159265358979323846

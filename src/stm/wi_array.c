@@ -1,7 +1,7 @@
 #include <stdbool.h>
 
+#include "../../include/wi.h"
 #include "../core/wi_state.h"
-#include "../include/wi.h"
 
 static struct wi_array*
 _check_arg_array(struct wi_state* state, int arg) {

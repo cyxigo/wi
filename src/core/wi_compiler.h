@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-#include "../include/wi_conf.h"
+#include "../../include/wi_conf.h"
 #include "wi_box.h"
 #include "wi_parser.h"
 #include "wi_table.h"

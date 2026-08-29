@@ -17,7 +17,7 @@ typedef void* wi_lib_handle;
 #include <dlfcn.h>
 #endif
 
-#include "../include/wi_conf.h"
+#include "../../include/wi_conf.h"
 #include "wi_box.h"
 #include "wi_gc.h"
 #include "wi_table.h"

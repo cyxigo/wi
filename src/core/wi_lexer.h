@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include <string.h>
 
-#include "../include/wi_conf.h"
+#include "../../include/wi_conf.h"
 #include "wi_util.h"
 
 WI_INLINE bool

@@ -8,9 +8,9 @@
 #include <stddef.h>
 #include <stdlib.h>
 
+#include "../../include/wi.h"
+#include "../../include/wi_conf.h"
 #include "../core/wi_util.h"
-#include "../include/wi.h"
-#include "../include/wi_conf.h"
 
 /* while yes this API is dead simple, it's used only in "Try Wi online!" thingy */
 static wi_state* _g_state = NULL;

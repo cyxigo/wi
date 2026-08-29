@@ -6,7 +6,7 @@
 #include <stddef.h>
 #include <stdio.h>
 
-#include "../include/wi.h"
+#include "../../include/wi.h"
 
 #if defined(__GNUC__) || defined(__clang__)
 #define WI_NORETURN __attribute__((noreturn))

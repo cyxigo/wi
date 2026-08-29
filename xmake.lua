@@ -20,7 +20,7 @@ function common()
     
     add_headerfiles("src/core/*.h", "src/std/*.h")
     add_files("src/core/*.c", "src/std/*.c", "src/stm/*.c")
-    add_includedirs("src/core", "src/std", "src/stm")
+    add_includedirs("src/core", "src/std", "src/stm", "include")
 
     set_targetdir("bin")
 end
@@ -70,6 +70,6 @@ target("wi_wasm")
     )
 
     add_files("src/core/*.c|wi.c", "src/std/*.c", "src/stm/*.c", "src/wasm/wi_wasm.c")
-    add_includedirs("src/core", "src/std", "src/stm", "src/include")
+    add_includedirs("src/core", "src/std", "src/stm", "include")
 
     set_targetdir("bin")

@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-#include "../include/wi.h"
+#include "../../include/wi.h"
 
 static void
 _string_sub(struct wi_state* state, int arg_count) {

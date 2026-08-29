@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "../include/wi.h"
+#include "../../include/wi.h"
 #include "wi_buf.h"
 #include "wi_table.h"
 #include "wi_value.h"

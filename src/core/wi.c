@@ -10,8 +10,8 @@
 #include <windows.h>
 #endif
 
-#include "../include/wi.h"
-#include "../include/wi_conf.h"
+#include "../../include/wi.h"
+#include "../../include/wi_conf.h"
 #include "wi_util.h"
 
 static wi_state* _g_state = NULL;

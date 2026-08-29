@@ -55,7 +55,18 @@ This produces `wi.js` + `wi.wasm` (for functions see [`wi_wasm.c`](https://githu
 
 You can also use [`build.sh`](https://github.com/cyxigo/wi/blob/main/build.sh)/[`build_wasm.sh`](https://github.com/cyxigo/wi/blob/main/build_wasm.sh) utility scripts for building Wi.
 
-## Project status
+## Structure
+The Wi source code is organized into the following directories:
+
+| Directory  | Description                                                  |
+| ---------- | ------------------------------------------------------------ |
+| `include`  | Public API headers (`wi_conf.h`, `wi.h`, `wi.hpp`)           |
+| `src/core` | Core components – compiler, VM, GC, API implementation, ect. |
+| `src/std`  | Standard library implementation                              |
+| `src/stm`  | Standard method library implementation                       |
+| `src/wasm` | WASM embedding functions                                     |
+
+## Status
 
 This programming language was created by me, and only me – a single person. It's in beta, because I'm still designing it and **breaking syntax changes are to be expected**. The standard library isn't finished yet, but it's already quite useful. Other than the API, the code is not heavily commented.
 

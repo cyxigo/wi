@@ -21,7 +21,7 @@
 #include <unistd.h>
 #endif
 
-#include "../include/wi_conf.h"
+#include "../../include/wi_conf.h"
 #include "wi_box.h"
 #include "wi_buf.h"
 #include "wi_compiler.h"

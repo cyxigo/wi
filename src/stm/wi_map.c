@@ -1,7 +1,7 @@
 #include <stdbool.h>
 
+#include "../../include/wi.h"
 #include "../core/wi_state.h"
-#include "../include/wi.h"
 
 static struct wi_map*
 _check_arg_map(struct wi_state* state, int slot) {

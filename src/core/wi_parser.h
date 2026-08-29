@@ -5,7 +5,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "../include/wi_conf.h"
 #include "wi_buf.h"
 #include "wi_lexer.h"
 #include "wi_util.h"

@@ -2,8 +2,8 @@
 
 #include <stdlib.h>
 
+#include "../../include/wi.h"
 #include "../core/wi_gc.h"
-#include "../include/wi.h"
 #include "time.h"
 
 static void

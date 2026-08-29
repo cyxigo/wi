@@ -5,7 +5,7 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "../include/wi.h"
+#include "../../include/wi.h"
 #include "wi_buf.h"
 
 struct wi_box;

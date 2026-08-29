@@ -7,8 +7,8 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "../../include/wi.h"
 #include "../core/wi_state.h"
-#include "../include/wi.h"
 
 static void
 _print(struct wi_state* state, int arg_count, bool newline) {
