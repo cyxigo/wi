@@ -1582,14 +1582,14 @@ wi_compile(struct wi_state* state, const char* file_path, const char* src, struc
     struct wi_parser* parser = wi_new_parser(&lexer, state->gc);
 
     if (!parser) {
-        wi_state_oom(state, "out of memory: failed to allocate the parser");
+        wi_state_oom(state, "failed to allocate the parser (wi_compile)");
     }
 
     struct wi_compiler* compiler = wi_new_compiler(NULL, state, parser, globals);
 
     if (!compiler) {
         wi_delete_parser(parser);
-        wi_state_oom(state, "out of memory: failed to allocate the compiler");
+        wi_state_oom(state, "failed to allocate the compiler (wi_compile)");
     }
 
     /*

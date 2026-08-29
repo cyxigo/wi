@@ -248,7 +248,7 @@ _base_to_string(struct wi_state* state, int arg_count) {
     char* string = wi_value_to_string(state->ffi_stack[1]);
 
     if (!string) {
-        wi_state_oom(state, "out of memory: failed to allocate a string for concatenation");
+        wi_state_oom(state, "failed to allocate a string (_base_string)");
     }
 
     struct wi_string* string_box = wi_take_cstring(state->gc, string, (int)strlen(string));

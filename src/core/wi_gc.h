@@ -72,7 +72,7 @@ wi_gc_push_root(struct wi_gc* gc, struct wi_box* root) {
         gc->temp_roots         = realloc(gc->temp_roots, sizeof(struct wi_box*) * (size_t)gc->temp_root_capacity);
 
         if (!gc->temp_roots) {
-            wi_state_oom(gc->state, "out of memory: failed to allocate garbage collector temp roots");
+            wi_state_oom(gc->state, "failed to allocate temp roots (wi_gc_push_root)");
         }
     }
 

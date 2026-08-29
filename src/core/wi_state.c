@@ -298,7 +298,7 @@ wi_state_push_recovery(struct wi_state* state) {
     struct wi_recovery* recovery = malloc(sizeof(struct wi_recovery));
 
     if (!recovery) {
-        wi_state_oom(state, "out of memory: failed to allocate an error buffer");
+        wi_state_oom(state, "failed to allocate an error buffer (wi_state_push_recovery)");
     }
 
     recovery->next    = state->recoveries;
@@ -359,7 +359,7 @@ wi_state_error(struct wi_state* state, const char* format, ...) {
         char* error = wi_vasprintf(format, args);
 
         if (WI_UNLIKELY(!error)) {
-            wi_state_oom(state, "failed to allocate an error message");
+            wi_state_oom(state, "failed to allocate an error message (wi_state_error)");
         }
 
         recovery->error = wi_take_cstring(state->gc, error, (int)strlen(error));
@@ -434,7 +434,7 @@ _state_concat(struct wi_state* state) {
         a_buf = wi_value_to_string(a);
 
         if (!a_buf) {
-            wi_state_oom(state, "out of memory: failed to allocate a string for concatenation");
+            wi_state_oom(state, "failed to allocate a string for concatenation (_state_concat)");
         }
 
         a_count = (int)strlen(a_buf);
@@ -450,7 +450,7 @@ _state_concat(struct wi_state* state) {
         b_buf = wi_value_to_string(b);
 
         if (!b_buf) {
-            wi_state_oom(state, "out of memory: failed to allocate a string for concatenation");
+            wi_state_oom(state, "failed to allocate a string for concatenation (_state_concat)");
         }
 
         b_count = (int)strlen(b_buf);
@@ -572,7 +572,7 @@ _state_subscript_get(struct wi_state* state, wi_value target, wi_value index) {
             key = wi_value_to_string(index);
 
             if (WI_UNLIKELY(!key)) {
-                wi_state_oom(state, "out of memory: failed to allocate key string for the error message");
+                wi_state_oom(state, "failed to allocate key string for an error message (_state_subscript_get)");
             }
 
             /*
@@ -701,7 +701,7 @@ _state_grow_stack(struct wi_state* state, wi_value* base, int needed) {
     wi_value* new_stack = realloc(state->stack, sizeof(wi_value) * (size_t)capacity);
 
     if (WI_UNLIKELY(!new_stack)) {
-        wi_state_oom(state, "out of memory: failed to allocate the value stack");
+        wi_state_oom(state, "failed to allocate the value stack (_state_grow_stack)");
     }
 
     state->stack_capacity = capacity;
@@ -746,7 +746,7 @@ _state_call(struct wi_state* state, struct wi_closure* closure, uint8_t arg_coun
         state->frames = realloc(state->frames, sizeof(struct wi_call_frame) * (size_t)capacity);
 
         if (WI_UNLIKELY(!state->frames)) {
-            wi_state_oom(state, "out of memory: failed to allocate call frames");
+            wi_state_oom(state, "failed to allocate call frames (_state_call)");
         }
 
         state->frame_capacity = capacity;

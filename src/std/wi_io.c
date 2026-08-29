@@ -67,7 +67,7 @@ _io_open(struct wi_state* state, int arg_count) {
 
     if (!file) {
         fclose(ptr);
-        wi_state_oom(state, "out of memory: failed to allocate a file handle");
+        wi_state_oom(state, "failed to allocate a file handle (_io_open)");
     }
 
     file->path = wi_strdup(file_path);
@@ -78,7 +78,7 @@ _io_open(struct wi_state* state, int arg_count) {
         free(file->path);
         free(file->mode);
         free(file);
-        wi_state_oom(state, "out of memory: failed to allocate a file handle");
+        wi_state_oom(state, "failed to allocate a file handle (_io_open)");
     }
 
     file->ptr      = ptr;
@@ -115,7 +115,7 @@ _io_write(struct wi_state* state, int arg_count) {
         content = wi_value_to_string(arg2);
 
         if (!content) {
-            wi_state_oom(state, "out of memory: failed to allocate file contents");
+            wi_state_oom(state, "failed to allocate file contents (_io_write)");
         }
 
         count = (int)strlen(content);
@@ -156,7 +156,7 @@ _io_read(struct wi_state* state, int arg_count) {
     char* content = malloc((size_t)size + 1);
 
     if (!content) {
-        wi_state_oom(state, "out of memory: failed to allocate file contents");
+        wi_state_oom(state, "failed to allocate file contents (_io_read)");
     }
 
     size_t read = fread(content, sizeof(char), (size_t)size, file->ptr);

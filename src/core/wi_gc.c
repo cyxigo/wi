@@ -168,7 +168,7 @@ wi_gc_realloc(struct wi_gc* gc, void* ptr, size_t old_size, size_t new_size) {
     void* result = realloc(ptr, new_size);
 
     if (WI_UNLIKELY(!result)) {
-        wi_state_oom(gc->state, "out of memory: failed to allocate memory in the garbage collector");
+        wi_state_oom(gc->state, "failed to allocate memory (wi_gc_realloc)");
     }
 
     return result;
@@ -197,7 +197,7 @@ _gc_mark_box(struct wi_gc* gc, struct wi_box* box) {
         gc->gray_stack    = realloc(gc->gray_stack, sizeof(struct wi_box*) * (size_t)gc->gray_capacity);
 
         if (WI_UNLIKELY(!gc->gray_stack)) {
-            wi_state_oom(gc->state, "out of memory: failed to allocate garbage collector gray stack");
+            wi_state_oom(gc->state, "failed to allocate gray stack (_gc_mark_box)");
         }
     }
 
@@ -361,7 +361,7 @@ wi_gc_remember(struct wi_gc* gc, struct wi_box* parent) {
         gc->remembered = realloc(gc->remembered, sizeof(struct wi_box*) * (size_t)gc->remembered_capacity);
 
         if (WI_UNLIKELY(!gc->remembered)) {
-            wi_state_oom(gc->state, "out of memory: failed to allocate garbage collector remembered set");
+            wi_state_oom(gc->state, "failed to allocate remembered stack (wi_gc_remember)");
         }
     }
 
