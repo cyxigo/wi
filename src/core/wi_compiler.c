@@ -1425,6 +1425,8 @@ _compiler_load_stmt(struct wi_compiler* compiler) {
     char   path[4096]; /* i assume 4kb is enough for this mess */
     size_t path_size = sizeof(path);
 
+    typedef void (*foreign_init_fn)(struct wi_state* state);
+
     /* platform-specific code is a legitimate way of torturing */
 #ifdef _WIN32
     DWORD len = GetModuleFileName(NULL, path, (DWORD)path_size);
@@ -1449,6 +1451,19 @@ _compiler_load_stmt(struct wi_compiler* compiler) {
 
     snprintf(path + path_len, remaining, "\\foreign\\%s.dll", raw_path);
     HMODULE lib = LoadLibraryA(path);
+
+    if (!lib) {
+        wi_parser_error_at_prev(compiler->parser, "failed to load foreign %s\nattempted path: %s\nload error: %lu",
+                                raw_path, path, GetLastError());
+    }
+
+    union {
+        FARPROC         proc;
+        foreign_init_fn fn;
+    } proc_conv;
+
+    proc_conv.proc       = GetProcAddress(lib, "wi_foreign_init");
+    foreign_init_fn init = proc_conv.fn;
 #else  /* __linux__ */
     ssize_t len = readlink("/proc/self/exe", path, path_size - 1);
 
@@ -1474,23 +1489,12 @@ _compiler_load_stmt(struct wi_compiler* compiler) {
 
     snprintf(path + path_len, remaining, "/foreign/%s.so", raw_path);
     void* lib = dlopen(path, RTLD_NOW | RTLD_GLOBAL);
-#endif /* _WIN32 */
 
     if (!lib) {
-        wi_parser_error_at_prev(compiler->parser, "failed to load foreign %s\nattempted path: %s", raw_path, path);
+        wi_parser_error_at_prev(compiler->parser, "failed to load foreign %s\nattempted path: %s\nload error: %s",
+                                raw_path, path, dlerror());
     }
 
-    typedef void (*foreign_init_fn)(struct wi_state* state);
-
-#ifdef _WIN32
-    union {
-        FARPROC         proc;
-        foreign_init_fn fn;
-    } proc_conv;
-
-    proc_conv.proc       = GetProcAddress(lib, "wi_foreign_init");
-    foreign_init_fn init = proc_conv.fn;
-#else  /* __linux__ */
     union {
         void*           ptr;
         foreign_init_fn fn;
