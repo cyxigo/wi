@@ -171,18 +171,6 @@ _lexer_make_token(struct wi_lexer* lexer, enum wi_token_kind kind) {
     return token;
 }
 
-static struct wi_token
-_lexer_error(struct wi_lexer* lexer, const char* msg, int line, int col) {
-    WI_UNUSED(lexer);
-    return (struct wi_token){
-        .kind  = WI_TOKEN_ERROR,
-        .start = msg,
-        .count = 1,
-        .line  = line,
-        .col   = col,
-    };
-}
-
 static char
 _lexer_peek(struct wi_lexer* lexer) {
     return *lexer->curr;
@@ -330,7 +318,7 @@ _lexer_non_dec_real(struct wi_lexer* lexer) {
     _lexer_advance(lexer);
 
     if (!is_digit_fn(_lexer_peek(lexer))) {
-        return _lexer_error(lexer, "expected at least one digit after base", line, col);
+        return wi_token_make_error("expected at least one digit after base", line, col);
     }
 
     while (is_digit_fn(_lexer_peek(lexer))) {
@@ -374,7 +362,7 @@ _lexer_string(struct wi_lexer* lexer) {
 
     while (_lexer_peek(lexer) != '"' && !_lexer_is_at_end(lexer)) {
         if (_lexer_check(lexer, '\n')) {
-            return _lexer_error(lexer, "unfinished string", line, col);
+            return wi_token_make_error("unfinished string", line, col);
         }
 
         if (_lexer_check(lexer, '$') && _lexer_check_next(lexer, '{')) {
@@ -383,7 +371,7 @@ _lexer_string(struct wi_lexer* lexer) {
                     we can't format lexer errors so we have to use the ancient technique called
                     "just type the limit in the string"
                 */
-                return _lexer_error(lexer, "string interpolation nested too deeply (limit is 8)", line, col);
+                return wi_token_make_error("string interpolation nested too deeply (limit is 8)", line, col);
             }
 
             struct wi_token token = _lexer_make_token(lexer, WI_TOKEN_INTERP);
@@ -403,7 +391,7 @@ _lexer_string(struct wi_lexer* lexer) {
     }
 
     if (_lexer_is_at_end(lexer)) {
-        return _lexer_error(lexer, "unfinished string", line, col);
+        return wi_token_make_error("unfinished string", line, col);
     }
 
     struct wi_token token = _lexer_make_token(lexer, WI_TOKEN_STRING);
@@ -484,7 +472,7 @@ wi_lexer_next(struct wi_lexer* lexer) {
         our dear user most likely tried to type a character that is meant to be a name or in a name
     */
     if ((c & 0x80) != 0) {
-        return _lexer_error(lexer, "non-ascii character in a name", lexer->line, lexer->curr_col - 1);
+        return wi_token_make_error("non-ascii character in a name", lexer->line, lexer->curr_col - 1);
     }
 
     if (wi_is_alpha(c)) {
@@ -597,5 +585,5 @@ wi_lexer_next(struct wi_lexer* lexer) {
             break;
     }
 
-    return _lexer_error(lexer, "unexpected character", lexer->line, lexer->curr_col);
+    return wi_token_make_error("unexpected character", lexer->line, lexer->curr_col);
 }

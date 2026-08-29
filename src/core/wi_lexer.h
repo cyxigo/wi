@@ -145,6 +145,17 @@ wi_token_from_string(const char* string) {
     };
 }
 
+WI_INLINE struct wi_token
+wi_token_make_error(const char* msg, int line, int col) {
+    return (struct wi_token){
+        .kind  = WI_TOKEN_ERROR,
+        .start = msg,
+        .count = 1,
+        .line  = line,
+        .col   = col,
+    };
+}
+
 const char*
 wi_token_kind_to_string(enum wi_token_kind kind);
 
