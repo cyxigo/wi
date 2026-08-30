@@ -287,6 +287,7 @@ _aqsort_partition(struct wi_state* state, struct wi_array* array, int lo, int hi
     int      i  = lo - 1;
 
     for (int j = lo; j < hi; j++) {
+        wi_arg_function(state, 2, 2);
         wi_state_ppush(state, buf[j]);
         wi_state_ppush(state, pi);
         wi_call(state, 2, false);
@@ -304,7 +305,6 @@ _aqsort_partition(struct wi_state* state, struct wi_array* array, int lo, int hi
 static void
 _aqsort(struct wi_state* state, struct wi_array* array, int lo, int hi) {
     while (lo < hi) { /* loop for tail recursion */
-
         int pi = _aqsort_partition(state, array, lo, hi);
 
         if (pi - lo < hi - pi) {
@@ -321,7 +321,6 @@ static void
 _array_sort(struct wi_state* state, int arg_count) {
     WI_UNUSED(arg_count);
     struct wi_array* array = _check_arg1_array(state);
-    wi_arg_function(state, 2, 2);
 
     if (array->items.count > 1) {
         _aqsort(state, array, 0, array->items.count - 1);

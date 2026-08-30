@@ -118,7 +118,6 @@ _map_each(struct wi_state* state, int arg_count) {
     WI_UNUSED(arg_count);
     struct wi_map* map = _check_arg1_map(state);
     wi_state_ppush(state, WI_MAKE_BOX_VALUE(map));
-    wi_arg_function(state, 2, 2);
 
     for (int i = 0; i < map->items.capacity; i++) {
         struct wi_entry* entry = &map->items.entries[i];
@@ -127,6 +126,7 @@ _map_each(struct wi_state* state, int arg_count) {
             continue;
         }
 
+        wi_arg_function(state, 2, 2);
         wi_state_ppush(state, entry->key);
         wi_state_ppush(state, entry->value);
         wi_call(state, 2, true);
@@ -152,9 +152,9 @@ _map_select(struct wi_state* state, int arg_count) {
         wi_state_ppush(state, entry->key);
         wi_call(state, 1, false);
 
+        wi_arg_function(state, 3, 1);
         wi_state_ppush(state, entry->value);
         wi_call(state, 1, false);
-        wi_arg_function(state, 3, 1);
 
         wi_value value = wi_state_pop(state);
         wi_value key   = wi_state_pop(state);
