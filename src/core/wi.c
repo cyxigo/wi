@@ -219,7 +219,7 @@ _parse_flags(int argc, const char** argv, wi_conf* conf, const char** file_path,
             continue;
         }
 
-        _flag_parse_error(argv[0], "unknown option");
+        _flag_parse_error(argv[0], "unknown option '%s'", arg);
     }
 
     for (int j = 0; j < *script_argc; j++) {
