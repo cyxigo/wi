@@ -1,5 +1,4 @@
-<div align="center">
-   <img width="200" alt="wi" src="https://github.com/user-attachments/assets/7c25acaf-bb2a-4ae7-ac22-2542f7b64676" />
+<img width="200" alt="wi" src="https://github.com/user-attachments/assets/7c25acaf-bb2a-4ae7-ac22-2542f7b64676" />
 
 ## Wi is a small, fast, embeddable, prototype-based scripting language
 
@@ -8,10 +7,6 @@
 [![GitHub License](https://img.shields.io/github/license/cyxigo/wi)](https://github.com/cyxigo/wi/blob/main/LICENSE)
 [![Docs](https://img.shields.io/badge/docs-wiki-blue)](https://github.com/cyxigo/wi/wiki)
 ![Code size](https://img.shields.io/github/languages/code-size/cyxigo/wi)
-![Platform](https://img.shields.io/badge/platform-linux%20%7C%20windows-lightgrey)
-[![CodeQL Advanced](https://github.com/cyxigo/wi/actions/workflows/codeql.yml/badge.svg)](https://github.com/cyxigo/wi/actions/workflows/codeql.yml)
-
-</div>
 
 ```scala
 obj_person := object {
@@ -66,7 +61,7 @@ The Wi source code is organized into the following directories:
 | `src/stm`  | Standard method library implementation                       |
 | `src/wasm` | WASM embedding functions                                     |
 
-## Status
+## Notes
 
 This programming language was created by me, and only me – a single person. It's in beta, because I'm still designing it and **breaking syntax changes are to be expected**. The standard library isn't finished yet, but it's already quite useful. Other than the API, the code is not heavily commented.
 
