@@ -2928,14 +2928,18 @@ FS.staticInit();
     }
 }
 Module["ccall"] = ccall;
-function _print_warnings(warnings) {
-    if (Module.printWarn) {
-        Module.printWarn(UTF8ToString(warnings));
+function _print_out(text) {
+    if (Module.print) {
+        Module.print(UTF8ToString(text));
+    }
+}
+function _print_err(text) {
+    if (Module.printErr) {
+        Module.printErr(UTF8ToString(text));
     }
 }
 var _wi_wasm_init,
     _wi_wasm_run,
-    _wi_wasm_get_error,
     _setThrew,
     __emscripten_stack_restore,
     __emscripten_stack_alloc,
@@ -2947,40 +2951,39 @@ var _wi_wasm_init,
 function assignWasmExports(wasmExports) {
     _wi_wasm_init = Module["_wi_wasm_init"] = wasmExports["C"];
     _wi_wasm_run = Module["_wi_wasm_run"] = wasmExports["D"];
-    _wi_wasm_get_error = Module["_wi_wasm_get_error"] = wasmExports["E"];
-    _setThrew = wasmExports["F"];
-    __emscripten_stack_restore = wasmExports["G"];
-    __emscripten_stack_alloc = wasmExports["H"];
-    _emscripten_stack_get_current = wasmExports["I"];
+    _setThrew = wasmExports["E"];
+    __emscripten_stack_restore = wasmExports["F"];
+    __emscripten_stack_alloc = wasmExports["G"];
+    _emscripten_stack_get_current = wasmExports["H"];
     memory = wasmMemory = wasmExports["z"];
     __indirect_function_table = wasmTable = wasmExports["B"];
 }
 var wasmImports = {
     x: ___syscall_faccessat,
-    j: ___syscall_fcntl64,
+    k: ___syscall_fcntl64,
     t: ___syscall_ioctl,
     u: ___syscall_openat,
     n: __emscripten_throw_longjmp,
-    y: _print_warnings,
+    y: _print_err,
+    l: _print_out,
     w: _clock_time_get,
     v: _emscripten_date_now,
     o: _emscripten_resize_heap,
     q: _environ_get,
     r: _environ_sizes_get,
-    h: _fd_close,
+    i: _fd_close,
     s: _fd_read,
     p: _fd_seek,
-    i: _fd_write,
-    f: invoke_ii,
+    j: _fd_write,
+    e: invoke_ii,
     d: invoke_iii,
     g: invoke_iiii,
-    l: invoke_iiiii,
-    m: invoke_iijii,
-    c: invoke_iijj,
-    k: invoke_jiii,
-    e: invoke_vi,
-    b: invoke_vii,
-    a: invoke_viii,
+    m: invoke_iiiii,
+    b: invoke_iijj,
+    h: invoke_vi,
+    a: invoke_vii,
+    c: invoke_viii,
+    f: invoke_vij,
 };
 function invoke_ii(index, a1) {
     var sp = stackSave();
@@ -3002,16 +3005,6 @@ function invoke_iii(index, a1, a2) {
         _setThrew(1, 0);
     }
 }
-function invoke_viii(index, a1, a2, a3) {
-    var sp = stackSave();
-    try {
-        getWasmTableEntry(index)(a1, a2, a3);
-    } catch (e) {
-        stackRestore(sp);
-        if (!(e instanceof EmscriptenEH)) throw e;
-        _setThrew(1, 0);
-    }
-}
 function invoke_vii(index, a1, a2) {
     var sp = stackSave();
     try {
@@ -3022,20 +3015,20 @@ function invoke_vii(index, a1, a2) {
         _setThrew(1, 0);
     }
 }
-function invoke_vi(index, a1) {
+function invoke_viii(index, a1, a2, a3) {
     var sp = stackSave();
     try {
-        getWasmTableEntry(index)(a1);
+        getWasmTableEntry(index)(a1, a2, a3);
     } catch (e) {
         stackRestore(sp);
         if (!(e instanceof EmscriptenEH)) throw e;
         _setThrew(1, 0);
     }
 }
-function invoke_iijii(index, a1, a2, a3, a4) {
+function invoke_vi(index, a1) {
     var sp = stackSave();
     try {
-        return getWasmTableEntry(index)(a1, a2, a3, a4);
+        getWasmTableEntry(index)(a1);
     } catch (e) {
         stackRestore(sp);
         if (!(e instanceof EmscriptenEH)) throw e;
@@ -3062,15 +3055,14 @@ function invoke_iiii(index, a1, a2, a3) {
         _setThrew(1, 0);
     }
 }
-function invoke_jiii(index, a1, a2, a3) {
+function invoke_vij(index, a1, a2) {
     var sp = stackSave();
     try {
-        return getWasmTableEntry(index)(a1, a2, a3);
+        getWasmTableEntry(index)(a1, a2);
     } catch (e) {
         stackRestore(sp);
         if (!(e instanceof EmscriptenEH)) throw e;
         _setThrew(1, 0);
-        return 0n;
     }
 }
 function invoke_iijj(index, a1, a2, a3) {
