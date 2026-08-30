@@ -40,17 +40,22 @@ xmake
 For max speed and performance, it is better to use **GNU99** compatible compiler, since Wi uses many **GNU** extensions for performance tweaks. Wi has zero dependencies but it would be nice to have `readline` library if you're building Wi on Linux (Wi uses it for better REPL).
 
 This produces Wi shared library + Wi executable.
+
 ### WASM
+
 Requires [`emcc`](https://emscripten.org/docs/getting_started/downloads.html). Then:
+
 ```bash
 xmake f -p wasm
 xmake
 ```
+
 This produces `wi.js` + `wi.wasm` (for functions see [`wi_wasm.c`](https://github.com/cyxigo/wi/blob/main/src/wasm/wi_wasm.c)) for embedding Wi in a web page.
 
 You can also use [`build.sh`](https://github.com/cyxigo/wi/blob/main/build.sh)/[`build_wasm.sh`](https://github.com/cyxigo/wi/blob/main/build_wasm.sh) utility scripts for building Wi.
 
 ## Structure
+
 The Wi source code is organized into the following directories:
 
 | Directory  | Description                                                  |
