@@ -26,7 +26,7 @@ main := || => {
         val = t->activate()->value();
     }
 
-    print(t->value());
+    puts(t->value());
     nt := new t {
         state: val;
         count_max: 3;
@@ -56,8 +56,8 @@ main := || => {
         val = nt->activate()->value();
     }
 
-    print(nt->value());
-    print("elapsed: ${os.clock() - start}");
+    puts(nt->value());
+    puts("elapsed: ${os.clock() - start}");
 };
 
 main();

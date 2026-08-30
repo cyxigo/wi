@@ -11,5 +11,5 @@ for (i := 0; i < #arr; i = i + 1) {
     sum = sum + arr[i];
 }
 
-print(sum);
-print("elapsed: ${os.clock() - start}");
+puts(sum);
+puts("elapsed: ${os.clock() - start}");
