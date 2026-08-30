@@ -506,7 +506,7 @@ wi_arg_is_userdata(wi_state* state, int arg, const char* name);
  *
  * @param state Wi state instance
  * @param arg Argument index (1-[arg_count])
- * @return Real stored in a slot
+ * @return Real argument
  */
 WI_API wi_real
 wi_arg_real(wi_state* state, int arg);
