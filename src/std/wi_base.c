@@ -100,12 +100,12 @@ _base_try(struct wi_state* state, int arg_count) {
     wi_state_ppush(state, WI_MAKE_BOX_VALUE(result));
     wi_table_reserve(&result->fields, 3);
 
-    uint8_t f_arg_count = (uint8_t)(arg_count - 1);
-    wi_arg_function(state, 1, f_arg_count);
-
-    struct wi_recovery* recovery = wi_state_push_recovery(state);
+    uint8_t             f_arg_count = (uint8_t)(arg_count - 1);
+    struct wi_recovery* recovery    = wi_state_push_recovery(state);
 
     if (setjmp(recovery->jmp) == WI_RUN_OK) {
+        wi_arg_function(state, 1, f_arg_count);
+
         for (uint8_t i = 0; i < f_arg_count; i++) {
             wi_state_ppush(state, state->ffi_stack[i + 2]);
         }
