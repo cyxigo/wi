@@ -222,11 +222,10 @@ wi_table_copy(struct wi_table* src, struct wi_table* dest) {
     }
 
     if (dest->entries) {
-        WI_GC_FREE_BUF(dest->gc, struct wi_entry, dest->entries, dest->capacity);
+        wi_table_free(dest);
     }
 
     if (src->capacity == 0) {
-        wi_table_init(dest, dest->gc);
         return;
     }
 
