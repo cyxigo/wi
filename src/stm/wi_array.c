@@ -270,7 +270,9 @@ _array_where(struct wi_state* state, int arg_count) {
 }
 
 static void
-_aqsort_swap(wi_value* buf, int i, int j) {
+_aqsort_swap(struct wi_array* array, int i, int j) {
+    wi_value* buf = array->items.data;
+
     wi_value temp = buf[i];
     buf[i]        = buf[j];
     buf[j]        = temp;
@@ -278,27 +280,25 @@ _aqsort_swap(wi_value* buf, int i, int j) {
 
 static int
 _aqsort_partition(struct wi_state* state, struct wi_array* array, int lo, int hi) {
-    wi_value* buf = array->items.data;
-
     int pii = lo + rand() % (hi - lo + 1);
-    _aqsort_swap(buf, pii, hi);
+    _aqsort_swap(array, pii, hi);
 
-    wi_value pi = buf[hi];
+    wi_value pi = array->items.data[hi];
     int      i  = lo - 1;
 
     for (int j = lo; j < hi; j++) {
         wi_arg_function(state, 2, 2);
-        wi_state_ppush(state, buf[j]);
+        wi_state_ppush(state, array->items.data[j]);
         wi_state_ppush(state, pi);
         wi_call(state, 2, false);
 
         if (!wi_value_is_falsy(wi_state_pop(state))) {
             i++;
-            _aqsort_swap(buf, i, j);
+            _aqsort_swap(array, i, j);
         }
     }
 
-    _aqsort_swap(buf, i + 1, hi);
+    _aqsort_swap(array, i + 1, hi);
     return i + 1;
 }
 
