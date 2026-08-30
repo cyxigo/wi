@@ -1,6 +1,6 @@
 set_project("Wi")
 
-set_version("8.1.0-beta")
+set_version("8.2.0-beta")
 set_description("The Wi programming language")
 set_license("MIT")
 
