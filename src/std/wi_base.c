@@ -22,7 +22,7 @@ _print(struct wi_state* state, int arg_count, bool newline) {
         state->out("\n");
     }
 
-    wi_slot_set_null(state, 0);
+    wi_push_null(state);
 }
 
 static void
@@ -40,7 +40,7 @@ _base_input(struct wi_state* state, int arg_count) {
     const char* prompt = "";
 
     if (arg_count == 1) {
-        prompt = wi_slot_get_string(state, 1, NULL, NULL);
+        prompt = wi_arg_string(state, 1, NULL, NULL);
     } else if (arg_count == 0) {
         /* do nothing */
     } else {
@@ -50,7 +50,7 @@ _base_input(struct wi_state* state, int arg_count) {
     char* line;
 
     if (!wi_read_line(&line, prompt)) {
-        wi_slot_set_null(state, 0);
+        wi_push_null(state);
         return;
     }
 
@@ -59,14 +59,15 @@ _base_input(struct wi_state* state, int arg_count) {
         wi_state_error(state, "invalid utf-8 sequence from input()");
     }
 
-    state->ffi_stack[0] = WI_MAKE_BOX_VALUE(wi_take_cstring(state->gc, line, (int)strlen(line)));
+    struct wi_string* line_box = wi_take_cstring(state->gc, line, (int)strlen(line));
+    wi_state_ppush(state, WI_MAKE_BOX_VALUE(line_box));
 }
 
 static void
 _base_is_main(struct wi_state* state, int arg_count) {
     WI_UNUSED(arg_count);
     struct wi_call_frame* frame = wi_state_frame(state);
-    wi_slot_set_bool(state, 0, !frame->closure->required);
+    wi_push_bool(state, !frame->closure->required);
 }
 
 static void
@@ -78,7 +79,7 @@ _base_exit(struct wi_state* state, int arg_count) {
 static void
 _base_error(struct wi_state* state, int arg_count) {
     WI_UNUSED(arg_count);
-    wi_state_error(state, "%s", wi_slot_get_string(state, 1, NULL, NULL));
+    wi_state_error(state, "%s", wi_arg_string(state, 1, NULL, NULL));
 }
 
 static void
@@ -87,29 +88,29 @@ _base_assert(struct wi_state* state, int arg_count) {
     bool is_falsy = wi_value_is_falsy(state->ffi_stack[1]);
 
     if (is_falsy) {
-        wi_state_error(state, "%s", wi_slot_get_string(state, 2, NULL, NULL));
+        wi_state_error(state, "%s", wi_arg_string(state, 2, NULL, NULL));
     }
 
-    wi_slot_set_bool(state, 0, !is_falsy);
+    wi_push_bool(state, !is_falsy);
 }
 
 static void
 _base_try(struct wi_state* state, int arg_count) {
-    wi_value          callback = wi_slot_check_callback(state, 1, (uint8_t)(arg_count - 1));
-    struct wi_object* result   = wi_new_object(state->gc);
-    state->ffi_stack[0]        = WI_MAKE_BOX_VALUE(result);
+    struct wi_object* result = wi_new_object(state->gc);
+    wi_state_ppush(state, WI_MAKE_BOX_VALUE(result));
     wi_table_reserve(&result->fields, 3);
+
+    uint8_t f_arg_count = (uint8_t)(arg_count - 1);
+    wi_arg_function(state, 1, f_arg_count);
 
     struct wi_recovery* recovery = wi_state_push_recovery(state);
 
     if (setjmp(recovery->jmp) == WI_RUN_OK) {
-        wi_state_push(state, callback);
-
-        for (int i = 0; i < arg_count - 1; i++) {
-            wi_state_push(state, state->ffi_stack[i + 2]);
+        for (uint8_t i = 0; i < f_arg_count; i++) {
+            wi_state_ppush(state, state->ffi_stack[i + 2]);
         }
 
-        wi_state_call(state, callback, (uint8_t)(arg_count - 1), false);
+        wi_call(state, f_arg_count, false);
         wi_value call_value = wi_state_pop(state);
 
         wi_table_set(&result->fields, WI_MAKE_BOX_VALUE(state->ok_str), wi_make_true_value());
@@ -127,12 +128,12 @@ _base_try(struct wi_state* state, int arg_count) {
 static void
 _base_type(struct wi_state* state, int arg_count) {
     WI_UNUSED(arg_count);
-    wi_slot_set_string(state, 0, wi_value_type(state->ffi_stack[1]));
+    wi_push_string(state, wi_value_type(state->ffi_stack[1]));
 }
 
 static void
 _is_type_function(struct wi_state* state, bool (*fn)(wi_value value)) {
-    wi_slot_set_bool(state, 0, fn(state->ffi_stack[1]));
+    wi_push_bool(state, fn(state->ffi_stack[1]));
 }
 
 static void
@@ -227,21 +228,21 @@ _base_to_real(struct wi_state* state, int arg_count) {
         wi_state_error(state, "bad argument 1 - cannot convert a value of type %s to real", wi_value_type(value));
     }
 
-    state->ffi_stack[0] = result;
+    wi_state_ppush(state, result);
 }
 
 static void
 _base_to_bool(struct wi_state* state, int arg_count) {
     WI_UNUSED(arg_count);
-    wi_slot_set_bool(state, 0, !wi_value_is_falsy(state->ffi_stack[1]));
+    wi_push_bool(state, !wi_value_is_falsy(state->ffi_stack[1]));
 }
 
 static void
 _base_to_string(struct wi_state* state, int arg_count) {
     WI_UNUSED(arg_count);
 
-    if (wi_slot_is_string(state, 1)) {
-        state->ffi_stack[0] = state->ffi_stack[1];
+    if (wi_arg_is_string(state, 1)) {
+        wi_state_ppush(state, state->ffi_stack[1]);
         return;
     }
 
@@ -251,8 +252,8 @@ _base_to_string(struct wi_state* state, int arg_count) {
         wi_state_oom(state, "failed to allocate a string (_base_string)");
     }
 
-    struct wi_string* string_box = wi_take_cstring(state->gc, string, (int)strlen(string));
-    state->ffi_stack[0]          = WI_MAKE_BOX_VALUE(string_box);
+    struct wi_string* box = wi_take_cstring(state->gc, string, (int)strlen(string));
+    wi_state_ppush(state, WI_MAKE_BOX_VALUE(box));
 }
 
 static struct wi_object*
@@ -269,8 +270,8 @@ static void
 _base_has_field(struct wi_state* state, int arg_count) {
     WI_UNUSED(arg_count);
     struct wi_object* object = _check_arg1_object(state);
-    wi_slot_get_string(state, 2, NULL, NULL);
-    wi_slot_set_bool(state, 0, wi_table_get(&object->fields, state->ffi_stack[2], NULL));
+    wi_arg_string(state, 2, NULL, NULL);
+    wi_push_bool(state, wi_table_get(&object->fields, state->ffi_stack[2], NULL));
 }
 
 static void
@@ -278,7 +279,7 @@ _base_fields(struct wi_state* state, int arg_count) {
     WI_UNUSED(arg_count);
     struct wi_object* object = _check_arg1_object(state);
     struct wi_map*    fields = wi_new_map(state->gc);
-    state->ffi_stack[0]      = WI_MAKE_BOX_VALUE(fields);
+    wi_state_ppush(state, WI_MAKE_BOX_VALUE(fields));
     wi_table_copy(&object->fields, &fields->items);
 }
 
@@ -345,7 +346,7 @@ _equals(wi_value a, wi_value b) {
 static void
 _base_equals(struct wi_state* state, int arg_count) {
     WI_UNUSED(arg_count);
-    wi_slot_set_bool(state, 0, _equals(state->ffi_stack[1], state->ffi_stack[2]));
+    wi_push_bool(state, _equals(state->ffi_stack[1], state->ffi_stack[2]));
 }
 
 void

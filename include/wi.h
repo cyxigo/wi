@@ -279,20 +279,6 @@ wi_object_set_foreign(wi_state* state, wi_object* object, const char* name, wi_f
                       bool is_variadic);
 
 /**
- * Function calling API. Example:
- * ```c
- * wi_find_function(state, "sum"); - Find the global function "sum" and push it onto the stack
- *
- * wi_push_real(state, 10); - Push argument 1
- * wi_push_real(state, 20); - Push argument 2
- * wi_call(state, 2); - Call function with `2` arguments, is protected
- *
- * wi_real sum = wi_check_real(state); - Get the function result, with type-checking
- * printf("%g\n", sum); - Print it
- * ```
- */
-
-/**
  * Find a *global* function and push it onto the stack
  *
  * @param state Wi state instance
@@ -300,6 +286,27 @@ wi_object_set_foreign(wi_state* state, wi_object* object, const char* name, wi_f
  */
 WI_API bool
 wi_find_function(wi_state* state, const char* name);
+
+/**
+ * Call a Wi function that is *at the stack top*
+ *
+ * @param state Wi state instance
+ * @param arg_count Argument count
+ * @param drop Whether to leave the return value at the stack or not
+ */
+WI_API void
+wi_call(wi_state* state, uint8_t arg_count, bool drop);
+
+/**
+ * Call a Wi function that is *at the stack top*; is protected
+ *
+ * @param state Wi state instance
+ * @param arg_count Argument count
+ * @param drop Whether to leave the return value at the stack or not
+ * @param error Optional pointer to store the error message (if any), can be `NULL`, must be freed manually
+ */
+WI_API bool
+wi_pcall(wi_state* state, uint8_t arg_count, bool drop, char** error);
 
 /**
  * Check if the value at the stack top is a real value
@@ -389,6 +396,14 @@ WI_API void
 wi_push_userdata(wi_state* state, const char* name, void* userdata, wi_userdata_finalizer_fn finalizer);
 
 /**
+ * Drop a value from the stack
+ *
+ * @param state Wi state instance
+ */
+WI_API void
+wi_drop(wi_state* state);
+
+/**
  * Pop a real value from the stack with type-checking
  *
  * @param state Wi state instance
@@ -432,170 +447,120 @@ WI_API void*
 wi_pop_userdata(wi_state* state, const char* name);
 
 /**
- * Call a Wi function, is protected.
- *
- * Leaves the result on the stack top, which needs to be explicitly popped via one of the `wi_pop_X` functions
+ * Check if argument is a real value
  *
  * @param state Wi state instance
- * @param arg_count Argument count
- * @param error Optional pointer to store the error message (if any), can be `NULL`, must be freed manually
+ * @param arg Argument index (1-[arg_count])
  */
 WI_API bool
-wi_call(wi_state* state, uint8_t arg_count, char** error);
+wi_arg_is_real(wi_state* state, int arg);
 
 /**
- * Slot functions are used in C functions to get arguments from the Wi caller
- * and to set the return value. Slot 0 is reserved for the return value.
- */
-
-/**
- * Check if a slot contains a real value
+ * Check if argument is a null value
  *
  * @param state Wi state instance
- * @param slot Slot index (0-[arg_count])
+ * @param arg Argument index (1-[arg_count])
  */
 WI_API bool
-wi_slot_is_real(wi_state* state, int slot);
+wi_arg_is_null(wi_state* state, int arg);
 
 /**
- * Check if a slot contains a null value
+ * Check if argument is a boolean value
  *
  * @param state Wi state instance
- * @param slot Slot index (0-[arg_count])
+ * @param arg Argument index (1-[arg_count])
  */
 WI_API bool
-wi_slot_is_null(wi_state* state, int slot);
+wi_arg_is_bool(wi_state* state, int arg);
 
 /**
- * Check if a slot contains a boolean value
+ * Check if argument is a string value
  *
  * @param state Wi state instance
- * @param slot Slot index (0-[arg_count])
+ * @param arg Argument index (1-[arg_count])
  */
 WI_API bool
-wi_slot_is_bool(wi_state* state, int slot);
+wi_arg_is_string(wi_state* state, int arg);
 
 /**
- * Check if a slot contains a string value
+ * Check if argument is a function value
  *
  * @param state Wi state instance
- * @param slot Slot index (0-[arg_count])
+ * @param arg Argument index (1-[arg_count])
  */
 WI_API bool
-wi_slot_is_string(wi_state* state, int slot);
+wi_arg_is_function(wi_state* state, int arg);
 
 /**
- * Check if a slot contains userdata
+ * Check if argument is userdata
  *
  * @param state Wi state instance
- * @param slot Slot index (0-[arg_count])
+ * @param arg Argument index (1-[arg_count])
  * @param name Userdata name, used for type-checking
  */
 WI_API bool
-wi_slot_is_userdata(wi_state* state, int slot, const char* name);
+wi_arg_is_userdata(wi_state* state, int arg, const char* name);
 
 /**
- * Store a real value in a slot
+ * Get a real argument with type-checking
  *
  * @param state Wi state instance
- * @param slot Slot index (0-[arg_count])
- * @param real Real
- */
-WI_API void
-wi_slot_set_real(wi_state* state, int slot, wi_real real);
-
-/**
- * Store a null value in a slot
- *
- * @param state Wi state instance
- * @param slot Slot index (0-[arg_count])
- */
-WI_API void
-wi_slot_set_null(wi_state* state, int slot);
-
-/**
- * Store a boolean value in a slot
- *
- * @param state Wi state instance
- * @param slot Slot index (0-[arg_count])
- * @param boolean Boolean
- */
-WI_API void
-wi_slot_set_bool(wi_state* state, int slot, bool boolean);
-
-/**
- * Store a string value in a slot
- *
- * @param state Wi state instance
- * @param slot Slot index (0-[arg_count])
- * @param string String (**must** be valid UTF-8, invalid - undefined behaviour)
- */
-WI_API void
-wi_slot_set_string(wi_state* state, int slot, const char* string);
-
-/**
- * Store userdata in a slot
- *
- * @param state Wi state instance
- * @param slot Slot index (0-[arg_count])
- * @param name Userdata name, used for type-checking
- * @param userdata Pointer to userdata
- * @param finalizer Userdata finalizer
- */
-WI_API void
-wi_slot_set_userdata(wi_state* state, int slot, const char* name, void* userdata,
-                     wi_userdata_finalizer_fn finalizer);
-
-/**
- * Get a real value from a slot with type-checking
- *
- * @param state Wi state instance
- * @param slot Slot index (0-[arg_count])
+ * @param arg Argument index (1-[arg_count])
  * @return Real stored in a slot
  */
 WI_API wi_real
-wi_slot_get_real(wi_state* state, int slot);
+wi_arg_real(wi_state* state, int arg);
 
 /**
- * Type-check if a slot has null value
+ * Type-check if argument is a null value
  *
  * @param state Wi state instance
- * @param slot Slot index (0-[arg_count])
+ * @param arg Argument index (1-[arg_count])
  */
 WI_API void
-wi_slot_get_null(wi_state* state, int slot);
+wi_arg_null(wi_state* state, int arg);
 
 /**
- * Get a boolean value from a slot with type-checking
+ * Get a boolean argument with type-checking
  *
  * @param state Wi state instance
- * @param slot Slot index (0-[arg_count])
- * @return Boolean stored in a slot
+ * @param arg Argument index (1-[arg_count])
+ * @return Boolean argument
  */
 WI_API bool
-wi_slot_get_bool(wi_state* state, int slot);
+wi_arg_bool(wi_state* state, int arg);
 
 /**
- * Get a string value from a slot with type-checking
+ * Get a string argument with type-checking
  *
  * @param state Wi state instance
- * @param slot Slot index (0-[arg_count])
+ * @param arg Argument index (1-[arg_count])
  * @param count Optional pointer to store the string byte count, can be `NULL`
  * @param len Optional pointer to store the string length (codepoint count), can be `NULL`
- * @return String stored in a slot
+ * @return String argument
  */
 WI_API char*
-wi_slot_get_string(wi_state* state, int slot, int* count, int* len);
+wi_arg_string(wi_state* state, int arg, int* count, int* len);
 
 /**
- * Get userdata from a slot with type-checking
+ * Check if argument is a function, check it's arity, and push it onto the stack
  *
  * @param state Wi state instance
- * @param slot Slot index (0-[arg_count])
+ * @param arg Argument index (1-[arg_count])
+ * @param arity Function arity
+ */
+WI_API void
+wi_arg_function(wi_state* state, int arg, uint8_t arity);
+
+/**
+ * Get userdata argument with type-checking
+ *
+ * @param state Wi state instance
+ * @param arg Argument index (1-[arg_count])
  * @param name Userdata name, used for type-checking
- * @return Userdata stored in a slot
+ * @return Userdata argument
  */
 WI_API void*
-wi_slot_get_userdata(wi_state* state, int slot, const char* name);
+wi_arg_userdata(wi_state* state, int arg, const char* name);
 
 #endif

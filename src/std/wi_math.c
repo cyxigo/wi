@@ -11,7 +11,7 @@
 
 static void
 _math_single_arg_function(struct wi_state* state, double (*fn)(double x)) {
-    wi_slot_set_real(state, 0, fn(wi_slot_get_real(state, 1)));
+    wi_push_real(state, fn(wi_arg_real(state, 1)));
 }
 
 static void
@@ -47,10 +47,10 @@ _math_ceil(struct wi_state* state, int arg_count) {
 static void
 _math_clamp(struct wi_state* state, int arg_count) {
     WI_UNUSED(arg_count);
-    wi_real real = wi_slot_get_real(state, 1);
-    wi_real min  = wi_slot_get_real(state, 2);
-    wi_real max  = wi_slot_get_real(state, 3);
-    wi_slot_set_real(state, 0, real < min ? min : real > max ? max : real);
+    wi_real real = wi_arg_real(state, 1);
+    wi_real min  = wi_arg_real(state, 2);
+    wi_real max  = wi_arg_real(state, 3);
+    wi_push_real(state, real < min ? min : real > max ? max : real);
 }
 
 static void
@@ -62,8 +62,8 @@ _math_cos(struct wi_state* state, int arg_count) {
 static void
 _math_deg(struct wi_state* state, int arg_count) {
     WI_UNUSED(arg_count);
-    wi_real rad = wi_slot_get_real(state, 1);
-    wi_slot_set_real(state, 0, rad * (180.0 / M_PI));
+    wi_real rad = wi_arg_real(state, 1);
+    wi_push_real(state, rad * (180.0 / M_PI));
 }
 
 static void
@@ -81,17 +81,17 @@ _math_floor(struct wi_state* state, int arg_count) {
 static void
 _math_mod(struct wi_state* state, int arg_count) {
     WI_UNUSED(arg_count);
-    wi_real a = wi_slot_get_real(state, 1);
-    wi_real b = wi_slot_get_real(state, 2);
-    wi_slot_set_real(state, 0, fmod(a, b));
+    wi_real a = wi_arg_real(state, 1);
+    wi_real b = wi_arg_real(state, 2);
+    wi_push_real(state, fmod(a, b));
 }
 
 static void
 _math_log(struct wi_state* state, int arg_count) {
     WI_UNUSED(arg_count);
-    wi_real value = wi_slot_get_real(state, 1);
-    wi_real base  = wi_slot_get_real(state, 2);
-    wi_slot_set_real(state, 0, log(value) / log(base));
+    wi_real value = wi_arg_real(state, 1);
+    wi_real base  = wi_arg_real(state, 2);
+    wi_push_real(state, log(value) / log(base));
 }
 
 static void
@@ -109,54 +109,54 @@ _math_ln(struct wi_state* state, int arg_count) {
 static void
 _math_max(struct wi_state* state, int arg_count) {
     WI_UNUSED(arg_count);
-    wi_real max = wi_slot_get_real(state, 1);
+    wi_real max = wi_arg_real(state, 1);
 
     for (int i = 1; i < arg_count; i++) {
-        wi_real arg = wi_slot_get_real(state, i + 1);
+        wi_real arg = wi_arg_real(state, i + 1);
 
         if (arg > max) {
             max = arg;
         }
     }
 
-    wi_slot_set_real(state, 0, max);
+    wi_push_real(state, max);
 }
 
 static void
 _math_min(struct wi_state* state, int arg_count) {
     WI_UNUSED(arg_count);
-    wi_real min = wi_slot_get_real(state, 1);
+    wi_real min = wi_arg_real(state, 1);
 
     for (int i = 1; i < arg_count; i++) {
-        wi_real arg = wi_slot_get_real(state, i + 1);
+        wi_real arg = wi_arg_real(state, i + 1);
 
         if (arg < min) {
             min = arg;
         }
     }
 
-    wi_slot_set_real(state, 0, min);
+    wi_push_real(state, min);
 }
 
 static void
 _math_pow(struct wi_state* state, int arg_count) {
     WI_UNUSED(arg_count);
-    wi_real base = wi_slot_get_real(state, 1);
-    wi_real exp  = wi_slot_get_real(state, 2);
-    wi_slot_set_real(state, 0, pow(base, exp));
+    wi_real base = wi_arg_real(state, 1);
+    wi_real exp  = wi_arg_real(state, 2);
+    wi_push_real(state, pow(base, exp));
 }
 
 static void
 _math_rad(struct wi_state* state, int arg_count) {
     WI_UNUSED(arg_count);
-    wi_real deg = wi_slot_get_real(state, 1);
-    wi_slot_set_real(state, 0, deg * (M_PI / 180.0));
+    wi_real deg = wi_arg_real(state, 1);
+    wi_push_real(state, deg * (M_PI / 180.0));
 }
 
 static void
 _math_random(struct wi_state* state, int arg_count) {
     WI_UNUSED(arg_count);
-    wi_slot_set_real(state, 0, (wi_real)rand() / ((wi_real)RAND_MAX + 1.0));
+    wi_push_real(state, (wi_real)rand() / ((wi_real)RAND_MAX + 1.0));
 }
 
 static void
@@ -168,8 +168,8 @@ _math_round(struct wi_state* state, int arg_count) {
 static void
 _math_sign(struct wi_state* state, int arg_count) {
     WI_UNUSED(arg_count);
-    wi_real real = wi_slot_get_real(state, 1);
-    wi_slot_set_real(state, 0, real > 0 ? 1 : real < 0 ? -1 : 0);
+    wi_real real = wi_arg_real(state, 1);
+    wi_push_real(state, real > 0 ? 1 : real < 0 ? -1 : 0);
 }
 
 static void

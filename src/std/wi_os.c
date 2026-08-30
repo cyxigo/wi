@@ -9,22 +9,22 @@
 static void
 _os_clock(struct wi_state* state, int arg_count) {
     WI_UNUSED(arg_count);
-    wi_slot_set_real(state, 0, (wi_real)clock() / (wi_real)CLOCKS_PER_SEC);
+    wi_push_real(state, (wi_real)clock() / (wi_real)CLOCKS_PER_SEC);
 }
 
 static void
 _os_time(struct wi_state* state, int arg_count) {
     WI_UNUSED(arg_count);
-    wi_slot_set_real(state, 0, (wi_real)time(NULL));
+    wi_push_real(state, (wi_real)time(NULL));
 }
 
 static void
 _os_get_env(struct wi_state* state, int arg_count) {
     WI_UNUSED(arg_count);
-    char* value = getenv(wi_slot_get_string(state, 1, NULL, NULL));
+    char* value = getenv(wi_arg_string(state, 1, NULL, NULL));
 
     if (!value) {
-        wi_slot_set_null(state, 0);
+        wi_push_null(state);
         return;
     }
 
@@ -32,14 +32,14 @@ _os_get_env(struct wi_state* state, int arg_count) {
         wi_state_error(state, "invalid utf-8 sequence from os.get_env()");
     }
 
-    wi_slot_set_string(state, 0, value);
+    wi_push_string(state, value);
 }
 
 static void
 _os_args(struct wi_state* state, int arg_count) {
     WI_UNUSED(arg_count);
     struct wi_array* result = wi_new_array(state->gc);
-    state->ffi_stack[0]     = WI_MAKE_BOX_VALUE(result);
+    wi_state_ppush(state, WI_MAKE_BOX_VALUE(result));
     wi_value_buf_reserve(&result->items, state->script_argc);
 
     for (int i = 0; i < state->script_argc; i++) {

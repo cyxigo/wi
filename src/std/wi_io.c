@@ -40,9 +40,9 @@ static void
 _io_open(struct wi_state* state, int arg_count) {
     WI_UNUSED(arg_count);
 
-    char* file_path = wi_slot_get_string(state, 1, NULL, NULL);
+    char* file_path = wi_arg_string(state, 1, NULL, NULL);
     int   mode_count;
-    char* mode     = wi_slot_get_string(state, 2, &mode_count, NULL);
+    char* mode     = wi_arg_string(state, 2, &mode_count, NULL);
     bool  updating = false;
 
     /* r w a */
@@ -83,21 +83,21 @@ _io_open(struct wi_state* state, int arg_count) {
 
     file->ptr      = ptr;
     file->updating = updating;
-    wi_slot_set_userdata(state, 0, "file", file, _file_finalizer);
+    wi_push_userdata(state, "file", file, _file_finalizer);
 }
 
 static void
 _io_close(struct wi_state* state, int arg_count) {
     WI_UNUSED(arg_count);
-    struct wi_file* file = wi_slot_get_userdata(state, 1, "file");
+    struct wi_file* file = wi_arg_userdata(state, 1, "file");
     _file_close(file);
-    wi_slot_set_null(state, 0);
+    wi_push_null(state);
 }
 
 static void
 _io_write(struct wi_state* state, int arg_count) {
     WI_UNUSED(arg_count);
-    struct wi_file* file = wi_slot_get_userdata(state, 1, "file");
+    struct wi_file* file = wi_arg_userdata(state, 1, "file");
     _file_check_open(state, file);
 
     if (file->mode[0] != 'w' && file->mode[0] != 'a' && !file->updating) {
@@ -110,7 +110,7 @@ _io_write(struct wi_state* state, int arg_count) {
     bool     owned = false;
 
     if (wi_value_is_string(arg2)) {
-        content = wi_slot_get_string(state, 2, &count, NULL);
+        content = wi_arg_string(state, 2, &count, NULL);
     } else {
         content = wi_value_to_string(arg2);
 
@@ -132,13 +132,13 @@ _io_write(struct wi_state* state, int arg_count) {
         wi_state_error(state, "failed to write file %s", file->path);
     }
 
-    wi_slot_set_null(state, 0);
+    wi_push_null(state);
 }
 
 static void
 _io_read(struct wi_state* state, int arg_count) {
     WI_UNUSED(arg_count);
-    struct wi_file* file = wi_slot_get_userdata(state, 1, "file");
+    struct wi_file* file = wi_arg_userdata(state, 1, "file");
     _file_check_open(state, file);
 
     if (file->mode[0] != 'r' && !file->updating) {
@@ -166,8 +166,9 @@ _io_read(struct wi_state* state, int arg_count) {
         wi_state_error(state, "failed to read file %s", file->path);
     }
 
-    content[read]       = '\0';
-    state->ffi_stack[0] = WI_MAKE_BOX_VALUE(wi_take_cstring(state->gc, content, (int)read));
+    content[read]         = '\0';
+    struct wi_string* box = wi_take_cstring(state->gc, content, (int)read);
+    wi_state_ppush(state, WI_MAKE_BOX_VALUE(box));
 }
 
 void

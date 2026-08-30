@@ -129,10 +129,57 @@ wi_find_function(struct wi_state* state, const char* name) {
     wi_gc_pop_root(state->gc);
 
     if (found) {
-        wi_state_push(state, value);
+        wi_state_ppush(state, value);
     }
 
     return found;
+}
+
+void
+wi_call(struct wi_state* state, uint8_t arg_count, bool drop) {
+    wi_value value = wi_state_peek(state, arg_count);
+
+    if (WI_UNLIKELY(!wi_value_is_foreign(value) && !wi_value_is_closure(value))) {
+        wi_state_error(state, "cannot call a value of type %s", wi_value_type(value));
+    }
+
+    wi_state_call(state, value, arg_count, drop);
+}
+
+bool
+wi_pcall(wi_state* state, uint8_t arg_count, bool drop, char** error) {
+    /* an offset in case stack reallocates (very scary) */
+    ptrdiff_t           start    = state->stack_top - state->stack - arg_count - 1;
+    struct wi_recovery* recovery = wi_state_push_recovery(state);
+    bool                failed;
+
+    if (setjmp(recovery->jmp) == WI_RUN_OK) {
+        wi_value value = wi_state_peek(state, arg_count);
+
+        if (WI_UNLIKELY(!wi_value_is_foreign(value) && !wi_value_is_closure(value))) {
+            wi_state_error(state, "cannot call a value of type %s", wi_value_type(value));
+        }
+
+        wi_state_call(state, value, arg_count, drop);
+        failed = false;
+    } else {
+        failed = true;
+    }
+
+    if (failed) {
+        state->stack_top = state->stack + start;
+    }
+
+    if (error) {
+        /*
+            strdup because after we pop the recovery, GC will free its error
+            in _base_try we don't need to do that because it's immediately passed to a new object
+        */
+        *error = failed ? wi_strdup(recovery->error->buf) : NULL;
+    }
+
+    wi_state_pop_recovery(state);
+    return !failed;
 }
 
 bool
@@ -167,29 +214,34 @@ wi_is_userdata(struct wi_state* state, const char* name) {
 
 void
 wi_push_real(struct wi_state* state, wi_real real) {
-    wi_state_push(state, wi_make_real_value(real));
+    wi_state_ppush(state, wi_make_real_value(real));
 }
 
 void
 wi_push_null(struct wi_state* state) {
-    wi_state_push(state, wi_make_null_value());
+    wi_state_ppush(state, wi_make_null_value());
 }
 
 void
 wi_push_bool(struct wi_state* state, bool boolean) {
-    wi_state_push(state, wi_make_bool_value(boolean));
+    wi_state_ppush(state, wi_make_bool_value(boolean));
 }
 
 void
 wi_push_string(struct wi_state* state, const char* string) {
     struct wi_string* box = wi_make_string(state->gc, string);
-    wi_state_push(state, WI_MAKE_BOX_VALUE(box));
+    wi_state_ppush(state, WI_MAKE_BOX_VALUE(box));
 }
 
 void
 wi_push_userdata(struct wi_state* state, const char* name, void* userdata, wi_userdata_finalizer_fn finalizer) {
     struct wi_userdata* box = _new_userdata(state, name, userdata, finalizer);
-    wi_state_push(state, WI_MAKE_BOX_VALUE(box));
+    wi_state_ppush(state, WI_MAKE_BOX_VALUE(box));
+}
+
+void
+wi_drop(wi_state* state) {
+    wi_state_drop(state);
 }
 
 wi_real
@@ -254,135 +306,72 @@ wi_pop_userdata(struct wi_state* state, const char* name) {
 }
 
 bool
-wi_call(struct wi_state* state, uint8_t arg_count, char** error) {
-    /* an offset, not a pointer - in case stack reallocates (very scary) */
-    ptrdiff_t           start    = state->stack_top - state->stack - arg_count - 1;
-    struct wi_recovery* recovery = wi_state_push_recovery(state);
-    bool                failed;
-
-    if (setjmp(recovery->jmp) == WI_RUN_OK) {
-        wi_value value = wi_state_peek(state, arg_count);
-
-        if (WI_UNLIKELY(!wi_value_is_foreign(value) && !wi_value_is_closure(value))) {
-            wi_state_error(state, "cannot call a value of type %s", wi_value_type(value));
-        }
-
-        wi_state_call(state, value, arg_count, false);
-        failed = false;
-    } else {
-        failed = true;
-    }
-
-    if (failed) {
-        state->stack_top = state->stack + start;
-    }
-
-    if (error) {
-        /*
-            strdup because after we pop the recovery, GC will free its error
-            in _base_try we don't need to do that because it's immediately passed to a new object
-        */
-        *error = failed ? wi_strdup(recovery->error->buf) : NULL;
-    }
-
-    wi_state_pop_recovery(state);
-    return !failed;
-}
-
-static void
-_slot_set(struct wi_state* state, int slot, wi_value value) {
-    state->ffi_stack[slot] = value;
+wi_arg_is_real(struct wi_state* state, int arg) {
+    return wi_value_is_real(state->ffi_stack[arg]);
 }
 
 bool
-wi_slot_is_real(struct wi_state* state, int slot) {
-    return wi_value_is_real(state->ffi_stack[slot]);
+wi_arg_is_null(struct wi_state* state, int arg) {
+    return wi_value_is_null(state->ffi_stack[arg]);
 }
 
 bool
-wi_slot_is_null(struct wi_state* state, int slot) {
-    return wi_value_is_null(state->ffi_stack[slot]);
+wi_arg_is_bool(struct wi_state* state, int arg) {
+    return wi_value_is_bool(state->ffi_stack[arg]);
 }
 
 bool
-wi_slot_is_bool(struct wi_state* state, int slot) {
-    return wi_value_is_bool(state->ffi_stack[slot]);
+wi_arg_is_string(struct wi_state* state, int arg) {
+    return wi_value_is_string(state->ffi_stack[arg]);
 }
 
 bool
-wi_slot_is_string(struct wi_state* state, int slot) {
-    return wi_value_is_string(state->ffi_stack[slot]);
+wi_arg_is_function(struct wi_state* state, int arg) {
+    wi_value value = state->ffi_stack[arg];
+    return wi_value_is_foreign(value) || wi_value_is_closure(value);
 }
 
 bool
-wi_slot_is_userdata(struct wi_state* state, int slot, const char* name) {
-    return _is_userdata(state->ffi_stack[slot], name);
-}
-
-void
-wi_slot_set_real(struct wi_state* state, int slot, wi_real real) {
-    _slot_set(state, slot, wi_make_real_value(real));
-}
-
-void
-wi_slot_set_null(struct wi_state* state, int slot) {
-    _slot_set(state, slot, wi_make_null_value());
-}
-
-void
-wi_slot_set_bool(struct wi_state* state, int slot, bool boolean) {
-    _slot_set(state, slot, wi_make_bool_value(boolean));
-}
-
-void
-wi_slot_set_string(struct wi_state* state, int slot, const char* string) {
-    struct wi_string* box = wi_make_string(state->gc, string);
-    _slot_set(state, slot, WI_MAKE_BOX_VALUE(box));
-}
-
-void
-wi_slot_set_userdata(struct wi_state* state, int slot, const char* name, void* userdata,
-                     wi_userdata_finalizer_fn finalizer) {
-    struct wi_userdata* box = _new_userdata(state, name, userdata, finalizer);
-    _slot_set(state, slot, WI_MAKE_BOX_VALUE(box));
+wi_arg_is_userdata(struct wi_state* state, int arg, const char* name) {
+    return _is_userdata(state->ffi_stack[arg], name);
 }
 
 wi_real
-wi_slot_get_real(struct wi_state* state, int slot) {
-    if (WI_UNLIKELY(!wi_slot_is_real(state, slot))) {
-        wi_state_error(state, "bad argument %i - expected a value of type real but got %s", slot,
-                       wi_value_type(state->ffi_stack[slot]));
+wi_arg_real(struct wi_state* state, int arg) {
+    if (WI_UNLIKELY(!wi_arg_is_real(state, arg))) {
+        wi_state_error(state, "bad argument %i - expected a value of type real but got %s", arg,
+                       wi_value_type(state->ffi_stack[arg]));
     }
 
-    return wi_value_as_real(state->ffi_stack[slot]);
+    return wi_value_as_real(state->ffi_stack[arg]);
 }
 
 void
-wi_slot_get_null(struct wi_state* state, int slot) {
-    if (WI_UNLIKELY(!wi_slot_is_null(state, slot))) {
-        wi_state_error(state, "bad argument %i - expected a value of type null but got %s", slot,
-                       wi_value_type(state->ffi_stack[slot]));
+wi_arg_null(struct wi_state* state, int arg) {
+    if (WI_UNLIKELY(!wi_arg_is_null(state, arg))) {
+        wi_state_error(state, "bad argument %i - expected a value of type null but got %s", arg,
+                       wi_value_type(state->ffi_stack[arg]));
     }
 }
 
 bool
-wi_slot_get_bool(struct wi_state* state, int slot) {
-    if (WI_UNLIKELY(!wi_slot_is_bool(state, slot))) {
-        wi_state_error(state, "bad argument %i - expected a value of type bool but got %s", slot,
-                       wi_value_type(state->ffi_stack[slot]));
+wi_arg_bool(struct wi_state* state, int arg) {
+    if (WI_UNLIKELY(!wi_arg_is_bool(state, arg))) {
+        wi_state_error(state, "bad argument %i - expected a value of type bool but got %s", arg,
+                       wi_value_type(state->ffi_stack[arg]));
     }
 
-    return wi_value_as_bool(state->ffi_stack[slot]);
+    return wi_value_as_bool(state->ffi_stack[arg]);
 }
 
 char*
-wi_slot_get_string(struct wi_state* state, int slot, int* count, int* len) {
-    if (WI_UNLIKELY(!wi_slot_is_string(state, slot))) {
-        wi_state_error(state, "bad argument %i - expected a value of type string but got %s", slot,
-                       wi_value_type(state->ffi_stack[slot]));
+wi_arg_string(struct wi_state* state, int arg, int* count, int* len) {
+    if (WI_UNLIKELY(!wi_arg_is_string(state, arg))) {
+        wi_state_error(state, "bad argument %i - expected a value of type string but got %s", arg,
+                       wi_value_type(state->ffi_stack[arg]));
     }
 
-    struct wi_string* string = wi_value_as_string(state->ffi_stack[slot]);
+    struct wi_string* string = wi_value_as_string(state->ffi_stack[arg]);
 
     if (count) {
         *count = string->count;
@@ -395,12 +384,32 @@ wi_slot_get_string(struct wi_state* state, int slot, int* count, int* len) {
     return string->buf;
 }
 
-void*
-wi_slot_get_userdata(struct wi_state* state, int slot, const char* name) {
-    wi_value value = state->ffi_stack[slot];
+void
+wi_arg_function(wi_state* state, int arg, uint8_t arity) {
+    wi_value function = state->ffi_stack[arg];
 
-    if (WI_UNLIKELY(!wi_slot_is_userdata(state, slot, name))) {
-        wi_state_error(state, "bad argument %i - expected a value of type %s but got %s", slot, name,
+    if (!wi_value_is_foreign(function) && !wi_value_is_closure(function)) {
+        wi_state_error(state, "bad argument %i - cannot use a value of type %s as a callback", arg,
+                       wi_value_type(function));
+    }
+
+    if (wi_value_is_closure(function)) {
+        struct wi_prototype* prototype = wi_value_as_closure(function)->prototype;
+        wi_state_check_arity(state, prototype->arity, arity, prototype->is_variadic);
+    } else {
+        struct wi_foreign* foreign = wi_value_as_foreign(function);
+        wi_state_check_arity(state, foreign->arity, arity, foreign->is_variadic);
+    }
+
+    wi_state_ppush(state, function);
+}
+
+void*
+wi_arg_userdata(struct wi_state* state, int arg, const char* name) {
+    wi_value value = state->ffi_stack[arg];
+
+    if (WI_UNLIKELY(!wi_arg_is_userdata(state, arg, name))) {
+        wi_state_error(state, "bad argument %i - expected a value of type %s but got %s", arg, name,
                        wi_value_type(value));
     }
 

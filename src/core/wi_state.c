@@ -720,6 +720,13 @@ _state_reserve_stack(struct wi_state* state, wi_value* base, int needed) {
     return true;
 }
 
+void
+wi_state_ppush(struct wi_state* state, wi_value value) {
+    if (_state_reserve_stack(state, state->stack_top, 1)) {
+        wi_state_push(state, value);
+    }
+}
+
 static void
 _state_capture_overflow_ctx(struct wi_state* state) {
     /*
@@ -1563,7 +1570,10 @@ wi_state_call_foreign(struct wi_state* state, struct wi_foreign* foreign, uint8_
     state->ffi_stack = state->stack_top - arg_count - 1;
     foreign->fn(state, arg_count);
 
-    state->stack_top = state->ffi_stack + 1;
+    wi_value result  = wi_state_pop(state);
+    state->stack_top = state->ffi_stack;
+    wi_state_push(state, result);
+
     state->ffi_stack = ffi_stack_offset == -1 ? NULL : state->stack + ffi_stack_offset;
 }
 
@@ -1630,24 +1640,4 @@ wi_state_run(struct wi_state* state, const char* file_path, const char* src) {
     _state_call(state, closure, 0);
 
     return _state_interpreter_loop(state, 0, true);
-}
-
-wi_value
-wi_slot_check_callback(struct wi_state* state, int slot, uint8_t arg_count) {
-    wi_value callback = state->ffi_stack[slot];
-
-    if (!wi_value_is_foreign(callback) && !wi_value_is_closure(callback)) {
-        wi_state_error(state, "bad argument %i - cannot use a value of type %s as a callback", slot,
-                       wi_value_type(callback));
-    }
-
-    if (wi_value_is_closure(callback)) {
-        struct wi_prototype* prototype = wi_value_as_closure(callback)->prototype;
-        wi_state_check_arity(state, prototype->arity, arg_count, prototype->is_variadic);
-    } else {
-        struct wi_foreign* foreign = wi_value_as_foreign(callback);
-        wi_state_check_arity(state, foreign->arity, arg_count, foreign->is_variadic);
-    }
-
-    return callback;
 }

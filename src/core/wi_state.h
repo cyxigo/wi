@@ -199,6 +199,10 @@ wi_state_abort(struct wi_state* state);
 void
 wi_state_interrupt(struct wi_state* state);
 
+/* ppush means protected push, calls _state_reserve_stack */
+void
+wi_state_ppush(struct wi_state* state, wi_value value);
+
 WI_INLINE void
 wi_state_check_arity(struct wi_state* state, int arity, uint8_t arg_count, bool is_variadic) {
     if (is_variadic) {
@@ -217,9 +221,5 @@ wi_state_call(struct wi_state* state, wi_value callable, uint8_t arg_count, bool
 
 enum wi_run_result
 wi_state_run(struct wi_state* state, const char* file_path, const char* src);
-
-/* we cannot really expose this to the public API, so.. it stays here. */
-wi_value
-wi_slot_check_callback(struct wi_state* state, int slot, uint8_t arg_count);
 
 #endif
