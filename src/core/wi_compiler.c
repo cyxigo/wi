@@ -253,6 +253,10 @@ static void
 _compiler_expr(struct wi_compiler* compiler);
 static void
 _compiler_stmt(struct wi_compiler* compiler);
+static void
+_compiler_decl(struct wi_compiler* compiler);
+static void
+_compiler_name_decl(struct wi_compiler* compiler);
 
 static void
 _compiler_decl_var(struct wi_compiler* compiler, struct wi_token name, wi_attrs attrs) {
@@ -354,7 +358,7 @@ _compiler_is_top_level(struct wi_compiler* compiler) {
 static void
 _compiler_block(struct wi_compiler* compiler) {
     while (!wi_parser_check(compiler->parser, WI_TOKEN_CLOSE_BRACE) && !wi_parser_is_at_end(compiler->parser)) {
-        _compiler_stmt(compiler);
+        _compiler_decl(compiler);
     }
 
     wi_parser_expect(compiler->parser, WI_TOKEN_CLOSE_BRACE);
@@ -1225,21 +1229,6 @@ _compiler_block_stmt(struct wi_compiler* compiler) {
 }
 
 static void
-_compiler_decl_stmt(struct wi_compiler* compiler) {
-    struct wi_token name  = wi_parser_expect(compiler->parser, WI_TOKEN_NAME);
-    wi_attrs        attrs = _compiler_parse_attrs(compiler);
-    compiler->var_name    = name;
-    _compiler_decl_var(compiler, name, attrs);
-
-    wi_parser_expect(compiler->parser, WI_TOKEN_COLON_EQUAL);
-    _compiler_expr(compiler);
-    wi_parser_expect(compiler->parser, WI_TOKEN_SEMICOLON);
-
-    _compiler_def_var(compiler, name, attrs);
-    compiler->var_name = WI_BLANK_TOKEN;
-}
-
-static void
 _compiler_if_stmt(struct wi_compiler* compiler) {
     wi_parser_expect(compiler->parser, WI_TOKEN_OPEN_PAREN);
     _compiler_expr(compiler);
@@ -1288,7 +1277,7 @@ _compiler_for_init(struct wi_compiler* compiler) {
     }
 
     if (wi_parser_check_decl(compiler->parser)) {
-        _compiler_decl_stmt(compiler);
+        _compiler_name_decl(compiler);
     } else {
         _compiler_expr_stmt(compiler);
     }
@@ -1520,12 +1509,6 @@ static void
 _compiler_stmt(struct wi_compiler* compiler) {
     wi_parser_enter(compiler->parser);
 
-    if (wi_parser_check_decl(compiler->parser)) {
-        _compiler_decl_stmt(compiler);
-        wi_parser_leave(compiler->parser);
-        return;
-    }
-
     switch (compiler->parser->curr.kind) {
         case WI_TOKEN_OPEN_BRACE:
             wi_parser_advance(compiler->parser);
@@ -1565,6 +1548,30 @@ _compiler_stmt(struct wi_compiler* compiler) {
     }
 
     wi_parser_leave(compiler->parser);
+}
+
+static void
+_compiler_name_decl(struct wi_compiler* compiler) {
+    struct wi_token name  = wi_parser_expect(compiler->parser, WI_TOKEN_NAME);
+    wi_attrs        attrs = _compiler_parse_attrs(compiler);
+    compiler->var_name    = name;
+    _compiler_decl_var(compiler, name, attrs);
+
+    wi_parser_expect(compiler->parser, WI_TOKEN_COLON_EQUAL);
+    _compiler_expr(compiler);
+    wi_parser_expect(compiler->parser, WI_TOKEN_SEMICOLON);
+
+    _compiler_def_var(compiler, name, attrs);
+    compiler->var_name = WI_BLANK_TOKEN;
+}
+
+static void
+_compiler_decl(struct wi_compiler* compiler) {
+    if (wi_parser_check_decl(compiler->parser)) {
+        _compiler_name_decl(compiler);
+    } else {
+        _compiler_stmt(compiler);
+    }
 }
 
 struct wi_prototype*
@@ -1612,7 +1619,7 @@ wi_compile(struct wi_state* state, const char* file_path, const char* src, struc
 
     if (setjmp(compiler->parser->error_jmp) == WI_RUN_OK) {
         while (!wi_parser_is_at_end(compiler->parser)) {
-            _compiler_stmt(compiler);
+            _compiler_decl(compiler);
         }
 
         struct wi_prototype* prototype = _compiler_end(compiler);
