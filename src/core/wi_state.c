@@ -362,7 +362,9 @@ wi_state_error(struct wi_state* state, const char* format, ...) {
             wi_state_oom(state, "failed to allocate an error message (wi_state_error)");
         }
 
-        recovery->error = wi_take_cstring(state->gc, error, (int)strlen(error));
+        int error_len = (int)strlen(error);
+        wi_gc_add_bytes(state->gc, error_len + 1);
+        recovery->error = wi_take_cstring(state->gc, error, error_len);
         va_end(args);
         longjmp(recovery->jmp, WI_RUN_ERROR);
     }

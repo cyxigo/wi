@@ -166,7 +166,8 @@ _io_read(struct wi_state* state, int arg_count) {
         wi_state_error(state, "failed to read file %s", file->path);
     }
 
-    content[read]         = '\0';
+    content[read] = '\0';
+    wi_gc_add_bytes(state->gc, read + 1);
     struct wi_string* box = wi_take_cstring(state->gc, content, (int)read);
     wi_state_ppush(state, WI_MAKE_BOX_VALUE(box));
 }
