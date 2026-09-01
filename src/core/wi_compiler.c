@@ -90,7 +90,7 @@ static void
 _compiler_emit_byte(struct wi_compiler* compiler, uint8_t byte) {
     struct wi_prototype* prototype = compiler->prototype;
     wi_byte_buf_add(&prototype->bytes, byte);
-    wi_int_buf_add(&prototype->lines, compiler->parser->curr.line);
+    wi_int_buf_add(&prototype->lines, compiler->parser->prev.line);
 }
 
 static void
