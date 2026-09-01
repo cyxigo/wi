@@ -1,0 +1,9 @@
+// Bug in v8.2.0-beta, should fail
+math := "bug";
+
+// Expected:
+// compile error: cannot redefine a foreign variable math
+//    | 
+//  2 | math := "bug";
+//    | ^^^^
+//    --> test/bugs/foreign_redef.wi:2:1

@@ -1,0 +1,36 @@
+// Bug in v8.2.0-beta won't let the last of these snippets pass
+// All should pass
+{
+    select := |n, ...args| => args[n];
+    result := try(select, 2);
+
+    if (!result.ok) {
+        puts("oops!");
+    } else {
+        puts(result.value);
+    }
+}
+
+{
+    select := |n, ...args| => args[n];
+    result := try(select, 2);
+
+    if (!result.ok) {
+        puts("oops! this happened:", result.error);
+    } else {
+        puts(result.value);
+    }
+}
+
+{
+    select := |n, ...args| => try(|x| => args[x], n).value || -1;
+    puts(select(2));
+    puts(select(2, 3, 4, 5));
+}
+
+// Expected:
+// oops!
+// oops! this happened:
+// array index out of range: 2
+// -1
+// 5

@@ -1,0 +1,11 @@
+// Bug in v8.2.0-beta, all of these should fail
+if (true) x := 10;
+while (true) x := 10;
+for (i := 0; i < 10; i = i + 1) x := 10;
+
+// Expected:
+// compile error: variable x is used but not defined
+//    | 
+//  6 | if (true) x := 10;
+//    |           ^
+//    --> test/bugs/stmt_decl.wi:6:11
