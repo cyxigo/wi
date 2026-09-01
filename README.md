@@ -27,7 +27,7 @@ slava->greet(); // Hello, Slava!
 - **Wi is prototype-based**. Many languages use classes – Wi uses [objects](https://github.com/cyxigo/wi/wiki/Objects). You clone these objects and create whatever you want. No delegation, just cloning.
 - **Wi is extendable**. [Simple and straightforward FFI](https://github.com/cyxigo/wi/wiki/Wi-API-Reference) allows you to easily create libraries for Wi and use them with the ease of [one statement](https://github.com/cyxigo/wi/wiki/FFI).
 
-Want to try it? [Try it here!](https://cyxigo.github.io/wi/)
+Want to try it? [Try it here!](https://wi-lang.pages.dev/try)
 
 ## Building
 
