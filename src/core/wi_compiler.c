@@ -308,13 +308,18 @@ _compiler_def_var(struct wi_compiler* compiler, struct wi_token name, wi_attrs a
 
     struct wi_string* name_box = wi_copy_cstring(compiler->gc, name.start, name.count);
     WI_GC_PUSH_ROOT(compiler->gc, name_box);
+    wi_value name_value = WI_MAKE_BOX_VALUE(name_box);
 
-    if (!wi_table_set(compiler->global_attrs, WI_MAKE_BOX_VALUE(name_box), wi_make_real_value(attrs))) {
+    if (wi_table_get(&compiler->state->foreign, name_value, NULL)) {
+        wi_parser_error_at(compiler->parser, name, "cannot redefine a foreign variable %s", name_box->buf);
+    }
+
+    if (!wi_table_set(compiler->global_attrs, name_value, wi_make_real_value(attrs))) {
         wi_parser_error_at(compiler->parser, name, "variable %s is already defined", name_box->buf);
     }
 
     wi_gc_pop_root(compiler->gc);
-    uint16_t constant = _compiler_make_constant(compiler, WI_MAKE_BOX_VALUE(name_box));
+    uint16_t constant = _compiler_make_constant(compiler, name_value);
     _compiler_emit_opcode_short(compiler, WI_OP_DEF_GLOBAL, constant);
 }
 
