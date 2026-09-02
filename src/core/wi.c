@@ -14,7 +14,8 @@
 #include "../../include/wi_conf.h"
 #include "wi_util.h"
 
-static wi_state* _g_state = NULL;
+static wi_state*             _g_state          = NULL;
+static volatile sig_atomic_t _g_script_running = 0;
 
 static void
 _delete_g_state(void) {
@@ -26,9 +27,27 @@ static void
 _sigint_handler(int sig) {
     WI_UNUSED(sig);
 
-    if (_g_state) {
-        wi_state_interrupt(_g_state);
+    if (!_g_state) {
+        return;
     }
+
+    if (_g_script_running) {
+        wi_state_interrupt(_g_state);
+        return;
+    }
+
+    /* repl waiting for the input, just quit */
+    printf("\n");
+    wi_delete_state(_g_state);
+    exit(EXIT_SUCCESS);
+}
+
+static wi_run_result
+_run(const char* file_path, const char* src) {
+    _g_script_running    = 1;
+    wi_run_result result = wi_state_run(_g_state, file_path, src);
+    _g_script_running    = 0;
+    return result;
 }
 
 static void
@@ -82,7 +101,7 @@ _repl(void) {
         }
 
         buf                  = _repl_append_line(buf, &buf_len, line);
-        wi_run_result result = wi_state_run(_g_state, "<stdin>", buf);
+        wi_run_result result = _run("<stdin>", buf);
 
         if (result == WI_RUN_ERROR && wi_state_was_eof_error(_g_state)) {
             /* missing ';' or unclosed '('/'['/'{' */
@@ -262,9 +281,8 @@ main(int argc, const char** argv) {
     }
 
     char* src = _read_file(file_path);
-
     wi_state_set_args(_g_state, script_argc, script_argv);
-    wi_run_result result = wi_state_run(_g_state, file_path, src);
+    wi_run_result result = _run(file_path, src);
     free(src);
     _delete_g_state();
 
