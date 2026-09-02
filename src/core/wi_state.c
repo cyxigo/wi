@@ -582,6 +582,7 @@ _state_subscript_get(struct wi_state* state, wi_value target, wi_value index) {
                 why assign to "->buf" you may ask? because wi_take_cstring frees passed to it buffer if it's
                 interned
             */
+            wi_gc_add_bytes(state->gc, strlen(key) + 1);
             key = wi_take_cstring(state->gc, key, strlen(key))->buf;
         }
 
