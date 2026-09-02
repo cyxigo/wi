@@ -722,13 +722,6 @@ _state_reserve_stack(struct wi_state* state, wi_value* base, int needed) {
     return true;
 }
 
-void
-wi_state_ppush(struct wi_state* state, wi_value value) {
-    if (_state_reserve_stack(state, state->stack_top, 1)) {
-        wi_state_push(state, value);
-    }
-}
-
 static void
 _state_capture_overflow_ctx(struct wi_state* state) {
     /*
@@ -742,6 +735,16 @@ _state_capture_overflow_ctx(struct wi_state* state) {
     } else {
         state->frame_count = 0;
     }
+}
+
+void
+wi_state_ppush(struct wi_state* state, wi_value value) {
+    if (WI_UNLIKELY(!_state_reserve_stack(state, state->stack_top, 1))) {
+        _state_capture_overflow_ctx(state);
+        wi_state_error(state, "stack overflow (limit is %i)", WI_STACK_MAX);
+    }
+
+    wi_state_push(state, value);
 }
 
 WI_INLINE void
