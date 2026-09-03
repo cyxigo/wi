@@ -2975,15 +2975,15 @@ var wasmImports = {
     s: _fd_read,
     p: _fd_seek,
     j: _fd_write,
-    e: invoke_ii,
+    f: invoke_ii,
     d: invoke_iii,
-    g: invoke_iiii,
+    h: invoke_iiii,
     m: invoke_iiiii,
     b: invoke_iijj,
-    h: invoke_vi,
+    e: invoke_vi,
     a: invoke_vii,
     c: invoke_viii,
-    f: invoke_vij,
+    g: invoke_vij,
 };
 function invoke_ii(index, a1) {
     var sp = stackSave();
