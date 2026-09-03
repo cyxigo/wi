@@ -29,6 +29,7 @@ wi_table_init(struct wi_table* table, struct wi_gc* gc) {
     table->capacity   = 0;
     table->count      = 0;
     table->live_count = 0;
+    table->mod_count  = 0;
 }
 
 void
