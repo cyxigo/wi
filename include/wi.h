@@ -15,6 +15,9 @@
 #ifdef _WIN32
 #define WI_API __declspec(dllexport)
 #define WI_FOREIGN_INIT __declspec(dllexport)
+#elif defined(__clang__) || (defined(__GNUC__) && __GNUC__ > 4)
+#define WI_API __attribute__((visibility("default")))
+#define WI_FOREIGN_INIT __attribute__((visibility("default")))
 #else
 #define WI_API
 #define WI_FOREIGN_INIT
