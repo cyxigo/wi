@@ -740,7 +740,8 @@ _compiler_arg_list(struct wi_compiler* compiler, uint8_t start) {
             _compiler_expr(compiler);
 
             if (arg_count == WI_PARAMETER_MAX) {
-                wi_parser_error_at_curr(compiler->parser, "cannot have more than 255 arguments in a call");
+                wi_parser_error_at_curr(compiler->parser, "cannot have more than %i arguments in a call",
+                                        WI_PARAMETER_MAX);
             }
 
             arg_count++;
@@ -996,7 +997,7 @@ _compiler_function_expr(struct wi_compiler* outer, bool can_assign) {
             }
 
             if (compiler.prototype->arity == WI_PARAMETER_MAX) {
-                wi_parser_error_at_curr(compiler.parser, "cannot have more than 255 parameters");
+                wi_parser_error_at_curr(compiler.parser, "cannot have more than %i parameters", WI_PARAMETER_MAX);
             }
 
             compiler.prototype->arity++;
