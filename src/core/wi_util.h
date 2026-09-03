@@ -8,7 +8,7 @@
 
 #include "../../include/wi.h"
 
-#if defined(__GNUC__) || defined(__clang__)
+#if defined(__clang__) || (defined(__GNUC__) && __GNUC__ > 4)
 #define WI_NORETURN __attribute__((noreturn))
 #define WI_UNLIKELY(x) __builtin_expect(!!(x), 0)
 #define WI_LIKELY(x) __builtin_expect(!!(x), 1)
