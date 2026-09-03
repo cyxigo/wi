@@ -7,7 +7,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-/* for wi_read_line */
 #ifdef _WIN32
 #include <windows.h>
 #elif defined(WI_USE_READLINE) /* wi is linked with -lreadline */
