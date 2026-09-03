@@ -1,0 +1,11 @@
+// Bug in v8.2.0-beta, clear mid-sort causes segfault
+arr := [0, 1, 2, 3, -2];
+arr->sort(|a, b| => {
+    arr->clear();
+    return a < b;
+});
+arr->each(print); 
+puts("ok");
+
+// Expected:
+// ok

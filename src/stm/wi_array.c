@@ -273,6 +273,10 @@ static void
 _aqsort_swap(struct wi_array* array, int i, int j) {
     wi_value* buf = array->items.data;
 
+    if (!buf) {
+        return;
+    }
+
     wi_value temp = buf[i];
     buf[i]        = buf[j];
     buf[j]        = temp;
@@ -286,7 +290,7 @@ _aqsort_partition(struct wi_state* state, struct wi_array* array, int lo, int hi
     wi_value pi = array->items.data[hi];
     int      i  = lo - 1;
 
-    for (int j = lo; j < hi; j++) {
+    for (int j = lo; j < hi && array->items.data; j++) {
         wi_arg_function(state, 2, 2);
         wi_state_ppush(state, array->items.data[j]);
         wi_state_ppush(state, pi);
@@ -304,7 +308,7 @@ _aqsort_partition(struct wi_state* state, struct wi_array* array, int lo, int hi
 
 static void
 _aqsort(struct wi_state* state, struct wi_array* array, int lo, int hi) {
-    while (lo < hi) { /* loop for tail recursion */
+    while (lo < hi && array->items.data) { /* loop for tail recursion */
         int pi = _aqsort_partition(state, array, lo, hi);
 
         if (pi - lo < hi - pi) {
