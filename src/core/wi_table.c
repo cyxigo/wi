@@ -92,6 +92,7 @@ _table_adjust_capacity(struct wi_table* table, int capacity) {
     WI_GC_FREE_BUF(table->gc, struct wi_entry, table->entries, table->capacity);
     table->capacity = capacity;
     table->entries  = entries;
+    table->mod_count++;
 }
 
 bool

@@ -116,7 +116,8 @@ _map_remove(struct wi_state* state, int arg_count) {
 static void
 _map_each(struct wi_state* state, int arg_count) {
     WI_UNUSED(arg_count);
-    struct wi_map* map = _check_arg1_map(state);
+    struct wi_map* map       = _check_arg1_map(state);
+    int            mod_count = map->items.mod_count;
     wi_state_ppush(state, WI_MAKE_BOX_VALUE(map));
 
     for (int i = 0; i < map->items.capacity; i++) {
@@ -130,60 +131,80 @@ _map_each(struct wi_state* state, int arg_count) {
         wi_state_ppush(state, entry->key);
         wi_state_ppush(state, entry->value);
         wi_call(state, 2, true);
+
+        if (WI_UNLIKELY(map->items.mod_count != mod_count)) {
+            wi_state_error(state, "map resized during iteration");
+        }
     }
 }
 
 static void
 _map_select(struct wi_state* state, int arg_count) {
     WI_UNUSED(arg_count);
-    struct wi_map* map    = _check_arg1_map(state);
-    struct wi_map* result = wi_new_map(state->gc);
+    struct wi_map* map       = _check_arg1_map(state);
+    int            mod_count = map->items.mod_count;
+    struct wi_map* result    = wi_new_map(state->gc);
     wi_state_ppush(state, WI_MAKE_BOX_VALUE(result));
     wi_table_reserve(&result->items, map->items.count);
 
     for (int i = 0; i < map->items.capacity; i++) {
         struct wi_entry* entry = &map->items.entries[i];
 
-        if (wi_value_is_empty(entry->key)) {
+        wi_value key   = entry->key;
+        wi_value value = entry->value;
+
+        if (wi_value_is_empty(key)) {
             continue;
         }
 
         wi_arg_function(state, 2, 1);
-        wi_state_ppush(state, entry->key);
+        wi_state_ppush(state, key);
         wi_call(state, 1, false);
 
         wi_arg_function(state, 3, 1);
-        wi_state_ppush(state, entry->value);
+        wi_state_ppush(state, value);
         wi_call(state, 1, false);
 
-        wi_value value = wi_state_pop(state);
-        wi_value key   = wi_state_pop(state);
+        if (WI_UNLIKELY(map->items.mod_count != mod_count)) {
+            wi_state_error(state, "map resized during iteration");
+        }
 
-        wi_table_set(&result->items, key, value);
+        wi_value new_value = wi_state_pop(state);
+        wi_value new_key   = wi_state_pop(state);
+
+        wi_table_set(&result->items, new_key, new_value);
     }
 }
 
 static void
 _map_where(struct wi_state* state, int arg_count) {
     WI_UNUSED(arg_count);
-    struct wi_map* map    = _check_arg1_map(state);
-    struct wi_map* result = wi_new_map(state->gc);
+    struct wi_map* map       = _check_arg1_map(state);
+    int            mod_count = map->items.mod_count;
+    struct wi_map* result    = wi_new_map(state->gc);
     wi_state_ppush(state, WI_MAKE_BOX_VALUE(result));
 
     for (int i = 0; i < map->items.capacity; i++) {
         struct wi_entry* entry = &map->items.entries[i];
 
-        if (wi_value_is_empty(entry->key)) {
+        wi_value key   = entry->key;
+        wi_value value = entry->value;
+
+        if (wi_value_is_empty(key)) {
             continue;
         }
 
         wi_arg_function(state, 2, 2);
-        wi_state_ppush(state, entry->key);
-        wi_state_ppush(state, entry->value);
+        wi_state_ppush(state, key);
+        wi_state_ppush(state, value);
         wi_call(state, 2, false);
 
+        if (WI_UNLIKELY(map->items.mod_count != mod_count)) {
+            wi_state_error(state, "map resized during iteration");
+        }
+
         if (!wi_value_is_falsy(wi_state_pop(state))) {
-            wi_table_set(&result->items, entry->key, entry->value);
+            wi_table_set(&result->items, key, value);
         }
     }
 }

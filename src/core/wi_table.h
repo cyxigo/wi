@@ -32,6 +32,7 @@ struct wi_table {
     int              capacity;
     int              count;
     int              live_count;
+    int              mod_count; /* how many times this table reallocated its entries */
 };
 
 void
