@@ -1,3 +1,4 @@
+// $ok
 // Bug in v8.2.0-beta won't let the last of these snippets pass
 // All should pass
 {

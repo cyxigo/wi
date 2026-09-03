@@ -1,3 +1,4 @@
+// $fail
 // Bug in v8.2.0-beta, all of these should fail
 if (true) x := 10;
 while (true) x := 10;

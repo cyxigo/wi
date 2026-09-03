@@ -1,3 +1,4 @@
+// $fail
 // Bug in v8.2.0-beta, should fail
 math := "bug";
 
