@@ -199,7 +199,7 @@ void
 wi_state_ppush(struct wi_state* state, wi_value value);
 
 WI_INLINE void
-wi_state_check_arity(struct wi_state* state, int arity, uint8_t arg_count, bool is_variadic) {
+wi_state_check_arity(struct wi_state* state, uint8_t arity, uint8_t arg_count, bool is_variadic) {
     if (is_variadic) {
         if (WI_UNLIKELY(arg_count < arity)) {
             wi_state_error(state, "expected at least %i arguments but got %hhu", arity, arg_count);
