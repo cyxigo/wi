@@ -270,8 +270,7 @@ wi_read_line(char** line, const char* prompt) {
 
     return true;
 #elif defined(WI_USE_READLINE)
-    rl_catch_signals = 0;
-    char* buf        = readline(prompt);
+    char* buf = readline(prompt);
 
     if (!buf) {
         return false;
