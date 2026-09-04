@@ -459,7 +459,7 @@ wi_pop_userdata(wi_state* state, const char* name);
  * @param arg Argument index (1-[arg_count])
  */
 WI_API bool
-wi_arg_is_real(wi_state* state, int arg);
+wi_arg_is_real(wi_state* state, uint8_t arg);
 
 /**
  * Check if argument is a null value
@@ -468,7 +468,7 @@ wi_arg_is_real(wi_state* state, int arg);
  * @param arg Argument index (1-[arg_count])
  */
 WI_API bool
-wi_arg_is_null(wi_state* state, int arg);
+wi_arg_is_null(wi_state* state, uint8_t arg);
 
 /**
  * Check if argument is a boolean value
@@ -477,7 +477,7 @@ wi_arg_is_null(wi_state* state, int arg);
  * @param arg Argument index (1-[arg_count])
  */
 WI_API bool
-wi_arg_is_bool(wi_state* state, int arg);
+wi_arg_is_bool(wi_state* state, uint8_t arg);
 
 /**
  * Check if argument is a string value
@@ -486,7 +486,7 @@ wi_arg_is_bool(wi_state* state, int arg);
  * @param arg Argument index (1-[arg_count])
  */
 WI_API bool
-wi_arg_is_string(wi_state* state, int arg);
+wi_arg_is_string(wi_state* state, uint8_t arg);
 
 /**
  * Check if argument is a function value
@@ -495,7 +495,7 @@ wi_arg_is_string(wi_state* state, int arg);
  * @param arg Argument index (1-[arg_count])
  */
 WI_API bool
-wi_arg_is_function(wi_state* state, int arg);
+wi_arg_is_function(wi_state* state, uint8_t arg);
 
 /**
  * Check if argument is an object
@@ -504,7 +504,7 @@ wi_arg_is_function(wi_state* state, int arg);
  * @param arg Argument index (1-[arg_count])
  */
 WI_API bool
-wi_arg_is_object(wi_state* state, int arg);
+wi_arg_is_object(wi_state* state, uint8_t arg);
 
 /**
  * Check if argument is userdata
@@ -514,7 +514,7 @@ wi_arg_is_object(wi_state* state, int arg);
  * @param name Userdata name, used for type-checking
  */
 WI_API bool
-wi_arg_is_userdata(wi_state* state, int arg, const char* name);
+wi_arg_is_userdata(wi_state* state, uint8_t arg, const char* name);
 
 /**
  * Get a real argument with type-checking
@@ -524,7 +524,7 @@ wi_arg_is_userdata(wi_state* state, int arg, const char* name);
  * @return Real argument
  */
 WI_API wi_real
-wi_arg_real(wi_state* state, int arg);
+wi_arg_real(wi_state* state, uint8_t arg);
 
 /**
  * Type-check if argument is a null value
@@ -533,7 +533,7 @@ wi_arg_real(wi_state* state, int arg);
  * @param arg Argument index (1-[arg_count])
  */
 WI_API void
-wi_arg_null(wi_state* state, int arg);
+wi_arg_null(wi_state* state, uint8_t arg);
 
 /**
  * Get a boolean argument with type-checking
@@ -543,7 +543,7 @@ wi_arg_null(wi_state* state, int arg);
  * @return Boolean argument
  */
 WI_API bool
-wi_arg_bool(wi_state* state, int arg);
+wi_arg_bool(wi_state* state, uint8_t arg);
 
 /**
  * Get a string argument with type-checking
@@ -555,7 +555,7 @@ wi_arg_bool(wi_state* state, int arg);
  * @return String argument
  */
 WI_API char*
-wi_arg_string(wi_state* state, int arg, int* count, int* len);
+wi_arg_string(wi_state* state, uint8_t arg, int* count, int* len);
 
 /**
  * Check if argument is a function, check it's arity, and push it onto the stack
@@ -565,16 +565,17 @@ wi_arg_string(wi_state* state, int arg, int* count, int* len);
  * @param arity Function arity
  */
 WI_API void
-wi_arg_function(wi_state* state, int arg, uint8_t arity);
+wi_arg_function(wi_state* state, uint8_t arg, uint8_t arity);
 
 /**
  * Get an object argument with type-checking
  *
  * @param state Wi state instance
  * @param arg Argument index (1-[arg_count])
+ * @return Object argument
  */
 WI_API wi_object*
-wi_arg_object(wi_state* state, int arg);
+wi_arg_object(wi_state* state, uint8_t arg);
 
 /**
  * Get userdata argument with type-checking
@@ -585,7 +586,7 @@ wi_arg_object(wi_state* state, int arg);
  * @return Userdata argument
  */
 WI_API void*
-wi_arg_userdata(wi_state* state, int arg, const char* name);
+wi_arg_userdata(wi_state* state, uint8_t arg, const char* name);
 
 /**
  * Set the value at the stack top as a field on an object, popping it.
