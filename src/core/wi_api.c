@@ -43,13 +43,13 @@ wi_def(struct wi_state* state, const char* name) {
     wi_state_drop(state);
 }
 
-bool
-wi_find(struct wi_state* state, const char* name) {
+static bool
+_find_in_table(struct wi_state* state, struct wi_table* table, const char* name) {
     struct wi_string* name_box = wi_make_string(state->gc, name);
     WI_GC_PUSH_ROOT(state->gc, name_box);
 
     wi_value value;
-    bool     found = wi_table_get(&state->globals, WI_MAKE_BOX_VALUE(name_box), &value);
+    bool     found = wi_table_get(table, WI_MAKE_BOX_VALUE(name_box), &value);
     wi_gc_pop_root(state->gc);
 
     if (found) {
@@ -57,6 +57,11 @@ wi_find(struct wi_state* state, const char* name) {
     }
 
     return found;
+}
+
+bool
+wi_find(struct wi_state* state, const char* name) {
+    return _find_in_table(state, &state->globals, name);
 }
 
 void
@@ -124,6 +129,11 @@ wi_is_bool(struct wi_state* state) {
 bool
 wi_is_string(struct wi_state* state) {
     return wi_value_is_string(wi_state_top(state));
+}
+
+bool
+wi_is_object(struct wi_state* state) {
+    return wi_value_is_object(wi_state_top(state));
 }
 
 static bool
@@ -237,6 +247,17 @@ wi_pop_string(struct wi_state* state, int* count, int* len) {
     return string->buf;
 }
 
+struct wi_object*
+wi_pop_object(struct wi_state* state) {
+    wi_value value = wi_state_pop(state);
+
+    if (WI_UNLIKELY(!wi_value_is_object(value))) {
+        wi_state_error(state, "expected a value of type object but got %s", wi_value_type(value));
+    }
+
+    return wi_value_as_object(value);
+}
+
 void*
 wi_pop_userdata(struct wi_state* state, const char* name) {
     if (WI_UNLIKELY(!wi_is_userdata(state, name))) {
@@ -270,6 +291,11 @@ bool
 wi_arg_is_function(struct wi_state* state, int arg) {
     wi_value value = state->ffi_stack[arg];
     return wi_value_is_foreign(value) || wi_value_is_closure(value);
+}
+
+bool
+wi_arg_is_object(struct wi_state* state, int arg) {
+    return wi_value_is_object(state->ffi_stack[arg]);
 }
 
 bool
@@ -345,6 +371,18 @@ wi_arg_function(struct wi_state* state, int arg, uint8_t arity) {
     wi_state_ppush(state, function);
 }
 
+struct wi_object*
+wi_arg_object(struct wi_state* state, int arg) {
+    wi_value value = state->ffi_stack[arg];
+
+    if (WI_UNLIKELY(!wi_value_is_object(value))) {
+        wi_state_error(state, "bad argument %i - expected a value of type object but got %s", arg,
+                       wi_value_type(value));
+    }
+
+    return wi_value_as_object(value);
+}
+
 void*
 wi_arg_userdata(struct wi_state* state, int arg, const char* name) {
     wi_value value = state->ffi_stack[arg];
@@ -372,4 +410,9 @@ wi_object_set(struct wi_state* state, struct wi_object* object, const char* name
     WI_GC_WRITE_BARRIER(state->gc, object, value);
     wi_gc_pop_root(state->gc);
     wi_state_drop(state);
+}
+
+bool
+wi_object_get(struct wi_state* state, struct wi_object* object, const char* name) {
+    return _find_in_table(state, &object->fields, name);
 }

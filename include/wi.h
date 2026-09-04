@@ -165,9 +165,8 @@ wi_state_was_eof_error(wi_state* state);
  * @param require_exists_fn Require existence check callback
  */
 WI_API void
-wi_state_set_callbacks(struct wi_state* state, wi_print_fn out_fn, wi_print_fn error_fn,
-                       wi_on_compile_fn on_compile_fn, wi_load_require_fn load_require_fn,
-                       wi_require_exists_fn require_exists_fn);
+wi_state_set_callbacks(wi_state* state, wi_print_fn out_fn, wi_print_fn error_fn, wi_on_compile_fn on_compile_fn,
+                       wi_load_require_fn load_require_fn, wi_require_exists_fn require_exists_fn);
 
 /**
  * Set the command line arguments that will be available to Wi scripts via os.args
@@ -312,6 +311,14 @@ WI_API bool
 wi_is_string(wi_state* state);
 
 /**
+ * Check if the value at the stack top is an object
+ *
+ * @param state Wi state instance
+ */
+WI_API bool
+wi_is_object(wi_state* state);
+
+/**
  * Check if the value at the stack top is userdata
  *
  * @param state Wi state instance
@@ -429,6 +436,14 @@ WI_API char*
 wi_pop_string(wi_state* state, int* count, int* len);
 
 /**
+ * Pop an object from the stack with type-checking
+ *
+ * @param state Wi state instance
+ */
+WI_API wi_object*
+wi_pop_object(wi_state* state);
+
+/**
  * Pop userdata from the stack with type-checking
  *
  * @param state Wi state instance
@@ -481,6 +496,15 @@ wi_arg_is_string(wi_state* state, int arg);
  */
 WI_API bool
 wi_arg_is_function(wi_state* state, int arg);
+
+/**
+ * Check if argument is an object
+ *
+ * @param state Wi state instance
+ * @param arg Argument index (1-[arg_count])
+ */
+WI_API bool
+wi_arg_is_object(wi_state* state, int arg);
 
 /**
  * Check if argument is userdata
@@ -544,6 +568,15 @@ WI_API void
 wi_arg_function(wi_state* state, int arg, uint8_t arity);
 
 /**
+ * Get an object argument with type-checking
+ *
+ * @param state Wi state instance
+ * @param arg Argument index (1-[arg_count])
+ */
+WI_API wi_object*
+wi_arg_object(wi_state* state, int arg);
+
+/**
  * Get userdata argument with type-checking
  *
  * @param state Wi state instance
@@ -564,5 +597,16 @@ wi_arg_userdata(wi_state* state, int arg, const char* name);
  */
 WI_API void
 wi_object_set(wi_state* state, wi_object* object, const char* name);
+
+/**
+ * Get a field from an object and push it onto the stack.
+ * Pushes nothing and returns false if the field doesn't exist
+ *
+ * @param state Wi state instance
+ * @param object Target object
+ * @param name Field name
+ */
+WI_API bool
+wi_object_get(wi_state* state, wi_object* object, const char* name);
 
 #endif
