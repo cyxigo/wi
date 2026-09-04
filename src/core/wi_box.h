@@ -154,7 +154,7 @@ wi_prototype_instr_size(struct wi_prototype* prototype, int offset);
 struct wi_foreign {
     struct wi_box box;
     wi_foreign_fn fn;
-    int           arity;
+    uint8_t       arity;
     bool          is_variadic;
 };
 
@@ -169,7 +169,7 @@ wi_value_as_foreign(wi_value value) {
 }
 
 struct wi_foreign*
-wi_new_foreign(struct wi_gc* gc, wi_foreign_fn fn, int arity, bool is_variadic);
+wi_new_foreign(struct wi_gc* gc, wi_foreign_fn fn, uint8_t arity, bool is_variadic);
 
 struct wi_upvalue;
 

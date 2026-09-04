@@ -33,99 +33,23 @@ wi_def_std(struct wi_state* state) {
 }
 
 void
-wi_def_foreign(struct wi_state* state, const char* name, wi_foreign_fn fn, int arity, bool is_variadic) {
-    wi_table_set_foreign(&state->foreign, name, fn, arity, is_variadic);
-}
-
-struct wi_object*
-wi_def_object(struct wi_state* state, const char* name) {
+wi_def(struct wi_state* state, const char* name) {
+    wi_value          value    = wi_state_top(state);
     struct wi_string* name_box = wi_make_string(state->gc, name);
     WI_GC_PUSH_ROOT(state->gc, name_box);
 
-    struct wi_object* object = wi_new_object(state->gc);
-    WI_GC_PUSH_ROOT(state->gc, object);
-
-    wi_table_set(&state->foreign, WI_MAKE_BOX_VALUE(name_box), WI_MAKE_BOX_VALUE(object));
-
+    wi_table_set(&state->foreign, WI_MAKE_BOX_VALUE(name_box), value);
     wi_gc_pop_root(state->gc);
-    wi_gc_pop_root(state->gc);
-
-    return object;
-}
-
-static void
-_set_field(struct wi_state* state, struct wi_object* object, const char* name, wi_value value) {
-    bool is_box = wi_value_is_box(value);
-
-    if (is_box) {
-        WI_GC_PUSH_ROOT(state->gc, wi_value_as_box(value));
-    }
-
-    struct wi_string* name_box   = wi_make_string(state->gc, name);
-    wi_value          name_value = WI_MAKE_BOX_VALUE(name_box);
-    WI_GC_PUSH_ROOT(state->gc, name_box);
-
-    if (wi_table_set(&object->fields, name_value, value)) {
-        WI_GC_WRITE_BARRIER(state->gc, object, name_value);
-    }
-
-    WI_GC_WRITE_BARRIER(state->gc, object, value);
-
-    if (is_box) {
-        wi_gc_pop_root(state->gc);
-    }
-
-    wi_gc_pop_root(state->gc);
-}
-
-void
-wi_object_set_real(struct wi_state* state, struct wi_object* object, const char* name, wi_real real) {
-    _set_field(state, object, name, wi_make_real_value(real));
-}
-
-void
-wi_object_set_bool(struct wi_state* state, struct wi_object* object, const char* name, bool boolean) {
-    _set_field(state, object, name, wi_make_bool_value(boolean));
-}
-
-void
-wi_object_set_string(struct wi_state* state, struct wi_object* object, const char* name, const char* string) {
-    struct wi_string* box = wi_make_string(state->gc, string);
-    _set_field(state, object, name, WI_MAKE_BOX_VALUE(box));
-}
-
-static struct wi_userdata*
-_new_userdata(struct wi_state* state, const char* name, void* userdata, wi_userdata_finalizer_fn finalizer) {
-    struct wi_string* name_box = wi_make_string(state->gc, name);
-    WI_GC_PUSH_ROOT(state->gc, name_box);
-
-    struct wi_userdata* box = wi_new_userdata(state->gc, name_box, userdata, finalizer);
-    wi_gc_pop_root(state->gc);
-
-    return box;
-}
-
-void
-wi_object_set_userdata(struct wi_state* state, struct wi_object* object, const char* field_name, const char* name,
-                       void* userdata, wi_userdata_finalizer_fn finalizer) {
-    struct wi_userdata* box = _new_userdata(state, name, userdata, finalizer);
-    _set_field(state, object, field_name, WI_MAKE_BOX_VALUE(box));
-}
-
-void
-wi_object_set_foreign(struct wi_state* state, struct wi_object* object, const char* name, wi_foreign_fn fn,
-                      int arity, bool is_variadic) {
-    struct wi_foreign* foreign = wi_new_foreign(state->gc, fn, arity, is_variadic);
-    _set_field(state, object, name, WI_MAKE_BOX_VALUE(foreign));
+    wi_state_drop(state);
 }
 
 bool
-wi_find_function(struct wi_state* state, const char* name) {
+wi_find(struct wi_state* state, const char* name) {
     struct wi_string* name_box = wi_make_string(state->gc, name);
     WI_GC_PUSH_ROOT(state->gc, name_box);
 
     wi_value value;
-    bool found = wi_table_get(&state->globals, WI_MAKE_BOX_VALUE(name_box), &value) && wi_value_is_closure(value);
+    bool     found = wi_table_get(&state->globals, WI_MAKE_BOX_VALUE(name_box), &value);
     wi_gc_pop_root(state->gc);
 
     if (found) {
@@ -147,7 +71,7 @@ wi_call(struct wi_state* state, uint8_t arg_count, bool drop) {
 }
 
 bool
-wi_pcall(wi_state* state, uint8_t arg_count, bool drop, char** error) {
+wi_pcall(struct wi_state* state, uint8_t arg_count, bool drop, char** error) {
     /* an offset in case stack reallocates (very scary) */
     ptrdiff_t           start    = state->stack_top - state->stack - arg_count - 1;
     struct wi_recovery* recovery = wi_state_push_recovery(state);
@@ -234,13 +158,30 @@ wi_push_string(struct wi_state* state, const char* string) {
 }
 
 void
+wi_push_foreign(struct wi_state* state, wi_foreign_fn fn, uint8_t arity, bool is_variadic) {
+    struct wi_foreign* box = wi_new_foreign(state->gc, fn, arity, is_variadic);
+    wi_state_ppush(state, WI_MAKE_BOX_VALUE(box));
+}
+
+struct wi_object*
+wi_push_object(struct wi_state* state) {
+    struct wi_object* box = wi_new_object(state->gc);
+    wi_state_ppush(state, WI_MAKE_BOX_VALUE(box));
+    return box;
+}
+
+void
 wi_push_userdata(struct wi_state* state, const char* name, void* userdata, wi_userdata_finalizer_fn finalizer) {
-    struct wi_userdata* box = _new_userdata(state, name, userdata, finalizer);
+    struct wi_string* name_box = wi_make_string(state->gc, name);
+    WI_GC_PUSH_ROOT(state->gc, name_box);
+
+    struct wi_userdata* box = wi_new_userdata(state->gc, name_box, userdata, finalizer);
+    wi_gc_pop_root(state->gc);
     wi_state_ppush(state, WI_MAKE_BOX_VALUE(box));
 }
 
 void
-wi_drop(wi_state* state) {
+wi_drop(struct wi_state* state) {
     wi_state_drop(state);
 }
 
@@ -385,7 +326,7 @@ wi_arg_string(struct wi_state* state, int arg, int* count, int* len) {
 }
 
 void
-wi_arg_function(wi_state* state, int arg, uint8_t arity) {
+wi_arg_function(struct wi_state* state, int arg, uint8_t arity) {
     wi_value function = state->ffi_stack[arg];
 
     if (!wi_value_is_foreign(function) && !wi_value_is_closure(function)) {
@@ -414,4 +355,21 @@ wi_arg_userdata(struct wi_state* state, int arg, const char* name) {
     }
 
     return wi_value_as_userdata(value)->data;
+}
+
+void
+wi_object_set(struct wi_state* state, struct wi_object* object, const char* name) {
+    wi_value value = wi_state_top(state);
+
+    struct wi_string* name_box   = wi_make_string(state->gc, name);
+    wi_value          name_value = WI_MAKE_BOX_VALUE(name_box);
+    WI_GC_PUSH_ROOT(state->gc, name_box);
+
+    if (wi_table_set(&object->fields, name_value, value)) {
+        WI_GC_WRITE_BARRIER(state->gc, object, name_value);
+    }
+
+    WI_GC_WRITE_BARRIER(state->gc, object, value);
+    wi_gc_pop_root(state->gc);
+    wi_state_drop(state);
 }

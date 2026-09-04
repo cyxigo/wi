@@ -353,35 +353,38 @@ _base_equals(struct wi_state* state, int arg_count) {
 
 void
 wi_state_def_std_base(struct wi_state* state) {
-    wi_def_foreign(state, "print", _base_print, 0, true);
-    wi_def_foreign(state, "puts", _base_puts, 0, true);
-    wi_def_foreign(state, "input", _base_input, 0, true);
-    wi_def_foreign(state, "is_main", _base_is_main, 0, false);
-    wi_def_foreign(state, "exit", _base_exit, 0, false);
+    wi_foreign_entry functions[] = {
+        {"print",       _base_print,       0, true },
+        {"puts",        _base_puts,        0, true },
+        {"input",       _base_input,       0, true },
+        {"is_main",     _base_is_main,     0, false},
+        {"exit",        _base_exit,        0, false},
 
-    wi_def_foreign(state, "error", _base_error, 1, false);
-    wi_def_foreign(state, "assert", _base_assert, 2, false);
-    wi_def_foreign(state, "try", _base_try, 1, true);
+        {"error",       _base_error,       1, false},
+        {"assert",      _base_assert,      2, false},
+        {"try",         _base_try,         1, true },
 
-    wi_def_foreign(state, "type", _base_type, 1, false);
-    wi_def_foreign(state, "is_real", _base_is_real, 1, false);
-    wi_def_foreign(state, "is_null", _base_is_null, 1, false);
-    wi_def_foreign(state, "is_bool", _base_is_bool, 1, false);
-    wi_def_foreign(state, "is_string", _base_is_string, 1, false);
-    wi_def_foreign(state, "is_array", _base_is_array, 1, false);
-    wi_def_foreign(state, "is_map", _base_is_map, 1, false);
-    wi_def_foreign(state, "is_foreign", _base_is_foreign, 1, false);
-    wi_def_foreign(state, "is_function", _base_is_function, 1, false);
-    wi_def_foreign(state, "is_object", _base_is_object, 1, false);
-    wi_def_foreign(state, "is_userdata", _base_is_userdata, 1, false);
-    wi_def_foreign(state, "is_falsy", _base_is_falsy, 1, false);
+        {"type",        _base_type,        1, false},
+        {"is_real",     _base_is_real,     1, false},
+        {"is_null",     _base_is_null,     1, false},
+        {"is_bool",     _base_is_bool,     1, false},
+        {"is_string",   _base_is_string,   1, false},
+        {"is_array",    _base_is_array,    1, false},
+        {"is_map",      _base_is_map,      1, false},
+        {"is_foreign",  _base_is_foreign,  1, false},
+        {"is_function", _base_is_function, 1, false},
+        {"is_object",   _base_is_object,   1, false},
+        {"is_userdata", _base_is_userdata, 1, false},
+        {"is_falsy",    _base_is_falsy,    1, false},
 
-    wi_def_foreign(state, "to_real", _base_to_real, 1, false);
-    wi_def_foreign(state, "to_bool", _base_to_bool, 1, false);
-    wi_def_foreign(state, "to_string", _base_to_string, 1, false);
+        {"to_real",     _base_to_real,     1, false},
+        {"to_bool",     _base_to_bool,     1, false},
+        {"to_string",   _base_to_string,   1, false},
 
-    wi_def_foreign(state, "has_field", _base_has_field, 2, false);
-    wi_def_foreign(state, "fields", _base_fields, 1, false);
+        {"has_field",   _base_has_field,   2, false},
+        {"fields",      _base_fields,      1, false},
 
-    wi_def_foreign(state, "equals", _base_equals, 2, false);
+        {"equals",      _base_equals,      2, false},
+    };
+    WI_DEF_FOREIGN_ALL(state, functions);
 }

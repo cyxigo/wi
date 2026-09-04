@@ -174,10 +174,13 @@ _io_read(struct wi_state* state, int arg_count) {
 
 void
 wi_state_def_std_io(struct wi_state* state) {
-    struct wi_object* object = wi_def_object(state, "io");
-
-    wi_object_set_foreign(state, object, "open", _io_open, 2, false);
-    wi_object_set_foreign(state, object, "close", _io_close, 1, false);
-    wi_object_set_foreign(state, object, "write", _io_write, 2, false);
-    wi_object_set_foreign(state, object, "read", _io_read, 1, false);
+    struct wi_object* object = wi_push_object(state);
+    wi_def(state, "io");
+    wi_foreign_entry functions[] = {
+        {"open",  _io_open,  2, false},
+        {"close", _io_close, 1, false},
+        {"write", _io_write, 2, false},
+        {"read",  _io_read,  1, false},
+    };
+    WI_OBJECT_SET_FOREIGN_ALL(state, object, functions);
 }

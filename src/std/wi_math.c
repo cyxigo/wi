@@ -192,34 +192,43 @@ _math_tan(struct wi_state* state, int arg_count) {
 
 void
 wi_state_def_std_math(struct wi_state* state) {
-    struct wi_object* object = wi_def_object(state, "math");
+    struct wi_object* object = wi_push_object(state);
+    wi_def(state, "math");
+    wi_foreign_entry functions[] = {
+        {"abs",    _math_abs,    1, false},
+        {"acos",   _math_acos,   1, false},
+        {"asin",   _math_asin,   1, false},
+        {"atan",   _math_atan,   1, false},
+        {"ceil",   _math_ceil,   1, false},
+        {"clamp",  _math_clamp,  3, false},
+        {"cos",    _math_cos,    1, false},
+        {"deg",    _math_deg,    1, false},
+        {"exp",    _math_exp,    1, false},
+        {"floor",  _math_floor,  1, false},
+        {"mod",    _math_mod,    2, false},
+        {"log",    _math_log,    2, false},
+        {"log10",  _math_log10,  1, false},
+        {"ln",     _math_ln,     1, false},
+        {"max",    _math_max,    2, true },
+        {"min",    _math_min,    2, true },
+        {"pow",    _math_pow,    2, false},
+        {"rad",    _math_rad,    1, false},
+        {"random", _math_random, 0, false},
+        {"round",  _math_round,  1, false},
+        {"sin",    _math_sin,    1, false},
+        {"sign",   _math_sign,   1, false},
+        {"sqrt",   _math_sqrt,   1, false},
+        {"tan",    _math_tan,    1, false},
+    };
 
-    wi_object_set_real(state, object, "E", M_E);
-    wi_object_set_real(state, object, "PI", M_PI);
-    wi_object_set_real(state, object, "HUGE", HUGE_VAL);
+    WI_OBJECT_SET_FOREIGN_ALL(state, object, functions);
 
-    wi_object_set_foreign(state, object, "abs", _math_abs, 1, false);
-    wi_object_set_foreign(state, object, "acos", _math_acos, 1, false);
-    wi_object_set_foreign(state, object, "asin", _math_asin, 1, false);
-    wi_object_set_foreign(state, object, "atan", _math_atan, 1, false);
-    wi_object_set_foreign(state, object, "ceil", _math_ceil, 1, false);
-    wi_object_set_foreign(state, object, "clamp", _math_clamp, 3, false);
-    wi_object_set_foreign(state, object, "cos", _math_cos, 1, false);
-    wi_object_set_foreign(state, object, "deg", _math_deg, 1, false);
-    wi_object_set_foreign(state, object, "exp", _math_exp, 1, false);
-    wi_object_set_foreign(state, object, "floor", _math_floor, 1, false);
-    wi_object_set_foreign(state, object, "mod", _math_mod, 2, false);
-    wi_object_set_foreign(state, object, "log", _math_log, 2, false);
-    wi_object_set_foreign(state, object, "log10", _math_log10, 1, false);
-    wi_object_set_foreign(state, object, "ln", _math_ln, 1, false);
-    wi_object_set_foreign(state, object, "max", _math_max, 2, true);
-    wi_object_set_foreign(state, object, "min", _math_min, 2, true);
-    wi_object_set_foreign(state, object, "pow", _math_pow, 2, false);
-    wi_object_set_foreign(state, object, "rad", _math_rad, 1, false);
-    wi_object_set_foreign(state, object, "random", _math_random, 0, false);
-    wi_object_set_foreign(state, object, "round", _math_round, 1, false);
-    wi_object_set_foreign(state, object, "sin", _math_sin, 1, false);
-    wi_object_set_foreign(state, object, "sign", _math_sign, 1, false);
-    wi_object_set_foreign(state, object, "sqrt", _math_sqrt, 1, false);
-    wi_object_set_foreign(state, object, "tan", _math_tan, 1, false);
+    wi_push_real(state, M_E);
+    wi_object_set(state, object, "E");
+
+    wi_push_real(state, M_PI);
+    wi_object_set(state, object, "PI");
+
+    wi_push_real(state, HUGE_VAL);
+    wi_object_set(state, object, "HUGE");
 }

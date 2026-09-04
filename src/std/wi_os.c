@@ -59,10 +59,13 @@ _os_args(struct wi_state* state, int arg_count) {
 
 void
 wi_state_def_std_os(struct wi_state* state) {
-    struct wi_object* object = wi_def_object(state, "os");
-
-    wi_object_set_foreign(state, object, "clock", _os_clock, 0, false);
-    wi_object_set_foreign(state, object, "time", _os_time, 0, false);
-    wi_object_set_foreign(state, object, "get_env", _os_get_env, 1, false);
-    wi_object_set_foreign(state, object, "args", _os_args, 0, false);
+    struct wi_object* object = wi_push_object(state);
+    wi_def(state, "os");
+    wi_foreign_entry functions[] = {
+        {"clock",   _os_clock,   0, false},
+        {"time",    _os_time,    0, false},
+        {"get_env", _os_get_env, 1, false},
+        {"args",    _os_args,    0, false},
+    };
+    WI_OBJECT_SET_FOREIGN_ALL(state, object, functions);
 }

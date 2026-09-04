@@ -76,6 +76,17 @@ typedef void (*wi_foreign_fn)(wi_state* state, int arg_count);
 typedef void (*wi_userdata_finalizer_fn)(void* data);
 
 /**
+ * A single { name, function, arity, is_variadic } row, used to register foreign (C) functions via
+ * `WI_DEF_FOREIGN_ALL`/`WI_OBJECT_SET_FOREIGN_ALL`
+ */
+typedef struct wi_foreign_entry {
+    const char*   name;
+    wi_foreign_fn fn;
+    uint8_t       arity;
+    bool          is_variadic;
+} wi_foreign_entry;
+
+/**
  * Create a new Wi state instance
  *
  * @param conf Wi configuration, see `wi_conf.h` for more
@@ -199,96 +210,23 @@ WI_API void
 wi_def_stm(wi_state* state);
 
 /**
- * Define a foreign (C) function in the state (global)
+ * Define the value at the stack top as a foreign (global) variable, popping it.
+ * If the variable already exists, it is overwritten
  *
  * @param state Wi state instance
- * @param name Function name
- * @param fn Pointer to the C function implementation
- * @param arity Function's arity (number of arguments it expects)
- * @param is_variadic Whether function is variadic or not
+ * @param name Variable name
  */
 WI_API void
-wi_def_foreign(wi_state* state, const char* name, wi_foreign_fn fn, int arity, bool is_variadic);
+wi_def(wi_state* state, const char* name);
 
 /**
- * Define an object in the state (global)
+ * Find a global variable and push it onto the stack
  *
  * @param state Wi state instance
- * @param name Object name
- * @return Pointer to the created object
- */
-WI_API wi_object*
-wi_def_object(wi_state* state, const char* name);
-
-/**
- * Set a real field on an object
- *
- * @param state Wi state instance
- * @param object Target object
- * @param name Field name
- * @param real Value to set
- */
-WI_API void
-wi_object_set_real(wi_state* state, wi_object* object, const char* name, wi_real real);
-
-/**
- * Set a boolean field on an object
- *
- * @param state Wi state instance
- * @param object Target object
- * @param name Field name
- * @param boolean Value to set
- */
-WI_API void
-wi_object_set_bool(wi_state* state, wi_object* object, const char* name, bool boolean);
-
-/**
- * Set a string field on an object
- *
- * @param state Wi state instance
- * @param object Target object
- * @param name Field name
- * @param string String (**must** be valid UTF-8, invalid - undefined behaviour)
- */
-WI_API void
-wi_object_set_string(wi_state* state, wi_object* object, const char* name, const char* string);
-
-/**
- * Set userdata as a field on an object
- *
- * @param state Wi state instance
- * @param object Target object
- * @param field_name Field name
- * @param name Userdata name, used for type-checking
- * @param userdata Pointer to userdata
- * @param finalizer Userdata finalizer
- */
-WI_API void
-wi_object_set_userdata(wi_state* state, wi_object* object, const char* field_name, const char* name,
-                       void* userdata, wi_userdata_finalizer_fn finalizer);
-
-/**
- * Set a foreign (C) function as a field on an object
- *
- * @param state Wi state instance
- * @param object Target object
- * @param name Field name
- * @param fn Pointer to the C function implementation
- * @param arity Function's arity (number of arguments it expects)
- * @param is_variadic Whether function is variadic or not
- */
-WI_API void
-wi_object_set_foreign(wi_state* state, wi_object* object, const char* name, wi_foreign_fn fn, int arity,
-                      bool is_variadic);
-
-/**
- * Find a *global* function and push it onto the stack
- *
- * @param state Wi state instance
- * @param name Function name
+ * @param name Variable name
  */
 WI_API bool
-wi_find_function(wi_state* state, const char* name);
+wi_find(wi_state* state, const char* name);
 
 /**
  * Call a Wi function that is *at the stack top*
@@ -386,6 +324,26 @@ wi_push_bool(wi_state* state, bool boolean);
  */
 WI_API void
 wi_push_string(wi_state* state, const char* string);
+
+/**
+ * Push a foreign (C) function onto the stack
+ *
+ * @param state Wi state instance
+ * @param fn Pointer to the C function implementation
+ * @param arity Function's arity (number of arguments it expects)
+ * @param is_variadic Whether function is variadic or not
+ */
+WI_API void
+wi_push_foreign(wi_state* state, wi_foreign_fn fn, uint8_t arity, bool is_variadic);
+
+/**
+ * Push a new, empty object onto the stack
+ *
+ * @param state Wi state instance
+ * @return Pointer to the created object
+ */
+WI_API wi_object*
+wi_push_object(wi_state* state);
 
 /**
  * Push userdata onto the stack
@@ -565,5 +523,45 @@ wi_arg_function(wi_state* state, int arg, uint8_t arity);
  */
 WI_API void*
 wi_arg_userdata(wi_state* state, int arg, const char* name);
+
+/**
+ * Set the value at the stack top as a field on an object, popping it.
+ * If the field already exists, it is overwritten
+ *
+ * @param state Wi state instance
+ * @param object Target object
+ * @param name Field name
+ */
+WI_API void
+wi_object_set(wi_state* state, wi_object* object, const char* name);
+
+/**
+ * Define a table of foreign (C) functions as globals in one call.
+ * Equivalent to calling `wi_push_foreign` + `wi_def` for each `wi_foreign_entry` in `functions`
+ *
+ * @param state Wi state instance
+ * @param functions A C array of `wi_foreign_entry`
+ */
+#define WI_DEF_FOREIGN_ALL(state, functions)                                 \
+    for (size_t i = 0; i < sizeof(functions) / sizeof(functions[0]); i++) {  \
+        wi_foreign_entry* entry = &functions[i];                             \
+        wi_push_foreign(state, entry->fn, entry->arity, entry->is_variadic); \
+        wi_def(state, entry->name);                                          \
+    }
+
+/**
+ * Set a table of foreign (C) functions as fields on an object in one call.
+ * Equivalent to calling `wi_push_foreign` + `wi_object_set` for each `wi_foreign_entry` in `functions`
+ *
+ * @param state Wi state instance
+ * @param object Target object
+ * @param functions A C array of `wi_foreign_entry`
+ */
+#define WI_OBJECT_SET_FOREIGN_ALL(state, object, functions)                  \
+    for (size_t i = 0; i < sizeof(functions) / sizeof(functions[0]); i++) {  \
+        wi_foreign_entry* entry = &functions[i];                             \
+        wi_push_foreign(state, entry->fn, entry->arity, entry->is_variadic); \
+        wi_object_set(state, object, entry->name);                           \
+    }
 
 #endif
