@@ -121,7 +121,7 @@ wi_table_set(struct wi_table* table, wi_value key, wi_value value) {
 }
 
 void
-wi_table_set_foreign(struct wi_table* table, const char* name, wi_foreign_fn fn, int arity, bool is_variadic) {
+wi_table_set_foreign(struct wi_table* table, const char* name, wi_foreign_fn fn, uint8_t arity, bool is_variadic) {
     struct wi_string* name_box = wi_make_string(table->gc, name);
     WI_GC_PUSH_ROOT(table->gc, name_box);
 
