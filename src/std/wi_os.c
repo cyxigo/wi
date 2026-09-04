@@ -7,19 +7,19 @@
 #include "time.h"
 
 static void
-_os_clock(struct wi_state* state, int arg_count) {
+_os_clock(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     wi_push_real(state, (wi_real)clock() / (wi_real)CLOCKS_PER_SEC);
 }
 
 static void
-_os_time(struct wi_state* state, int arg_count) {
+_os_time(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     wi_push_real(state, (wi_real)time(NULL));
 }
 
 static void
-_os_get_env(struct wi_state* state, int arg_count) {
+_os_get_env(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     char* value = getenv(wi_arg_string(state, 1, NULL, NULL));
 
@@ -36,7 +36,7 @@ _os_get_env(struct wi_state* state, int arg_count) {
 }
 
 static void
-_os_args(struct wi_state* state, int arg_count) {
+_os_args(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     struct wi_array* result = wi_new_array(state->gc);
     wi_state_ppush(state, WI_MAKE_BOX_VALUE(result));

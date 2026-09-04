@@ -7,7 +7,7 @@
 #include "../../include/wi.h"
 
 static void
-_string_sub(struct wi_state* state, int arg_count) {
+_string_sub(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     int   len;
     int   count;
@@ -44,19 +44,19 @@ _string_case_mod(struct wi_state* state, int (*mod_fn)(int c)) {
 }
 
 static void
-_string_upper(struct wi_state* state, int arg_count) {
+_string_upper(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     _string_case_mod(state, toupper);
 }
 
 static void
-_string_lower(struct wi_state* state, int arg_count) {
+_string_lower(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     _string_case_mod(state, tolower);
 }
 
 static void
-_string_trim(struct wi_state* state, int arg_count) {
+_string_trim(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     int   count;
     char* string = wi_arg_string(state, 1, &count, NULL);
@@ -76,7 +76,7 @@ _string_trim(struct wi_state* state, int arg_count) {
 }
 
 static void
-_string_has(struct wi_state* state, int arg_count) {
+_string_has(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     int   count;
     char* string = wi_arg_string(state, 1, &count, NULL);
@@ -94,7 +94,7 @@ _string_has(struct wi_state* state, int arg_count) {
 }
 
 static void
-_string_index_of(struct wi_state* state, int arg_count) {
+_string_index_of(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     int   count;
     char* string = wi_arg_string(state, 1, &count, NULL);
@@ -117,7 +117,7 @@ _string_index_of(struct wi_state* state, int arg_count) {
 }
 
 static void
-_string_starts_with(struct wi_state* state, int arg_count) {
+_string_starts_with(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     int   count;
     char* string = wi_arg_string(state, 1, &count, NULL);
@@ -129,7 +129,7 @@ _string_starts_with(struct wi_state* state, int arg_count) {
 }
 
 static void
-_string_ends_with(struct wi_state* state, int arg_count) {
+_string_ends_with(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     int   count;
     char* string = wi_arg_string(state, 1, &count, NULL);
@@ -141,7 +141,7 @@ _string_ends_with(struct wi_state* state, int arg_count) {
 }
 
 static void
-_string_compare(struct wi_state* state, int arg_count) {
+_string_compare(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     int   a_count;
     char* a = wi_arg_string(state, 1, &a_count, NULL);
@@ -153,7 +153,7 @@ _string_compare(struct wi_state* state, int arg_count) {
 }
 
 static void
-_string_replace(struct wi_state* state, int arg_count) {
+_string_replace(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     int   count;
     char* string = wi_arg_string(state, 1, &count, NULL);
@@ -191,7 +191,7 @@ _string_replace(struct wi_state* state, int arg_count) {
 }
 
 static void
-_string_split(struct wi_state* state, int arg_count) {
+_string_split(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     int   count;
     char* string = wi_arg_string(state, 1, &count, NULL);
@@ -253,7 +253,7 @@ _reverse_cp_bytes(char* start, char* buf_end) {
 }
 
 static void
-_string_reverse(struct wi_state* state, int arg_count) {
+_string_reverse(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     int   count;
     char* string = wi_arg_string(state, 1, &count, NULL);
@@ -288,7 +288,7 @@ end:;
 }
 
 static void
-_string_each(struct wi_state* state, int arg_count) {
+_string_each(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     int   count;
     char* string = wi_arg_string(state, 1, &count, NULL);
@@ -310,7 +310,7 @@ _string_each(struct wi_state* state, int arg_count) {
 }
 
 static void
-_string_select(struct wi_state* state, int arg_count) {
+_string_select(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     int   count;
     char* string = wi_arg_string(state, 1, &count, NULL);
@@ -352,7 +352,7 @@ _string_select(struct wi_state* state, int arg_count) {
 }
 
 static void
-_string_where(struct wi_state* state, int arg_count) {
+_string_where(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     int   count;
     char* string = wi_arg_string(state, 1, &count, NULL);

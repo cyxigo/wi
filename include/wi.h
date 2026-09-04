@@ -99,7 +99,7 @@ typedef bool (*wi_require_exists_fn)(wi_state* state, const char* path);
 /**
  * Foreign (C) function pointer, called from Wi scripts
  */
-typedef void (*wi_foreign_fn)(wi_state* state, int arg_count);
+typedef void (*wi_foreign_fn)(wi_state* state, uint8_t arg_count);
 /**
  * Userdata finalizer - function called when the userdata gets collected by GC
  */

@@ -11,7 +11,7 @@
 #include "../core/wi_state.h"
 
 static void
-_print(struct wi_state* state, int arg_count, bool newline) {
+_print(struct wi_state* state, uint8_t arg_count, bool newline) {
     for (int i = 0; i < arg_count; i++) {
         wi_value_print(state, state->ffi_stack[i + 1]);
 
@@ -26,17 +26,17 @@ _print(struct wi_state* state, int arg_count, bool newline) {
 }
 
 static void
-_base_print(struct wi_state* state, int arg_count) {
+_base_print(struct wi_state* state, uint8_t arg_count) {
     _print(state, arg_count, false);
 }
 
 static void
-_base_puts(struct wi_state* state, int arg_count) {
+_base_puts(struct wi_state* state, uint8_t arg_count) {
     _print(state, arg_count, true);
 }
 
 static void
-_base_input(struct wi_state* state, int arg_count) {
+_base_input(struct wi_state* state, uint8_t arg_count) {
     const char* prompt = "";
 
     if (arg_count == 1) {
@@ -66,26 +66,26 @@ _base_input(struct wi_state* state, int arg_count) {
 }
 
 static void
-_base_is_main(struct wi_state* state, int arg_count) {
+_base_is_main(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     struct wi_call_frame* frame = wi_state_frame(state);
     wi_push_bool(state, !frame->closure->required);
 }
 
 static void
-_base_exit(struct wi_state* state, int arg_count) {
+_base_exit(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     wi_state_abort(state);
 }
 
 static void
-_base_error(struct wi_state* state, int arg_count) {
+_base_error(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     wi_state_error(state, "%s", wi_arg_string(state, 1, NULL, NULL));
 }
 
 static void
-_base_assert(struct wi_state* state, int arg_count) {
+_base_assert(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     bool is_falsy = wi_value_is_falsy(state->ffi_stack[1]);
 
@@ -97,7 +97,7 @@ _base_assert(struct wi_state* state, int arg_count) {
 }
 
 static void
-_base_try(struct wi_state* state, int arg_count) {
+_base_try(struct wi_state* state, uint8_t arg_count) {
     struct wi_object*   result      = wi_push_object(state);
     uint8_t             f_arg_count = (uint8_t)(arg_count - 1);
     struct wi_recovery* recovery    = wi_state_push_recovery(state);
@@ -132,7 +132,7 @@ _base_try(struct wi_state* state, int arg_count) {
 }
 
 static void
-_base_type(struct wi_state* state, int arg_count) {
+_base_type(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     wi_push_string(state, wi_value_type(state->ffi_stack[1]));
 }
@@ -143,73 +143,73 @@ _is_type_function(struct wi_state* state, bool (*fn)(wi_value value)) {
 }
 
 static void
-_base_is_real(struct wi_state* state, int arg_count) {
+_base_is_real(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     _is_type_function(state, wi_value_is_real);
 }
 
 static void
-_base_is_null(struct wi_state* state, int arg_count) {
+_base_is_null(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     _is_type_function(state, wi_value_is_null);
 }
 
 static void
-_base_is_bool(struct wi_state* state, int arg_count) {
+_base_is_bool(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     _is_type_function(state, wi_value_is_bool);
 }
 
 static void
-_base_is_string(struct wi_state* state, int arg_count) {
+_base_is_string(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     _is_type_function(state, wi_value_is_string);
 }
 
 static void
-_base_is_array(struct wi_state* state, int arg_count) {
+_base_is_array(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     _is_type_function(state, wi_value_is_array);
 }
 
 static void
-_base_is_map(struct wi_state* state, int arg_count) {
+_base_is_map(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     _is_type_function(state, wi_value_is_map);
 }
 
 static void
-_base_is_foreign(struct wi_state* state, int arg_count) {
+_base_is_foreign(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     _is_type_function(state, wi_value_is_foreign);
 }
 
 static void
-_base_is_function(struct wi_state* state, int arg_count) {
+_base_is_function(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     _is_type_function(state, wi_value_is_closure);
 }
 
 static void
-_base_is_object(struct wi_state* state, int arg_count) {
+_base_is_object(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     _is_type_function(state, wi_value_is_object);
 }
 
 static void
-_base_is_userdata(struct wi_state* state, int arg_count) {
+_base_is_userdata(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     _is_type_function(state, wi_value_is_userdata);
 }
 
 static void
-_base_is_falsy(struct wi_state* state, int arg_count) {
+_base_is_falsy(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     _is_type_function(state, wi_value_is_falsy);
 }
 
 static void
-_base_to_real(struct wi_state* state, int arg_count) {
+_base_to_real(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     wi_value value = state->ffi_stack[1];
     wi_value result;
@@ -238,13 +238,13 @@ _base_to_real(struct wi_state* state, int arg_count) {
 }
 
 static void
-_base_to_bool(struct wi_state* state, int arg_count) {
+_base_to_bool(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     wi_push_bool(state, !wi_value_is_falsy(state->ffi_stack[1]));
 }
 
 static void
-_base_to_string(struct wi_state* state, int arg_count) {
+_base_to_string(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
 
     if (wi_arg_is_string(state, 1)) {
@@ -273,7 +273,7 @@ _check_arg1_object(struct wi_state* state) {
 }
 
 static void
-_base_has_field(struct wi_state* state, int arg_count) {
+_base_has_field(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     struct wi_object* object = _check_arg1_object(state);
     wi_arg_string(state, 2, NULL, NULL);
@@ -281,7 +281,7 @@ _base_has_field(struct wi_state* state, int arg_count) {
 }
 
 static void
-_base_fields(struct wi_state* state, int arg_count) {
+_base_fields(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     struct wi_object* object = _check_arg1_object(state);
     struct wi_map*    fields = wi_new_map(state->gc);
@@ -350,7 +350,7 @@ _equals(wi_value a, wi_value b) {
 }
 
 static void
-_base_equals(struct wi_state* state, int arg_count) {
+_base_equals(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     wi_push_bool(state, _equals(state->ffi_stack[1], state->ffi_stack[2]));
 }

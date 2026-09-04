@@ -4,7 +4,7 @@
 #include "../core/wi_state.h"
 
 static struct wi_array*
-_check_arg_array(struct wi_state* state, int arg) {
+_check_arg_array(struct wi_state* state, uint8_t arg) {
     if (!wi_value_is_array(state->ffi_stack[arg])) {
         wi_state_error(state, "bad argument %i - expected a value of type array but got %s", arg,
                        wi_value_type(state->ffi_stack[arg]));
@@ -19,7 +19,7 @@ _check_arg1_array(struct wi_state* state) {
 }
 
 static void
-_array_copy(struct wi_state* state, int arg_count) {
+_array_copy(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     struct wi_array* array     = _check_arg1_array(state);
     struct wi_array* new_array = wi_new_array(state->gc);
@@ -33,7 +33,7 @@ _array_copy(struct wi_state* state, int arg_count) {
 }
 
 static void
-_array_clear(struct wi_state* state, int arg_count) {
+_array_clear(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     struct wi_array* array = _check_arg1_array(state);
     wi_value_buf_free(&array->items);
@@ -41,21 +41,21 @@ _array_clear(struct wi_state* state, int arg_count) {
 }
 
 static void
-_array_capacity(struct wi_state* state, int arg_count) {
+_array_capacity(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     struct wi_array* array = _check_arg1_array(state);
     wi_push_real(state, array->items.capacity);
 }
 
 static void
-_array_count(struct wi_state* state, int arg_count) {
+_array_count(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     struct wi_array* array = _check_arg1_array(state);
     wi_push_real(state, array->items.count);
 }
 
 static void
-_array_reverse(struct wi_state* state, int arg_count) {
+_array_reverse(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     struct wi_array* array = _check_arg1_array(state);
     wi_state_ppush(state, state->ffi_stack[1]);
@@ -68,7 +68,7 @@ _array_reverse(struct wi_state* state, int arg_count) {
 }
 
 static void
-_array_reversed(struct wi_state* state, int arg_count) {
+_array_reversed(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     struct wi_array* array     = _check_arg1_array(state);
     struct wi_array* new_array = wi_new_array(state->gc);
@@ -85,7 +85,7 @@ _array_reversed(struct wi_state* state, int arg_count) {
 }
 
 static void
-_array_add(struct wi_state* state, int arg_count) {
+_array_add(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     struct wi_array* array = _check_arg1_array(state);
     wi_value_buf_add(&array->items, state->ffi_stack[2]);
@@ -94,7 +94,7 @@ _array_add(struct wi_state* state, int arg_count) {
 }
 
 static void
-_array_has(struct wi_state* state, int arg_count) {
+_array_has(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     struct wi_array* array = _check_arg1_array(state);
     bool             found = false;
@@ -110,7 +110,7 @@ _array_has(struct wi_state* state, int arg_count) {
 }
 
 static void
-_array_index_of(struct wi_state* state, int arg_count) {
+_array_index_of(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     struct wi_array* array = _check_arg1_array(state);
     int              index = -1;
@@ -126,7 +126,7 @@ _array_index_of(struct wi_state* state, int arg_count) {
 }
 
 static void
-_array_remove(struct wi_state* state, int arg_count) {
+_array_remove(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     struct wi_array* array = _check_arg1_array(state);
     bool             found = false;
@@ -149,7 +149,7 @@ _array_remove(struct wi_state* state, int arg_count) {
 }
 
 static void
-_array_remove_at(struct wi_state* state, int arg_count) {
+_array_remove_at(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     struct wi_array* array = _check_arg1_array(state);
     int              index = (int)wi_arg_real(state, 2);
@@ -169,7 +169,7 @@ _array_remove_at(struct wi_state* state, int arg_count) {
 }
 
 static void
-_array_pop(struct wi_state* state, int arg_count) {
+_array_pop(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     struct wi_array* array = _check_arg1_array(state);
 
@@ -182,7 +182,7 @@ _array_pop(struct wi_state* state, int arg_count) {
 }
 
 static void
-_array_concat(struct wi_state* state, int arg_count) {
+_array_concat(struct wi_state* state, uint8_t arg_count) {
     struct wi_array* result = wi_new_array(state->gc);
     wi_state_ppush(state, WI_MAKE_BOX_VALUE(result));
 
@@ -201,7 +201,7 @@ _array_concat(struct wi_state* state, int arg_count) {
 }
 
 static void
-_array_slice(struct wi_state* state, int arg_count) {
+_array_slice(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     struct wi_array* array = _check_arg1_array(state);
     int              start = (int)wi_arg_real(state, 2);
@@ -221,7 +221,7 @@ _array_slice(struct wi_state* state, int arg_count) {
 }
 
 static void
-_array_each(struct wi_state* state, int arg_count) {
+_array_each(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     struct wi_array* array = _check_arg1_array(state);
     wi_state_ppush(state, WI_MAKE_BOX_VALUE(array));
@@ -234,7 +234,7 @@ _array_each(struct wi_state* state, int arg_count) {
 }
 
 static void
-_array_select(struct wi_state* state, int arg_count) {
+_array_select(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     struct wi_array* array  = _check_arg1_array(state);
     struct wi_array* result = wi_new_array(state->gc);
@@ -250,7 +250,7 @@ _array_select(struct wi_state* state, int arg_count) {
 }
 
 static void
-_array_where(struct wi_state* state, int arg_count) {
+_array_where(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     struct wi_array* array  = _check_arg1_array(state);
     struct wi_array* result = wi_new_array(state->gc);
@@ -322,7 +322,7 @@ _aqsort(struct wi_state* state, struct wi_array* array, int lo, int hi) {
 }
 
 static void
-_array_sort(struct wi_state* state, int arg_count) {
+_array_sort(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     struct wi_array* array = _check_arg1_array(state);
 

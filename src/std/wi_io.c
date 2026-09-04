@@ -2,6 +2,7 @@
 
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -37,7 +38,7 @@ _file_check_open(struct wi_state* state, struct wi_file* file) {
 }
 
 static void
-_io_open(struct wi_state* state, int arg_count) {
+_io_open(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
 
     char* file_path = wi_arg_string(state, 1, NULL, NULL);
@@ -87,7 +88,7 @@ _io_open(struct wi_state* state, int arg_count) {
 }
 
 static void
-_io_close(struct wi_state* state, int arg_count) {
+_io_close(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     struct wi_file* file = wi_arg_userdata(state, 1, "file");
     _file_close(file);
@@ -95,7 +96,7 @@ _io_close(struct wi_state* state, int arg_count) {
 }
 
 static void
-_io_write(struct wi_state* state, int arg_count) {
+_io_write(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     struct wi_file* file = wi_arg_userdata(state, 1, "file");
     _file_check_open(state, file);
@@ -136,7 +137,7 @@ _io_write(struct wi_state* state, int arg_count) {
 }
 
 static void
-_io_read(struct wi_state* state, int arg_count) {
+_io_read(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     struct wi_file* file = wi_arg_userdata(state, 1, "file");
     _file_check_open(state, file);
