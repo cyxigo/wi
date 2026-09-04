@@ -24,6 +24,35 @@
 #endif
 
 /**
+ * Define a table of foreign (C) functions as globals in one call.
+ * Equivalent to calling `wi_push_foreign` + `wi_def` for each `wi_foreign_entry` in `functions`
+ *
+ * @param state Wi state instance
+ * @param functions A C array of `wi_foreign_entry`
+ */
+#define WI_DEF_FOREIGN_ALL(state, functions)                                 \
+    for (size_t i = 0; i < sizeof(functions) / sizeof(functions[0]); i++) {  \
+        wi_foreign_entry* entry = &functions[i];                             \
+        wi_push_foreign(state, entry->fn, entry->arity, entry->is_variadic); \
+        wi_def(state, entry->name);                                          \
+    }
+
+/**
+ * Set a table of foreign (C) functions as fields on an object in one call.
+ * Equivalent to calling `wi_push_foreign` + `wi_object_set` for each `wi_foreign_entry` in `functions`
+ *
+ * @param state Wi state instance
+ * @param object Target object
+ * @param functions A C array of `wi_foreign_entry`
+ */
+#define WI_OBJECT_SET_FOREIGN_ALL(state, object, functions)                  \
+    for (size_t i = 0; i < sizeof(functions) / sizeof(functions[0]); i++) {  \
+        wi_foreign_entry* entry = &functions[i];                             \
+        wi_push_foreign(state, entry->fn, entry->arity, entry->is_variadic); \
+        wi_object_set(state, object, entry->name);                           \
+    }
+
+/**
  * Wi's number type
  */
 typedef double wi_real;
@@ -534,34 +563,5 @@ wi_arg_userdata(wi_state* state, int arg, const char* name);
  */
 WI_API void
 wi_object_set(wi_state* state, wi_object* object, const char* name);
-
-/**
- * Define a table of foreign (C) functions as globals in one call.
- * Equivalent to calling `wi_push_foreign` + `wi_def` for each `wi_foreign_entry` in `functions`
- *
- * @param state Wi state instance
- * @param functions A C array of `wi_foreign_entry`
- */
-#define WI_DEF_FOREIGN_ALL(state, functions)                                 \
-    for (size_t i = 0; i < sizeof(functions) / sizeof(functions[0]); i++) {  \
-        wi_foreign_entry* entry = &functions[i];                             \
-        wi_push_foreign(state, entry->fn, entry->arity, entry->is_variadic); \
-        wi_def(state, entry->name);                                          \
-    }
-
-/**
- * Set a table of foreign (C) functions as fields on an object in one call.
- * Equivalent to calling `wi_push_foreign` + `wi_object_set` for each `wi_foreign_entry` in `functions`
- *
- * @param state Wi state instance
- * @param object Target object
- * @param functions A C array of `wi_foreign_entry`
- */
-#define WI_OBJECT_SET_FOREIGN_ALL(state, object, functions)                  \
-    for (size_t i = 0; i < sizeof(functions) / sizeof(functions[0]); i++) {  \
-        wi_foreign_entry* entry = &functions[i];                             \
-        wi_push_foreign(state, entry->fn, entry->arity, entry->is_variadic); \
-        wi_object_set(state, object, entry->name);                           \
-    }
 
 #endif
