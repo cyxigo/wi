@@ -158,16 +158,7 @@ wi_new_state(wi_conf* conf) {
     wi_table_init(&state->stm_array, state->gc);
     wi_table_init(&state->stm_map, state->gc);
 
-    state->ok_str    = NULL;
-    state->value_str = NULL;
-    state->error_str = NULL;
-
-    state->ok_str    = wi_copy_cstring(state->gc, "ok", 2);
-    state->value_str = wi_copy_cstring(state->gc, "value", 5);
-    state->error_str = wi_copy_cstring(state->gc, "error", 5);
-
     srand((unsigned)time(NULL));
-
     return state;
 }
 

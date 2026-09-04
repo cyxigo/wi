@@ -56,6 +56,7 @@
  * Wi's number type
  */
 typedef double wi_real;
+
 /**
  * Opaque Wi object handle
  */

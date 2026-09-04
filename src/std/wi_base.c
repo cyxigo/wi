@@ -98,10 +98,7 @@ _base_assert(struct wi_state* state, int arg_count) {
 
 static void
 _base_try(struct wi_state* state, int arg_count) {
-    struct wi_object* result = wi_new_object(state->gc);
-    wi_state_ppush(state, WI_MAKE_BOX_VALUE(result));
-    wi_table_reserve(&result->fields, 3);
-
+    struct wi_object*   result      = wi_push_object(state);
     uint8_t             f_arg_count = (uint8_t)(arg_count - 1);
     struct wi_recovery* recovery    = wi_state_push_recovery(state);
 
@@ -113,15 +110,22 @@ _base_try(struct wi_state* state, int arg_count) {
         }
 
         wi_call(state, f_arg_count, false);
-        wi_value call_value = wi_state_pop(state);
+        wi_object_set(state, result, "value");
 
-        wi_table_set(&result->fields, WI_MAKE_BOX_VALUE(state->ok_str), wi_make_true_value());
-        wi_table_set(&result->fields, WI_MAKE_BOX_VALUE(state->value_str), call_value);
-        wi_table_set(&result->fields, WI_MAKE_BOX_VALUE(state->error_str), wi_make_null_value());
+        wi_push_bool(state, true);
+        wi_object_set(state, result, "ok");
+
+        wi_push_null(state);
+        wi_object_set(state, result, "error");
     } else {
-        wi_table_set(&result->fields, WI_MAKE_BOX_VALUE(state->ok_str), wi_make_false_value());
-        wi_table_set(&result->fields, WI_MAKE_BOX_VALUE(state->value_str), wi_make_null_value());
-        wi_table_set(&result->fields, WI_MAKE_BOX_VALUE(state->error_str), WI_MAKE_BOX_VALUE(recovery->error));
+        wi_push_null(state);
+        wi_object_set(state, result, "value");
+
+        wi_push_bool(state, false);
+        wi_object_set(state, result, "ok");
+
+        wi_state_ppush(state, WI_MAKE_BOX_VALUE(recovery->error));
+        wi_object_set(state, result, "error");
     }
 
     wi_state_pop_recovery(state);

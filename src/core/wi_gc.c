@@ -287,10 +287,6 @@ _gc_mark_roots(struct wi_gc* gc) {
     for (struct wi_upvalue* upvalue = state->open_upvalues; upvalue; upvalue = upvalue->next) {
         _GC_MARK_BOX(gc, upvalue);
     }
-
-    _GC_MARK_BOX(gc, state->ok_str);
-    _GC_MARK_BOX(gc, state->value_str);
-    _GC_MARK_BOX(gc, state->error_str);
 }
 
 static void
