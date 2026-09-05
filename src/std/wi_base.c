@@ -262,20 +262,10 @@ _base_to_string(struct wi_state* state, uint8_t arg_count) {
     wi_state_ppush(state, WI_MAKE_BOX_VALUE(box));
 }
 
-static struct wi_object*
-_check_arg1_object(struct wi_state* state) {
-    if (!wi_value_is_object(state->ffi_stack[1])) {
-        wi_state_error(state, "bad argument 1 - expected a value of type object but got %s",
-                       wi_value_type(state->ffi_stack[1]));
-    }
-
-    return wi_value_as_object(state->ffi_stack[1]);
-}
-
 static void
 _base_has_field(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
-    struct wi_object* object = _check_arg1_object(state);
+    struct wi_object* object = wi_arg_object(state, 1);
     wi_arg_string(state, 2, NULL, NULL);
     wi_push_bool(state, wi_table_get(&object->fields, state->ffi_stack[2], NULL));
 }
@@ -283,7 +273,7 @@ _base_has_field(struct wi_state* state, uint8_t arg_count) {
 static void
 _base_fields(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
-    struct wi_object* object = _check_arg1_object(state);
+    struct wi_object* object = wi_arg_object(state, 1);
     struct wi_map*    fields = wi_new_map(state->gc);
     wi_state_ppush(state, WI_MAKE_BOX_VALUE(fields));
     wi_table_copy(&object->fields, &fields->items);
