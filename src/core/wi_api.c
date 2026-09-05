@@ -132,6 +132,11 @@ wi_is_string(struct wi_state* state) {
 }
 
 bool
+wi_is_array(struct wi_state* state) {
+    return wi_value_is_array(wi_state_top(state));
+}
+
+bool
 wi_is_object(struct wi_state* state) {
     return wi_value_is_object(wi_state_top(state));
 }
@@ -165,6 +170,13 @@ void
 wi_push_string(struct wi_state* state, const char* string) {
     struct wi_string* box = wi_make_string(state->gc, string);
     wi_state_ppush(state, WI_MAKE_BOX_VALUE(box));
+}
+
+struct wi_array*
+wi_push_array(struct wi_state* state) {
+    struct wi_array* box = wi_new_array(state->gc);
+    wi_state_ppush(state, WI_MAKE_BOX_VALUE(box));
+    return box;
 }
 
 void
@@ -247,6 +259,17 @@ wi_pop_string(struct wi_state* state, int* count, int* len) {
     return string->buf;
 }
 
+struct wi_array*
+wi_pop_array(struct wi_state* state) {
+    wi_value value = wi_state_pop(state);
+
+    if (WI_UNLIKELY(!wi_value_is_array(value))) {
+        wi_state_error(state, "expected a value of type array but got %s", wi_value_type(value));
+    }
+
+    return wi_value_as_array(value);
+}
+
 struct wi_object*
 wi_pop_object(struct wi_state* state) {
     wi_value value = wi_state_pop(state);
@@ -285,6 +308,11 @@ wi_arg_is_bool(struct wi_state* state, uint8_t arg) {
 bool
 wi_arg_is_string(struct wi_state* state, uint8_t arg) {
     return wi_value_is_string(state->ffi_stack[arg]);
+}
+
+bool
+wi_arg_is_array(struct wi_state* state, uint8_t arg) {
+    return wi_value_is_array(state->ffi_stack[arg]);
 }
 
 bool
@@ -351,6 +379,16 @@ wi_arg_string(struct wi_state* state, uint8_t arg, int* count, int* len) {
     return string->buf;
 }
 
+struct wi_array*
+wi_arg_array(struct wi_state* state, uint8_t arg) {
+    if (WI_UNLIKELY(!wi_arg_is_array(state, arg))) {
+        wi_state_error(state, "bad argument %i - expected a value of type array but got %s", arg,
+                       wi_value_type(state->ffi_stack[arg]));
+    }
+
+    return wi_value_as_array(state->ffi_stack[arg]);
+}
+
 void
 wi_arg_function(struct wi_state* state, uint8_t arg, uint8_t arity) {
     wi_value function = state->ffi_stack[arg];
@@ -393,6 +431,42 @@ wi_arg_userdata(struct wi_state* state, uint8_t arg, const char* name) {
     }
 
     return wi_value_as_userdata(value)->data;
+}
+
+int
+wi_array_count(struct wi_array* array) {
+    return array->items.count;
+}
+
+void
+wi_array_add(struct wi_state* state, struct wi_array* array) {
+    wi_value value = wi_state_top(state);
+    wi_value_buf_add(&array->items, value);
+    WI_GC_WRITE_BARRIER(state->gc, array, value);
+    wi_state_drop(state);
+}
+
+bool
+wi_array_set(struct wi_state* state, struct wi_array* array, int index) {
+    if (index < 0 || index >= array->items.count) {
+        return false;
+    }
+
+    wi_value value           = wi_state_top(state);
+    array->items.data[index] = value;
+    WI_GC_WRITE_BARRIER(state->gc, array, value);
+    wi_state_drop(state);
+    return true;
+}
+
+bool
+wi_array_get(struct wi_state* state, struct wi_array* array, int index) {
+    if (index < 0 || index >= array->items.count) {
+        return false;
+    }
+
+    wi_state_ppush(state, array->items.data[index]);
+    return true;
 }
 
 void

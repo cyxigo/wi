@@ -58,6 +58,11 @@
 typedef double wi_real;
 
 /**
+ * Opaque Wi array handle
+ */
+typedef struct wi_array wi_array;
+
+/**
  * Opaque Wi object handle
  */
 typedef struct wi_object wi_object;
@@ -311,6 +316,14 @@ WI_API bool
 wi_is_string(wi_state* state);
 
 /**
+ * Check if the value at the stack top is an array
+ *
+ * @param state Wi state instance
+ */
+WI_API bool
+wi_is_array(wi_state* state);
+
+/**
  * Check if the value at the stack top is an object
  *
  * @param state Wi state instance
@@ -361,6 +374,15 @@ wi_push_bool(wi_state* state, bool boolean);
  */
 WI_API void
 wi_push_string(wi_state* state, const char* string);
+
+/**
+ * Push a new, empty array onto the stack
+ *
+ * @param state Wi state instance
+ * @return Pointer to the created array
+ */
+WI_API wi_array*
+wi_push_array(wi_state* state);
 
 /**
  * Push a foreign (C) function onto the stack
@@ -436,6 +458,14 @@ WI_API char*
 wi_pop_string(wi_state* state, int* count, int* len);
 
 /**
+ * Pop an array from the stack with type-checking
+ *
+ * @param state Wi state instance
+ */
+WI_API wi_array*
+wi_pop_array(wi_state* state);
+
+/**
  * Pop an object from the stack with type-checking
  *
  * @param state Wi state instance
@@ -487,6 +517,15 @@ wi_arg_is_bool(wi_state* state, uint8_t arg);
  */
 WI_API bool
 wi_arg_is_string(wi_state* state, uint8_t arg);
+
+/**
+ * Check if argument is an array
+ *
+ * @param state Wi state instance
+ * @param arg Argument index (1-[arg_count])
+ */
+WI_API bool
+wi_arg_is_array(wi_state* state, uint8_t arg);
 
 /**
  * Check if argument is a function value
@@ -558,6 +597,16 @@ WI_API char*
 wi_arg_string(wi_state* state, uint8_t arg, int* count, int* len);
 
 /**
+ * Get an array argument with type-checking
+ *
+ * @param state Wi state instance
+ * @param arg Argument index (1-[arg_count])
+ * @return Array argument
+ */
+WI_API wi_array*
+wi_arg_array(wi_state* state, uint8_t arg);
+
+/**
  * Check if argument is a function, check it's arity, and push it onto the stack
  *
  * @param state Wi state instance
@@ -587,6 +636,45 @@ wi_arg_object(wi_state* state, uint8_t arg);
  */
 WI_API void*
 wi_arg_userdata(wi_state* state, uint8_t arg, const char* name);
+
+/**
+ * Get the number of items in an array
+ *
+ * @param array Target array
+ */
+WI_API int
+wi_array_count(wi_array* array);
+
+/**
+ * Append the value at the stack top to an array, popping it
+ *
+ * @param state Wi state instance
+ * @param array Target array
+ */
+WI_API void
+wi_array_add(wi_state* state, wi_array* array);
+
+/**
+ * Set the value at the stack top as an array item at index, popping it.
+ * Returns false if out of range
+ *
+ * @param state Wi state instance
+ * @param array Target array
+ * @param index Item index
+ */
+WI_API bool
+wi_array_set(wi_state* state, wi_array* array, int index);
+
+/**
+ * Get an array item by index and push it onto the stack.
+ * Pushes nothing and returns false if the index is out of range
+ *
+ * @param state Wi state instance
+ * @param array Target array
+ * @param index Item index
+ */
+WI_API bool
+wi_array_get(wi_state* state, wi_array* array, int index);
 
 /**
  * Set the value at the stack top as a field on an object, popping it.

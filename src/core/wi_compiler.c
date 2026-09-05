@@ -770,8 +770,8 @@ _compiler_array_expr(struct wi_compiler* compiler, bool can_assign) {
             _compiler_expr(compiler);
 
             if (count == UINT16_MAX) {
-                wi_parser_error_at_curr(compiler->parser,
-                                        "cannot have more than %i elements in an array expression", UINT16_MAX);
+                wi_parser_error_at_curr(compiler->parser, "cannot have more than %i items in an array expression",
+                                        UINT16_MAX);
             }
 
             count++;
