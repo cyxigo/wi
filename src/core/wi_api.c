@@ -137,6 +137,11 @@ wi_is_array(struct wi_state* state) {
 }
 
 bool
+wi_is_map(struct wi_state* state) {
+    return wi_value_is_map(wi_state_top(state));
+}
+
+bool
 wi_is_object(struct wi_state* state) {
     return wi_value_is_object(wi_state_top(state));
 }
@@ -175,6 +180,13 @@ wi_push_string(struct wi_state* state, const char* string) {
 struct wi_array*
 wi_push_array(struct wi_state* state) {
     struct wi_array* box = wi_new_array(state->gc);
+    wi_state_ppush(state, WI_MAKE_BOX_VALUE(box));
+    return box;
+}
+
+struct wi_map*
+wi_push_map(struct wi_state* state) {
+    struct wi_map* box = wi_new_map(state->gc);
     wi_state_ppush(state, WI_MAKE_BOX_VALUE(box));
     return box;
 }
@@ -270,6 +282,17 @@ wi_pop_array(struct wi_state* state) {
     return wi_value_as_array(value);
 }
 
+struct wi_map*
+wi_pop_map(struct wi_state* state) {
+    wi_value value = wi_state_pop(state);
+
+    if (WI_UNLIKELY(!wi_value_is_map(value))) {
+        wi_state_error(state, "expected a value of type map but got %s", wi_value_type(value));
+    }
+
+    return wi_value_as_map(value);
+}
+
 struct wi_object*
 wi_pop_object(struct wi_state* state) {
     wi_value value = wi_state_pop(state);
@@ -313,6 +336,11 @@ wi_arg_is_string(struct wi_state* state, uint8_t arg) {
 bool
 wi_arg_is_array(struct wi_state* state, uint8_t arg) {
     return wi_value_is_array(state->ffi_stack[arg]);
+}
+
+bool
+wi_arg_is_map(struct wi_state* state, uint8_t arg) {
+    return wi_value_is_map(state->ffi_stack[arg]);
 }
 
 bool
@@ -387,6 +415,16 @@ wi_arg_array(struct wi_state* state, uint8_t arg) {
     }
 
     return wi_value_as_array(state->ffi_stack[arg]);
+}
+
+struct wi_map*
+wi_arg_map(struct wi_state* state, uint8_t arg) {
+    if (WI_UNLIKELY(!wi_arg_is_map(state, arg))) {
+        wi_state_error(state, "bad argument %i - expected a value of type map but got %s", arg,
+                       wi_value_type(state->ffi_stack[arg]));
+    }
+
+    return wi_value_as_map(state->ffi_stack[arg]);
 }
 
 void
@@ -466,6 +504,38 @@ wi_array_get(struct wi_state* state, struct wi_array* array, int index) {
     }
 
     wi_state_ppush(state, array->items.data[index]);
+    return true;
+}
+
+int
+wi_map_count(struct wi_map* map) {
+    return map->items.live_count;
+}
+
+void
+wi_map_set(struct wi_state* state, struct wi_map* map) {
+    wi_value value = wi_state_top(state);
+    wi_value key   = wi_state_peek(state, 1);
+
+    if (wi_table_set(&map->items, key, value)) {
+        WI_GC_WRITE_BARRIER(state->gc, map, key);
+    }
+
+    WI_GC_WRITE_BARRIER(state->gc, map, value);
+    wi_state_drop(state);
+    wi_state_drop(state);
+}
+
+bool
+wi_map_get(struct wi_state* state, struct wi_map* map) {
+    wi_value key = wi_state_pop(state);
+    wi_value value;
+
+    if (!wi_table_get(&map->items, key, &value)) {
+        return false;
+    }
+
+    wi_state_ppush(state, value);
     return true;
 }
 

@@ -63,6 +63,11 @@ typedef double wi_real;
 typedef struct wi_array wi_array;
 
 /**
+ * Opague Wi map handle
+ */
+typedef struct wi_map wi_map;
+
+/**
  * Opaque Wi object handle
  */
 typedef struct wi_object wi_object;
@@ -324,6 +329,14 @@ WI_API bool
 wi_is_array(wi_state* state);
 
 /**
+ * Check if the value at the stack top is a map
+ *
+ * @param state Wi state instance
+ */
+WI_API bool
+wi_is_map(wi_state* state);
+
+/**
  * Check if the value at the stack top is an object
  *
  * @param state Wi state instance
@@ -383,6 +396,15 @@ wi_push_string(wi_state* state, const char* string);
  */
 WI_API wi_array*
 wi_push_array(wi_state* state);
+
+/**
+ * Push a new, empty map onto the stack
+ *
+ * @param state Wi state instance
+ * @return Pointer to the created map
+ */
+WI_API wi_map*
+wi_push_map(wi_state* state);
 
 /**
  * Push a foreign (C) function onto the stack
@@ -466,6 +488,14 @@ WI_API wi_array*
 wi_pop_array(wi_state* state);
 
 /**
+ * Pop a map from the stack with type-checking
+ *
+ * @param state Wi state instance
+ */
+WI_API wi_map*
+wi_pop_map(wi_state* state);
+
+/**
  * Pop an object from the stack with type-checking
  *
  * @param state Wi state instance
@@ -526,6 +556,15 @@ wi_arg_is_string(wi_state* state, uint8_t arg);
  */
 WI_API bool
 wi_arg_is_array(wi_state* state, uint8_t arg);
+
+/**
+ * Check if argument is a map
+ *
+ * @param state Wi state instance
+ * @param arg Argument index (1-[arg_count])
+ */
+WI_API bool
+wi_arg_is_map(wi_state* state, uint8_t arg);
 
 /**
  * Check if argument is a function value
@@ -607,6 +646,16 @@ WI_API wi_array*
 wi_arg_array(wi_state* state, uint8_t arg);
 
 /**
+ * Get a map argument with type-checking
+ *
+ * @param state Wi state instance
+ * @param arg Argument index (1-[arg_count])
+ * @return Map argument
+ */
+WI_API wi_map*
+wi_arg_map(wi_state* state, uint8_t arg);
+
+/**
  * Check if argument is a function, check it's arity, and push it onto the stack
  *
  * @param state Wi state instance
@@ -677,8 +726,34 @@ WI_API bool
 wi_array_get(wi_state* state, wi_array* array, int index);
 
 /**
+ * Get the number of entries in a map
+ *
+ * @param map Target map
+ */
+WI_API int
+wi_map_count(wi_map* map);
+
+/**
+ * Set map key to a value, both need to be at the stack top pushed in order key -> value
+ *
+ * @param state Wi state instance
+ * @param map Target map
+ */
+WI_API void
+wi_map_set(wi_state* state, wi_map* map);
+
+/**
+ * Look up map key which is at the stack top.
+ * Pushes nothing and returns false if key is not found
+ *
+ * @param state Wi state instance
+ * @param map Target map
+ */
+WI_API bool
+wi_map_get(wi_state* state, wi_map* map);
+
+/**
  * Set the value at the stack top as a field on an object, popping it.
- * If the field already exists, it is overwritten
  *
  * @param state Wi state instance
  * @param object Target object

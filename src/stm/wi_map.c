@@ -3,25 +3,10 @@
 #include "../../include/wi.h"
 #include "../core/wi_state.h"
 
-static struct wi_map*
-_check_arg_map(struct wi_state* state, uint8_t arg) {
-    if (!wi_value_is_map(state->ffi_stack[arg])) {
-        wi_state_error(state, "bad argument %i - expected a value of type map but got %s", arg,
-                       wi_value_type(state->ffi_stack[arg]));
-    }
-
-    return wi_value_as_map(state->ffi_stack[arg]);
-}
-
-static struct wi_map*
-_check_arg1_map(struct wi_state* state) {
-    return _check_arg_map(state, 1);
-}
-
 static void
 _map_copy(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
-    struct wi_map* src  = _check_arg1_map(state);
+    struct wi_map* src  = wi_arg_map(state, 1);
     struct wi_map* dest = wi_new_map(state->gc);
     wi_state_ppush(state, WI_MAKE_BOX_VALUE(dest));
     wi_table_copy(&src->items, &dest->items);
@@ -30,7 +15,7 @@ _map_copy(struct wi_state* state, uint8_t arg_count) {
 static void
 _map_clear(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
-    struct wi_map* map = _check_arg1_map(state);
+    struct wi_map* map = wi_arg_map(state, 1);
     wi_table_free(&map->items);
     wi_push_null(state);
 }
@@ -38,21 +23,21 @@ _map_clear(struct wi_state* state, uint8_t arg_count) {
 static void
 _map_capacity(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
-    struct wi_map* map = _check_arg1_map(state);
+    struct wi_map* map = wi_arg_map(state, 1);
     wi_push_real(state, map->items.capacity);
 }
 
 static void
 _map_count(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
-    struct wi_map* map = _check_arg1_map(state);
+    struct wi_map* map = wi_arg_map(state, 1);
     wi_push_real(state, map->items.live_count);
 }
 
 static void
 _map_keys(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
-    struct wi_map*   map    = _check_arg1_map(state);
+    struct wi_map*   map    = wi_arg_map(state, 1);
     struct wi_array* result = wi_new_array(state->gc);
     wi_state_ppush(state, WI_MAKE_BOX_VALUE(result));
     wi_value_buf_reserve(&result->items, map->items.count);
@@ -69,7 +54,7 @@ _map_keys(struct wi_state* state, uint8_t arg_count) {
 static void
 _map_values(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
-    struct wi_map*   map    = _check_arg1_map(state);
+    struct wi_map*   map    = wi_arg_map(state, 1);
     struct wi_array* result = wi_new_array(state->gc);
     wi_state_ppush(state, WI_MAKE_BOX_VALUE(result));
 
@@ -87,7 +72,7 @@ _map_values(struct wi_state* state, uint8_t arg_count) {
 static void
 _map_has(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
-    struct wi_map* map    = _check_arg1_map(state);
+    struct wi_map* map    = wi_arg_map(state, 1);
     bool           exists = wi_table_get(&map->items, state->ffi_stack[2], NULL);
     wi_push_bool(state, exists);
 }
@@ -95,7 +80,7 @@ _map_has(struct wi_state* state, uint8_t arg_count) {
 static void
 _map_get_or_default(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
-    struct wi_map* map = _check_arg1_map(state);
+    struct wi_map* map = wi_arg_map(state, 1);
     wi_value       value;
 
     if (wi_table_get(&map->items, state->ffi_stack[2], &value)) {
@@ -109,14 +94,14 @@ _map_get_or_default(struct wi_state* state, uint8_t arg_count) {
 static void
 _map_remove(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
-    struct wi_map* map = _check_arg1_map(state);
+    struct wi_map* map = wi_arg_map(state, 1);
     wi_push_bool(state, wi_table_delete(&map->items, state->ffi_stack[2]));
 }
 
 static void
 _map_each(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
-    struct wi_map* map       = _check_arg1_map(state);
+    struct wi_map* map       = wi_arg_map(state, 1);
     int            mod_count = map->items.mod_count;
     wi_state_ppush(state, WI_MAKE_BOX_VALUE(map));
 
@@ -141,7 +126,7 @@ _map_each(struct wi_state* state, uint8_t arg_count) {
 static void
 _map_select(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
-    struct wi_map* map       = _check_arg1_map(state);
+    struct wi_map* map       = wi_arg_map(state, 1);
     int            mod_count = map->items.mod_count;
     struct wi_map* result    = wi_new_map(state->gc);
     wi_state_ppush(state, WI_MAKE_BOX_VALUE(result));
@@ -179,7 +164,7 @@ _map_select(struct wi_state* state, uint8_t arg_count) {
 static void
 _map_where(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
-    struct wi_map* map       = _check_arg1_map(state);
+    struct wi_map* map       = wi_arg_map(state, 1);
     int            mod_count = map->items.mod_count;
     struct wi_map* result    = wi_new_map(state->gc);
     wi_state_ppush(state, WI_MAKE_BOX_VALUE(result));
