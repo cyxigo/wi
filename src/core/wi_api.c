@@ -448,14 +448,14 @@ wi_array_add(struct wi_state* state, struct wi_array* array) {
 
 bool
 wi_array_set(struct wi_state* state, struct wi_array* array, int index) {
+    wi_value value = wi_state_pop(state);
+
     if (index < 0 || index >= array->items.count) {
         return false;
     }
 
-    wi_value value           = wi_state_top(state);
     array->items.data[index] = value;
     WI_GC_WRITE_BARRIER(state->gc, array, value);
-    wi_state_drop(state);
     return true;
 }
 
