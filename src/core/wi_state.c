@@ -573,8 +573,9 @@ _state_subscript_get(struct wi_state* state, wi_value target, wi_value index) {
                 why assign to "->buf" you may ask? because wi_take_cstring frees passed to it buffer if it's
                 interned
             */
-            wi_gc_add_bytes(state->gc, strlen(key) + 1);
-            key = wi_take_cstring(state->gc, key, strlen(key))->buf;
+            size_t key_count = strlen(key);
+            wi_gc_add_bytes(state->gc, key_count + 1);
+            key = wi_take_cstring(state->gc, key, (int)key_count)->buf;
         }
 
         wi_state_error(state, "map has no key %s", key);
@@ -888,7 +889,9 @@ _state_require(struct wi_state* state, wi_value path_value) {
         we wrap src in a box in case wi_compile fails and causes oom error
         gc will have a reference to src and will be able to free it
     */
-    struct wi_string* src_box = wi_take_cstring(state->gc, src, (int)strlen(src));
+    size_t src_count = strlen(src);
+    wi_gc_add_bytes(state->gc, src_count + 1);
+    struct wi_string* src_box = wi_take_cstring(state->gc, src, (int)src_count);
     WI_GC_PUSH_ROOT(state->gc, src_box);
 
     /*
