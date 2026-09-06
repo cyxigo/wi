@@ -59,9 +59,7 @@ _base_input(struct wi_state* state, uint8_t arg_count) {
         wi_state_error(state, "invalid utf-8 sequence from input()");
     }
 
-    int line_len = (int)strlen(line);
-    wi_gc_add_bytes(state->gc, line_len + 1);
-    struct wi_string* line_box = wi_take_cstring(state->gc, line, line_len);
+    struct wi_string* line_box = wi_take_calloc_string(state->gc, line, (int)strlen(line));
     wi_state_ppush(state, WI_MAKE_BOX_VALUE(line_box));
 }
 
@@ -258,7 +256,7 @@ _base_to_string(struct wi_state* state, uint8_t arg_count) {
         wi_state_oom(state, "failed to allocate a string (_base_string)");
     }
 
-    struct wi_string* box = wi_take_cstring(state->gc, string, (int)strlen(string));
+    struct wi_string* box = wi_take_calloc_string(state->gc, string, (int)strlen(string));
     wi_state_ppush(state, WI_MAKE_BOX_VALUE(box));
 }
 

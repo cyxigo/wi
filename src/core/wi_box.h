@@ -80,6 +80,8 @@ struct wi_string*
 wi_copy_cstring(struct wi_gc* gc, const char* buf, int count);
 struct wi_string*
 wi_take_cstring(struct wi_gc* gc, char* buf, int count);
+struct wi_string*
+wi_take_calloc_string(struct wi_gc* gc, char* buf, int count);
 
 WI_INLINE struct wi_string*
 wi_make_string(struct wi_gc* gc, const char* string) {

@@ -74,6 +74,13 @@ wi_take_cstring(struct wi_gc* gc, char* buf, int count) {
     return wi_new_string(gc, buf, count, hash);
 }
 
+struct wi_string*
+wi_take_calloc_string(struct wi_gc* gc, char* buf, int count) {
+    gc->bytes_allocated += count;
+    gc->young_bytes += count;
+    return wi_take_cstring(gc, buf, count);
+}
+
 struct wi_array*
 wi_new_array(struct wi_gc* gc) {
     struct wi_array* array = WI_NEW_BOX(gc, struct wi_array, WI_BOX_ARRAY);

@@ -93,18 +93,6 @@ wi_log_gc(struct wi_gc* gc) {
 
 void*
 wi_gc_realloc(struct wi_gc* gc, void* ptr, size_t old_size, size_t new_size);
-
-/*
-    wi_take_cstring assumes buffer came from wi_gc_realloc but that's not always the case
-    it can also be from malloc! and that malloc can be from wi_strdup/wi_vasprintf etc.
-    and so we need to use this function so "how many bytes we allocated" tracking will be correct
-*/
-WI_INLINE void
-wi_gc_add_bytes(struct wi_gc* gc, size_t size) {
-    gc->bytes_allocated += size;
-    gc->young_bytes += size;
-}
-
 void
 wi_gc_remember(struct wi_gc* gc, struct wi_box* parent);
 
