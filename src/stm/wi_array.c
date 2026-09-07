@@ -268,18 +268,22 @@ _aqsort_swap(struct wi_array* array, int i, int j) {
 }
 
 static int
-_aqsort_partition(struct wi_state* state, struct wi_array* array, int lo, int hi) {
+_aqsort_partition(struct wi_state* state, struct wi_array* array, int lo, int hi, int count) {
     int pii = lo + rand() % (hi - lo + 1);
     _aqsort_swap(array, pii, hi);
 
     wi_value pi = array->items.data[hi];
     int      i  = lo - 1;
 
-    for (int j = lo; j < hi && array->items.data; j++) {
+    for (int j = lo; j < hi; j++) {
         wi_arg_function(state, 2, 2);
         wi_state_ppush(state, array->items.data[j]);
         wi_state_ppush(state, pi);
         wi_call(state, 2, false);
+
+        if (WI_UNLIKELY(array->items.count != count)) {
+            wi_state_error(state, "array resized during sort");
+        }
 
         if (!wi_value_is_falsy(wi_state_pop(state))) {
             i++;
@@ -292,15 +296,15 @@ _aqsort_partition(struct wi_state* state, struct wi_array* array, int lo, int hi
 }
 
 static void
-_aqsort(struct wi_state* state, struct wi_array* array, int lo, int hi) {
-    while (lo < hi && array->items.data) { /* loop for tail recursion */
-        int pi = _aqsort_partition(state, array, lo, hi);
+_aqsort(struct wi_state* state, struct wi_array* array, int lo, int hi, int count) {
+    while (lo < hi) { /* loop for tail recursion */
+        int pi = _aqsort_partition(state, array, lo, hi, count);
 
         if (pi - lo < hi - pi) {
-            _aqsort(state, array, lo, pi - 1);
+            _aqsort(state, array, lo, pi - 1, count);
             lo = pi + 1;
         } else {
-            _aqsort(state, array, pi + 1, hi);
+            _aqsort(state, array, pi + 1, hi, count);
             hi = pi - 1;
         }
     }
@@ -312,7 +316,7 @@ _array_sort(struct wi_state* state, uint8_t arg_count) {
     struct wi_array* array = wi_arg_array(state, 1);
 
     if (array->items.count > 1) {
-        _aqsort(state, array, 0, array->items.count - 1);
+        _aqsort(state, array, 0, array->items.count - 1, array->items.count);
     }
 
     wi_state_ppush(state, state->ffi_stack[1]);

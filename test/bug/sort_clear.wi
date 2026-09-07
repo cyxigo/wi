@@ -5,8 +5,7 @@ arr->sort(|a, b| => {
     arr->clear();
     return a < b;
 });
-arr->each(std::print); 
-std::puts("ok");
 
 // Expected:
-// ok
+// runtime error: array resized during sort
+//    --> test/bug/sort_clear.wi:7 in main function
