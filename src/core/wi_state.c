@@ -1380,7 +1380,7 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
 
             state->stack_top = frame->slots;
 
-            if (!frame->closure->module->is_main) {
+            if (frame->closure->prototype->is_main && !frame->closure->module->is_main) {
                 wi_state_push(state, WI_MAKE_BOX_VALUE(frame->closure->module));
             } else {
                 wi_state_push(state, result);
