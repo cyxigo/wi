@@ -167,7 +167,13 @@ _io_read(struct wi_state* state, uint8_t arg_count) {
         wi_state_error(state, "failed to read file %s", file->path);
     }
 
-    content[read]         = '\0';
+    content[read] = '\0';
+
+    if (!wi_utf8_validate(content, (int)read)) {
+        free(content);
+        wi_state_error(state, "invalid utf-8 in file %s", file->path);
+    }
+
     struct wi_string* box = wi_take_calloc_string(state->gc, content, (int)read);
     wi_state_ppush(state, WI_MAKE_BOX_VALUE(box));
 }
