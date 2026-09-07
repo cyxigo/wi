@@ -1,4 +1,4 @@
-start := os.clock();
+start := os::clock();
 arr := [];
 
 for (i := 0; i < 1000000; i = i + 1) {
@@ -11,5 +11,5 @@ for (i := 0; i < #arr; i = i + 1) {
     sum = sum + arr[i];
 }
 
-puts(sum);
-puts("elapsed: ${os.clock() - start}");
+std::puts(sum);
+std::puts("elapsed: ${os::clock() - start}");

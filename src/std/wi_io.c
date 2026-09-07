@@ -174,7 +174,7 @@ _io_read(struct wi_state* state, uint8_t arg_count) {
 
 void
 wi_state_def_std_io(struct wi_state* state) {
-    struct wi_object* object = wi_push_object(state);
+    struct wi_module* module = wi_push_module(state);
     wi_def(state, "io");
     wi_foreign_entry functions[] = {
         {"open",  _io_open,  2, false},
@@ -182,5 +182,6 @@ wi_state_def_std_io(struct wi_state* state) {
         {"write", _io_write, 2, false},
         {"read",  _io_read,  1, false},
     };
-    WI_OBJECT_SET_FOREIGN_ALL(state, object, functions);
+
+    WI_MODULE_EXPORT_FOREIGN_ALL(state, module, functions);
 }

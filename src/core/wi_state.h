@@ -68,9 +68,9 @@ struct wi_state {
     wi_print_fn out;
     wi_print_fn error;
 
-    wi_on_compile_fn     on_compile;
-    wi_load_require_fn   load_require;
-    wi_require_exists_fn require_exists;
+    wi_on_compile_fn    on_compile;
+    wi_import_load_fn   import_load;
+    wi_import_exists_fn import_exists;
 
     int          script_argc;
     const char** script_argv;
@@ -96,15 +96,9 @@ struct wi_state {
     wi_value* stack_top;
     wi_value* ffi_stack;
 
-    struct wi_table globals;
-    /*
-        this table is used by the compiler for two purposes:
-        1. track globals definition and redefinition
-        2. track globals attributes, such as @const
-    */
-    struct wi_table    global_attrs;
+    struct wi_module*  main_module;
     struct wi_table    foreign;
-    struct wi_table    required;
+    struct wi_table    imported;
     struct wi_upvalue* open_upvalues;
 
     /*
@@ -166,8 +160,8 @@ wi_state_was_eof_error(wi_state* state);
 
 void
 wi_state_set_callbacks(struct wi_state* state, wi_print_fn out_fn, wi_print_fn error_fn,
-                       wi_on_compile_fn on_compile_fn, wi_load_require_fn load_require_fn,
-                       wi_require_exists_fn require_exists_fn);
+                       wi_on_compile_fn on_compile_fn, wi_import_load_fn import_load_fn,
+                       wi_import_exists_fn import_exists_fn);
 
 void
 wi_state_set_args(struct wi_state* state, int argc, const char** argv);

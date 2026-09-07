@@ -91,7 +91,7 @@ _state_read_file(struct wi_state* state, const char* file_path) {
 }
 
 static bool
-_state_require_exists(struct wi_state* state, const char* path) {
+_state_import_exists(struct wi_state* state, const char* path) {
     WI_UNUSED(state);
 #ifdef _WIN32
     return _access(path, 0) == 0;
@@ -122,9 +122,9 @@ wi_new_state(wi_conf* conf) {
     state->out           = _state_out;
     state->error         = _state_error;
 
-    state->on_compile     = _state_on_compile;
-    state->load_require   = _state_read_file;
-    state->require_exists = _state_require_exists;
+    state->on_compile    = _state_on_compile;
+    state->import_load   = _state_read_file;
+    state->import_exists = _state_import_exists;
 
     state->script_argc = 0;
     state->script_argv = NULL;
@@ -147,10 +147,12 @@ wi_new_state(wi_conf* conf) {
 
     _state_reset(state);
 
-    wi_table_init(&state->globals, state->gc);
-    wi_table_init(&state->global_attrs, state->gc);
+    state->main_module          = NULL;
+    state->main_module          = wi_new_module(state->gc, "<main>");
+    state->main_module->is_main = true;
+
     wi_table_init(&state->foreign, state->gc);
-    wi_table_init(&state->required, state->gc);
+    wi_table_init(&state->imported, state->gc);
 
     state->libs = NULL;
 
@@ -167,10 +169,8 @@ wi_delete_state(struct wi_state* state) {
     free(state->frames);
     free(state->stack);
 
-    wi_table_free(&state->globals);
-    wi_table_free(&state->global_attrs);
     wi_table_free(&state->foreign);
-    wi_table_free(&state->required);
+    wi_table_free(&state->imported);
 
     wi_table_free(&state->stm_string);
     wi_table_free(&state->stm_array);
@@ -198,8 +198,8 @@ wi_state_was_eof_error(wi_state* state) {
 
 void
 wi_state_set_callbacks(struct wi_state* state, wi_print_fn out_fn, wi_print_fn error_fn,
-                       wi_on_compile_fn on_compile_fn, wi_load_require_fn load_require_fn,
-                       wi_require_exists_fn require_exists_fn) {
+                       wi_on_compile_fn on_compile_fn, wi_import_load_fn import_load_fn,
+                       wi_import_exists_fn import_exists_fn) {
     if (out_fn) {
         state->out = out_fn;
     }
@@ -212,12 +212,12 @@ wi_state_set_callbacks(struct wi_state* state, wi_print_fn out_fn, wi_print_fn e
         state->on_compile = on_compile_fn;
     }
 
-    if (load_require_fn) {
-        state->load_require = load_require_fn;
+    if (import_load_fn) {
+        state->import_load = import_load_fn;
     }
 
-    if (require_exists_fn) {
-        state->require_exists = require_exists_fn;
+    if (import_exists_fn) {
+        state->import_exists = import_exists_fn;
     }
 }
 
@@ -567,7 +567,7 @@ _state_subscript_get(struct wi_state* state, wi_value target, wi_value index) {
             }
 
             /*
-                same trick as in _state_require: use gc boxing for cleanup, since wi_state_error longjmps
+                same trick as in _state_import: use gc boxing for cleanup, since wi_state_error longjmps
                 why assign to "->buf" you may ask? because wi_take_cstring frees passed to it buffer if it's
                 interned
             */
@@ -874,12 +874,12 @@ _state_set_field(struct wi_state* state, wi_value name, wi_value target) {
 }
 
 static struct wi_closure*
-_state_require(struct wi_state* state, wi_value path_value) {
+_state_import(struct wi_state* state, wi_value path_value) {
     char* path = wi_value_as_cstring(path_value);
-    char* src  = state->load_require(state, path);
+    char* src  = state->import_load(state, path);
 
-    struct wi_object* object = wi_new_object(state->gc);
-    WI_GC_PUSH_ROOT(state->gc, object);
+    struct wi_module* module = wi_new_module(state->gc, path);
+    WI_GC_PUSH_ROOT(state->gc, module);
 
     /*
         we wrap src in a box in case wi_compile fails and causes oom error
@@ -888,15 +888,11 @@ _state_require(struct wi_state* state, wi_value path_value) {
     struct wi_string* src_box = wi_take_calloc_string(state->gc, src, (int)strlen(src));
     WI_GC_PUSH_ROOT(state->gc, src_box);
 
-    /*
-        here, object->fields acts as state->global_attrs, it's temporary yes, but we won't need
-        to go back to the required script (i.e. recompile it)
-    */
-    struct wi_prototype* prototype = wi_compile(state, path, src_box->buf, &object->fields);
+    struct wi_prototype* prototype = wi_compile(state, path, src_box->buf, module);
 
     if (!prototype) {
         wi_gc_pop_root(state->gc); /* src_box */
-        wi_gc_pop_root(state->gc); /* object */
+        wi_gc_pop_root(state->gc); /* module */
         wi_state_error(state, "failed to compile script %s", path);
     }
 
@@ -904,15 +900,10 @@ _state_require(struct wi_state* state, wi_value path_value) {
     WI_GC_PUSH_ROOT(state->gc, prototype);
 
     state->on_compile(state);
-
-    wi_table_set(&state->required, path_value, WI_MAKE_BOX_VALUE(object));
-
-    struct wi_closure* closure = wi_new_closure(state->gc, prototype, &object->fields);
-    closure->required          = object;
-    closure->is_main           = true;
+    struct wi_closure* closure = wi_new_closure(state->gc, prototype, module);
 
     wi_gc_pop_root(state->gc); /* prototype */
-    wi_gc_pop_root(state->gc); /* object */
+    wi_gc_pop_root(state->gc); /* module */
 
     return closure;
 }
@@ -1021,24 +1012,22 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
             _DISPATCH();
         }
         _OPCODE_LABEL(DEF_GLOBAL) : {
-            wi_value name = _READ_CONSTANT();
-            wi_table_set(frame->closure->globals, name, wi_state_top(state));
+            wi_value          name   = _READ_CONSTANT();
+            struct wi_module* module = frame->closure->module;
 
-            if (WI_UNLIKELY(frame->closure->required)) {
-                WI_GC_WRITE_BARRIER(state->gc, frame->closure->required, name);
-                WI_GC_WRITE_BARRIER(state->gc, frame->closure->required, wi_state_top(state));
-            }
-
+            wi_table_set(&module->vars, name, wi_state_top(state));
+            WI_GC_WRITE_BARRIER(state->gc, module, name);
+            WI_GC_WRITE_BARRIER(state->gc, module, wi_state_top(state));
             wi_state_drop(state);
+
             _DISPATCH();
         }
         _OPCODE_LABEL(SET_GLOBAL) : {
-            wi_value name = _READ_CONSTANT();
-            wi_table_set(frame->closure->globals, name, wi_state_top(state));
+            wi_value          name   = _READ_CONSTANT();
+            struct wi_module* module = frame->closure->module;
 
-            if (WI_UNLIKELY(frame->closure->required)) {
-                WI_GC_WRITE_BARRIER(state->gc, frame->closure->required, wi_state_top(state));
-            }
+            wi_table_set(&module->vars, name, wi_state_top(state));
+            WI_GC_WRITE_BARRIER(state->gc, module, wi_state_top(state));
 
             _DISPATCH();
         }
@@ -1046,8 +1035,9 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
             wi_value name = _READ_CONSTANT();
             wi_value value;
 
-            wi_table_get(frame->closure->globals, name, &value);
+            wi_table_get(&frame->closure->module->vars, name, &value);
             wi_state_push(state, value);
+
             _DISPATCH();
         }
         _OPCODE_LABEL(STORE_LOCAL) : {
@@ -1306,8 +1296,7 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
         }
         _OPCODE_LABEL(PUSH_CLOSURE) : {
             struct wi_prototype* prototype = wi_value_as_prototype(_READ_CONSTANT());
-            struct wi_closure*   closure   = wi_new_closure(state->gc, prototype, frame->closure->globals);
-            closure->required              = frame->closure->required;
+            struct wi_closure*   closure   = wi_new_closure(state->gc, prototype, frame->closure->module);
             wi_state_push(state, WI_MAKE_BOX_VALUE(closure));
 
             for (int i = 0; i < closure->upvalue_count; i++) {
@@ -1381,7 +1370,6 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
             _state_tail_call(state, frame, wi_value_as_closure(value), arg_count);
             _UPDATE_FRAME();
             _CHECK_INTERRUPT();
-
             _DISPATCH();
         }
     _op_return:
@@ -1392,8 +1380,8 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
 
             state->stack_top = frame->slots;
 
-            if (frame->closure->required && frame->closure->is_main) {
-                wi_state_push(state, WI_MAKE_BOX_VALUE(frame->closure->required));
+            if (!frame->closure->module->is_main) {
+                wi_state_push(state, WI_MAKE_BOX_VALUE(frame->closure->module));
             } else {
                 wi_state_push(state, result);
             }
@@ -1518,21 +1506,46 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
             wi_gc_pop_root(state->gc);
             _DISPATCH();
         }
-        _OPCODE_LABEL(REQUIRE) : {
+        _OPCODE_LABEL(IMPORT) : {
             wi_value path_value = _READ_CONSTANT();
             wi_value loaded;
 
-            if (wi_table_get(&state->required, path_value, &loaded)) {
+            if (wi_table_get(&state->imported, path_value, &loaded)) {
                 wi_state_push(state, loaded);
                 _DISPATCH();
             }
 
             frame->ip                  = ip;
-            struct wi_closure* closure = _state_require(state, path_value);
+            struct wi_closure* closure = _state_import(state, path_value);
+
             wi_state_push(state, WI_MAKE_BOX_VALUE(closure));
-            _state_call(state, closure, 0);
+            wi_state_call(state, WI_MAKE_BOX_VALUE(closure), 0, false);
+            wi_table_set(&state->imported, path_value, wi_state_top(state));
 
             _UPDATE_FRAME();
+            _CHECK_INTERRUPT();
+            _DISPATCH();
+        }
+        _OPCODE_LABEL(GET_MODULE_VAR) : {
+            wi_value name   = _READ_CONSTANT();
+            wi_value target = wi_state_top(state);
+
+            if (WI_UNLIKELY(!wi_value_is_module(target))) {
+                _ERROR("cannot use operator '::' on a value of type %s", wi_value_type(target));
+            }
+
+            struct wi_module* module = wi_value_as_module(target);
+
+            if (WI_UNLIKELY(!wi_table_get(&module->exports, name, NULL))) {
+                _ERROR("variable %s was not exported from module %s", wi_value_as_cstring(name), module->path);
+            }
+
+            wi_value value;
+            wi_table_get(&module->vars, name, &value);
+
+            wi_state_drop(state);
+            wi_state_push(state, value);
+
             _DISPATCH();
         }
     }
@@ -1584,6 +1597,7 @@ wi_state_call(struct wi_state* state, wi_value callable, uint8_t arg_count, bool
     }
 
     if (state->c_depth == WI_CSTACK_MAX) {
+        _state_capture_overflow_ctx(state);
         wi_state_error(state, "C stack overflow (limit is %i)", WI_CSTACK_MAX);
     }
 
@@ -1604,9 +1618,10 @@ wi_state_call(struct wi_state* state, wi_value callable, uint8_t arg_count, bool
 
 enum wi_run_result
 wi_state_run(struct wi_state* state, const char* file_path, const char* src) {
-    state->was_eof_error = false;
-    state->interrupted   = 0;
-    /* set early so we can catch compiler/parser oom */
+    state->was_eof_error     = false;
+    state->interrupted       = 0;
+    state->main_module->path = file_path;
+    /* set early so we can catch compiler/parser oom, etc. */
     int jmp_result = setjmp(state->jmp);
 
     if (jmp_result == WI_RUN_ABORT) {
@@ -1617,7 +1632,7 @@ wi_state_run(struct wi_state* state, const char* file_path, const char* src) {
         return WI_RUN_ERROR;
     }
 
-    struct wi_prototype* prototype = wi_compile(state, file_path, src, &state->global_attrs);
+    struct wi_prototype* prototype = wi_compile(state, file_path, src, state->main_module);
 
     if (!prototype) {
         return WI_RUN_ERROR;
@@ -1626,8 +1641,7 @@ wi_state_run(struct wi_state* state, const char* file_path, const char* src) {
     WI_GC_PUSH_ROOT(state->gc, prototype);
     state->on_compile(state);
 
-    struct wi_closure* closure = wi_new_closure(state->gc, prototype, &state->globals);
-    closure->is_main           = true;
+    struct wi_closure* closure = wi_new_closure(state->gc, prototype, state->main_module);
     wi_gc_pop_root(state->gc);
 
     wi_state_push(state, WI_MAKE_BOX_VALUE(closure));

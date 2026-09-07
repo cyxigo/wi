@@ -115,6 +115,14 @@ _gc_free_box(struct wi_gc* gc, struct wi_box* box) {
             WI_GC_FREE(gc, struct wi_userdata, box);
             break;
         }
+        case WI_BOX_MODULE: {
+            struct wi_module* module = (struct wi_module*)box;
+            wi_table_free(&module->vars);
+            wi_table_free(&module->exports);
+            wi_table_free(&module->compile_vars);
+            WI_GC_FREE(gc, struct wi_module, box);
+            break;
+        }
     }
 }
 
@@ -245,7 +253,6 @@ _gc_mark_compiler(struct wi_gc* gc) {
     struct wi_compiler* compiler = gc->compiler;
 
     while (compiler) {
-        _gc_mark_table(gc, compiler->global_attrs);
         _GC_MARK_BOX(gc, compiler->prototype);
         _GC_MARK_BOX(gc, compiler->constants);
         compiler = compiler->outer;
@@ -276,8 +283,8 @@ _gc_mark_roots(struct wi_gc* gc) {
         _gc_mark_value(gc, *slot);
     }
 
-    _gc_mark_table(gc, &state->globals);
-    _gc_mark_table(gc, &state->required);
+    _GC_MARK_BOX(gc, state->main_module);
+    _gc_mark_table(gc, &state->imported);
     _gc_mark_table(gc, &state->foreign);
 
     _gc_mark_table(gc, &state->stm_string);
@@ -325,7 +332,7 @@ _gc_blacken_box(struct wi_gc* gc, struct wi_box* box) {
                 _GC_MARK_BOX(gc, closure->upvalues[i]);
             }
 
-            _GC_MARK_BOX(gc, closure->required);
+            _GC_MARK_BOX(gc, closure->module);
             break;
         }
         case WI_BOX_UPVALUE: {
@@ -341,6 +348,13 @@ _gc_blacken_box(struct wi_gc* gc, struct wi_box* box) {
         case WI_BOX_USERDATA: {
             struct wi_userdata* userdata = (struct wi_userdata*)box;
             _GC_MARK_BOX(gc, userdata->name);
+            break;
+        }
+        case WI_BOX_MODULE: {
+            struct wi_module* module = (struct wi_module*)box;
+            _gc_mark_table(gc, &module->vars);
+            _gc_mark_table(gc, &module->exports);
+            _gc_mark_table(gc, &module->compile_vars);
             break;
         }
     }

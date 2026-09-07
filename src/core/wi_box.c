@@ -147,7 +147,7 @@ wi_new_foreign(struct wi_gc* gc, wi_foreign_fn fn, uint8_t arity, bool is_variad
 }
 
 struct wi_closure*
-wi_new_closure(struct wi_gc* gc, struct wi_prototype* prototype, struct wi_table* globals) {
+wi_new_closure(struct wi_gc* gc, struct wi_prototype* prototype, struct wi_module* module) {
     struct wi_upvalue** upvalues = WI_GC_ALLOC(gc, struct wi_upvalue*, prototype->upvalue_count);
 
     for (uint8_t i = 0; i < prototype->upvalue_count; i++) {
@@ -159,9 +159,7 @@ wi_new_closure(struct wi_gc* gc, struct wi_prototype* prototype, struct wi_table
     closure->prototype     = prototype;
     closure->upvalues      = upvalues;
     closure->upvalue_count = prototype->upvalue_count;
-    closure->globals       = globals;
-    closure->required      = NULL;
-    closure->is_main       = false;
+    closure->module        = module;
 
     return closure;
 }
@@ -193,4 +191,17 @@ wi_new_userdata(struct wi_gc* gc, struct wi_string* name, void* data, wi_userdat
     userdata->finalizer = finalizer;
 
     return userdata;
+}
+
+struct wi_module*
+wi_new_module(struct wi_gc* gc, const char* path) {
+    struct wi_module* module = WI_NEW_BOX(gc, struct wi_module, WI_BOX_MODULE);
+
+    module->path    = path;
+    module->is_main = false;
+    wi_table_init(&module->vars, gc);
+    wi_table_init(&module->exports, gc);
+    wi_table_init(&module->compile_vars, gc);
+
+    return module;
 }

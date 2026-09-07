@@ -4,9 +4,7 @@
 #include <stdint.h>
 
 #include "../../include/wi_conf.h"
-#include "wi_box.h"
 #include "wi_parser.h"
-#include "wi_table.h"
 
 /*
     a whole variables attributes system just for one silly shallow @const?
@@ -53,7 +51,7 @@ struct wi_compiler {
     struct wi_parser*   parser;
     struct wi_token     var_name;
 
-    struct wi_table*     global_attrs;
+    struct wi_module*    module;
     struct wi_prototype* prototype;
     int                  slot_count;
     struct wi_map*       constants;
@@ -70,13 +68,13 @@ struct wi_compiler {
 
 struct wi_compiler*
 wi_new_compiler(struct wi_compiler* outer, struct wi_state* state, struct wi_parser* parser,
-                struct wi_table* global_attrs);
+                struct wi_module* module);
 void
 wi_delete_compiler(struct wi_compiler* compiler);
 void
 wi_compiler_init(struct wi_compiler* compiler, struct wi_compiler* outer, struct wi_state* state,
-                 struct wi_parser* parser, struct wi_table* globals);
+                 struct wi_parser* parser, struct wi_module* module);
 struct wi_prototype*
-wi_compile(struct wi_state* state, const char* file_path, const char* src, struct wi_table* globals);
+wi_compile(struct wi_state* state, const char* file_path, const char* src, struct wi_module* module);
 
 #endif

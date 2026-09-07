@@ -208,8 +208,10 @@ wi_prototype_disasm_instr(struct wi_state* state, struct wi_prototype* prototype
             return _constant_instr(state, "load_method", "method name", prototype, offset);
         case WI_OP_NEW:
             return _short_instr(state, "new", "object count", prototype, offset);
-        case WI_OP_REQUIRE:
-            return _constant_instr(state, "require", "path", prototype, offset);
+        case WI_OP_IMPORT:
+            return _constant_instr(state, "import", "path", prototype, offset);
+        case WI_OP_GET_MODULE_VAR:
+            return _constant_instr(state, "get_module_var", "module variable name", prototype, offset);
     }
 
     state->out("invalid opcode %hhu\n", opcode);

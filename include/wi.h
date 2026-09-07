@@ -10,17 +10,18 @@
 /**
  * Platform-specific API export macros
  * WI_API: Used to mark all public API functions
- * WI_FOREIGN_INIT: Used to mark foreign library entry point (wi_foreign_init)
+ * WI_MODULE_EXPORT: Used to mark a foreign library's entry point (`wi_module_init`), which **must** return a Wi
+ * module handle
  */
 #ifdef _WIN32
 #define WI_API __declspec(dllexport)
-#define WI_FOREIGN_INIT __declspec(dllexport)
+#define WI_MODULE_EXPORT __declspec(dllexport)
 #elif defined(__clang__) || (defined(__GNUC__) && __GNUC__ > 4)
 #define WI_API __attribute__((visibility("default")))
-#define WI_FOREIGN_INIT __attribute__((visibility("default")))
+#define WI_MODULE_EXPORT __attribute__((visibility("default")))
 #else
 #define WI_API
-#define WI_FOREIGN_INIT
+#define WI_MODULE_EXPORT
 #endif
 
 /**
@@ -53,6 +54,21 @@
     }
 
 /**
+ * Export a table of foreign (C) functions as exported variables in a module in one call.
+ * Equivalent to calling `wi_push_foreign` + `wi_module_set` for each `wi_foreign_entry` in `functions`
+ *
+ * @param state Wi state instance
+ * @param module Target module
+ * @param functions A C array of `wi_foreign_entry`
+ */
+#define WI_MODULE_EXPORT_FOREIGN_ALL(state, module, functions)               \
+    for (size_t i = 0; i < sizeof(functions) / sizeof(functions[0]); i++) {  \
+        wi_foreign_entry* entry = &functions[i];                             \
+        wi_push_foreign(state, entry->fn, entry->arity, entry->is_variadic); \
+        wi_module_set(state, module, entry->name);                           \
+    }
+
+/**
  * Wi's number type
  */
 typedef double wi_real;
@@ -71,6 +87,11 @@ typedef struct wi_map wi_map;
  * Opaque Wi object handle
  */
 typedef struct wi_object wi_object;
+
+/**
+ * Opague Wi module handle
+ */
+typedef struct wi_module wi_module;
 
 /**
  * Opaque Wi state handle
@@ -95,16 +116,17 @@ typedef void (*wi_print_fn)(const char* format, ...);
 typedef void (*wi_on_compile_fn)(wi_state* state);
 
 /**
- * Function called in the `require` statement. Use this in a custom virtual filesystem (your app, for example).
+ * Function called in the `import` statement. Use this in a custom virtual filesystem (your app, for example).
  * Must return Wi code
  */
-typedef char* (*wi_load_require_fn)(wi_state* state, const char* path);
+typedef char* (*wi_import_load_fn)(wi_state* state, const char* path);
 
 /**
- * Function used to check whether a `require`d file exists, called at compile time.
+ * Function used to check whether a `import`ed file exists, called at compile time. If it returns `false`, `import`
+ * falls back to treating the path as a foreign library.
  * Must return whether a file exists
  */
-typedef bool (*wi_require_exists_fn)(wi_state* state, const char* path);
+typedef bool (*wi_import_exists_fn)(wi_state* state, const char* path);
 
 /**
  * Foreign (C) function pointer, called from Wi scripts
@@ -171,12 +193,12 @@ wi_state_was_eof_error(wi_state* state);
  * @param out_fn Standard output callback
  * @param error_fn Error output callback
  * @param on_compile_fn On compile callback
- * @param load_require_fn Load require callback
- * @param require_exists_fn Require existence check callback
+ * @param import_load_fn Load import callback
+ * @param import_exists_fn Import existence check callback
  */
 WI_API void
 wi_state_set_callbacks(wi_state* state, wi_print_fn out_fn, wi_print_fn error_fn, wi_on_compile_fn on_compile_fn,
-                       wi_load_require_fn load_require_fn, wi_require_exists_fn require_exists_fn);
+                       wi_import_load_fn import_load_fn, wi_import_exists_fn import_exists_fn);
 
 /**
  * Set the command line arguments that will be available to Wi scripts via os.args
@@ -354,6 +376,14 @@ WI_API bool
 wi_is_userdata(wi_state* state, const char* name);
 
 /**
+ * Check if the value at the stack top is a module
+ *
+ * @param state Wi state instance
+ */
+WI_API bool
+wi_is_module(wi_state* state);
+
+/**
  * Push a real value onto the stack
  *
  * @param state Wi state instance
@@ -405,6 +435,16 @@ wi_push_array(wi_state* state);
  */
 WI_API wi_map*
 wi_push_map(wi_state* state);
+
+/**
+ * Push a new, empty module onto the stack.
+ * `path` of said module will be just "foreign"
+ *
+ * @param state Wi state instance
+ * @return Pointer to the created module
+ */
+WI_API wi_module*
+wi_push_module(wi_state* state);
 
 /**
  * Push a foreign (C) function onto the stack
@@ -513,6 +553,14 @@ WI_API void*
 wi_pop_userdata(wi_state* state, const char* name);
 
 /**
+ * Pop a module from the stack with type-checking
+ *
+ * @param state Wi state instance
+ */
+WI_API wi_module*
+wi_pop_module(wi_state* state);
+
+/**
  * Check if argument is a real value
  *
  * @param state Wi state instance
@@ -593,6 +641,15 @@ wi_arg_is_object(wi_state* state, uint8_t arg);
  */
 WI_API bool
 wi_arg_is_userdata(wi_state* state, uint8_t arg, const char* name);
+
+/**
+ * Check if argument is a module
+ *
+ * @param state Wi state instance
+ * @param arg Argument index (1-[arg_count])
+ */
+WI_API bool
+wi_arg_is_module(wi_state* state, uint8_t arg);
 
 /**
  * Get a real argument with type-checking
@@ -687,6 +744,16 @@ WI_API void*
 wi_arg_userdata(wi_state* state, uint8_t arg, const char* name);
 
 /**
+ * Get a module argument with type-checking
+ *
+ * @param state Wi state instance
+ * @param arg Argument index (1-[arg_count])
+ * @return Module argument
+ */
+WI_API wi_module*
+wi_arg_module(wi_state* state, uint8_t arg);
+
+/**
  * Get the number of items in an array
  *
  * @param array Target array
@@ -753,7 +820,7 @@ WI_API bool
 wi_map_get(wi_state* state, wi_map* map);
 
 /**
- * Set the value at the stack top as a field on an object, popping it.
+ * Set the value at the stack top as a field on an object, popping it
  *
  * @param state Wi state instance
  * @param object Target object
@@ -772,5 +839,26 @@ wi_object_set(wi_state* state, wi_object* object, const char* name);
  */
 WI_API bool
 wi_object_get(wi_state* state, wi_object* object, const char* name);
+
+/**
+ * Export the value at the stack top as a module variable, popping it
+ *
+ * @param state Wi state instance
+ * @param module Target module
+ * @param name Export name
+ */
+WI_API void
+wi_module_set(wi_state* state, wi_module* module, const char* name);
+
+/**
+ * Get an exported variable from a module and push it onto the stack.
+ * Pushes nothing and returns false if the variable doesn't exist
+ *
+ * @param state Wi state instance
+ * @param module Target module
+ * @param name Export name
+ */
+WI_API bool
+wi_module_get(wi_state* state, wi_module* module, const char* name);
 
 #endif

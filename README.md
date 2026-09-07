@@ -11,7 +11,7 @@
 ```scala
 obj_person := object {
     name: "";
-    greet: |self| => puts("Hello, ${self.name}!");
+    greet: |self| => std::puts("Hello, ${self.name}!");
 };
 
 slava := new obj_person {

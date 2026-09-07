@@ -61,7 +61,7 @@ _find_in_table(struct wi_state* state, struct wi_table* table, const char* name)
 
 bool
 wi_find(struct wi_state* state, const char* name) {
-    return _find_in_table(state, &state->globals, name);
+    return _find_in_table(state, &state->main_module->vars, name);
 }
 
 void
@@ -156,6 +156,11 @@ wi_is_userdata(struct wi_state* state, const char* name) {
     return _is_userdata(wi_state_top(state), name);
 }
 
+bool
+wi_is_module(wi_state* state) {
+    return wi_value_is_module(wi_state_top(state));
+}
+
 void
 wi_push_real(struct wi_state* state, wi_real real) {
     wi_state_ppush(state, wi_make_real_value(real));
@@ -187,6 +192,13 @@ wi_push_array(struct wi_state* state) {
 struct wi_map*
 wi_push_map(struct wi_state* state) {
     struct wi_map* box = wi_new_map(state->gc);
+    wi_state_ppush(state, WI_MAKE_BOX_VALUE(box));
+    return box;
+}
+
+struct wi_module*
+wi_push_module(struct wi_state* state) {
+    struct wi_module* box = wi_new_module(state->gc, "foreign");
     wi_state_ppush(state, WI_MAKE_BOX_VALUE(box));
     return box;
 }
@@ -313,6 +325,17 @@ wi_pop_userdata(struct wi_state* state, const char* name) {
     return wi_value_as_userdata(wi_state_pop(state))->data;
 }
 
+struct wi_module*
+wi_pop_module(struct wi_state* state) {
+    wi_value value = wi_state_pop(state);
+
+    if (WI_UNLIKELY(!wi_value_is_module(value))) {
+        wi_state_error(state, "expected a value of type module but got %s", wi_value_type(value));
+    }
+
+    return wi_value_as_module(value);
+}
+
 bool
 wi_arg_is_real(struct wi_state* state, uint8_t arg) {
     return wi_value_is_real(state->ffi_stack[arg]);
@@ -357,6 +380,11 @@ wi_arg_is_object(struct wi_state* state, uint8_t arg) {
 bool
 wi_arg_is_userdata(struct wi_state* state, uint8_t arg, const char* name) {
     return _is_userdata(state->ffi_stack[arg], name);
+}
+
+bool
+wi_arg_is_module(struct wi_state* state, uint8_t arg) {
+    return wi_value_is_module(state->ffi_stack[arg]);
 }
 
 wi_real
@@ -471,6 +499,18 @@ wi_arg_userdata(struct wi_state* state, uint8_t arg, const char* name) {
     return wi_value_as_userdata(value)->data;
 }
 
+struct wi_module*
+wi_arg_module(struct wi_state* state, uint8_t arg) {
+    wi_value value = state->ffi_stack[arg];
+
+    if (WI_UNLIKELY(!wi_arg_is_module(state, arg))) {
+        wi_state_error(state, "bad argument %i - expected a value of type module but got %s", arg,
+                       wi_value_type(value));
+    }
+
+    return wi_value_as_module(value);
+}
+
 int
 wi_array_count(struct wi_array* array) {
     return array->items.count;
@@ -559,4 +599,28 @@ wi_object_set(struct wi_state* state, struct wi_object* object, const char* name
 bool
 wi_object_get(struct wi_state* state, struct wi_object* object, const char* name) {
     return _find_in_table(state, &object->fields, name);
+}
+
+void
+wi_module_set(struct wi_state* state, struct wi_module* module, const char* name) {
+    wi_value value = wi_state_top(state);
+
+    struct wi_string* name_box   = wi_make_string(state->gc, name);
+    wi_value          name_value = WI_MAKE_BOX_VALUE(name_box);
+    WI_GC_PUSH_ROOT(state->gc, name_box);
+
+    if (wi_table_set(&module->vars, name_value, value)) {
+        WI_GC_WRITE_BARRIER(state->gc, module, name_value);
+    }
+
+    WI_GC_WRITE_BARRIER(state->gc, module, value);
+    wi_table_set(&module->exports, name_value, wi_make_true_value());
+
+    wi_gc_pop_root(state->gc);
+    wi_state_drop(state);
+}
+
+bool
+wi_module_get(struct wi_state* state, struct wi_module* module, const char* name) {
+    return _find_in_table(state, &module->vars, name);
 }

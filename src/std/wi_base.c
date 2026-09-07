@@ -67,7 +67,7 @@ static void
 _base_is_main(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     struct wi_call_frame* frame = wi_state_frame(state);
-    wi_push_bool(state, !frame->closure->required);
+    wi_push_bool(state, frame->closure->module->is_main);
 }
 
 static void
@@ -345,6 +345,8 @@ _base_equals(struct wi_state* state, uint8_t arg_count) {
 
 void
 wi_state_def_std_base(struct wi_state* state) {
+    struct wi_module* module = wi_push_module(state);
+    wi_def(state, "std");
     wi_foreign_entry functions[] = {
         {"print",       _base_print,       0, true },
         {"puts",        _base_puts,        0, true },
@@ -378,5 +380,6 @@ wi_state_def_std_base(struct wi_state* state) {
 
         {"equals",      _base_equals,      2, false},
     };
-    WI_DEF_FOREIGN_ALL(state, functions);
+
+    WI_MODULE_EXPORT_FOREIGN_ALL(state, module, functions);
 }

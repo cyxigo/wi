@@ -6,10 +6,10 @@ fib := |n| => {
     return fib(n - 1) + fib(n - 2);
 };
 
-start := os.clock();
+start := os::clock();
 
 for (i := 0; i < 5; i = i + 1) {
-    puts(fib(28));
+    std::puts(fib(28));
 }
 
-puts("elapsed: ${os.clock() - start}");
+std::puts("elapsed: ${os::clock() - start}");

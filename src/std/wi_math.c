@@ -192,7 +192,7 @@ _math_tan(struct wi_state* state, uint8_t arg_count) {
 
 void
 wi_state_def_std_math(struct wi_state* state) {
-    struct wi_object* object = wi_push_object(state);
+    struct wi_module* module = wi_push_module(state);
     wi_def(state, "math");
     wi_foreign_entry functions[] = {
         {"abs",    _math_abs,    1, false},
@@ -221,14 +221,14 @@ wi_state_def_std_math(struct wi_state* state) {
         {"tan",    _math_tan,    1, false},
     };
 
-    WI_OBJECT_SET_FOREIGN_ALL(state, object, functions);
+    WI_MODULE_EXPORT_FOREIGN_ALL(state, module, functions);
 
     wi_push_real(state, M_E);
-    wi_object_set(state, object, "E");
+    wi_module_set(state, module, "E");
 
     wi_push_real(state, M_PI);
-    wi_object_set(state, object, "PI");
+    wi_module_set(state, module, "PI");
 
     wi_push_real(state, HUGE_VAL);
-    wi_object_set(state, object, "HUGE");
+    wi_module_set(state, module, "HUGE");
 }

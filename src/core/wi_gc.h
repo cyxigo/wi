@@ -5,6 +5,7 @@
 #include <stddef.h>
 
 #include "../../include/wi_conf.h"
+#include "wi_box.h"
 #include "wi_compiler.h"
 #include "wi_table.h"
 

@@ -5,8 +5,8 @@ arr->sort(|a, b| => {
     arr->clear();
     return a < b;
 });
-arr->each(print); 
-puts("ok");
+arr->each(std::print); 
+std::puts("ok");
 
 // Expected:
 // ok

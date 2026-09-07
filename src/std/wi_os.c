@@ -59,7 +59,7 @@ _os_args(struct wi_state* state, uint8_t arg_count) {
 
 void
 wi_state_def_std_os(struct wi_state* state) {
-    struct wi_object* object = wi_push_object(state);
+    struct wi_module* module = wi_push_module(state);
     wi_def(state, "os");
     wi_foreign_entry functions[] = {
         {"clock",   _os_clock,   0, false},
@@ -67,5 +67,6 @@ wi_state_def_std_os(struct wi_state* state) {
         {"get_env", _os_get_env, 1, false},
         {"args",    _os_args,    0, false},
     };
-    WI_OBJECT_SET_FOREIGN_ALL(state, object, functions);
+
+    WI_MODULE_EXPORT_FOREIGN_ALL(state, module, functions);
 }

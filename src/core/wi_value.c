@@ -5,7 +5,6 @@
 #include <string.h>
 
 #include "wi_box.h"
-#include "wi_buf.h"
 #include "wi_gc.h" /* IWYU pragma: keep */
 #include "wi_state.h"
 #include "wi_table.h"
@@ -70,6 +69,9 @@ wi_value_print(struct wi_state* state, wi_value value) {
     } else if (wi_value_is_userdata(value)) {
         struct wi_userdata* userdata = wi_value_as_userdata(value);
         state->out("<%s %p>", userdata->name->buf, (void*)userdata);
+    } else if (wi_value_is_module(value)) {
+        struct wi_module* module = wi_value_as_module(value);
+        state->out("<module %p (%s)>", (void*)module, module->path);
     } else {
         state->out("<unknown>");
     }
@@ -167,6 +169,10 @@ wi_value_type(wi_value value) {
         return wi_value_as_userdata(value)->name->buf;
     }
 
+    if (wi_value_is_module(value)) {
+        return "module";
+    }
+
     return "unknown";
 }
 
@@ -228,6 +234,11 @@ wi_value_to_string(wi_value value) {
     if (wi_value_is_userdata(value)) {
         struct wi_userdata* userdata = wi_value_as_userdata(value);
         return wi_sprintf("<%s %p>", userdata->name->buf, (void*)userdata);
+    }
+
+    if (wi_value_is_module(value)) {
+        struct wi_module* module = wi_value_as_module(value);
+        return wi_sprintf("<module %p (%s)>", (void*)module, module->path);
     }
 
     return wi_strdup("<unknown>");

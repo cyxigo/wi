@@ -32,14 +32,14 @@
 
 struct wi_compiler*
 wi_new_compiler(struct wi_compiler* outer, struct wi_state* state, struct wi_parser* parser,
-                struct wi_table* globals) {
+                struct wi_module* module) {
     struct wi_compiler* compiler = malloc(sizeof(struct wi_compiler));
 
     if (!compiler) {
         return NULL;
     }
 
-    wi_compiler_init(compiler, outer, state, parser, globals);
+    wi_compiler_init(compiler, outer, state, parser, module);
     return compiler;
 }
 
@@ -50,7 +50,7 @@ wi_delete_compiler(struct wi_compiler* compiler) {
 
 void
 wi_compiler_init(struct wi_compiler* compiler, struct wi_compiler* outer, struct wi_state* state,
-                 struct wi_parser* parser, struct wi_table* global_attrs) {
+                 struct wi_parser* parser, struct wi_module* module) {
     compiler->outer        = outer;
     compiler->state        = state;
     compiler->gc           = state->gc;
@@ -58,7 +58,7 @@ wi_compiler_init(struct wi_compiler* compiler, struct wi_compiler* outer, struct
     compiler->parser       = parser;
     compiler->var_name     = WI_BLANK_TOKEN;
 
-    compiler->global_attrs       = global_attrs;
+    compiler->module             = module;
     compiler->prototype          = NULL;
     compiler->constants          = NULL;
     compiler->prototype          = wi_new_prototype(compiler->gc, compiler->parser->lexer->file_path);
@@ -306,7 +306,7 @@ _compiler_def_var(struct wi_compiler* compiler, struct wi_token name, wi_attrs a
         wi_parser_error_at(compiler->parser, name, "cannot redefine a foreign variable %s", name_box->buf);
     }
 
-    if (!wi_table_set(compiler->global_attrs, name_value, wi_make_real_value(attrs))) {
+    if (!wi_table_set(&compiler->module->compile_vars, name_value, wi_make_real_value(attrs))) {
         wi_parser_error_at(compiler->parser, name, "variable %s is already defined", name_box->buf);
     }
 
@@ -470,7 +470,7 @@ _compiler_var(struct wi_compiler* compiler, struct wi_token name, bool can_assig
         wi_value attrs_value;
         wi_value foreign = wi_make_empty_value();
 
-        if (!wi_table_get(compiler->global_attrs, name_value, &attrs_value) &&
+        if (!wi_table_get(&compiler->module->compile_vars, name_value, &attrs_value) &&
             !wi_table_get(&compiler->state->foreign, name_value, &foreign)) {
             wi_parser_error_at(compiler->parser, name, "variable %s is used but not defined", global_name->buf);
         }
@@ -959,7 +959,7 @@ static void
 _compiler_function_expr(struct wi_compiler* outer, bool can_assign) {
     WI_UNUSED(can_assign);
     struct wi_compiler compiler;
-    wi_compiler_init(&compiler, outer, outer->state, outer->parser, outer->global_attrs);
+    wi_compiler_init(&compiler, outer, outer->state, outer->parser, outer->module);
     _compiler_init_local(&compiler);
 
     /* check if previous token is truly a | and not || (pipe pipe, empty function) */
@@ -1036,6 +1036,14 @@ _compiler_function_expr(struct wi_compiler* outer, bool can_assign) {
 }
 
 static void
+_compiler_get_module_var_expr(struct wi_compiler* compiler, bool can_assign) {
+    WI_UNUSED(can_assign);
+    struct wi_token name          = wi_parser_expect(compiler->parser, WI_TOKEN_NAME);
+    uint16_t        name_constant = _compiler_name_constant(compiler, name);
+    _compiler_emit_opcode_short(compiler, WI_OP_GET_MODULE_VAR, name_constant);
+}
+
+static void
 _compiler_object_expr(struct wi_compiler* compiler, bool can_assign) {
     WI_UNUSED(can_assign);
     uint16_t field_count = 0;
@@ -1105,79 +1113,212 @@ _compiler_new_expr(struct wi_compiler* compiler, bool can_assign) {
 }
 
 static void
-_compiler_require_expr(struct wi_compiler* compiler, bool can_assign) {
-    WI_UNUSED(can_assign);
-    struct wi_token   path     = wi_parser_expect(compiler->parser, WI_TOKEN_STRING);
-    struct wi_string* path_box = wi_copy_cstring(compiler->gc, path.start, path.count);
+_compiler_import_foreign(struct wi_compiler* compiler, struct wi_string* lib_path, struct wi_string* script_path) {
+    wi_value path_value = WI_MAKE_BOX_VALUE(lib_path);
+    wi_value cached;
 
-    if (!compiler->state->require_exists(compiler->state, path_box->buf)) {
-        wi_parser_error_at(compiler->parser, path, "file %s does not exist", path_box->buf);
+    if (wi_table_get(&compiler->state->imported, path_value, &cached)) {
+        _compiler_emit_push(compiler, cached);
+        return;
     }
 
-    uint16_t path_constant = _compiler_make_constant(compiler, WI_MAKE_BOX_VALUE(path_box));
-    _compiler_emit_opcode_short(compiler, WI_OP_REQUIRE, path_constant);
+    /* wasm, macos, etc. */
+#if !defined(_WIN32) && !defined(__linux__)
+    wi_parser_error_at_prev(compiler->parser,
+                            "could not import %s\n   no script %s\n   foreign libraries are not supported on "
+                            "this platform",
+                            lib_path->buf, script_path->buf);
+#else
+
+    /* prepare for seeing horrifying things... platform-specific code!!! */
+    struct wi_state* state = compiler->state;
+
+    size_t raw_path_len = (size_t)lib_path->count;
+    char*  raw_path     = lib_path->buf;
+    char   path[4096]; /* i assume 4kb is enough for this mess */
+    size_t path_size = sizeof(path);
+
+    typedef struct wi_module* (*wi_module_init_fn)(struct wi_state* state);
+
+    /* platform-specific code is a legitimate way of torturing */
+#ifdef _WIN32
+    DWORD len = GetModuleFileName(NULL, path, (DWORD)path_size);
+
+    if (len < 1 || len >= path_size) {
+        wi_parser_error_at_prev(compiler->parser, "call to GetModuleFileName failed or path truncated");
+    }
+
+    char* last_slash = strrchr(path, '\\');
+
+    if (last_slash) {
+        *last_slash = '\0';
+    }
+
+    size_t path_len  = strlen(path);
+    size_t remaining = path_size - path_len;
+
+    /* 10: '\lib\' + '.dll' + '\0' */
+    if (remaining < 14 || raw_path_len > (remaining - 14)) {
+        wi_parser_error_at_prev(compiler->parser, "library path too long");
+    }
+
+    snprintf(path + path_len, remaining, "\\lib\\%s.dll", raw_path);
+    HMODULE lib = LoadLibraryA(path);
+
+    if (!lib) {
+        wi_parser_error_at_prev(compiler->parser,
+                                "could not import %s\n   no script %s\n   failed to load library %s (error %lu)",
+                                raw_path, script_path->buf, path, GetLastError());
+    }
+
+    union {
+        FARPROC           proc;
+        wi_module_init_fn fn;
+    } proc_conv;
+
+    proc_conv.proc         = GetProcAddress(lib, "wi_module_init");
+    wi_module_init_fn init = proc_conv.fn;
+#else  /* __linux__ */
+    ssize_t len = readlink("/proc/self/exe", path, path_size - 1);
+
+    if (len == -1) {
+        wi_parser_error_at_prev(compiler->parser, "call to readlink failed");
+    }
+
+    path[len] = '\0';
+
+    char* last_slash = strrchr(path, '/');
+
+    if (last_slash) {
+        *last_slash = '\0';
+    }
+
+    size_t path_len  = strlen(path);
+    size_t remaining = path_size - path_len;
+
+    /* 9: '/lib/' + '.so' + '\0' */
+    if (remaining < 9 || raw_path_len > (remaining - 9)) {
+        wi_parser_error_at_prev(compiler->parser, "library path too long");
+    }
+
+    snprintf(path + path_len, remaining, "/lib/%s.so", raw_path);
+    void* lib = dlopen(path, RTLD_NOW | RTLD_GLOBAL);
+
+    if (!lib) {
+        wi_parser_error_at_prev(compiler->parser,
+                                "could not import %s\n   no script %s\n   failed to load library %s:\n   %s",
+                                raw_path, script_path->buf, path, dlerror());
+    }
+
+    union {
+        void*             ptr;
+        wi_module_init_fn fn;
+    } sym_conv;
+
+    sym_conv.ptr           = dlsym(lib, "wi_module_init");
+    wi_module_init_fn init = sym_conv.fn;
+#endif /* _WIN32 */
+
+    if (!init) {
+        wi_lib_close(lib);
+        wi_parser_error_at_prev(compiler->parser, "library %s did not export wi_module_init", raw_path);
+    }
+
+    if (!wi_state_add_lib(state, lib)) {
+        return;
+    }
+
+    wi_value module = WI_MAKE_BOX_VALUE(init(state));
+    wi_table_set(&state->imported, path_value, module);
+    _compiler_emit_push(compiler, module);
+    wi_state_drop(state);
+
+#endif /* !defined(_WIN32) && !defined(__linux__) */
+}
+
+static void
+_compiler_import_expr(struct wi_compiler* compiler, bool can_assign) {
+    WI_UNUSED(can_assign);
+    struct wi_token   path_token  = wi_parser_expect(compiler->parser, WI_TOKEN_STRING);
+    char*             path        = wi_sprintf("%.*s.wi", path_token.count, path_token.start);
+    struct wi_string* script_path = wi_take_calloc_string(compiler->gc, path, (int)strlen(path));
+    WI_GC_PUSH_ROOT(compiler->gc, script_path);
+
+    if (compiler->state->import_exists(compiler->state, script_path->buf)) {
+        uint16_t path_constant = _compiler_make_constant(compiler, WI_MAKE_BOX_VALUE(script_path));
+        _compiler_emit_opcode_short(compiler, WI_OP_IMPORT, path_constant);
+        wi_gc_pop_root(compiler->gc);
+        return;
+    }
+
+    struct wi_string* lib_path = wi_copy_cstring(compiler->gc, script_path->buf, script_path->count - 3);
+    wi_gc_pop_root(compiler->gc); /* script_path */
+    WI_GC_PUSH_ROOT(compiler->gc, lib_path);
+    _compiler_import_foreign(compiler, lib_path, script_path);
+    wi_gc_pop_root(compiler->gc);
 }
 
 static struct _parse_rule _g_rules[] = {
-    [WI_TOKEN_BLANK]           = {NULL,                    NULL,                     _PREC_NONE      },
-    [WI_TOKEN_NAME]            = {_compiler_var_expr,      NULL,                     _PREC_NONE      },
-    [WI_TOKEN_REAL]            = {_compiler_lit_expr,      NULL,                     _PREC_NONE      },
-    [WI_TOKEN_STRING]          = {_compiler_lit_expr,      NULL,                     _PREC_NONE      },
-    [WI_TOKEN_INTERP]          = {_compiler_interp_expr,   NULL,                     _PREC_NONE      },
-    [WI_TOKEN_OPEN_PAREN]      = {_compiler_group_expr,    _compiler_call_expr,      _PREC_CALL      },
-    [WI_TOKEN_CLOSE_PAREN]     = {NULL,                    NULL,                     _PREC_NONE      },
-    [WI_TOKEN_OPEN_BRACKET]    = {_compiler_array_expr,    _compiler_subscript_expr, _PREC_CALL      },
-    [WI_TOKEN_CLOSE_BRACKET]   = {NULL,                    NULL,                     _PREC_NONE      },
-    [WI_TOKEN_OPEN_BRACE]      = {_compiler_map_expr,      NULL,                     _PREC_NONE      },
-    [WI_TOKEN_CLOSE_BRACE]     = {NULL,                    NULL,                     _PREC_NONE      },
-    [WI_TOKEN_SEMICOLON]       = {NULL,                    NULL,                     _PREC_NONE      },
-    [WI_TOKEN_COMMA]           = {NULL,                    NULL,                     _PREC_NONE      },
-    [WI_TOKEN_DOT]             = {NULL,                    _compiler_field_expr,     _PREC_CALL      },
-    [WI_TOKEN_DOT_DOT_DOT]     = {NULL,                    NULL,                     _PREC_NONE      },
-    [WI_TOKEN_HASH]            = {_compiler_unary_expr,    NULL,                     _PREC_NONE      },
-    [WI_TOKEN_AT]              = {NULL,                    NULL,                     _PREC_NONE      },
-    [WI_TOKEN_ARROW]           = {NULL,                    _compiler_invoke_expr,    _PREC_CALL      },
-    [WI_TOKEN_FAT_ARROW]       = {NULL,                    NULL,                     _PREC_NONE      },
-    [WI_TOKEN_PERCENT]         = {NULL,                    _compiler_binary_expr,    _PREC_FACTOR    },
-    [WI_TOKEN_PLUS]            = {NULL,                    _compiler_binary_expr,    _PREC_TERM      },
-    [WI_TOKEN_MINUS]           = {_compiler_unary_expr,    _compiler_binary_expr,    _PREC_TERM      },
-    [WI_TOKEN_STAR]            = {NULL,                    _compiler_binary_expr,    _PREC_FACTOR    },
-    [WI_TOKEN_STAR_STAR]       = {NULL,                    _compiler_binary_expr,    _PREC_POWER     },
-    [WI_TOKEN_SLASH]           = {NULL,                    _compiler_binary_expr,    _PREC_FACTOR    },
-    [WI_TOKEN_AMPER]           = {NULL,                    _compiler_binary_expr,    _PREC_BIT_AND   },
-    [WI_TOKEN_AMPER_AMPER]     = {NULL,                    _compiler_and_expr,       _PREC_AND       },
-    [WI_TOKEN_PIPE]            = {_compiler_function_expr, _compiler_binary_expr,    _PREC_BIT_OR    },
-    [WI_TOKEN_PIPE_PIPE]       = {_compiler_function_expr, _compiler_or_expr,        _PREC_OR        },
-    [WI_TOKEN_CARET]           = {NULL,                    _compiler_binary_expr,    _PREC_BIT_XOR   },
-    [WI_TOKEN_TILDE]           = {_compiler_unary_expr,    NULL,                     _PREC_NONE      },
-    [WI_TOKEN_EQUAL]           = {NULL,                    NULL,                     _PREC_NONE      },
-    [WI_TOKEN_EQUAL_EQUAL]     = {NULL,                    _compiler_binary_expr,    _PREC_EQUALITY  },
-    [WI_TOKEN_BANG]            = {_compiler_unary_expr,    NULL,                     _PREC_NONE      },
-    [WI_TOKEN_BANG_EQUAL]      = {NULL,                    _compiler_binary_expr,    _PREC_EQUALITY  },
-    [WI_TOKEN_COLON]           = {NULL,                    NULL,                     _PREC_NONE      },
-    [WI_TOKEN_COLON_EQUAL]     = {NULL,                    NULL,                     _PREC_NONE      },
-    [WI_TOKEN_GREATER]         = {NULL,                    _compiler_binary_expr,    _PREC_COMPARISON},
-    [WI_TOKEN_GREATER_GREATER] = {NULL,                    _compiler_binary_expr,    _PREC_SHIFT     },
-    [WI_TOKEN_GREATER_EQUAL]   = {NULL,                    _compiler_binary_expr,    _PREC_COMPARISON},
-    [WI_TOKEN_LESS]            = {NULL,                    _compiler_binary_expr,    _PREC_COMPARISON},
-    [WI_TOKEN_LESS_LESS]       = {NULL,                    _compiler_binary_expr,    _PREC_SHIFT     },
-    [WI_TOKEN_LESS_EQUAL]      = {NULL,                    _compiler_binary_expr,    _PREC_COMPARISON},
-    [WI_TOKEN_IF]              = {NULL,                    NULL,                     _PREC_NONE      },
-    [WI_TOKEN_ELSE]            = {NULL,                    NULL,                     _PREC_NONE      },
-    [WI_TOKEN_NULL]            = {_compiler_lit_expr,      NULL,                     _PREC_NONE      },
-    [WI_TOKEN_TRUE]            = {_compiler_lit_expr,      NULL,                     _PREC_NONE      },
-    [WI_TOKEN_FALSE]           = {_compiler_lit_expr,      NULL,                     _PREC_NONE      },
-    [WI_TOKEN_WHILE]           = {NULL,                    NULL,                     _PREC_NONE      },
-    [WI_TOKEN_FOR]             = {NULL,                    NULL,                     _PREC_NONE      },
-    [WI_TOKEN_BREAK]           = {NULL,                    NULL,                     _PREC_NONE      },
-    [WI_TOKEN_CONTINUE]        = {NULL,                    NULL,                     _PREC_NONE      },
-    [WI_TOKEN_RETURN]          = {NULL,                    NULL,                     _PREC_NONE      },
-    [WI_TOKEN_OBJECT]          = {_compiler_object_expr,   NULL,                     _PREC_NONE      },
-    [WI_TOKEN_NEW]             = {_compiler_new_expr,      NULL,                     _PREC_NONE      },
-    [WI_TOKEN_REQUIRE]         = {_compiler_require_expr,  NULL,                     _PREC_NONE      },
-    [WI_TOKEN_LOAD]            = {NULL,                    NULL,                     _PREC_NONE      },
-    [WI_TOKEN_EOF]             = {NULL,                    NULL,                     _PREC_NONE      },
-    [WI_TOKEN_ERROR]           = {NULL,                    NULL,                     _PREC_NONE      },
+    [WI_TOKEN_BLANK]           = {NULL,                    NULL,                          _PREC_NONE      },
+    [WI_TOKEN_NAME]            = {_compiler_var_expr,      NULL,                          _PREC_NONE      },
+    [WI_TOKEN_REAL]            = {_compiler_lit_expr,      NULL,                          _PREC_NONE      },
+    [WI_TOKEN_STRING]          = {_compiler_lit_expr,      NULL,                          _PREC_NONE      },
+    [WI_TOKEN_INTERP]          = {_compiler_interp_expr,   NULL,                          _PREC_NONE      },
+    [WI_TOKEN_OPEN_PAREN]      = {_compiler_group_expr,    _compiler_call_expr,           _PREC_CALL      },
+    [WI_TOKEN_CLOSE_PAREN]     = {NULL,                    NULL,                          _PREC_NONE      },
+    [WI_TOKEN_OPEN_BRACKET]    = {_compiler_array_expr,    _compiler_subscript_expr,      _PREC_CALL      },
+    [WI_TOKEN_CLOSE_BRACKET]   = {NULL,                    NULL,                          _PREC_NONE      },
+    [WI_TOKEN_OPEN_BRACE]      = {_compiler_map_expr,      NULL,                          _PREC_NONE      },
+    [WI_TOKEN_CLOSE_BRACE]     = {NULL,                    NULL,                          _PREC_NONE      },
+    [WI_TOKEN_SEMICOLON]       = {NULL,                    NULL,                          _PREC_NONE      },
+    [WI_TOKEN_COMMA]           = {NULL,                    NULL,                          _PREC_NONE      },
+    [WI_TOKEN_DOT]             = {NULL,                    _compiler_field_expr,          _PREC_CALL      },
+    [WI_TOKEN_DOT_DOT_DOT]     = {NULL,                    NULL,                          _PREC_NONE      },
+    [WI_TOKEN_HASH]            = {_compiler_unary_expr,    NULL,                          _PREC_NONE      },
+    [WI_TOKEN_AT]              = {NULL,                    NULL,                          _PREC_NONE      },
+    [WI_TOKEN_ARROW]           = {NULL,                    _compiler_invoke_expr,         _PREC_CALL      },
+    [WI_TOKEN_FAT_ARROW]       = {NULL,                    NULL,                          _PREC_NONE      },
+    [WI_TOKEN_PERCENT]         = {NULL,                    _compiler_binary_expr,         _PREC_FACTOR    },
+    [WI_TOKEN_PLUS]            = {NULL,                    _compiler_binary_expr,         _PREC_TERM      },
+    [WI_TOKEN_MINUS]           = {_compiler_unary_expr,    _compiler_binary_expr,         _PREC_TERM      },
+    [WI_TOKEN_STAR]            = {NULL,                    _compiler_binary_expr,         _PREC_FACTOR    },
+    [WI_TOKEN_STAR_STAR]       = {NULL,                    _compiler_binary_expr,         _PREC_POWER     },
+    [WI_TOKEN_SLASH]           = {NULL,                    _compiler_binary_expr,         _PREC_FACTOR    },
+    [WI_TOKEN_AMPER]           = {NULL,                    _compiler_binary_expr,         _PREC_BIT_AND   },
+    [WI_TOKEN_AMPER_AMPER]     = {NULL,                    _compiler_and_expr,            _PREC_AND       },
+    [WI_TOKEN_PIPE]            = {_compiler_function_expr, _compiler_binary_expr,         _PREC_BIT_OR    },
+    [WI_TOKEN_PIPE_PIPE]       = {_compiler_function_expr, _compiler_or_expr,             _PREC_OR        },
+    [WI_TOKEN_CARET]           = {NULL,                    _compiler_binary_expr,         _PREC_BIT_XOR   },
+    [WI_TOKEN_TILDE]           = {_compiler_unary_expr,    NULL,                          _PREC_NONE      },
+    [WI_TOKEN_EQUAL]           = {NULL,                    NULL,                          _PREC_NONE      },
+    [WI_TOKEN_EQUAL_EQUAL]     = {NULL,                    _compiler_binary_expr,         _PREC_EQUALITY  },
+    [WI_TOKEN_BANG]            = {_compiler_unary_expr,    NULL,                          _PREC_NONE      },
+    [WI_TOKEN_BANG_EQUAL]      = {NULL,                    _compiler_binary_expr,         _PREC_EQUALITY  },
+    [WI_TOKEN_COLON]           = {NULL,                    NULL,                          _PREC_NONE      },
+    [WI_TOKEN_COLON_COLON]     = {NULL,                    _compiler_get_module_var_expr, _PREC_CALL      },
+    [WI_TOKEN_COLON_EQUAL]     = {NULL,                    NULL,                          _PREC_NONE      },
+    [WI_TOKEN_GREATER]         = {NULL,                    _compiler_binary_expr,         _PREC_COMPARISON},
+    [WI_TOKEN_GREATER_GREATER] = {NULL,                    _compiler_binary_expr,         _PREC_SHIFT     },
+    [WI_TOKEN_GREATER_EQUAL]   = {NULL,                    _compiler_binary_expr,         _PREC_COMPARISON},
+    [WI_TOKEN_LESS]            = {NULL,                    _compiler_binary_expr,         _PREC_COMPARISON},
+    [WI_TOKEN_LESS_LESS]       = {NULL,                    _compiler_binary_expr,         _PREC_SHIFT     },
+    [WI_TOKEN_LESS_EQUAL]      = {NULL,                    _compiler_binary_expr,         _PREC_COMPARISON},
+    [WI_TOKEN_IF]              = {NULL,                    NULL,                          _PREC_NONE      },
+    [WI_TOKEN_ELSE]            = {NULL,                    NULL,                          _PREC_NONE      },
+    [WI_TOKEN_NULL]            = {_compiler_lit_expr,      NULL,                          _PREC_NONE      },
+    [WI_TOKEN_TRUE]            = {_compiler_lit_expr,      NULL,                          _PREC_NONE      },
+    [WI_TOKEN_FALSE]           = {_compiler_lit_expr,      NULL,                          _PREC_NONE      },
+    [WI_TOKEN_WHILE]           = {NULL,                    NULL,                          _PREC_NONE      },
+    [WI_TOKEN_FOR]             = {NULL,                    NULL,                          _PREC_NONE      },
+    [WI_TOKEN_BREAK]           = {NULL,                    NULL,                          _PREC_NONE      },
+    [WI_TOKEN_CONTINUE]        = {NULL,                    NULL,                          _PREC_NONE      },
+    [WI_TOKEN_RETURN]          = {NULL,                    NULL,                          _PREC_NONE      },
+    [WI_TOKEN_OBJECT]          = {_compiler_object_expr,   NULL,                          _PREC_NONE      },
+    [WI_TOKEN_NEW]             = {_compiler_new_expr,      NULL,                          _PREC_NONE      },
+    [WI_TOKEN_EXPORT]          = {NULL,                    NULL,                          _PREC_NONE      },
+    [WI_TOKEN_IMPORT]          = {_compiler_import_expr,   NULL,                          _PREC_NONE      },
+    [WI_TOKEN_EOF]             = {NULL,                    NULL,                          _PREC_NONE      },
+    [WI_TOKEN_ERROR]           = {NULL,                    NULL,                          _PREC_NONE      },
 };
 
 static struct _parse_rule*
@@ -1370,117 +1511,29 @@ _compiler_return_stmt(struct wi_compiler* compiler) {
 }
 
 static void
-_compiler_load_stmt(struct wi_compiler* compiler) {
+_compiler_export_stmt(struct wi_compiler* compiler) {
     if (!_compiler_is_top_level(compiler)) {
-        wi_parser_error_at_prev(compiler->parser, "can only use 'load' from top-level code");
+        wi_parser_error_at_prev(compiler->parser, "can only use 'export' from top-level code");
     }
 
-    /* wasm, macos, etc. */
-#if !defined(_WIN32) && !defined(__linux__)
-    wi_parser_error_at_prev(compiler->parser, "load statement is not supported on this platform");
-#else
+    wi_parser_expect(compiler->parser, WI_TOKEN_OPEN_BRACE);
 
-    /* prepare for seeing horrifying things... platform-specific code!!! */
-    struct wi_token   path_token = wi_parser_expect(compiler->parser, WI_TOKEN_STRING);
-    struct wi_string* path_box   = wi_copy_cstring(compiler->gc, path_token.start, path_token.count);
+    if (!wi_parser_check(compiler->parser, WI_TOKEN_CLOSE_BRACE)) {
+        do {
+            struct wi_token name       = wi_parser_expect(compiler->parser, WI_TOKEN_NAME);
+            wi_value        name_value = WI_MAKE_BOX_VALUE(wi_copy_cstring(compiler->gc, name.start, name.count));
+
+            if (!wi_table_get(&compiler->module->compile_vars, name_value, NULL)) {
+                wi_parser_error_at(compiler->parser, name, "variable %.*s is used but not defined", name.count,
+                                   name.start);
+            }
+
+            wi_table_set(&compiler->module->exports, name_value, wi_make_true_value());
+        } while (wi_parser_match(compiler->parser, WI_TOKEN_COMMA));
+    }
+
+    wi_parser_expect(compiler->parser, WI_TOKEN_CLOSE_BRACE);
     wi_parser_expect(compiler->parser, WI_TOKEN_SEMICOLON);
-
-    struct wi_state* state = compiler->state;
-
-    size_t raw_path_len = (size_t)path_box->count;
-    char*  raw_path     = path_box->buf;
-    char   path[4096]; /* i assume 4kb is enough for this mess */
-    size_t path_size = sizeof(path);
-
-    typedef void (*foreign_init_fn)(struct wi_state* state);
-
-    /* platform-specific code is a legitimate way of torturing */
-#ifdef _WIN32
-    DWORD len = GetModuleFileName(NULL, path, (DWORD)path_size);
-
-    if (len < 1 || len >= path_size) {
-        wi_parser_error_at_prev(compiler->parser, "call to GetModuleFileName failed or path truncated");
-    }
-
-    char* last_slash = strrchr(path, '\\');
-
-    if (last_slash) {
-        *last_slash = '\0';
-    }
-
-    size_t path_len  = strlen(path);
-    size_t remaining = path_size - path_len;
-
-    /* 14: '\foreign\' + '.dll' + '\0' */
-    if (remaining < 14 || raw_path_len > (remaining - 14)) {
-        wi_parser_error_at_prev(compiler->parser, "foreign path too long");
-    }
-
-    snprintf(path + path_len, remaining, "\\foreign\\%s.dll", raw_path);
-    HMODULE lib = LoadLibraryA(path);
-
-    if (!lib) {
-        wi_parser_error_at_prev(compiler->parser, "failed to load foreign %s\nattempted path: %s\nload error: %lu",
-                                raw_path, path, GetLastError());
-    }
-
-    union {
-        FARPROC         proc;
-        foreign_init_fn fn;
-    } proc_conv;
-
-    proc_conv.proc       = GetProcAddress(lib, "wi_foreign_init");
-    foreign_init_fn init = proc_conv.fn;
-#else  /* __linux__ */
-    ssize_t len = readlink("/proc/self/exe", path, path_size - 1);
-
-    if (len == -1) {
-        wi_parser_error_at_prev(compiler->parser, "call to readlink failed");
-    }
-
-    path[len] = '\0';
-
-    char* last_slash = strrchr(path, '/');
-
-    if (last_slash) {
-        *last_slash = '\0';
-    }
-
-    size_t path_len  = strlen(path);
-    size_t remaining = path_size - path_len;
-
-    /* 13: '/foreign/' + '.so' + '\0' */
-    if (remaining < 13 || raw_path_len > (remaining - 13)) {
-        wi_parser_error_at_prev(compiler->parser, "foreign path too long");
-    }
-
-    snprintf(path + path_len, remaining, "/foreign/%s.so", raw_path);
-    void* lib = dlopen(path, RTLD_NOW | RTLD_GLOBAL);
-
-    if (!lib) {
-        wi_parser_error_at_prev(compiler->parser, "failed to load foreign %s\nattempted path: %s\nload error: %s",
-                                raw_path, path, dlerror());
-    }
-
-    union {
-        void*           ptr;
-        foreign_init_fn fn;
-    } sym_conv;
-
-    sym_conv.ptr         = dlsym(lib, "wi_foreign_init");
-    foreign_init_fn init = sym_conv.fn;
-#endif /* _WIN32 */
-
-    if (!init) {
-        wi_lib_close(lib);
-        wi_parser_error_at_prev(compiler->parser, "foreign %s does not export wi_foreign_init", raw_path);
-    }
-
-    if (wi_state_add_lib(state, lib)) {
-        init(state);
-    }
-
-#endif /* !defined(_WIN32) && !defined(__linux__) */
 }
 
 static void
@@ -1516,9 +1569,9 @@ _compiler_stmt(struct wi_compiler* compiler) {
             wi_parser_advance(compiler->parser);
             _compiler_return_stmt(compiler);
             break;
-        case WI_TOKEN_LOAD:
+        case WI_TOKEN_EXPORT:
             wi_parser_advance(compiler->parser);
-            _compiler_load_stmt(compiler);
+            _compiler_export_stmt(compiler);
             break;
         default:
             _compiler_expr_stmt(compiler);
@@ -1553,7 +1606,7 @@ _compiler_decl(struct wi_compiler* compiler) {
 }
 
 struct wi_prototype*
-wi_compile(struct wi_state* state, const char* file_path, const char* src, struct wi_table* globals) {
+wi_compile(struct wi_state* state, const char* file_path, const char* src, struct wi_module* module) {
     if (!wi_utf8_validate(src, (int)strlen(src))) {
         /* we can't use amazing wi_parser_X functions so... we do it the barbaric way... */
         state->error("compile error: invalid utf-8 sequence\n");
@@ -1570,7 +1623,7 @@ wi_compile(struct wi_state* state, const char* file_path, const char* src, struc
         wi_state_oom(state, "failed to allocate the parser (wi_compile)");
     }
 
-    struct wi_compiler* compiler = wi_new_compiler(NULL, state, parser, globals);
+    struct wi_compiler* compiler = wi_new_compiler(NULL, state, parser, module);
 
     if (!compiler) {
         wi_delete_parser(parser);
@@ -1579,7 +1632,7 @@ wi_compile(struct wi_state* state, const char* file_path, const char* src, struc
 
     /*
         we capture this because of the load statement
-        when a compilation of the script fails, we need to close any open foreign handles by
+        when a compilation of the script fails, we need to close any open lib handles by
         the load statement, but using wi_state_close_libs would close every single handle opened
         even by a different script, so we do this:
 

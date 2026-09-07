@@ -19,6 +19,7 @@ enum wi_box_kind {
     WI_BOX_UPVALUE,
     WI_BOX_OBJECT,
     WI_BOX_USERDATA,
+    WI_BOX_MODULE,
 };
 
 struct wi_box {
@@ -180,15 +181,7 @@ struct wi_closure {
     struct wi_prototype* prototype;
     struct wi_upvalue**  upvalues;
     uint8_t              upvalue_count;
-    struct wi_table*     globals;
-    /*
-        may be confusing so i'll explain:
-        when a script is required, we compile and run it just like the main script -
-        compiling it into a closure *and* setting this field because required scripts
-        turn into objects, so if this field is set - script is not main (was required)
-    */
-    struct wi_object* required;
-    bool              is_main; /* is this closure a main closure? (the one that runs the script) */
+    struct wi_module*    module;
 };
 
 WI_INLINE bool
@@ -202,7 +195,7 @@ wi_value_as_closure(wi_value value) {
 }
 
 struct wi_closure*
-wi_new_closure(struct wi_gc* gc, struct wi_prototype* prototype, struct wi_table* globals);
+wi_new_closure(struct wi_gc* gc, struct wi_prototype* prototype, struct wi_module* module);
 
 struct wi_upvalue {
     struct wi_box      box;
@@ -261,5 +254,27 @@ wi_value_as_userdata(wi_value value) {
 
 struct wi_userdata*
 wi_new_userdata(struct wi_gc* gc, struct wi_string* name, void* data, wi_userdata_finalizer_fn finalizer);
+
+struct wi_module {
+    struct wi_box   box;
+    bool            is_main;
+    const char*     path;
+    struct wi_table vars;         /* globals table used at the runtime */
+    struct wi_table exports;      /* exported globals, used by :: */
+    struct wi_table compile_vars; /* globals table used at compile time */
+};
+
+WI_INLINE bool
+wi_value_is_module(wi_value value) {
+    return wi_value_is_box_kind(value, WI_BOX_MODULE);
+}
+
+WI_INLINE struct wi_module*
+wi_value_as_module(wi_value value) {
+    return (struct wi_module*)wi_value_as_box(value);
+}
+
+struct wi_module*
+wi_new_module(struct wi_gc* gc, const char* path);
 
 #endif

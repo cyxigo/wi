@@ -271,6 +271,7 @@ main(int argc, const char** argv) {
         return EXIT_FAILURE;
     }
 
+    wi_state_set_args(_g_state, script_argc, script_argv);
     wi_def_stm(_g_state);
     wi_def_std(_g_state);
 
@@ -280,8 +281,7 @@ main(int argc, const char** argv) {
         return EXIT_SUCCESS;
     }
 
-    char* src = _read_file(file_path);
-    wi_state_set_args(_g_state, script_argc, script_argv);
+    char*         src    = _read_file(file_path);
     wi_run_result result = _run(file_path, src);
     free(src);
     _delete_g_state();
