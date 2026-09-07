@@ -787,7 +787,7 @@ _compiler_subscript_expr(struct wi_compiler* compiler, bool can_assign) {
     _compiler_expr(compiler);
     wi_parser_expect(compiler->parser, WI_TOKEN_CLOSE_BRACKET);
 
-    if (!wi_parser_match(compiler->parser, WI_TOKEN_EQUAL) || !can_assign) {
+    if (!can_assign || !wi_parser_match(compiler->parser, WI_TOKEN_EQUAL)) {
         _compiler_emit_opcode(compiler, WI_OP_SUBSCRIPT_GET);
         return;
     }
@@ -825,7 +825,7 @@ _compiler_field_expr(struct wi_compiler* compiler, bool can_assign) {
     struct wi_token name          = wi_parser_expect(compiler->parser, WI_TOKEN_NAME);
     uint16_t        name_constant = _compiler_name_constant(compiler, name);
 
-    if (!wi_parser_match(compiler->parser, WI_TOKEN_EQUAL) || !can_assign) {
+    if (!can_assign || !wi_parser_match(compiler->parser, WI_TOKEN_EQUAL)) {
         _compiler_emit_opcode_short(compiler, WI_OP_GET_FIELD, name_constant);
         return;
     }
