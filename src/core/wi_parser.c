@@ -149,6 +149,13 @@ wi_parser_error_at_curr(struct wi_parser* parser, const char* format, ...) {
     longjmp(parser->error_jmp, 1);
 }
 
+WI_NORETURN void
+wi_parser_oom(struct wi_parser* parser, const char* what) {
+    parser->gc->state->error("out of memory: %s\n", what);
+    wi_gc_reset_roots(parser->gc);
+    longjmp(parser->error_jmp, 1);
+}
+
 void
 wi_parser_warning_at(struct wi_parser* parser, struct wi_token token, const char* format, ...) {
     struct wi_state* state = parser->gc->state;

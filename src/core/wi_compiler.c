@@ -30,6 +30,27 @@
 #include "wi_util.h"
 #include "wi_value.h"
 
+static struct wi_compiler_local*
+_compiler_add_local(struct wi_compiler* compiler) {
+    if (WI_UNLIKELY(compiler->local_count + 1 > compiler->local_capacity)) {
+        int capacity = WI_GROW_CAPACITY(compiler->local_capacity);
+
+        if (capacity > WI_LOCAL_MAX) {
+            capacity = WI_LOCAL_MAX;
+        }
+
+        compiler->locals = realloc(compiler->locals, sizeof(struct wi_compiler_local) * capacity);
+
+        if (!compiler->locals) {
+            wi_parser_oom(compiler->parser, "failed to allocate compiler locals (_compiler_add_local)");
+        }
+
+        compiler->local_capacity = capacity;
+    }
+
+    return &compiler->locals[compiler->local_count++];
+}
+
 struct wi_compiler*
 wi_new_compiler(struct wi_compiler* outer, struct wi_state* state, struct wi_parser* parser,
                 struct wi_module* module) {
@@ -39,18 +60,6 @@ wi_new_compiler(struct wi_compiler* outer, struct wi_state* state, struct wi_par
         return NULL;
     }
 
-    wi_compiler_init(compiler, outer, state, parser, module);
-    return compiler;
-}
-
-void
-wi_delete_compiler(struct wi_compiler* compiler) {
-    free(compiler);
-}
-
-void
-wi_compiler_init(struct wi_compiler* compiler, struct wi_compiler* outer, struct wi_state* state,
-                 struct wi_parser* parser, struct wi_module* module) {
     compiler->outer        = outer;
     compiler->state        = state;
     compiler->gc           = state->gc;
@@ -66,19 +75,32 @@ wi_compiler_init(struct wi_compiler* compiler, struct wi_compiler* outer, struct
     compiler->slot_count         = 0;
     compiler->constants          = wi_new_map(compiler->gc);
 
-    compiler->local_count = 0;
-    compiler->scope_depth = 0;
+    compiler->locals           = NULL;
+    compiler->local_count      = 0;
+    compiler->local_capacity   = 0;
+    compiler->scope_depth      = 0;
+    compiler->upvalues         = NULL;
+    compiler->upvalue_capacity = 0;
 
     compiler->innermost_loop_start       = -1;
     compiler->innermost_loop_scope_depth = 0;
     compiler->last_call_offset           = -1;
 
-    struct wi_compiler_local* local = &compiler->locals[compiler->local_count++];
+    struct wi_compiler_local* local = _compiler_add_local(compiler);
     local->name                     = WI_BLANK_TOKEN;
     local->depth                    = 0;
     local->is_captured              = false;
     local->used                     = true;
     local->attrs                    = WI_DEFAULT_ATTRS;
+
+    return compiler;
+}
+
+void
+wi_delete_compiler(struct wi_compiler* compiler) {
+    free(compiler->locals);
+    free(compiler->upvalues);
+    free(compiler);
 }
 
 static const int _opcode_effects[] = {
@@ -274,7 +296,7 @@ _compiler_decl_var(struct wi_compiler* compiler, struct wi_token name, wi_attrs 
         }
     }
 
-    struct wi_compiler_local* local = &compiler->locals[compiler->local_count++];
+    struct wi_compiler_local* local = _compiler_add_local(compiler);
     local->name                     = name;
     local->depth                    = -1;
     local->is_captured              = false;
@@ -408,6 +430,22 @@ _compiler_add_upvalue(struct wi_compiler* compiler, uint8_t index, bool is_local
 
     if (upvalue_count >= WI_UPVALUE_MAX) {
         wi_parser_error_at_curr(compiler->parser, "too many upvalues in a closure (limit is %i)", WI_UPVALUE_MAX);
+    }
+
+    if (WI_UNLIKELY(compiler->prototype->upvalue_count + 1 > compiler->upvalue_capacity)) {
+        int capacity = WI_GROW_CAPACITY(compiler->upvalue_capacity);
+
+        if (capacity > WI_UPVALUE_MAX) {
+            capacity = WI_UPVALUE_MAX;
+        }
+
+        compiler->upvalues = realloc(compiler->upvalues, sizeof(struct wi_compiler_upvalue) * capacity);
+
+        if (!compiler->upvalues) {
+            wi_parser_oom(compiler->parser, "failed to allocate compiler upvalues (_compiler_add_upvalue)");
+        }
+
+        compiler->upvalue_capacity = capacity;
     }
 
     struct wi_compiler_upvalue* upvalue = &compiler->upvalues[upvalue_count];
@@ -958,81 +996,87 @@ _compiler_or_expr(struct wi_compiler* compiler, bool can_assign) {
 static void
 _compiler_function_expr(struct wi_compiler* outer, bool can_assign) {
     WI_UNUSED(can_assign);
-    struct wi_compiler compiler;
-    wi_compiler_init(&compiler, outer, outer->state, outer->parser, outer->module);
-    _compiler_init_local(&compiler);
+    struct wi_compiler* compiler = wi_new_compiler(outer, outer->state, outer->parser, outer->module);
+
+    if (!compiler) {
+        wi_parser_oom(outer->parser, "failed to allocate the compiler (_compiler_function_expr)");
+    }
+
+    _compiler_init_local(compiler);
 
     /* check if previous token is truly a | and not || (pipe pipe, empty function) */
-    bool            has_params = compiler.parser->prev.kind == WI_TOKEN_PIPE;
+    bool            has_params = compiler->parser->prev.kind == WI_TOKEN_PIPE;
     struct wi_token var_name   = outer->var_name;
 
     if (var_name.kind == WI_TOKEN_NAME) {
-        compiler.prototype->name = wi_copy_cstring(compiler.gc, var_name.start, var_name.count);
+        compiler->prototype->name = wi_copy_cstring(compiler->gc, var_name.start, var_name.count);
     }
 
-    if (compiler.prototype->name) {
-        compiler.locals[0].name = (struct wi_token){
+    if (compiler->prototype->name) {
+        compiler->locals[0].name = (struct wi_token){
             .kind  = WI_TOKEN_NAME,
-            .start = compiler.prototype->name->buf,
-            .count = compiler.prototype->name->count,
-            .line  = compiler.parser->curr.line,
-            .col   = compiler.parser->curr.col,
+            .start = compiler->prototype->name->buf,
+            .count = compiler->prototype->name->count,
+            .line  = compiler->parser->curr.line,
+            .col   = compiler->parser->curr.col,
         };
     }
 
-    _compiler_begin_scope(&compiler);
+    _compiler_begin_scope(compiler);
 
-    if (has_params && !wi_parser_check(compiler.parser, WI_TOKEN_PIPE)) {
+    if (has_params && !wi_parser_check(compiler->parser, WI_TOKEN_PIPE)) {
         do {
-#define _PARAMETER()                                                          \
-    struct wi_token name  = wi_parser_expect(compiler.parser, WI_TOKEN_NAME); \
-    wi_attrs        attrs = _compiler_parse_attrs(&compiler);                 \
-    _compiler_decl_var(&compiler, name, attrs);                               \
-    _compiler_def_var(&compiler, name, attrs)
+#define _PARAMETER()                                                           \
+    struct wi_token name  = wi_parser_expect(compiler->parser, WI_TOKEN_NAME); \
+    wi_attrs        attrs = _compiler_parse_attrs(compiler);                   \
+    _compiler_decl_var(compiler, name, attrs);                                 \
+    _compiler_def_var(compiler, name, attrs)
 
-            if (wi_parser_match(compiler.parser, WI_TOKEN_DOT_DOT_DOT)) {
-                compiler.prototype->is_variadic = true;
+            if (wi_parser_match(compiler->parser, WI_TOKEN_DOT_DOT_DOT)) {
+                compiler->prototype->is_variadic = true;
                 _PARAMETER();
                 break;
             }
 
-            if (compiler.prototype->arity == WI_PARAMETER_MAX) {
-                wi_parser_error_at_curr(compiler.parser, "cannot have more than %i parameters", WI_PARAMETER_MAX);
+            if (compiler->prototype->arity == WI_PARAMETER_MAX) {
+                wi_parser_error_at_curr(compiler->parser, "cannot have more than %i parameters", WI_PARAMETER_MAX);
             }
 
-            compiler.prototype->arity++;
+            compiler->prototype->arity++;
             _PARAMETER();
 
 #undef _PARAMETER
-        } while (wi_parser_match(compiler.parser, WI_TOKEN_COMMA));
+        } while (wi_parser_match(compiler->parser, WI_TOKEN_COMMA));
     }
 
     if (has_params) {
-        wi_parser_expect(compiler.parser, WI_TOKEN_PIPE);
+        wi_parser_expect(compiler->parser, WI_TOKEN_PIPE);
     }
 
-    wi_parser_expect(compiler.parser, WI_TOKEN_FAT_ARROW);
+    wi_parser_expect(compiler->parser, WI_TOKEN_FAT_ARROW);
 
-    if (wi_parser_match(compiler.parser, WI_TOKEN_OPEN_BRACE)) {
-        _compiler_block(&compiler);
+    if (wi_parser_match(compiler->parser, WI_TOKEN_OPEN_BRACE)) {
+        _compiler_block(compiler);
     } else {
-        _compiler_expr(&compiler);
-        _compiler_emit_opcode(&compiler, WI_OP_RETURN);
+        _compiler_expr(compiler);
+        _compiler_emit_opcode(compiler, WI_OP_RETURN);
     }
 
-    for (int i = 1; i < compiler.local_count; i++) {
-        _compiler_warn_unused(&compiler, &compiler.locals[i]);
+    for (int i = 1; i < compiler->local_count; i++) {
+        _compiler_warn_unused(compiler, &compiler->locals[i]);
     }
 
-    struct wi_prototype* prototype = _compiler_end(&compiler);
+    struct wi_prototype* prototype = _compiler_end(compiler);
     uint16_t             constant  = _compiler_make_constant(outer, WI_MAKE_BOX_VALUE(prototype));
     _compiler_emit_opcode_short(outer, WI_OP_PUSH_CLOSURE, constant);
 
     for (int i = 0; i < prototype->upvalue_count; i++) {
-        struct wi_compiler_upvalue* upvalue = &compiler.upvalues[i];
+        struct wi_compiler_upvalue* upvalue = &compiler->upvalues[i];
         _compiler_emit_byte(outer, upvalue->index);
         _compiler_emit_byte(outer, upvalue->is_local ? 1 : 0);
     }
+
+    wi_delete_compiler(compiler);
 }
 
 static void
@@ -1623,13 +1667,6 @@ wi_compile(struct wi_state* state, const char* file_path, const char* src, struc
         wi_state_oom(state, "failed to allocate the parser (wi_compile)");
     }
 
-    struct wi_compiler* compiler = wi_new_compiler(NULL, state, parser, module);
-
-    if (!compiler) {
-        wi_delete_parser(parser);
-        wi_state_oom(state, "failed to allocate the compiler (wi_compile)");
-    }
-
     /*
         we capture this because of the load statement
         when a compilation of the script fails, we need to close any open lib handles by
@@ -1648,7 +1685,13 @@ wi_compile(struct wi_state* state, const char* file_path, const char* src, struc
     */
     struct wi_lib_node* libs = state->libs;
 
-    if (setjmp(compiler->parser->error_jmp) == WI_RUN_OK) {
+    if (setjmp(parser->error_jmp) == WI_RUN_OK) {
+        struct wi_compiler* compiler = wi_new_compiler(NULL, state, parser, module);
+
+        if (!compiler) {
+            wi_parser_oom(parser, "failed to allocate the compiler (wi_compile)");
+        }
+
         while (!wi_parser_is_at_end(compiler->parser)) {
             _compiler_decl(compiler);
         }
@@ -1663,8 +1706,20 @@ wi_compile(struct wi_state* state, const char* file_path, const char* src, struc
 
     wi_state_close_libs_from(state, libs);
 
+    /*
+        we walk from the innermost compiler to the outermost, because not all compilers are always freed
+        _compiler_function_expr is another place were we allocate a compiler - and it can leak if we do not
+        reach the end of _compiler_function_expr where we delete it
+    */
+    struct wi_compiler* curr = state->gc->compiler;
+
+    while (curr) {
+        struct wi_compiler* next = curr->outer;
+        wi_delete_compiler(curr);
+        curr = next;
+    }
+
     wi_delete_parser(parser);
-    wi_delete_compiler(compiler);
     state->gc->compiler = NULL;
 
     return NULL;

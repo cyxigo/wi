@@ -136,17 +136,6 @@ wi_token_lexemes_equal(struct wi_token a, struct wi_token b) {
 }
 
 WI_INLINE struct wi_token
-wi_token_from_string(const char* string) {
-    return (struct wi_token){
-        .kind  = WI_TOKEN_NAME,
-        .start = string,
-        .count = (int)strlen(string),
-        .line  = 1,
-        .col   = 1,
-    };
-}
-
-WI_INLINE struct wi_token
 wi_token_make_error(const char* msg, int line, int col) {
     return (struct wi_token){
         .kind  = WI_TOKEN_ERROR,

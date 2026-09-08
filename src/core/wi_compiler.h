@@ -3,7 +3,6 @@
 
 #include <stdint.h>
 
-#include "../../include/wi_conf.h"
 #include "wi_parser.h"
 
 /*
@@ -56,10 +55,13 @@ struct wi_compiler {
     int                  slot_count;
     struct wi_map*       constants;
 
-    struct wi_compiler_local   locals[WI_LOCAL_MAX];
-    struct wi_compiler_upvalue upvalues[WI_UPVALUE_MAX];
-    int                        local_count;
-    int                        scope_depth;
+    struct wi_compiler_local* locals;
+    int                       local_count;
+    int                       local_capacity;
+    int                       scope_depth;
+
+    struct wi_compiler_upvalue* upvalues;
+    int                         upvalue_capacity; /* count is prototype->upvalue_count */
 
     int innermost_loop_start;
     int innermost_loop_scope_depth;
@@ -71,9 +73,6 @@ wi_new_compiler(struct wi_compiler* outer, struct wi_state* state, struct wi_par
                 struct wi_module* module);
 void
 wi_delete_compiler(struct wi_compiler* compiler);
-void
-wi_compiler_init(struct wi_compiler* compiler, struct wi_compiler* outer, struct wi_state* state,
-                 struct wi_parser* parser, struct wi_module* module);
 struct wi_prototype*
 wi_compile(struct wi_state* state, const char* file_path, const char* src, struct wi_module* module);
 

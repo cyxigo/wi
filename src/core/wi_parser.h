@@ -33,6 +33,8 @@ WI_NORETURN void
 wi_parser_error_at_prev(struct wi_parser* parser, const char* format, ...);
 WI_NORETURN void
 wi_parser_error_at_curr(struct wi_parser* parser, const char* format, ...);
+WI_NORETURN void
+wi_parser_oom(struct wi_parser* parser, const char* what);
 
 WI_INLINE void
 wi_parser_enter(struct wi_parser* parser) {
