@@ -16,6 +16,7 @@
 
 static wi_state*             _g_state          = NULL;
 static volatile sig_atomic_t _g_script_running = 0;
+static const char*           _g_exec           = "";
 
 static void
 _delete_g_state(void) {
@@ -66,7 +67,7 @@ _repl_append_line(char* buf, size_t* buf_len, char* line) {
     char*  new_buf        = realloc(buf, new_buf_offset + line_len + 1);
 
     if (!new_buf) {
-        fprintf(stderr, "out of memory: failed to allocate the repl input buffer\n");
+        fprintf(stderr, "%s: out of memory: failed to allocate the repl input buffer\n", _g_exec);
         _delete_g_state();
         exit(EXIT_FAILURE);
     }
@@ -125,7 +126,7 @@ _read_error(const char* format, ...) {
     va_list args;
     va_start(args, format);
 
-    fprintf(stderr, "read error: ");
+    fprintf(stderr, "%s: ", _g_exec);
     vfprintf(stderr, format, args);
     fprintf(stderr, "\n");
 
@@ -153,8 +154,8 @@ _read_file(const char* file_path) {
 }
 
 static void
-_help(const char* exec_path) {
-    printf("usage: %s [script] [options]\n", exec_path);
+_help(void) {
+    printf("usage: %s [script] [options]\n", _g_exec);
     printf("options:\n");
     printf("    -h    --help              show this help message\n");
     printf("    -v    --version           show version information\n");
@@ -166,14 +167,14 @@ _help(const char* exec_path) {
 }
 
 static void
-_flag_parse_error(const char* exec_path, const char* format, ...) {
+_flag_parse_error(const char* format, ...) {
     va_list args;
     va_start(args, format);
 
-    fprintf(stderr, "error: ");
+    fprintf(stderr, "%s: ", _g_exec);
     vfprintf(stderr, format, args);
     fprintf(stderr, "\n");
-    fprintf(stderr, "try '%s --help' for more info\n", exec_path);
+    fprintf(stderr, "try '%s --help' for more info\n", _g_exec);
 
     va_end(args);
     exit(EXIT_FAILURE);
@@ -209,7 +210,7 @@ _parse_flags(int argc, const char** argv, wi_conf* conf, const char** file_path,
         }
 
         if (strcmp(arg, "-h") == 0 || strcmp(arg, "--help") == 0) {
-            _help(argv[0]);
+            _help();
             exit(EXIT_SUCCESS);
         }
 
@@ -238,20 +239,22 @@ _parse_flags(int argc, const char** argv, wi_conf* conf, const char** file_path,
             continue;
         }
 
-        _flag_parse_error(argv[0], "unknown option '%s'", arg);
+        _flag_parse_error("unknown option '%s'", arg);
     }
 
     for (int j = 0; j < *script_argc; j++) {
         const char* arg = (*script_argv)[j];
 
         if (!wi_utf8_validate(arg, (int)strlen(arg))) {
-            _flag_parse_error(argv[0], "invalid utf-8 sequence in script argument %i", j);
+            _flag_parse_error("invalid utf-8 sequence in script argument %i", j);
         }
     }
 }
 
 int
 main(int argc, const char** argv) {
+    _g_exec = argv[0];
+
 #ifdef _WIN32
     SetConsoleOutputCP(CP_UTF8);
     SetConsoleCP(CP_UTF8);
