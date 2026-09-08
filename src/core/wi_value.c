@@ -262,5 +262,5 @@ wi_string_to_real(const char* string, int len, char** end_ptr) {
         }
     }
 
-    return strtod(string, end_ptr);
+    return wi_canon_real(strtod(string, end_ptr));
 }

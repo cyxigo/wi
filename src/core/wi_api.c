@@ -163,7 +163,7 @@ wi_is_module(wi_state* state) {
 
 void
 wi_push_real(struct wi_state* state, wi_real real) {
-    wi_state_ppush(state, wi_make_real_value(real));
+    wi_state_ppush(state, wi_make_real_value(wi_canon_real(real)));
 }
 
 void

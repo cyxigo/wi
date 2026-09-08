@@ -1,6 +1,7 @@
 #ifndef WI_VALUE_H
 #define WI_VALUE_H
 
+#include <math.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
@@ -10,7 +11,8 @@
 
 struct wi_box;
 
-#define WI_QNAN 0x7ffc000000000000
+#define WI_QNAN 0x7ffc000000000000 /* quiet nan */
+#define WI_CNAN 0x7ff8000000000000 /* canon nan */
 #define WI_SIGN_BIT 0x8000000000000000
 
 enum {
@@ -25,6 +27,20 @@ enum {
 };
 
 typedef uint64_t wi_value;
+
+/*
+    canonicalize nan since welp nan is a many many many clunky values and we DO NOT want them
+    in our little value type
+*/
+WI_INLINE wi_real
+wi_canon_real(wi_real real) {
+    if (WI_UNLIKELY(isnan(real))) {
+        wi_value bits = WI_CNAN;
+        memcpy(&real, &bits, sizeof(real));
+    }
+
+    return real;
+}
 
 WI_INLINE wi_value
 wi_make_real_value(wi_real real) {
