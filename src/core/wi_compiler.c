@@ -1546,7 +1546,7 @@ _compiler_return_stmt(struct wi_compiler* compiler) {
     uint8_t* bytes  = compiler->prototype->bytes.data;
     int      offset = compiler->last_call_offset;
 
-    if (offset == end - 2 && bytes[offset] == WI_OP_CALL) {
+    if (offset != -1 && offset == end - 2 && bytes[offset] == WI_OP_CALL) {
         bytes[offset] = WI_OP_TAIL_CALL;
         return;
     }
