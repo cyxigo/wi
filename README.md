@@ -22,7 +22,7 @@ slava->greet(); // Hello, Slava!
 ```
 
 - **Wi is small**. The [entire implementation](https://github.com/cyxigo/wi/tree/main/src) takes less than 15,000 lines of code.
-- **Wi is fast**. Fast single-pass compiler to bytecode with **NaN** boxing value representation help Wi to [compete with other dynamic programming languages](https://github.com/cyxigo/wi/tree/main/test/benchmark#readme).
+- **Wi is fast**. Fast single-pass compiler to bytecode with **NaN** boxing value representation helps Wi to [compete with other dynamic programming languages](https://github.com/cyxigo/wi/tree/main/test/benchmark#readme).
 - **Wi is simple**. You can learn its dead-simple syntax and standard library in less than a week using its [lovingly made documentation](https://github.com/cyxigo/wi/wiki).
 - **Wi is prototype-based**. Many languages use classes – Wi uses [objects](https://github.com/cyxigo/wi/wiki/Objects). You clone these objects and create whatever you want. No delegation, just cloning.
 - **Wi is extendable**. [Simple and straightforward FFI](https://github.com/cyxigo/wi/wiki/Wi-API-Reference) allows you to easily create libraries for Wi and use them with the ease of [one statement](https://github.com/cyxigo/wi/wiki/FFI).
@@ -37,7 +37,7 @@ Requires [`xmake`](https://xmake.io/guide/quick-start.html#installation) and any
 xmake
 ```
 
-For max speed and performance, it is better to use **GNU99** compatible compiler, since Wi uses many **GNU** extensions for performance tweaks. Wi has zero dependencies but it would be nice to have `readline` library if you're building Wi on Linux (Wi uses it for better REPL).
+For max speed and performance, it is better to use **GNU99** compatible compiler, since Wi uses many **GNU** extensions for performance tweaks. Wi has zero dependencies but it would be nice to have the `readline` library if you're building Wi on Linux (Wi uses it for better REPL).
 
 This produces Wi shared library + Wi executable.
 
@@ -68,7 +68,7 @@ The Wi source code is organized into the following directories:
 
 ## Notes
 
-This programming language was created by me, and only me – a single person. It's in beta, because I'm still designing it and **breaking syntax changes are to be expected**. The standard library isn't finished yet, but it's already quite useful. Other than the API, the code is not heavily commented.
+This programming language was created by me, and only me – a single person. It's in beta, because I'm still designing it and **breaking syntax changes are to be expected**. The standard library is not something mind-blowing, but it's useful. Other than the API, the code is not heavily commented.
 
 Some parts may still need polish, and I'm very open to suggestions – if you have one, [open an issue](https://github.com/cyxigo/wi/issues)!
 
