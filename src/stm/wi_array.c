@@ -209,12 +209,17 @@ static void
 _array_each(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     struct wi_array* array = wi_arg_array(state, 1);
+    int              count = array->items.count;
     wi_state_ppush(state, WI_MAKE_BOX_VALUE(array));
 
     for (int i = 0; i < array->items.count; i++) {
         wi_arg_function(state, 2, 1);
         wi_state_ppush(state, array->items.data[i]);
         wi_call(state, 1, true);
+
+        if (WI_UNLIKELY(array->items.count != count)) {
+            wi_state_error(state, "array resized during iteration");
+        }
     }
 }
 
@@ -222,6 +227,7 @@ static void
 _array_select(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     struct wi_array* array  = wi_arg_array(state, 1);
+    int              count  = array->items.count;
     struct wi_array* result = wi_new_array(state->gc);
     wi_state_ppush(state, WI_MAKE_BOX_VALUE(result));
     wi_value_buf_reserve(&result->items, array->items.count);
@@ -230,6 +236,11 @@ _array_select(struct wi_state* state, uint8_t arg_count) {
         wi_arg_function(state, 2, 1);
         wi_state_ppush(state, array->items.data[i]);
         wi_call(state, 1, false);
+
+        if (WI_UNLIKELY(array->items.count != count)) {
+            wi_state_error(state, "array resized during iteration");
+        }
+
         wi_value_buf_add(&result->items, wi_state_pop(state));
     }
 }
@@ -238,6 +249,7 @@ static void
 _array_where(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     struct wi_array* array  = wi_arg_array(state, 1);
+    int              count  = array->items.count;
     struct wi_array* result = wi_new_array(state->gc);
     wi_state_ppush(state, WI_MAKE_BOX_VALUE(result));
 
@@ -247,6 +259,10 @@ _array_where(struct wi_state* state, uint8_t arg_count) {
         wi_arg_function(state, 2, 1);
         wi_state_ppush(state, item);
         wi_call(state, 1, false);
+
+        if (WI_UNLIKELY(array->items.count != count)) {
+            wi_state_error(state, "array resized during iteration");
+        }
 
         if (!wi_value_is_falsy(wi_state_pop(state))) {
             wi_value_buf_add(&result->items, item);
@@ -282,7 +298,7 @@ _aqsort_partition(struct wi_state* state, struct wi_array* array, int lo, int hi
         wi_call(state, 2, false);
 
         if (WI_UNLIKELY(array->items.count != count)) {
-            wi_state_error(state, "array resized during sort");
+            wi_state_error(state, "array resized during iteration");
         }
 
         if (!wi_value_is_falsy(wi_state_pop(state))) {
