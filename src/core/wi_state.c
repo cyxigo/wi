@@ -652,27 +652,11 @@ _state_correct_stack(struct wi_state* state, wi_value* old_stack, wi_value* new_
 }
 
 /*
-    ensures [needed] more slots fit past [base], growing (and correcting) the stack
-    why do we need [base]? because of the tail calls!
-    let's trace the things... when we call a function, we add a new frame right? stack is:
-    [function] [arg1] [arg2]
-    cool! so, when we call a NEW function...
-    [function] [arg1] [arg2] [new_function] [arg1]
-                            ^------ calculate from here (the stack top)
-    see where i'm going? tail calls don't need that old function, so we don't need to calculate
-    from the stack_top, but from overwritten frame's slots
-    [function] [arg1] [arg2] <--- BOOM! TAIL CALL
-    [new_function] [arg1]
-    ^------ calculate from here (where previous frame's slots started)
-    i hope that clears up things...
-
-    p.s: this comment exists because after i made this function with the [base] parameter and took a nap
-    i couldn't understand why it exists for a looooooong time. welp, turns out comments are really important.
-    - cyxigo, 08.05.2026
+    ensures [needed] more slots fit past stack top, growing (and correcting) the stack
 */
 static bool
-_state_grow_stack(struct wi_state* state, wi_value* base, int needed) {
-    int required = (int)(base - state->stack) + needed;
+_state_grow_stack(struct wi_state* state, int needed) {
+    int required = (int)(state->stack_top - state->stack) + needed;
 
     if (required > WI_STACK_MAX) {
         return false;
@@ -703,9 +687,9 @@ _state_grow_stack(struct wi_state* state, wi_value* base, int needed) {
 }
 
 WI_INLINE bool
-_state_reserve_stack(struct wi_state* state, wi_value* base, int needed) {
-    if (WI_UNLIKELY(base + needed > state->stack_end)) {
-        return _state_grow_stack(state, base, needed);
+_state_reserve_stack(struct wi_state* state, int needed) {
+    if (WI_UNLIKELY(state->stack_top + needed > state->stack_end)) {
+        return _state_grow_stack(state, needed);
     }
 
     return true;
@@ -728,7 +712,7 @@ _state_capture_overflow_ctx(struct wi_state* state) {
 
 void
 wi_state_ppush(struct wi_state* state, wi_value value) {
-    if (WI_UNLIKELY(!_state_reserve_stack(state, state->stack_top, 1))) {
+    if (WI_UNLIKELY(!_state_reserve_stack(state, 1))) {
         _state_capture_overflow_ctx(state);
         wi_state_error(state, "stack overflow (limit is %i)", WI_STACK_MAX);
     }
@@ -754,7 +738,7 @@ _state_call(struct wi_state* state, struct wi_closure* closure, uint8_t arg_coun
     }
 
     /* calculate and, if needed, grow the slots starting from the stack top */
-    if (WI_UNLIKELY(!_state_reserve_stack(state, state->stack_top, prototype->max_slot_count))) {
+    if (WI_UNLIKELY(!_state_reserve_stack(state, prototype->max_slot_count))) {
         _state_capture_overflow_ctx(state);
         wi_state_error(state, "stack overflow (limit is %i)", WI_STACK_MAX);
     }
@@ -789,7 +773,7 @@ _state_tail_call(struct wi_state* state, struct wi_call_frame* frame, struct wi_
     wi_state_check_arity(state, prototype->arity, arg_count, prototype->is_variadic);
 
     /* calculate and, if needed, grow the slots starting from the reused frame slots */
-    if (WI_UNLIKELY(!_state_reserve_stack(state, frame->slots, prototype->max_slot_count))) {
+    if (WI_UNLIKELY(!_state_reserve_stack(state, prototype->max_slot_count))) {
         _state_capture_overflow_ctx(state);
         wi_state_error(state, "stack overflow (limit is %i)", WI_STACK_MAX);
     }
