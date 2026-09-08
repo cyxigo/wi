@@ -989,6 +989,25 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
                                                                                                   \
         wi_state_push(state, wi_make_real_value((wi_real)(a_int op b_int)));                      \
     } while (false)
+#define _SHIFT_OP(op)                                                                             \
+    do {                                                                                          \
+        wi_value b = wi_state_pop(state);                                                         \
+        wi_value a = wi_state_pop(state);                                                         \
+                                                                                                  \
+        if (WI_UNLIKELY(!wi_value_is_real(a) || !wi_value_is_real(b))) {                          \
+            _ERROR("cannot use operator '" #op "' on values of type %s and %s", wi_value_type(a), \
+                   wi_value_type(b));                                                             \
+        }                                                                                         \
+                                                                                                  \
+        int64_t a_int = (int64_t)wi_value_as_real(a);                                             \
+        int64_t b_int = (int64_t)wi_value_as_real(b);                                             \
+                                                                                                  \
+        if (WI_UNLIKELY(b_int < 0 || b_int >= 64)) {                                              \
+            _ERROR("shift amount out of range: %lld", b_int);                                     \
+        }                                                                                         \
+                                                                                                  \
+        wi_state_push(state, wi_make_real_value((wi_real)(a_int op b_int)));                      \
+    } while (false)
 
     _INTERPRET {
         _OPCODE_LABEL(PUSH) : {
@@ -1166,11 +1185,11 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
             _DISPATCH();
         }
         _OPCODE_LABEL(BIT_SHL) : {
-            _BIT_OP(<<);
+            _SHIFT_OP(<<);
             _DISPATCH();
         }
         _OPCODE_LABEL(BIT_SHR) : {
-            _BIT_OP(>>);
+            _SHIFT_OP(>>);
             _DISPATCH();
         }
         _OPCODE_LABEL(LEN) : {
@@ -1565,6 +1584,7 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
 
 #undef _BINARY_OP
 #undef _BIT_OP
+#undef _SHIFT_OP
 
     return WI_RUN_OK;
 }
