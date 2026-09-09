@@ -202,10 +202,14 @@ static void
 _compiler_pop_loop_locals(struct wi_compiler* compiler) {
     for (int i = compiler->local_count - 1;
          i >= 0 && compiler->locals[i].depth > compiler->innermost_loop_scope_depth; i--) {
+        /*
+            emit byte directly instead of emit opcode because we don't need to account the stack effect here
+            so break/continue inside a branch won't undercount the prototype->max_slot_count
+        */
         if (compiler->locals[i].is_captured) {
-            _compiler_emit_opcode(compiler, WI_OP_CLOSE_UPVALUE);
+            _compiler_emit_byte(compiler, WI_OP_CLOSE_UPVALUE);
         } else {
-            _compiler_emit_opcode(compiler, WI_OP_POP);
+            _compiler_emit_byte(compiler, WI_OP_POP);
         }
     }
 }
