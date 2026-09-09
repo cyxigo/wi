@@ -1146,6 +1146,7 @@ _compiler_new_expr(struct wi_compiler* compiler, bool can_assign) {
     _compiler_emit_opcode_short(compiler, WI_OP_NEW, count);
 
     if (!wi_parser_match(compiler->parser, WI_TOKEN_OPEN_BRACE)) {
+        compiler->slot_count -= count;
         return;
     }
 
