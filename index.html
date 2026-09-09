@@ -36,7 +36,7 @@
             <pre>
 <span class="token-name">obj_person</span> := <span class="token-kw">object</span> {
     <span class="token-name">name</span>: <span class="token-string">""</span>;
-    <span class="token-name">greet</span>: |<span class="token-name">self</span>| => <span class="token-name">print</span>(<span class="token-string">"Hello, </span>${self.name}<span class="token-string">!"</span>);
+    <span class="token-name">greet</span>: |<span class="token-name">self</span>| => <span class="token-name">std</span>::<span class="token-name">puts</span>(<span class="token-string">"Hello, </span>${self.name}<span class="token-string">!"</span>);
 };
 
 <span class="token-name">slava</span> := <span class="token-kw">new</span> <span class="token-name">obj_person</span> {
@@ -53,7 +53,7 @@
                 </li>
                 <li>
                     <b>Wi is fast.</b> Fast single-pass compiler to bytecode with <b>NaN</b> boxing value
-                    representation help Wi to
+                    representation helps Wi to
                     <a class="button" href="https://github.com/cyxigo/wi/tree/main/test/benchmark#readme"
                         >compete with other dynamic programming languages</a
                     >.
@@ -82,9 +82,9 @@
 
             <h2>Notes</h2>
             This programming language was created by me, and only me – a single person. It's in beta, because I'm
-            still designing it and <b>breaking syntax changes are to be expected</b>. The standard library isn't
-            finished yet, but it's already quite useful. Other than the API, the code is not heavily commented.
-            Some parts may still need polish, and I'm very open to suggestions – if you have one,
+            still designing it and <b>breaking syntax changes are to be expected</b>. The standard library is not
+            something mind-blowing, but it's useful. Other than the API, the code is not heavily commented. Some
+            parts may still need polish, and I'm very open to suggestions – if you have one,
             <a class="button" href="https://github.com/cyxigo/wi/issues">open an issue</a>!
             <br />
             No AI was used in the development of Wi – only me, my horrendous laptop, my favorite book (Crafting

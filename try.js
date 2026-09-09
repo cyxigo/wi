@@ -38,13 +38,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
 var exampleHello = () => {
     var code = document.getElementById("code");
-    code.value = `puts("Hello World!");`;
+    code.value = `std::puts("Hello World!");`;
 };
 
 var exampleLoop = () => {
     var code = document.getElementById("code");
     code.value = `for (i := 0; i < 5; i = i + 1) {
-    puts("Looping... i: \${i}");
+    std::puts("Looping... i: \${i}");
 }`;
 };
 
@@ -52,7 +52,7 @@ var exampleObject = () => {
     var code = document.getElementById("code");
     code.value = `obj_person := object {
     name: "";
-    greet: |self| => puts("Hi \${self.name}!");
+    greet: |self| => std::puts("Hi \${self.name}!");
 };
 
 bob := new obj_person {
@@ -68,7 +68,7 @@ var examplePipeline = () => {
 numbers
     ->where(|x| => x % 2 == 0) // Where... only evens
     ->select(|x| => x ** 2) // Select... squares
-    ->each(|x| => puts("Number: \${x}")); // Each... puts!`;
+    ->each(|x| => std::puts("Number: \${x}")); // Each... puts!`;
 };
 
 var exampleMerging = () => {
@@ -86,7 +86,7 @@ obj_address := object {
 obj_person := new obj_contact, obj_address {
     name: "";
     show_info: |self| => {
-        puts("\${self.name} lives in \${self.city}, email: \${self.email}");
+        std::puts("\${self.name} lives in \${self.city}, email: \${self.email}");
     };
 };
 
