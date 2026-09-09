@@ -797,6 +797,7 @@ _compiler_call_expr(struct wi_compiler* compiler, bool can_assign) {
     uint8_t arg_count = _compiler_arg_list(compiler, 0);
     _compiler_emit_opcode_byte(compiler, WI_OP_CALL, arg_count);
     compiler->last_call_offset = compiler->prototype->bytes.count - 2;
+    compiler->slot_count -= arg_count;
 }
 
 static void
@@ -819,6 +820,7 @@ _compiler_array_expr(struct wi_compiler* compiler, bool can_assign) {
 
     wi_parser_expect(compiler->parser, WI_TOKEN_CLOSE_BRACKET);
     _compiler_emit_opcode_short(compiler, WI_OP_PUSH_ARRAY, count);
+    compiler->slot_count -= count;
 }
 
 static void
@@ -857,6 +859,7 @@ _compiler_map_expr(struct wi_compiler* compiler, bool can_assign) {
 
     wi_parser_expect(compiler->parser, WI_TOKEN_CLOSE_BRACE);
     _compiler_emit_opcode_short(compiler, WI_OP_PUSH_MAP, count);
+    compiler->slot_count -= count * 2;
 }
 
 static void
@@ -885,6 +888,7 @@ _compiler_invoke_expr(struct wi_compiler* compiler, bool can_assign) {
 
     _compiler_emit_opcode_byte(compiler, WI_OP_CALL, arg_count);
     compiler->last_call_offset = compiler->prototype->bytes.count - 2;
+    compiler->slot_count -= arg_count;
 }
 
 static void
@@ -1116,6 +1120,7 @@ _compiler_object_expr(struct wi_compiler* compiler, bool can_assign) {
 
     wi_parser_expect(compiler->parser, WI_TOKEN_CLOSE_BRACE);
     _compiler_emit_opcode_short(compiler, WI_OP_PUSH_OBJECT, field_count);
+    compiler->slot_count -= field_count * 2;
 }
 
 static void
@@ -1155,6 +1160,7 @@ _compiler_new_expr(struct wi_compiler* compiler, bool can_assign) {
     }
 
     wi_parser_expect(compiler->parser, WI_TOKEN_CLOSE_BRACE);
+    compiler->slot_count -= count;
 }
 
 static void
