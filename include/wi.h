@@ -132,6 +132,7 @@ typedef bool (*wi_import_exists_fn)(wi_state* state, const char* path);
  * Foreign (C) function pointer, called from Wi scripts
  */
 typedef void (*wi_foreign_fn)(wi_state* state, uint8_t arg_count);
+
 /**
  * Userdata finalizer - function called when the userdata gets collected by GC
  */
@@ -437,16 +438,6 @@ WI_API wi_map*
 wi_push_map(wi_state* state);
 
 /**
- * Push a new, empty module onto the stack.
- * `path` of said module will be just "foreign"
- *
- * @param state Wi state instance
- * @return Pointer to the created module
- */
-WI_API wi_module*
-wi_push_module(wi_state* state);
-
-/**
  * Push a foreign (C) function onto the stack
  *
  * @param state Wi state instance
@@ -458,15 +449,6 @@ WI_API void
 wi_push_foreign(wi_state* state, wi_foreign_fn fn, uint8_t arity, bool is_variadic);
 
 /**
- * Push a new, empty object onto the stack
- *
- * @param state Wi state instance
- * @return Pointer to the created object
- */
-WI_API wi_object*
-wi_push_object(wi_state* state);
-
-/**
  * Push userdata onto the stack
  *
  * @param state Wi state instance
@@ -476,6 +458,25 @@ wi_push_object(wi_state* state);
  */
 WI_API void
 wi_push_userdata(wi_state* state, const char* name, void* userdata, wi_userdata_finalizer_fn finalizer);
+
+/**
+ * Push a new, empty object onto the stack
+ *
+ * @param state Wi state instance
+ * @return Pointer to the created object
+ */
+WI_API wi_object*
+wi_push_object(wi_state* state);
+
+/**
+ * Push a new, empty module onto the stack.
+ * `path` of said module will be just "foreign"
+ *
+ * @param state Wi state instance
+ * @return Pointer to the created module
+ */
+WI_API wi_module*
+wi_push_module(wi_state* state);
 
 /**
  * Drop a value from the stack
@@ -536,14 +537,6 @@ WI_API wi_map*
 wi_pop_map(wi_state* state);
 
 /**
- * Pop an object from the stack with type-checking
- *
- * @param state Wi state instance
- */
-WI_API wi_object*
-wi_pop_object(wi_state* state);
-
-/**
  * Pop userdata from the stack with type-checking
  *
  * @param state Wi state instance
@@ -551,6 +544,14 @@ wi_pop_object(wi_state* state);
  */
 WI_API void*
 wi_pop_userdata(wi_state* state, const char* name);
+
+/**
+ * Pop an object from the stack with type-checking
+ *
+ * @param state Wi state instance
+ */
+WI_API wi_object*
+wi_pop_object(wi_state* state);
 
 /**
  * Pop a module from the stack with type-checking
@@ -624,15 +625,6 @@ WI_API bool
 wi_arg_is_function(wi_state* state, uint8_t arg);
 
 /**
- * Check if argument is an object
- *
- * @param state Wi state instance
- * @param arg Argument index (1-[arg_count])
- */
-WI_API bool
-wi_arg_is_object(wi_state* state, uint8_t arg);
-
-/**
  * Check if argument is userdata
  *
  * @param state Wi state instance
@@ -641,6 +633,15 @@ wi_arg_is_object(wi_state* state, uint8_t arg);
  */
 WI_API bool
 wi_arg_is_userdata(wi_state* state, uint8_t arg, const char* name);
+
+/**
+ * Check if argument is an object
+ *
+ * @param state Wi state instance
+ * @param arg Argument index (1-[arg_count])
+ */
+WI_API bool
+wi_arg_is_object(wi_state* state, uint8_t arg);
 
 /**
  * Check if argument is a module
@@ -723,16 +724,6 @@ WI_API void
 wi_arg_function(wi_state* state, uint8_t arg, uint8_t arity);
 
 /**
- * Get an object argument with type-checking
- *
- * @param state Wi state instance
- * @param arg Argument index (1-[arg_count])
- * @return Object argument
- */
-WI_API wi_object*
-wi_arg_object(wi_state* state, uint8_t arg);
-
-/**
  * Get userdata argument with type-checking
  *
  * @param state Wi state instance
@@ -742,6 +733,16 @@ wi_arg_object(wi_state* state, uint8_t arg);
  */
 WI_API void*
 wi_arg_userdata(wi_state* state, uint8_t arg, const char* name);
+
+/**
+ * Get an object argument with type-checking
+ *
+ * @param state Wi state instance
+ * @param arg Argument index (1-[arg_count])
+ * @return Object argument
+ */
+WI_API wi_object*
+wi_arg_object(wi_state* state, uint8_t arg);
 
 /**
  * Get a module argument with type-checking
