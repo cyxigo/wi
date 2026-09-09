@@ -4,6 +4,7 @@
 
 #include "wi_state.h"
 
+#include <errno.h>
 #include <math.h>
 #include <setjmp.h>
 #include <stdarg.h>
@@ -77,7 +78,7 @@ _state_read_file(struct wi_state* state, const char* file_path) {
     FILE* file = fopen(file_path, "rb");
 
     if (!file) {
-        wi_state_error(state, "failed to open file %s", file_path);
+        wi_state_error(state, "failed to open file %s: %s", file_path, strerror(errno));
     }
 
     char* buf = wi_read_stream(file);

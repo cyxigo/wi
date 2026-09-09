@@ -1,3 +1,4 @@
+#include <errno.h>
 #include <signal.h>
 #include <stdarg.h>
 #include <stdbool.h>
@@ -138,7 +139,7 @@ _read_file(const char* file_path) {
     FILE* file = fopen(file_path, "rb");
 
     if (!file) {
-        _read_error("failed to open file %s", file_path);
+        _read_error("failed to open file %s: %s", file_path, strerror(errno));
         exit(EXIT_FAILURE);
     }
 

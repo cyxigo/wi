@@ -1,5 +1,6 @@
 #include "wi_io.h"
 
+#include <errno.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -61,7 +62,7 @@ _io_open(struct wi_state* state, uint8_t arg_count) {
     FILE* ptr = fopen(file_path, mode);
 
     if (!ptr) {
-        wi_state_error(state, "failed to open file %s", file_path);
+        wi_state_error(state, "failed to open file %s: %s", file_path, strerror(errno));
     }
 
     struct wi_file* file = malloc(sizeof(struct wi_file));
