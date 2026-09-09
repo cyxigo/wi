@@ -63,11 +63,11 @@ _string_trim(struct wi_state* state, uint8_t arg_count) {
     int   start  = 0;
     int   end    = count;
 
-    while (start < end && isspace(string[start])) {
+    while (start < end && isspace((unsigned char)string[start])) {
         start++;
     }
 
-    while (end > start && isspace(string[end - 1])) {
+    while (end > start && isspace((unsigned char)string[end - 1])) {
         end--;
     }
 
