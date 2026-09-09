@@ -7,5 +7,5 @@ arr->sort(|a, b| => {
 });
 
 // Expected:
-// runtime error: array resized during sort
+// runtime error: array resized during iteration
 //    --> test/bug/sort_clear.wi:7 in main function
