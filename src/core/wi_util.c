@@ -8,6 +8,7 @@
 #include <string.h>
 
 #ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #elif defined(WI_USE_READLINE) /* wi is linked with -lreadline */
 #include <readline/history.h>
