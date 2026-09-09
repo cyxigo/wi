@@ -93,7 +93,7 @@ obj_person := new obj_contact, obj_address {
 alice := new obj_person {
     name: "Alice";
     email: "alice@work.com";
-    city:"New York";
+    city: "New York";
 };
 
 alice->show_info();`;
