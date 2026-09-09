@@ -1,0 +1,14 @@
+// $ok
+// Bug in v8.3.0-beta, x && g() should not be valid for TCO since it would remove RETURN where the jump lands
+g := || => 99;
+
+f := |x| => {
+    return x && g();
+};
+
+std::puts(f(false));
+std::puts(f(true));
+
+// Expected:
+// false
+// 99
