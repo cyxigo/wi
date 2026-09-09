@@ -168,6 +168,17 @@ _compiler_patch_jump(struct wi_compiler* compiler, int offset) {
 
     bytes[offset]     = (uint8_t)(jump >> 8);
     bytes[offset + 1] = (uint8_t)(jump & 0xff);
+
+    /*
+        check if we just emitted CALL
+        why? because things like x && f() should NOT be turned into TAIL_CALL
+        the && jump lands on the RETURN after f() - if we removed that RETURN
+        for a tail call, the jump would land on... weeeeird things
+        so we invalidate this tco candidate
+    */
+    if (compiler->prototype->bytes.count == compiler->last_call_offset + 2) {
+        compiler->last_call_offset = -1;
+    }
 }
 
 static void
