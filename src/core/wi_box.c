@@ -1,6 +1,7 @@
 #include "wi_box.h"
 
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
@@ -76,8 +77,9 @@ wi_take_cstring(struct wi_gc* gc, char* buf, int count) {
 
 struct wi_string*
 wi_take_calloc_string(struct wi_gc* gc, char* buf, int count) {
-    gc->bytes_allocated += count + 1;
-    gc->young_bytes += count + 1;
+    size_t add = (size_t)count + 1;
+    gc->bytes_allocated += add;
+    gc->young_bytes += add;
     return wi_take_cstring(gc, buf, count);
 }
 

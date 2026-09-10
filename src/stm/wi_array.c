@@ -172,7 +172,7 @@ _array_concat(struct wi_state* state, uint8_t arg_count) {
     wi_state_ppush(state, WI_MAKE_BOX_VALUE(result));
 
     for (int i = 0; i < arg_count; i++) {
-        struct wi_array* array = wi_arg_array(state, i + 1);
+        struct wi_array* array = wi_arg_array(state, (uint8_t)(i + 1));
         int              count = array->items.count;
 
         if (count == 0) {

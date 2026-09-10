@@ -2,6 +2,7 @@
 
 #include <math.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdlib.h>
 
 #include "../../include/wi.h"
@@ -112,7 +113,7 @@ _math_max(struct wi_state* state, uint8_t arg_count) {
     wi_real max = wi_arg_real(state, 1);
 
     for (int i = 1; i < arg_count; i++) {
-        wi_real arg = wi_arg_real(state, i + 1);
+        wi_real arg = wi_arg_real(state, (uint8_t)(i + 1));
 
         if (arg > max) {
             max = arg;
@@ -128,7 +129,7 @@ _math_min(struct wi_state* state, uint8_t arg_count) {
     wi_real min = wi_arg_real(state, 1);
 
     for (int i = 1; i < arg_count; i++) {
-        wi_real arg = wi_arg_real(state, i + 1);
+        wi_real arg = wi_arg_real(state, (uint8_t)(i + 1));
 
         if (arg < min) {
             min = arg;

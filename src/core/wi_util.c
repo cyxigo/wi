@@ -32,14 +32,14 @@ wi_vasprintf(const char* format, va_list args) {
         return NULL;
     }
 
-    char* buf = malloc(len + 1);
+    char* buf = malloc((size_t)(len + 1));
 
     if (WI_UNLIKELY(!buf)) {
         return NULL;
     }
 
     va_copy(args_copy, args);
-    int written = vsnprintf(buf, len + 1, format, args_copy);
+    int written = vsnprintf(buf, (size_t)(len + 1), format, args_copy);
     va_end(args_copy);
 
     if (written < 0) {

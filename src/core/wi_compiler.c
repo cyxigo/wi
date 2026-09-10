@@ -40,7 +40,7 @@ _compiler_add_local(struct wi_compiler* compiler) {
             capacity = WI_LOCAL_MAX;
         }
 
-        compiler->locals = realloc(compiler->locals, sizeof(struct wi_compiler_local) * capacity);
+        compiler->locals = realloc(compiler->locals, sizeof(struct wi_compiler_local) * (size_t)capacity);
 
         if (!compiler->locals) {
             wi_parser_oom(compiler->parser, "failed to allocate compiler locals (_compiler_add_local)");
@@ -455,7 +455,7 @@ _compiler_add_upvalue(struct wi_compiler* compiler, uint8_t index, bool is_local
             capacity = WI_UPVALUE_MAX;
         }
 
-        compiler->upvalues = realloc(compiler->upvalues, sizeof(struct wi_compiler_upvalue) * capacity);
+        compiler->upvalues = realloc(compiler->upvalues, sizeof(struct wi_compiler_upvalue) * (size_t)capacity);
 
         if (!compiler->upvalues) {
             wi_parser_oom(compiler->parser, "failed to allocate compiler upvalues (_compiler_add_upvalue)");
