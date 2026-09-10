@@ -18,7 +18,7 @@ function common()
         set_strip("all")
     end
     
-    add_headerfiles("src/core/*.h", "src/std/*.h")
+    add_headerfiles("src/core/*.h", "src/std/*.h", "src/stm/*.h")
     add_files("src/core/*.c", "src/std/*.c", "src/stm/*.c")
     add_includedirs("src/core", "src/std", "src/stm", "include")
 
