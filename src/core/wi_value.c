@@ -19,12 +19,12 @@ _print_bytes(struct wi_state* state, char* buf, int count) {
         char* nul = memchr(ptr, '\0', (size_t)(end - ptr));
 
         if (!nul) {
-            wi_printf(state->out, "%.*s", end - ptr, ptr);
+            wi_printf(state->out, "%.*s", (int)(end - ptr), ptr);
             return;
         }
 
         if (nul > ptr) {
-            wi_printf(state->out, "%.*s", nul - ptr, ptr);
+            wi_printf(state->out, "%.*s", (int)(nul - ptr), ptr);
         }
 
         state->out(" ");
