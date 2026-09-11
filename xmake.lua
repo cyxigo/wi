@@ -111,6 +111,10 @@ target("wi_wasm")
     set_group("web")
     set_filename("wi.js")
 
+    -- never seen these warnings before but now they are everywhere so
+    -- we make emcc SHUT UP!!!!
+    add_cflags("-Wno-gnu-line-marker", "-Wno-unused-command-line-argument")
+
     if is_mode("debug") then
         set_optimize("none")
         add_ldflags("-sASSERTIONS=1", "-sSAFE_HEAP=1", "-gsource-map", {force = true})
