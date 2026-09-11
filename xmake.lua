@@ -21,7 +21,7 @@ end
 
 option("werror")
     set_description("Error on warnings (enable -Werror)")
-    set_default(true)
+    set_default(false)
     set_showmenu(true)
 option_end()
 
@@ -29,24 +29,39 @@ if has_config("werror") then
     set_warnings("error")
 end
 
--- wi doesn't really support macosx but it won't hurt to add the check here
--- "doesn't support" is a big stretch too since only problem on macosx is no foreign library loading
-if is_plat("linux", "macosx") then
-    add_requires("readline", {optional = true})
+add_requires("readline", {optional = true})
+
+-- check if our toolchain can accept gnu flags like -g or -flto
+-- on anything other than god forsaken windows we just return true
+function is_gnu_compatible()
+    if not is_plat("windows") then
+        return true -- linux/macosx/bsd default toolchains are always gcc/clang
+    end
+
+    local toolchain = get_config("toolchain")
+    return toolchain == "mingw" or toolchain == "clang" or toolchain == "gcc"
 end
 
 function common()
     if is_mode("debug") then
-        add_cflags("-g -fno-omit-frame-pointer")
+        if is_gnu_compatible() then
+            add_cflags("-fno-omit-frame-pointer")
+        end
+
         set_optimize("none")
         set_symbols("debug")
     elseif is_mode("release") then
-        add_cflags("-flto -fno-stack-protector -fno-common")
+        if is_gnu_compatible() then
+            add_cflags("-flto", "-fno-stack-protector", "-fno-common")
+        end
+
         set_optimize("fastest")
         set_strip("all")
     end
 
-    add_cflags("-Wconversion")
+    if is_gnu_compatible() then
+        add_cflags("-Wconversion")
+    end
 
     add_headerfiles("src/core/*.h", "src/std/*.h", "src/stm/*.h")
     add_files("src/core/*.c", "src/std/*.c", "src/stm/*.c")
@@ -60,13 +75,18 @@ target("wi_shared")
     set_kind("shared")
     set_group("libs")
     set_basename("wi")
+
     common()
-    add_cflags("-fvisibility=hidden", {force = true})
+
+    if is_gnu_compatible() then
+        add_cflags("-fvisibility=hidden", {force = true})
+    end
 
 target("wi")
     set_enabled(not is_plat("wasm"))
     set_kind("binary")
     set_group("apps")
+    
     common()
 
     if is_plat("linux") then
