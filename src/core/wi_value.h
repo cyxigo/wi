@@ -1,16 +1,23 @@
 #ifndef WI_VALUE_H
 #define WI_VALUE_H
 
-#include <math.h>
+#include <math.h> /* IWYU pragma: keep (NaN boxing) */
 #include <stdbool.h>
 #include <stdint.h>
-#include <string.h>
+#include <string.h> /* IWYU pragma: keep (NaN boxing) */
 
 #include "../../include/wi.h"
 #include "wi_buf.h"
 
 struct wi_box;
 
+enum {
+    WI_NULL_HASH  = 7,
+    WI_TRUE_HASH  = 9,
+    WI_FALSE_HASH = 11,
+};
+
+#ifndef WI_UNION_TAGGING
 #define WI_QNAN 0x7ffc000000000000 /* quiet nan */
 #define WI_CNAN 0x7ff8000000000000 /* canon nan */
 #define WI_SIGN_BIT 0x8000000000000000
@@ -20,10 +27,6 @@ enum {
     WI_TAG_NULL  = 2,
     WI_TAG_TRUE  = 1,
     WI_TAG_FALSE = 0,
-
-    WI_NULL_HASH  = 7,
-    WI_TRUE_HASH  = 9,
-    WI_FALSE_HASH = 11,
 };
 
 typedef uint64_t wi_value;
@@ -137,6 +140,125 @@ wi_values_equal(wi_value a, wi_value b) {
 
     return a == b;
 }
+#else
+enum wi_value_tag {
+    WI_TAG_REAL,
+    WI_TAG_EMPTY,
+    WI_TAG_NULL,
+    WI_TAG_TRUE,
+    WI_TAG_FALSE,
+    WI_TAG_BOX,
+};
+
+typedef struct wi_value {
+    enum wi_value_tag tag;
+    union {
+        wi_real        real;
+        struct wi_box* box;
+    } as;
+} wi_value;
+
+WI_INLINE wi_real
+wi_canon_real(wi_real real) {
+    return real;
+}
+
+WI_INLINE wi_value
+wi_make_real_value(wi_real real) {
+    return (wi_value){.tag = WI_TAG_REAL, .as.real = real};
+}
+
+WI_INLINE wi_value
+wi_make_empty_value(void) {
+    return (wi_value){.tag = WI_TAG_EMPTY};
+}
+
+WI_INLINE wi_value
+wi_make_null_value(void) {
+    return (wi_value){.tag = WI_TAG_NULL};
+}
+
+WI_INLINE wi_value
+wi_make_true_value(void) {
+    return (wi_value){.tag = WI_TAG_TRUE};
+}
+
+WI_INLINE wi_value
+wi_make_false_value(void) {
+    return (wi_value){.tag = WI_TAG_FALSE};
+}
+
+WI_INLINE wi_value
+wi_make_bool_value(bool boolean) {
+    return boolean ? wi_make_true_value() : wi_make_false_value();
+}
+
+WI_INLINE wi_value
+wi_make_box_value(struct wi_box* box) {
+    return (wi_value){.tag = WI_TAG_BOX, .as.box = box};
+}
+
+#define WI_MAKE_BOX_VALUE(box) wi_make_box_value((struct wi_box*)box)
+
+WI_INLINE bool
+wi_value_is_real(wi_value value) {
+    return value.tag == WI_TAG_REAL;
+}
+
+WI_INLINE bool
+wi_value_is_empty(wi_value value) {
+    return value.tag == WI_TAG_EMPTY;
+}
+
+WI_INLINE bool
+wi_value_is_null(wi_value value) {
+    return value.tag == WI_TAG_NULL;
+}
+
+WI_INLINE bool
+wi_value_is_bool(wi_value value) {
+    return value.tag == WI_TAG_TRUE || value.tag == WI_TAG_FALSE;
+}
+
+WI_INLINE bool
+wi_value_is_box(wi_value value) {
+    return value.tag == WI_TAG_BOX;
+}
+
+WI_INLINE wi_real
+wi_value_as_real(wi_value value) {
+    return value.as.real;
+}
+
+WI_INLINE bool
+wi_value_as_bool(wi_value value) {
+    return value.tag == WI_TAG_TRUE;
+}
+
+WI_INLINE struct wi_box*
+wi_value_as_box(wi_value value) {
+    return value.as.box;
+}
+
+WI_INLINE bool
+wi_value_is_falsy(wi_value value) {
+    return (wi_value_is_bool(value) && !wi_value_as_bool(value)) || wi_value_is_null(value) ||
+           (wi_value_is_real(value) && wi_value_as_real(value) == 0.0);
+}
+
+WI_INLINE bool
+wi_values_equal(wi_value a, wi_value b) {
+    if (wi_value_is_real(a) && wi_value_is_real(b)) {
+        return wi_value_as_real(a) == wi_value_as_real(b);
+    }
+
+    if (a.tag != b.tag) {
+        return false;
+    }
+
+    return a.tag != WI_TAG_BOX || a.as.box == b.as.box;
+}
+#endif /* !WI_UNION_TAGGING */
 
 void
 wi_value_print(struct wi_state* state, wi_value value);

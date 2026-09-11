@@ -7,6 +7,18 @@ set_license("MIT")
 set_languages("c99")
 set_warnings("all", "extra", "pedantic")
 
+-- NaN boxing is not nearly a portable thingy so Wi has an option to use union tagging
+-- of course, it makes Wi slower overall. so union tagging is opt-in
+option("union")
+    set_description("Use union tagging instead of NaN boxing for value representation")
+    set_default(false)
+    set_showmenu(true)
+option_end()
+
+if has_config("union") then 
+    add_defines("WI_UNION_TAGGING")
+end
+
 option("werror")
     set_description("Error on warnings (enable -Werror)")
     set_default(true)
@@ -35,6 +47,7 @@ function common()
     end
 
     add_cflags("-Wconversion")
+
     add_headerfiles("src/core/*.h", "src/std/*.h", "src/stm/*.h")
     add_files("src/core/*.c", "src/std/*.c", "src/stm/*.c")
     add_includedirs("src/core", "src/std", "src/stm", "include")
