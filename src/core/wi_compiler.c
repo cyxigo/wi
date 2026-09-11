@@ -1421,13 +1421,21 @@ _compiler_if_stmt(struct wi_compiler* compiler) {
     wi_parser_expect(compiler->parser, WI_TOKEN_CLOSE_PAREN);
 
     int then_jump = _compiler_emit_jump(compiler, WI_OP_JUMP_IF_FALSE);
-    _compiler_stmt(compiler);
+    wi_parser_expect(compiler->parser, WI_TOKEN_OPEN_BRACE);
+    _compiler_block_stmt(compiler);
 
     int else_jump = _compiler_emit_jump(compiler, WI_OP_JUMP);
     _compiler_patch_jump(compiler, then_jump);
 
     if (wi_parser_match(compiler->parser, WI_TOKEN_ELSE)) {
-        _compiler_stmt(compiler);
+        /* avoid double braces on else if chains */
+        if (wi_parser_check(compiler->parser, WI_TOKEN_IF)) {
+            wi_parser_advance(compiler->parser);
+            _compiler_if_stmt(compiler);
+        } else {
+            wi_parser_expect(compiler->parser, WI_TOKEN_OPEN_BRACE);
+            _compiler_block_stmt(compiler);
+        }
     }
 
     _compiler_patch_jump(compiler, else_jump);
@@ -1446,7 +1454,8 @@ _compiler_while_stmt(struct wi_compiler* compiler) {
     wi_parser_expect(compiler->parser, WI_TOKEN_CLOSE_PAREN);
 
     int exit_jump = _compiler_emit_jump(compiler, WI_OP_JUMP_IF_FALSE);
-    _compiler_stmt(compiler);
+    wi_parser_expect(compiler->parser, WI_TOKEN_OPEN_BRACE);
+    _compiler_block_stmt(compiler);
     _compiler_emit_loop(compiler, compiler->innermost_loop_start);
 
     _compiler_patch_jump(compiler, exit_jump);
@@ -1515,7 +1524,8 @@ _compiler_for_stmt(struct wi_compiler* compiler) {
     int exit_jump = _compiler_for_cond(compiler);
     _compiler_for_incr(compiler);
 
-    _compiler_stmt(compiler);
+    wi_parser_expect(compiler->parser, WI_TOKEN_OPEN_BRACE);
+    _compiler_block_stmt(compiler);
     _compiler_emit_loop(compiler, compiler->innermost_loop_start);
 
     if (exit_jump != -1) {
