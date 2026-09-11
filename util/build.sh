@@ -1,6 +1,7 @@
 #!/bin/bash
 # script to build both windows and linux versions of wi
 # supports two flags being -r/--release for release and -d/--debug for debug
+set -e
 
 mode="release"
 

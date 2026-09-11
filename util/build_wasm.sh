@@ -1,5 +1,7 @@
 #!/bin/bash
 # script mirroring build.sh, but builds wasm (not included in build.sh)
+set -e
+
 mode="release"
 
 while [[ $# -gt 0 ]]; do

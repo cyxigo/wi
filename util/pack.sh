@@ -6,6 +6,8 @@
 # $1 - architecture
 # $2 - executable
 # $3 - shared library
+set -e
+
 pack() {
     mkdir -p bin
     pushd bin
