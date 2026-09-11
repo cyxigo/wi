@@ -1,6 +1,6 @@
 set_project("Wi")
 
-set_version("9.0.0-beta")
+set_version("9.1.0-beta")
 set_description("The Wi programming language")
 set_license("MIT")
 
@@ -86,7 +86,7 @@ target("wi")
     set_enabled(not is_plat("wasm"))
     set_kind("binary")
     set_group("apps")
-    
+
     common()
 
     if is_plat("linux") then
