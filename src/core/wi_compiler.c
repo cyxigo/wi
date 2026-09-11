@@ -1303,12 +1303,49 @@ _compiler_import_foreign(struct wi_compiler* compiler, struct wi_string* lib_pat
 #endif /* !defined(_WIN32) && !defined(__linux__) */
 }
 
+/*
+    returns the length of the directory part of [path], including the trailing separator
+    or 0 if [path] has no directory in it (e.g. "main.wi", "<stdin>")
+*/
+static int
+_import_dir_len(const char* path) {
+    const char* slash = strrchr(path, '/');
+#ifdef _WIN32
+    const char* backslash = strrchr(path, '\\');
+
+    if (backslash > slash) {
+        slash = backslash;
+    }
+#endif
+    return slash ? (int)(slash - path + 1) : 0;
+}
+
+static bool
+_import_is_absolute(const char* path) {
+#ifdef _WIN32
+    /* \ or X: or / */
+    return path[0] == '\\' || path[0] == '/' || (wi_is_alpha(path[0]) && path[1] == ':');
+#else
+    /* every other os is actually sane (right, Windows?) */
+    return path[0] == '/';
+#endif
+}
+
 static void
 _compiler_import_expr(struct wi_compiler* compiler, bool can_assign) {
     WI_UNUSED(can_assign);
-    struct wi_token   path_token  = wi_parser_expect(compiler->parser, WI_TOKEN_STRING);
-    char*             path        = wi_sprintf("%.*s.wi", path_token.count, path_token.start);
-    struct wi_string* script_path = wi_take_calloc_string(compiler->gc, path, (int)strlen(path));
+    struct wi_token path_token = wi_parser_expect(compiler->parser, WI_TOKEN_STRING);
+
+    /*
+        path shenanigans begin here
+        all of this is so we actually search for modules relative to the current module
+        not relative to the CWD
+    */
+    const char* base     = compiler->module->path;
+    int         base_len = _import_is_absolute(path_token.start) ? 0 : _import_dir_len(base);
+
+    char*             resolved    = wi_sprintf("%.*s%.*s.wi", base_len, base, path_token.count, path_token.start);
+    struct wi_string* script_path = wi_take_calloc_string(compiler->gc, resolved, (int)strlen(resolved));
     WI_GC_PUSH_ROOT(compiler->gc, script_path);
 
     if (compiler->state->import_exists(compiler->state, script_path->buf)) {
@@ -1318,11 +1355,12 @@ _compiler_import_expr(struct wi_compiler* compiler, bool can_assign) {
         return;
     }
 
-    struct wi_string* lib_path = wi_copy_cstring(compiler->gc, script_path->buf, script_path->count - 3);
+    struct wi_string* lib_path = wi_copy_cstring(compiler->gc, path_token.start, path_token.count);
     wi_gc_pop_root(compiler->gc); /* script_path */
     WI_GC_PUSH_ROOT(compiler->gc, lib_path);
     _compiler_import_foreign(compiler, lib_path, script_path);
     wi_gc_pop_root(compiler->gc);
+    /* and never end... */
 }
 
 static struct _parse_rule _g_rules[] = {
