@@ -55,7 +55,7 @@ wi_new_gc(wi_conf* conf) {
 static void
 _gc_free_box(struct wi_gc* gc, struct wi_box* box) {
     if (WI_UNLIKELY(wi_log_gc(gc))) {
-        gc->state->out("free box at %p of kind %d\n", (void*)box, box->kind);
+        wi_printf(gc->state->out, "free box at %p of kind %d\n", (void*)box, box->kind);
     }
 
     switch (box->kind) {
@@ -189,7 +189,7 @@ _gc_mark_box(struct wi_gc* gc, struct wi_box* box) {
     }
 
     if (WI_UNLIKELY(wi_log_gc(gc))) {
-        gc->state->out("marked box at %p ", (void*)box);
+        wi_printf(gc->state->out, "marked box at %p ", (void*)box);
         wi_value_print(gc->state, WI_MAKE_BOX_VALUE(box));
         gc->state->out("\n");
     }
@@ -299,7 +299,7 @@ _gc_mark_roots(struct wi_gc* gc) {
 static void
 _gc_blacken_box(struct wi_gc* gc, struct wi_box* box) {
     if (WI_UNLIKELY(wi_log_gc(gc))) {
-        gc->state->out("blacken box at %p ", (void*)box);
+        wi_printf(gc->state->out, "blacken box at %p ", (void*)box);
         wi_value_print(gc->state, WI_MAKE_BOX_VALUE(box));
         gc->state->out("\n");
     }
@@ -502,8 +502,8 @@ wi_gc_collect_minor(struct wi_gc* gc) {
 
     if (WI_UNLIKELY(wi_log_gc(gc))) {
         gc->state->out("---  end minor gc  ---\n");
-        gc->state->out("     collected %zu bytes (from %zu to %zu)\n", before - gc->bytes_allocated, before,
-                       gc->bytes_allocated);
+        wi_printf(gc->state->out, "     collected %zu bytes (from %zu to %zu)\n", before - gc->bytes_allocated,
+                  before, gc->bytes_allocated);
     }
 }
 
@@ -526,7 +526,7 @@ wi_gc_collect_major(struct wi_gc* gc) {
 
     if (WI_UNLIKELY(wi_log_gc(gc))) {
         gc->state->out("---  end major gc  ---\n");
-        gc->state->out("     collected %zu bytes (from %zu to %zu) next at %zu\n", before - gc->bytes_allocated,
-                       before, gc->bytes_allocated, gc->next_major);
+        wi_printf(gc->state->out, "     collected %zu bytes (from %zu to %zu) next at %zu\n",
+                  before - gc->bytes_allocated, before, gc->bytes_allocated, gc->next_major);
     }
 }

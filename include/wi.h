@@ -108,7 +108,7 @@ typedef enum wi_run_result {
 } wi_run_result;
 
 /* Callback to print... something. Used by Wi for standard/error output printing */
-typedef void (*wi_print_fn)(const char* format, ...);
+typedef void (*wi_print_fn)(const char* text);
 
 /**
  * Function called right after a successful compilation of a script.

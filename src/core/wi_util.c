@@ -73,8 +73,17 @@ wi_vprintf(wi_print_fn fn, const char* format, va_list args) {
         return;
     }
 
-    fn("%s", buf);
+    fn(buf);
     free(buf);
+}
+
+/* a little wrapper around printing callbacks so we can use them just like printf (uses wi_vprintf) */
+void
+wi_printf(wi_print_fn fn, const char* format, ...) {
+    va_list args;
+    va_start(args, format);
+    wi_vprintf(fn, format, args);
+    va_end(args);
 }
 
 /*

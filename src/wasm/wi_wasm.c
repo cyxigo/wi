@@ -40,34 +40,6 @@ _print_err(const char* text) {
 }
 #endif
 
-static void
-_wasm_print(void (*js_fn)(const char* text), const char* format, va_list args) {
-    char* buf = wi_vasprintf(format, args);
-
-    if (!buf) {
-        return;
-    }
-
-    js_fn(buf);
-    free(buf);
-}
-
-static void
-_wasm_out(const char* format, ...) {
-    va_list args;
-    va_start(args, format);
-    _wasm_print(_print_out, format, args);
-    va_end(args);
-}
-
-static void
-_wasm_error(const char* format, ...) {
-    va_list args;
-    va_start(args, format);
-    _wasm_print(_print_err, format, args);
-    va_end(args);
-}
-
 EMSCRIPTEN_KEEPALIVE void
 wi_wasm_init(void) {
     if (_g_state) {
@@ -75,7 +47,7 @@ wi_wasm_init(void) {
     }
 
     _g_state = wi_new_state(&_g_conf);
-    wi_state_set_callbacks(_g_state, _wasm_out, _wasm_error, NULL, NULL, NULL);
+    wi_state_set_callbacks(_g_state, _print_out, _print_err, NULL, NULL, NULL);
 
     wi_def_stm(_g_state);
     wi_def_std(_g_state);

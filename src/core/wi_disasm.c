@@ -23,7 +23,7 @@ _simple_instr(struct wi_state* state, int offset, const char* format, ...) {
 static int
 _byte_instr(struct wi_state* state, const char* name, const char* arg_name, struct wi_prototype* prototype,
             int offset) {
-    state->out("%-16s %hhu (%s)\n", name, prototype->bytes.data[offset + 1], arg_name);
+    wi_printf(state->out, "%-16s %hhu (%s)\n", name, prototype->bytes.data[offset + 1], arg_name);
     return offset + 2;
 }
 
@@ -31,7 +31,7 @@ static int
 _short_instr(struct wi_state* state, const char* name, const char* arg_name, struct wi_prototype* prototype,
              int offset) {
     uint16_t arg = (uint16_t)(prototype->bytes.data[offset + 1] << 8 | prototype->bytes.data[offset + 2]);
-    state->out("%-16s %hu (%s)\n", name, arg, arg_name);
+    wi_printf(state->out, "%-16s %hu (%s)\n", name, arg, arg_name);
     return offset + 3;
 }
 
@@ -41,10 +41,10 @@ _constant_instr(struct wi_state* state, const char* name, const char* arg_name, 
     uint16_t constant = (uint16_t)(prototype->bytes.data[offset + 1] << 8 | prototype->bytes.data[offset + 2]);
     wi_value value    = prototype->constants.data[constant];
 
-    state->out("%-16s ", name);
-    state->out("C:%05hu ", constant);
+    wi_printf(state->out, "%-16s ", name);
+    wi_printf(state->out, "C:%05hu ", constant);
     wi_value_print(state, value);
-    state->out(" (%s)\n", arg_name);
+    wi_printf(state->out, " (%s)\n", arg_name);
 
     return offset + 3;
 }
@@ -52,19 +52,19 @@ _constant_instr(struct wi_state* state, const char* name, const char* arg_name, 
 static int
 _jump_instr(struct wi_state* state, const char* name, int sign, struct wi_prototype* prototype, int offset) {
     uint16_t jump = (uint16_t)(prototype->bytes.data[offset + 1] << 8 | prototype->bytes.data[offset + 2]);
-    state->out("%-16s O:%03i -> O:%03i\n", name, offset, offset + 3 + sign * jump);
+    wi_printf(state->out, "%-16s O:%03i -> O:%03i\n", name, offset, offset + 3 + sign * jump);
     return offset + 3;
 }
 
 int
 wi_prototype_disasm_instr(struct wi_state* state, struct wi_prototype* prototype, int offset) {
-    state->out("%04i ", offset);
+    wi_printf(state->out, "%04i ", offset);
     int line = prototype->lines.data[offset];
 
     if (offset > 0 && line == prototype->lines.data[offset - 1]) {
         state->out("   | ");
     } else {
-        state->out("%4i ", line);
+        wi_printf(state->out, "%4i ", line);
     }
 
     uint8_t opcode = prototype->bytes.data[offset];
@@ -170,7 +170,7 @@ wi_prototype_disasm_instr(struct wi_state* state, struct wi_prototype* prototype
             uint16_t constant = (uint16_t)(prototype->bytes.data[offset] << 8 | prototype->bytes.data[offset + 1]);
             wi_value prototype_value = prototype->constants.data[constant];
 
-            state->out("%-16s ", "push_closure");
+            wi_printf(state->out, "%-16s ", "push_closure");
             wi_value_print(state, prototype_value);
             state->out("\n");
 
@@ -179,7 +179,8 @@ wi_prototype_disasm_instr(struct wi_state* state, struct wi_prototype* prototype
             for (int i = 0; i < wi_value_as_prototype(prototype_value)->upvalue_count; i++) {
                 uint8_t index    = prototype->bytes.data[offset++];
                 uint8_t is_local = prototype->bytes.data[offset++];
-                state->out("    %04i    | %-16s at %hhu\n", offset - 2, is_local ? "local" : "upvalue", index);
+                wi_printf(state->out, "    %04i    | %-16s at %hhu\n", offset - 2, is_local ? "local" : "upvalue",
+                          index);
             }
 
             return offset;
@@ -214,29 +215,29 @@ wi_prototype_disasm_instr(struct wi_state* state, struct wi_prototype* prototype
             return _constant_instr(state, "get_module_var", "module variable name", prototype, offset);
     }
 
-    state->out("invalid opcode %hhu\n", opcode);
+    wi_printf(state->out, "invalid opcode %hhu\n", opcode);
     return offset + 1;
 }
 
 void
 wi_prototype_disasm(struct wi_state* state, struct wi_prototype* prototype) {
     if (prototype->is_main) {
-        state->out("--- main function (%s) ---\n", prototype->file_path);
+        wi_printf(state->out, "--- main function (%s) ---\n", prototype->file_path);
     } else if (prototype->name) {
-        state->out("--- %s() (%s) ---\n", prototype->name->buf, prototype->file_path);
+        wi_printf(state->out, "--- %s() (%s) ---\n", prototype->name->buf, prototype->file_path);
     } else {
-        state->out("--- anonymous function (%s) ---\n", prototype->file_path);
+        wi_printf(state->out, "--- anonymous function (%s) ---\n", prototype->file_path);
     }
 
-    state->out("bytes: %i\n", prototype->bytes.count);
-    state->out("constants: %i\n", prototype->constants.count);
+    wi_printf(state->out, "bytes: %i\n", prototype->bytes.count);
+    wi_printf(state->out, "constants: %i\n", prototype->constants.count);
 
     for (int i = 0; i < prototype->constants.count; i++) {
         wi_value value = prototype->constants.data[i];
 
-        state->out("    C:%05i ", i);
+        wi_printf(state->out, "    C:%05i ", i);
         wi_value_print(state, value);
-        state->out(" (%s)\n", wi_value_type(value));
+        wi_printf(state->out, " (%s)\n", wi_value_type(value));
     }
 
     state->out("instructions:\n");

@@ -52,19 +52,13 @@ _state_reset(struct wi_state* state) {
 }
 
 static void
-_state_out(const char* format, ...) {
-    va_list args;
-    va_start(args, format);
-    vprintf(format, args);
-    va_end(args);
+_state_out(const char* text) {
+    fputs(text, stdout);
 }
 
 static void
-_state_error(const char* format, ...) {
-    va_list args;
-    va_start(args, format);
-    vfprintf(stderr, format, args);
-    va_end(args);
+_state_error(const char* text) {
+    fputs(text, stderr);
 }
 
 static void
@@ -368,12 +362,12 @@ wi_state_error(struct wi_state* state, const char* format, ...) {
         struct wi_call_frame* frame     = &state->frames[i];
         struct wi_prototype*  prototype = frame->closure->prototype;
         int                   line      = prototype->lines.data[frame->ip - prototype->bytes.data - 1];
-        state->error("   --> %s:%i", prototype->file_path, line);
+        wi_printf(state->error, "   --> %s:%i", prototype->file_path, line);
 
         if (prototype->is_main) {
             state->error(" in main function\n");
         } else if (prototype->name) {
-            state->error(" in %s()\n", prototype->name->buf);
+            wi_printf(state->error, " in %s()\n", prototype->name->buf);
         } else {
             state->error(" in anonymous function\n");
         }
@@ -388,7 +382,7 @@ wi_state_error(struct wi_state* state, const char* format, ...) {
 
 WI_NORETURN void
 wi_state_oom(struct wi_state* state, const char* what) {
-    state->error("out of memory: %s\n", what);
+    wi_printf(state->error, "out of memory: %s\n", what);
     _state_reset(state);
     wi_gc_reset_roots(state->gc);
     longjmp(state->jmp, WI_RUN_ABORT);

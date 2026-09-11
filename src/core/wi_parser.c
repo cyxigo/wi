@@ -81,9 +81,9 @@ _parser_print_token_line(struct wi_parser* parser, wi_print_fn fn, struct wi_tok
 
     int line_width = _digit_count(token.line);
 
-    fn(" %*s | \n", line_width, "");
-    fn(" %*i | %.*s\n", line_width, token.line, (int)(line_end - line_start), line_start);
-    fn(" %*s | %*s", line_width, "", token.col - 1, "");
+    wi_printf(fn, " %*s | \n", line_width, "");
+    wi_printf(fn, " %*i | %.*s\n", line_width, token.line, (int)(line_end - line_start), line_start);
+    wi_printf(fn, " %*s | %*s", line_width, "", token.col - 1, "");
 
     int caret_count = wi_utf8_len(token.start, token.count);
 
@@ -109,14 +109,14 @@ _parser_error_va(struct wi_parser* parser, struct wi_token token, const char* fo
     state->error("compile error: ");
 
     if (token.kind == WI_TOKEN_ERROR) {
-        state->error("%s\n", token.start);
+        wi_printf(state->error, "%s\n", token.start);
     } else {
         wi_vprintf(state->error, format, args);
         state->error("\n");
     }
 
     _parser_print_token_line(parser, state->error, token.kind == WI_TOKEN_EOF ? parser->last : token);
-    state->error("   --> %s:%i:%i\n", parser->lexer->file_path, token.line, token.col);
+    wi_printf(state->error, "   --> %s:%i:%i\n", parser->lexer->file_path, token.line, token.col);
 
 end:
     wi_gc_reset_roots(parser->gc);
@@ -151,7 +151,7 @@ wi_parser_error_at_curr(struct wi_parser* parser, const char* format, ...) {
 
 WI_NORETURN void
 wi_parser_oom(struct wi_parser* parser, const char* what) {
-    parser->gc->state->error("out of memory: %s\n", what);
+    wi_printf(parser->gc->state->error, "out of memory: %s\n", what);
     wi_gc_reset_roots(parser->gc);
     longjmp(parser->error_jmp, 1);
 }
@@ -173,7 +173,7 @@ wi_parser_warning_at(struct wi_parser* parser, struct wi_token token, const char
 
     state->out("\n");
     _parser_print_token_line(parser, state->out, token);
-    state->out("   --> %s:%i:%i\n", parser->lexer->file_path, token.line, token.col);
+    wi_printf(state->out, "   --> %s:%i:%i\n", parser->lexer->file_path, token.line, token.col);
 }
 
 void

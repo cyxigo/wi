@@ -30,6 +30,8 @@ char*
 wi_sprintf(const char* format, ...);
 void
 wi_vprintf(wi_print_fn print, const char* format, va_list args);
+void
+wi_printf(wi_print_fn fn, const char* format, ...);
 
 char*
 wi_strdup(const char* src);
