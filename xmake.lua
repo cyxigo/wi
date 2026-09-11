@@ -61,6 +61,7 @@ target("wi_shared")
     set_group("libs")
     set_basename("wi")
     common()
+    add_cflags("-fvisibility=hidden", {force = true})
 
 target("wi")
     set_enabled(not is_plat("wasm"))
