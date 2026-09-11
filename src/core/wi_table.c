@@ -56,13 +56,13 @@ _find_entry(struct wi_entry* entries, int capacity, wi_value key) {
     for (;;) {
         struct wi_entry* entry = &entries[index];
 
-        if (wi_value_is_empty(entry->key)) {
-            if (wi_value_is_null(entry->value)) {
+        if (WI_UNLIKELY(wi_value_is_empty(entry->key))) {
+            if (WI_LIKELY(wi_value_is_null(entry->value))) {
                 return tombstone ? tombstone : entry;
             } else if (!tombstone) {
                 tombstone = entry;
             }
-        } else if (wi_values_equal(key, entry->key)) {
+        } else if (WI_LIKELY(wi_values_equal(key, entry->key))) {
             return entry;
         }
 
@@ -106,7 +106,7 @@ wi_table_set(struct wi_table* table, wi_value key, wi_value value) {
     struct wi_entry* entry      = _find_entry(table->entries, table->capacity, key);
     bool             is_new_key = wi_value_is_empty(entry->key);
 
-    if (is_new_key) {
+    if (WI_UNLIKELY(is_new_key)) {
         if (wi_value_is_null(entry->value)) {
             table->count++;
         }

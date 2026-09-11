@@ -156,14 +156,14 @@ wi_gc_realloc(struct wi_gc* gc, void* ptr, size_t old_size, size_t new_size) {
 
         if (WI_UNLIKELY(wi_conf_is_set(gc->conf, WI_CONF_STRESS_GC))) {
             wi_gc_collect_major(gc);
-        } else if (!gc->compiler && gc->young_bytes > gc->young_max) {
+        } else if (WI_UNLIKELY(!gc->compiler && gc->young_bytes > gc->young_max)) {
             /*
                 why !gc->compiler you may ask? because installing 3 gazillion write barriers in
                 the compiler would be so so painful and the benefit of minor collections at
                 compile-time is almost none to zero!
             */
             wi_gc_collect_minor(gc);
-        } else if (gc->bytes_allocated > gc->next_major) {
+        } else if (WI_UNLIKELY(gc->bytes_allocated > gc->next_major)) {
             wi_gc_collect_major(gc);
         }
     }

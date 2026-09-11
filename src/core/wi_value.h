@@ -128,12 +128,6 @@ wi_value_as_box(wi_value value) {
 }
 
 WI_INLINE bool
-wi_value_is_falsy(wi_value value) {
-    return (wi_value_is_bool(value) && !wi_value_as_bool(value)) || wi_value_is_null(value) ||
-           (wi_value_is_real(value) && wi_value_as_real(value) == 0.0);
-}
-
-WI_INLINE bool
 wi_values_equal(wi_value a, wi_value b) {
     if (wi_value_is_real(a) && wi_value_is_real(b)) {
         return wi_value_as_real(a) == wi_value_as_real(b);
@@ -242,12 +236,6 @@ wi_value_as_box(wi_value value) {
 }
 
 WI_INLINE bool
-wi_value_is_falsy(wi_value value) {
-    return (wi_value_is_bool(value) && !wi_value_as_bool(value)) || wi_value_is_null(value) ||
-           (wi_value_is_real(value) && wi_value_as_real(value) == 0.0);
-}
-
-WI_INLINE bool
 wi_values_equal(wi_value a, wi_value b) {
     if (wi_value_is_real(a) && wi_value_is_real(b)) {
         return wi_value_as_real(a) == wi_value_as_real(b);
@@ -260,6 +248,12 @@ wi_values_equal(wi_value a, wi_value b) {
     return a.tag != WI_TAG_BOX || a.as.box == b.as.box;
 }
 #endif /* !WI_UNION_TAGGING */
+
+WI_INLINE bool
+wi_value_is_falsy(wi_value value) {
+    return (wi_value_is_bool(value) && !wi_value_as_bool(value)) || wi_value_is_null(value) ||
+           (wi_value_is_real(value) && wi_value_as_real(value) == 0.0);
+}
 
 void
 wi_value_print(struct wi_state* state, wi_value value);

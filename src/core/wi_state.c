@@ -316,7 +316,7 @@ wi_state_pop_recovery(struct wi_state* state) {
 
 WI_INLINE void
 _state_close_upvalues(struct wi_state* state, wi_value* last) {
-    while (state->open_upvalues && state->open_upvalues->location >= last) {
+    while (WI_UNLIKELY(state->open_upvalues && state->open_upvalues->location >= last)) {
         struct wi_upvalue* upvalue = state->open_upvalues;
 
         upvalue->closed   = *upvalue->location;
@@ -753,7 +753,7 @@ _state_call(struct wi_state* state, struct wi_closure* closure, uint8_t arg_coun
         we set frame->slots to point to the start of the arguments so function can access them
         as locals! (first slot, which is a function, is a local too - so recursive functions can use it)
     */
-    if (prototype->is_variadic) {
+    if (WI_UNLIKELY(prototype->is_variadic)) {
         _state_push_array(state, arg_count - prototype->arity);
         frame->slots = state->stack_top - prototype->arity - 2;
     } else {
@@ -778,7 +778,7 @@ _state_tail_call(struct wi_state* state, struct wi_call_frame* frame, struct wi_
     /*
         move new arguments in the place of the old ones
     */
-    if (prototype->is_variadic) {
+    if (WI_UNLIKELY(prototype->is_variadic)) {
         _state_push_array(state, arg_count - prototype->arity);
         wi_value* callee_slots = state->stack_top - prototype->arity - 2;
         memmove(frame->slots, callee_slots, sizeof(wi_value) * (size_t)(prototype->arity + 2));
@@ -795,7 +795,7 @@ _state_tail_call(struct wi_state* state, struct wi_call_frame* frame, struct wi_
 
 WI_INLINE void
 _state_resolve_field(struct wi_state* state, struct wi_object* object, wi_value name, wi_value* value) {
-    if (wi_table_get(&object->fields, name, value)) {
+    if (WI_LIKELY(wi_table_get(&object->fields, name, value))) {
         return;
     }
 
@@ -804,23 +804,31 @@ _state_resolve_field(struct wi_state* state, struct wi_object* object, wi_value 
 
 static wi_value
 _state_resolve_method(struct wi_state* state, wi_value receiver, wi_value name) {
-    wi_value function;
-
-    if (wi_value_is_object(receiver)) {
-        _state_resolve_field(state, wi_value_as_object(receiver), name, &function);
-        return function;
+    if (WI_UNLIKELY(!wi_value_is_box(receiver))) {
+        goto error;
     }
 
+    struct wi_box*   box = wi_value_as_box(receiver);
     struct wi_table* methods;
+    wi_value         function;
 
-    if (wi_value_is_string(receiver)) {
-        methods = &state->stm_string;
-    } else if (wi_value_is_array(receiver)) {
-        methods = &state->stm_array;
-    } else if (wi_value_is_map(receiver)) {
-        methods = &state->stm_map;
-    } else {
-        wi_state_error(state, "value type %s has no methods", wi_value_type(receiver));
+    switch (box->kind) {
+        case WI_BOX_OBJECT:
+            _state_resolve_field(state, (struct wi_object*)box, name, &function);
+            return function;
+        case WI_BOX_STRING:
+            methods = &state->stm_string;
+            break;
+        case WI_BOX_ARRAY:
+            methods = &state->stm_array;
+            break;
+        case WI_BOX_MAP:
+            methods = &state->stm_map;
+            break;
+        default:
+        error:
+            wi_state_error(state, "value type %s has no methods", wi_value_type(receiver));
+            break;
     }
 
     if (WI_UNLIKELY(!wi_table_get(methods, name, &function))) {
@@ -1378,7 +1386,7 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
 
             state->stack_top = frame->slots;
 
-            if (frame->closure->prototype->is_main && !frame->closure->module->is_main) {
+            if (WI_UNLIKELY(frame->closure->prototype->is_main && !frame->closure->module->is_main)) {
                 wi_state_push(state, WI_MAKE_BOX_VALUE(frame->closure->module));
             } else {
                 wi_state_push(state, result);
