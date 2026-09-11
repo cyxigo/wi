@@ -18,8 +18,8 @@ enum {
 };
 
 #ifndef WI_UNION_TAGGING
-#define WI_QNAN 0x7ffc000000000000 /* quiet nan */
-#define WI_CNAN 0x7ff8000000000000 /* canon nan */
+#define WI_QNAN 0x7ffc000000000000 /* quiet NaN */
+#define WI_CNAN 0x7ff8000000000000 /* canon NaN */
 #define WI_SIGN_BIT 0x8000000000000000
 
 enum {
@@ -32,12 +32,13 @@ enum {
 typedef uint64_t wi_value;
 
 /*
-    canonicalize nan since welp nan is a many many many clunky values and we DO NOT want them
+    canonicalize NaN since welp NaN is a many many many clunky values and we DO NOT want them
     in our little value type
 */
 WI_INLINE wi_real
 wi_canon_real(wi_real real) {
-    if (WI_UNLIKELY(isnan(real))) {
+    /* real != real since NaN is the only um.. "number" that does not equal to itself */
+    if (WI_UNLIKELY(real != real)) {
         wi_value bits = WI_CNAN;
         memcpy(&real, &bits, sizeof(real));
     }
