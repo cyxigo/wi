@@ -2,8 +2,6 @@
 # script for profiling wi via test/benchmark tests
 # to run perf you need kernel.perf_event_paranoid and i always forget command for it so:
 # sudo sysctl -w kernel.perf_event_paranoid=-1
-set -e
-
 count=0
 total=$(ls test/benchmark/*.wi | wc -l)
 
