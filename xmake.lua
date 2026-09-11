@@ -5,7 +5,23 @@ set_description("The Wi programming language")
 set_license("MIT")
 
 set_languages("c99")
-set_warnings("everything", "error", "pedantic")
+set_warnings("all", "extra", "pedantic")
+
+option("werror")
+    set_description("Error on warnings (enable -Werror)")
+    set_default(true)
+    set_showmenu(true)
+option_end()
+
+if has_config("werror") then
+    set_warnings("error")
+end
+
+-- wi doesn't really support macosx but it won't hurt to add the check here
+-- "doesn't support" is a big stretch too since only problem on macosx is no foreign library loading
+if is_plat("linux", "macosx") then
+    add_requires("readline", {optional = true})
+end
 
 function common()
     if is_mode("debug") then
@@ -42,13 +58,15 @@ target("wi")
     if is_plat("linux") then
         add_ldflags("-rdynamic", {force = true})
     end
-     
+
     if is_plat("windows") then 
         add_files("windows/wi.rc")
-    elseif is_plat("linux") and os.isfile("/usr/include/readline/readline.h") then
+    end
+
+    if has_package("readline") then
         add_defines("WI_USE_READLINE")
-        add_links("readline")
-    end 
+        add_packages("readline")
+    end
 
 target("wi_wasm")
     set_enabled(is_plat("wasm"))
