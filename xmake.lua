@@ -29,7 +29,10 @@ if has_config("werror") then
     set_warnings("error")
 end
 
-add_requires("readline", {optional = true})
+-- wi uses horrid winapi on windows with ReadConsoleW and other winapi horror functions
+if not is_plat("windows") then
+    add_requires("readline", {optional = true})
+end
 
 -- check if our toolchain can accept gnu flags like -g or -flto
 -- on anything other than god forsaken windows we just return true
