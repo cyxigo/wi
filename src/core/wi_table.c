@@ -99,7 +99,7 @@ _table_adjust_capacity(struct wi_table* table, int capacity) {
 bool
 wi_table_set(struct wi_table* table, wi_value key, wi_value value) {
     if (WI_UNLIKELY(table->count + 1 > table->capacity * WI_TABLE_MAX_LOAD)) {
-        int capacity = WI_TABLE_GROW_CAPACITY(table->capacity);
+        int capacity = wi_table_grow_capacity(table->capacity);
         _table_adjust_capacity(table, capacity);
     }
 
@@ -209,7 +209,7 @@ wi_table_reserve(struct wi_table* table, int count) {
     int capacity = table->capacity;
 
     while (needed > capacity * WI_TABLE_MAX_LOAD) {
-        capacity = WI_TABLE_GROW_CAPACITY(capacity);
+        capacity = wi_table_grow_capacity(capacity);
     }
 
     if (capacity > table->capacity) {

@@ -16,8 +16,10 @@ enum {
     WI_BUF_CAPACITY_FACTOR  = 2,
 };
 
-#define WI_GROW_CAPACITY(capacity) \
-    ((capacity) < WI_BUF_DEFAULT_CAPACITY ? WI_BUF_DEFAULT_CAPACITY : (capacity) * WI_BUF_CAPACITY_FACTOR)
+WI_INLINE int
+wi_grow_capacity(int capacity) {
+    return capacity < WI_BUF_DEFAULT_CAPACITY ? WI_BUF_DEFAULT_CAPACITY : capacity * WI_BUF_CAPACITY_FACTOR;
+}
 
 #define WI_DECL_BUF(type, name)                                                                       \
     struct wi_##name##_buf {                                                                          \
@@ -55,7 +57,7 @@ enum {
     WI_INLINE int wi_##name##_buf_add(struct wi_##name##_buf* buf, type item) {                       \
         if (WI_UNLIKELY(buf->count + 1 > buf->capacity)) {                                            \
             int old_capacity = buf->capacity;                                                         \
-            buf->capacity    = WI_GROW_CAPACITY(buf->capacity);                                       \
+            buf->capacity    = wi_grow_capacity(buf->capacity);                                       \
             buf->data        = wi_gc_realloc(buf->gc, buf->data, sizeof(type) * (size_t)old_capacity, \
                                              sizeof(type) * (size_t)buf->capacity);                   \
         }                                                                                             \

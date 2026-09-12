@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 
+#include "wi_buf.h"
 #include "wi_value.h"
 
 struct wi_string;
@@ -16,8 +17,10 @@ enum {
     WI_TABLE_MIN_CAPACITY = 4,
 };
 
-#define WI_TABLE_GROW_CAPACITY(capacity) \
-    ((capacity) < WI_TABLE_MIN_CAPACITY ? WI_TABLE_MIN_CAPACITY : (capacity) * WI_BUF_CAPACITY_FACTOR)
+WI_INLINE int
+wi_table_grow_capacity(int capacity) {
+    return capacity < WI_TABLE_MIN_CAPACITY ? WI_TABLE_MIN_CAPACITY : capacity * WI_BUF_CAPACITY_FACTOR;
+}
 
 struct wi_entry {
     wi_value key;

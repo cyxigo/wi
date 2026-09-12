@@ -660,7 +660,7 @@ _state_grow_stack(struct wi_state* state, int needed) {
     int capacity = state->stack_capacity;
 
     while (capacity < required) {
-        capacity = WI_GROW_CAPACITY(capacity);
+        capacity = wi_grow_capacity(capacity);
     }
 
     if (capacity > WI_STACK_MAX) {
@@ -722,7 +722,7 @@ _state_call(struct wi_state* state, struct wi_closure* closure, uint8_t arg_coun
 
     /* grow the frames if needed */
     if (WI_UNLIKELY(state->frame_count == state->frame_capacity)) {
-        int capacity  = WI_GROW_CAPACITY(state->frame_capacity);
+        int capacity  = wi_grow_capacity(state->frame_capacity);
         state->frames = realloc(state->frames, sizeof(struct wi_call_frame) * (size_t)capacity);
 
         if (WI_UNLIKELY(!state->frames)) {

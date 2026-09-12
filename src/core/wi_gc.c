@@ -201,7 +201,7 @@ _gc_mark_box(struct wi_gc* gc, struct wi_box* box) {
     }
 
     if (gc->gray_count + 1 > gc->gray_capacity) {
-        gc->gray_capacity = WI_GROW_CAPACITY(gc->gray_capacity);
+        gc->gray_capacity = wi_grow_capacity(gc->gray_capacity);
         gc->gray_stack    = realloc(gc->gray_stack, sizeof(struct wi_box*) * (size_t)gc->gray_capacity);
 
         if (WI_UNLIKELY(!gc->gray_stack)) {
@@ -367,7 +367,7 @@ wi_gc_remember(struct wi_gc* gc, struct wi_box* parent) {
     parent->is_remembered = true;
 
     if (WI_UNLIKELY(gc->remembered_count + 1 > gc->remembered_capacity)) {
-        gc->remembered_capacity = WI_GROW_CAPACITY(gc->remembered_capacity);
+        gc->remembered_capacity = wi_grow_capacity(gc->remembered_capacity);
         gc->remembered = realloc(gc->remembered, sizeof(struct wi_box*) * (size_t)gc->remembered_capacity);
 
         if (WI_UNLIKELY(!gc->remembered)) {

@@ -34,7 +34,7 @@
 static struct wi_compiler_local*
 _compiler_add_local(struct wi_compiler* compiler) {
     if (WI_UNLIKELY(compiler->local_count + 1 > compiler->local_capacity)) {
-        int capacity = WI_GROW_CAPACITY(compiler->local_capacity);
+        int capacity = wi_grow_capacity(compiler->local_capacity);
 
         if (capacity > WI_LOCAL_MAX) {
             capacity = WI_LOCAL_MAX;
@@ -449,7 +449,7 @@ _compiler_add_upvalue(struct wi_compiler* compiler, uint8_t index, bool is_local
     }
 
     if (WI_UNLIKELY(compiler->prototype->upvalue_count + 1 > compiler->upvalue_capacity)) {
-        int capacity = WI_GROW_CAPACITY(compiler->upvalue_capacity);
+        int capacity = wi_grow_capacity(compiler->upvalue_capacity);
 
         if (capacity > WI_UPVALUE_MAX) {
             capacity = WI_UPVALUE_MAX;
