@@ -88,6 +88,16 @@ wi_prototype_disasm_instr(struct wi_state* state, struct wi_prototype* prototype
             return _constant_instr(state, "get_global", "global name", prototype, offset);
         case WI_OP_STORE_LOCAL:
             return _byte_instr(state, "store_local", "local slot", prototype, offset);
+        case WI_OP_STORE_LOCAL_0:
+        case WI_OP_STORE_LOCAL_1:
+        case WI_OP_STORE_LOCAL_2:
+        case WI_OP_STORE_LOCAL_3:
+        case WI_OP_STORE_LOCAL_4:
+        case WI_OP_STORE_LOCAL_5:
+        case WI_OP_STORE_LOCAL_6:
+        case WI_OP_STORE_LOCAL_7:
+        case WI_OP_STORE_LOCAL_8:
+            return _simple_instr(state, offset, "store_local_%i", opcode - WI_OP_STORE_LOCAL_0);
         case WI_OP_LOAD_LOCAL:
             return _byte_instr(state, "load_local", "local slot", prototype, offset);
         case WI_OP_LOAD_LOCAL_0:

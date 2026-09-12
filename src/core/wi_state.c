@@ -1050,6 +1050,20 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
             frame->slots[_READ_BYTE()] = wi_state_top(state);
             _DISPATCH();
         }
+        /* clang-format off */
+        _OPCODE_LABEL(STORE_LOCAL_0) :
+        _OPCODE_LABEL(STORE_LOCAL_1) :
+        _OPCODE_LABEL(STORE_LOCAL_2) :
+        _OPCODE_LABEL(STORE_LOCAL_3) :
+        _OPCODE_LABEL(STORE_LOCAL_4) :
+        _OPCODE_LABEL(STORE_LOCAL_5) :
+        _OPCODE_LABEL(STORE_LOCAL_6) :
+        _OPCODE_LABEL(STORE_LOCAL_7) :
+        _OPCODE_LABEL(STORE_LOCAL_8) : {
+            frame->slots[opcode - WI_OP_STORE_LOCAL_0] = wi_state_top(state);
+            _DISPATCH();
+        }
+        /* clang-format on */
         _OPCODE_LABEL(LOAD_LOCAL) : {
             wi_state_push(state, frame->slots[_READ_BYTE()]);
             _DISPATCH();

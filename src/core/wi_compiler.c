@@ -502,11 +502,11 @@ _compiler_var(struct wi_compiler* compiler, struct wi_token name, bool can_assig
     uint8_t           get_op;
 
     if (arg != -1) {
-        set_op = WI_OP_STORE_LOCAL;
-
         if (arg <= 8) {
+            set_op = (uint8_t)(WI_OP_STORE_LOCAL_0 + arg);
             get_op = (uint8_t)(WI_OP_LOAD_LOCAL_0 + arg);
         } else {
+            set_op = WI_OP_STORE_LOCAL;
             get_op = WI_OP_LOAD_LOCAL;
         }
     } else if ((arg = _compiler_resolve_upvalue(compiler, name, &attrs)) != -1) {
@@ -558,7 +558,9 @@ _compiler_var(struct wi_compiler* compiler, struct wi_token name, bool can_assig
         _compiler_emit_opcode(compiler, set_op);
 
         if (!global_name) {
-            _compiler_emit_byte(compiler, (uint8_t)arg);
+            if (set_op == WI_OP_STORE_LOCAL || set_op == WI_OP_STORE_UPVALUE) {
+                _compiler_emit_byte(compiler, (uint8_t)arg);
+            }
         } else {
             _compiler_emit_short(compiler, (uint16_t)arg);
         }
