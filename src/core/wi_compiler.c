@@ -1344,7 +1344,12 @@ _compiler_import_expr(struct wi_compiler* compiler, bool can_assign) {
     const char* base     = compiler->module->path;
     int         base_len = _import_is_absolute(path_token.start) ? 0 : _import_dir_len(base);
 
-    char*             resolved    = wi_sprintf("%.*s%.*s.wi", base_len, base, path_token.count, path_token.start);
+    char* resolved = wi_sprintf("%.*s%.*s.wi", base_len, base, path_token.count, path_token.start);
+
+    if (!resolved) {
+        wi_parser_oom(compiler->parser, "failed to allocate the import path (_compiler_import_expr)");
+    }
+
     struct wi_string* script_path = wi_take_calloc_string(compiler->gc, resolved, (int)strlen(resolved));
     WI_GC_PUSH_ROOT(compiler->gc, script_path);
 
