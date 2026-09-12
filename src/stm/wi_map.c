@@ -40,7 +40,7 @@ _map_keys(struct wi_state* state, uint8_t arg_count) {
     struct wi_map*   map    = wi_arg_map(state, 1);
     struct wi_array* result = wi_new_array(state->gc);
     wi_state_ppush(state, WI_MAKE_BOX_VALUE(result));
-    wi_value_buf_reserve(&result->items, map->items.count);
+    wi_value_buf_reserve(&result->items, map->items.live_count);
 
     for (int i = 0; i < map->items.capacity; i++) {
         struct wi_entry* entry = &map->items.entries[i];
@@ -57,8 +57,7 @@ _map_values(struct wi_state* state, uint8_t arg_count) {
     struct wi_map*   map    = wi_arg_map(state, 1);
     struct wi_array* result = wi_new_array(state->gc);
     wi_state_ppush(state, WI_MAKE_BOX_VALUE(result));
-
-    wi_value_buf_reserve(&result->items, map->items.count);
+    wi_value_buf_reserve(&result->items, map->items.live_count);
 
     for (int i = 0; i < map->items.capacity; i++) {
         struct wi_entry* entry = &map->items.entries[i];
