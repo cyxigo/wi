@@ -1469,7 +1469,9 @@ _compiler_if_stmt(struct wi_compiler* compiler) {
         /* avoid double braces on else if chains */
         if (wi_parser_check(compiler->parser, WI_TOKEN_IF)) {
             wi_parser_advance(compiler->parser);
+            wi_parser_enter(compiler->parser);
             _compiler_if_stmt(compiler);
+            wi_parser_leave(compiler->parser);
         } else {
             wi_parser_expect(compiler->parser, WI_TOKEN_OPEN_BRACE);
             _compiler_block_stmt(compiler);
