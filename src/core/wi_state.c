@@ -802,7 +802,7 @@ _state_resolve_field(struct wi_state* state, struct wi_object* object, wi_value 
     wi_state_error(state, "object has no field %s", wi_value_as_cstring(name));
 }
 
-static wi_value
+WI_INLINE wi_value
 _state_resolve_method(struct wi_state* state, wi_value receiver, wi_value name) {
     if (WI_UNLIKELY(!wi_value_is_box(receiver))) {
         goto error;
