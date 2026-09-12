@@ -1610,7 +1610,7 @@ wi_state_call(struct wi_state* state, wi_value callable, uint8_t arg_count, bool
 
     struct wi_closure* closure = wi_value_as_closure(callable);
 
-    /* same thing as wi_call! but instead storing where the ffi stack starts */
+    /* storing where the ffi stack starts as an offset in case of stack reallocation (scary) */
     ptrdiff_t ffi_stack_offset = state->ffi_stack ? state->ffi_stack - state->stack : -1;
     int       base_frame_count = state->frame_count;
     _state_call(state, closure, arg_count);
