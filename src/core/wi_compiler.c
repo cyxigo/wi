@@ -1616,13 +1616,18 @@ _compiler_for_stmt(struct wi_compiler* compiler) {
 
     compiler->innermost_loop->continue_start = compiler->prototype->bytes.count;
 
-    struct wi_byte_buf* bytes = &compiler->innermost_loop->incr_bytes;
-    struct wi_int_buf*  lines = &compiler->innermost_loop->incr_lines;
+    struct wi_byte_buf* bytes      = &compiler->prototype->bytes;
+    struct wi_int_buf*  lines      = &compiler->prototype->lines;
+    struct wi_byte_buf* incr_bytes = &compiler->innermost_loop->incr_bytes;
+    struct wi_int_buf*  incr_lines = &compiler->innermost_loop->incr_lines;
 
-    for (int i = 0; i < bytes->count; i++) {
-        wi_byte_buf_add(&compiler->prototype->bytes, bytes->data[i]);
-        wi_int_buf_add(&compiler->prototype->lines, lines->data[i]);
-    }
+    wi_byte_buf_reserve(bytes, incr_bytes->count);
+    memcpy(bytes->data + bytes->count, incr_bytes->data, (size_t)incr_bytes->count);
+    bytes->count += incr_bytes->count;
+
+    wi_int_buf_reserve(lines, incr_lines->count);
+    memcpy(lines->data + lines->count, incr_lines->data, sizeof(int) * (size_t)incr_lines->count);
+    lines->count += incr_lines->count;
 
     _compiler_emit_loop(compiler, compiler->innermost_loop->start);
 
