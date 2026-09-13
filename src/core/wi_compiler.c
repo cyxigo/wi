@@ -1577,7 +1577,7 @@ _compiler_for_incr(struct wi_compiler* compiler) {
 
     /*
         we swap current prototype bytes for our loop state bytes
-        which we emit when we enter a new loop iteration (continue/end of the for body)
+        which we emit when we enter a new loop iteration (end of the for body)
     */
     struct wi_loop* loop = compiler->loop;
     struct wi_code* code = compiler->code;
@@ -1586,6 +1586,8 @@ _compiler_for_incr(struct wi_compiler* compiler) {
         reset/capture tco while we compile increment expression
         if increment expression does a call, our compiler, after swapped back to original buffer,
         will think "ohhh last call where is it" but offset is COMPLELETY wrong for the original buffer
+        this is mostly unreachable, like, really really really really hard to even trigger
+        buuuutttttt it costs nothing to be correct!
     */
     int last_call_offset       = compiler->last_call_offset;
     compiler->last_call_offset = -1;
