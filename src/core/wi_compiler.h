@@ -49,6 +49,13 @@ struct wi_loop {
     int             start;
     int             scope_depth;
     /*
+        offset to which continue will jump to
+        for - increment start
+        while - loop opcode
+        -1 - not yet set but must be unreachable
+    */
+    int continue_start;
+    /*
         we need to keep increment part of the for-loop... somewhere. we keep it here!
         the reason we need to even do that is because increment is parsed before the body
         and should be executed... after.

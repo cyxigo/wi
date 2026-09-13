@@ -1263,9 +1263,13 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
             _CHECK_INTERRUPT();
             _DISPATCH();
         }
-        _OPCODE_LABEL(BREAK) : {
+        /* clang-format off */
+        /* both of these are unreachable and patched before execution or disassembly */
+        _OPCODE_LABEL(BREAK) :
+        _OPCODE_LABEL(CONTINUE) : {
             _ERROR("invalid opcode");
         }
+        /* clang-format on */
         _OPCODE_LABEL(PUSH_ARRAY) : {
             uint16_t count = _READ_SHORT();
             _state_push_array(state, (int)count);

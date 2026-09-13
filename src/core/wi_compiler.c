@@ -191,13 +191,13 @@ _compiler_patch_jump(struct wi_compiler* compiler, int offset) {
 static void
 _compiler_emit_loop(struct wi_compiler* compiler, int loop_start) {
     _compiler_emit_opcode(compiler, WI_OP_LOOP);
-    int offset = compiler->prototype->bytes.count - loop_start + 2;
+    int jump = compiler->prototype->bytes.count - loop_start + 2;
 
-    if (offset > WI_LOOP_MAX) {
+    if (jump > WI_LOOP_MAX) {
         wi_parser_error_at_curr(compiler->parser, "too much code to loop (limit is %i)", WI_LOOP_MAX);
     }
 
-    _compiler_emit_short(compiler, (uint16_t)offset);
+    _compiler_emit_short(compiler, (uint16_t)jump);
 }
 
 static void
@@ -208,11 +208,13 @@ _compiler_start_loop(struct wi_compiler* compiler) {
         wi_parser_oom(compiler->parser, "failed to allocate a loop state (_compiler_start_loop)");
     }
 
-    loop->enclosing   = compiler->innermost_loop;
-    loop->start       = compiler->prototype->bytes.count;
-    loop->scope_depth = compiler->scope_depth;
+    loop->enclosing      = compiler->innermost_loop;
+    loop->start          = compiler->prototype->bytes.count;
+    loop->continue_start = -1;
+    loop->scope_depth    = compiler->scope_depth;
     wi_byte_buf_init(&loop->incr_bytes, compiler->gc);
     wi_int_buf_init(&loop->incr_lines, compiler->gc);
+
     compiler->innermost_loop = loop;
 }
 
@@ -226,6 +228,17 @@ _compiler_end_loop(struct wi_compiler* compiler) {
         if (bytes[offset] == WI_OP_BREAK) {
             bytes[offset] = WI_OP_JUMP;
             _compiler_patch_jump(compiler, offset + 1);
+            offset += 3;
+        } else if (bytes[offset] == WI_OP_CONTINUE) {
+            bytes[offset] = WI_OP_JUMP;
+            int jump      = loop->continue_start - (offset + 3);
+
+            if (jump < 0 || jump > WI_JUMP_MAX) {
+                wi_parser_error_at_curr(compiler->parser, "too much code to jump over (limit is %i)", WI_JUMP_MAX);
+            }
+
+            bytes[offset + 1] = (uint8_t)(jump >> 8);
+            bytes[offset + 2] = (uint8_t)(jump & 0xff);
             offset += 3;
         } else {
             offset += wi_prototype_instr_size(compiler->prototype, offset);
@@ -1526,6 +1539,7 @@ _compiler_while_stmt(struct wi_compiler* compiler) {
     int exit_jump = _compiler_emit_jump(compiler, WI_OP_JUMP_IF_FALSE);
     wi_parser_expect(compiler->parser, WI_TOKEN_OPEN_BRACE);
     _compiler_block_stmt(compiler);
+    compiler->innermost_loop->continue_start = compiler->prototype->bytes.count;
     _compiler_emit_loop(compiler, compiler->innermost_loop->start);
 
     _compiler_patch_jump(compiler, exit_jump);
@@ -1555,17 +1569,6 @@ _compiler_for_cond(struct wi_compiler* compiler) {
     wi_parser_expect(compiler->parser, WI_TOKEN_SEMICOLON);
 
     return _compiler_emit_jump(compiler, WI_OP_JUMP_IF_FALSE);
-}
-
-static void
-_compiler_emit_incr(struct wi_compiler* compiler) {
-    struct wi_byte_buf* bytes = &compiler->innermost_loop->incr_bytes;
-    struct wi_int_buf*  lines = &compiler->innermost_loop->incr_lines;
-
-    for (int i = 0; i < bytes->count; i++) {
-        wi_byte_buf_add(&compiler->prototype->bytes, bytes->data[i]);
-        wi_int_buf_add(&compiler->prototype->lines, lines->data[i]);
-    }
 }
 
 static void
@@ -1611,7 +1614,16 @@ _compiler_for_stmt(struct wi_compiler* compiler) {
     wi_parser_expect(compiler->parser, WI_TOKEN_OPEN_BRACE);
     _compiler_block_stmt(compiler);
 
-    _compiler_emit_incr(compiler);
+    compiler->innermost_loop->continue_start = compiler->prototype->bytes.count;
+
+    struct wi_byte_buf* bytes = &compiler->innermost_loop->incr_bytes;
+    struct wi_int_buf*  lines = &compiler->innermost_loop->incr_lines;
+
+    for (int i = 0; i < bytes->count; i++) {
+        wi_byte_buf_add(&compiler->prototype->bytes, bytes->data[i]);
+        wi_int_buf_add(&compiler->prototype->lines, lines->data[i]);
+    }
+
     _compiler_emit_loop(compiler, compiler->innermost_loop->start);
 
     if (exit_jump != -1) {
@@ -1640,8 +1652,7 @@ _compiler_continue_stmt(struct wi_compiler* compiler) {
     }
 
     _compiler_pop_loop_locals(compiler);
-    _compiler_emit_incr(compiler);
-    _compiler_emit_loop(compiler, compiler->innermost_loop->start);
+    _compiler_emit_jump(compiler, WI_OP_CONTINUE);
     wi_parser_expect(compiler->parser, WI_TOKEN_SEMICOLON);
 }
 
