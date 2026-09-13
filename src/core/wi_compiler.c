@@ -85,8 +85,8 @@ wi_new_compiler(struct wi_compiler* outer, struct wi_state* state, struct wi_par
     compiler->upvalues         = NULL;
     compiler->upvalue_capacity = 0;
 
-    compiler->loop             = NULL;
-    compiler->last_call_offset = -1;
+    compiler->loop      = NULL;
+    compiler->last_call = -1;
 
     struct wi_compiler_local* local = _compiler_add_local(compiler);
     local->name                     = WI_BLANK_TOKEN;
@@ -183,8 +183,8 @@ _compiler_patch_jump(struct wi_compiler* compiler, int offset) {
         for a tail call, the jump would land on... weeeeird things
         so we invalidate this tco candidate
     */
-    if (compiler->code->bytes.count == compiler->last_call_offset + 2) {
-        compiler->last_call_offset = -1;
+    if (compiler->code->bytes.count == compiler->last_call + 2) {
+        compiler->last_call = -1;
     }
 }
 
@@ -851,7 +851,7 @@ _compiler_call_expr(struct wi_compiler* compiler, bool can_assign) {
     WI_UNUSED(can_assign);
     uint8_t arg_count = _compiler_arg_list(compiler, 0);
     _compiler_emit_opcode_byte(compiler, WI_OP_CALL, arg_count);
-    compiler->last_call_offset = compiler->code->bytes.count - 2;
+    compiler->last_call = compiler->code->bytes.count - 2;
     compiler->slot_count -= arg_count;
 }
 
@@ -942,7 +942,7 @@ _compiler_invoke_expr(struct wi_compiler* compiler, bool can_assign) {
     uint8_t arg_count = _compiler_arg_list(compiler, 1);
 
     _compiler_emit_opcode_byte(compiler, WI_OP_CALL, arg_count);
-    compiler->last_call_offset = compiler->code->bytes.count - 2;
+    compiler->last_call = compiler->code->bytes.count - 2;
     compiler->slot_count -= arg_count;
 }
 
@@ -1589,16 +1589,16 @@ _compiler_for_incr(struct wi_compiler* compiler) {
         this is mostly unreachable, like, really really really really hard to even trigger
         buuuutttttt it costs nothing to be correct!
     */
-    int last_call_offset       = compiler->last_call_offset;
-    compiler->last_call_offset = -1;
-    compiler->code             = &loop->incr;
+    int last_call_offset = compiler->last_call;
+    compiler->last_call  = -1;
+    compiler->code       = &loop->incr;
 
     _compiler_expr(compiler);
     _compiler_emit_opcode(compiler, WI_OP_POP);
     wi_parser_expect(compiler->parser, WI_TOKEN_CLOSE_PAREN);
 
-    compiler->code             = code;
-    compiler->last_call_offset = last_call_offset;
+    compiler->code      = code;
+    compiler->last_call = last_call_offset;
 }
 
 static void
@@ -1666,7 +1666,7 @@ _compiler_return_stmt(struct wi_compiler* compiler) {
 
     int      end    = compiler->code->bytes.count;
     uint8_t* bytes  = compiler->code->bytes.data;
-    int      offset = compiler->last_call_offset;
+    int      offset = compiler->last_call;
 
     if (offset != -1 && offset == end - 2 && bytes[offset] == WI_OP_CALL) {
         bytes[offset] = WI_OP_TAIL_CALL;

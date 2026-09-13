@@ -92,7 +92,7 @@ struct wi_compiler {
     int                         upvalue_capacity; /* count is prototype->upvalue_count */
 
     struct wi_loop* loop;
-    int             last_call_offset;
+    int             last_call;
 };
 
 struct wi_compiler*
