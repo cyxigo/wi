@@ -1361,6 +1361,7 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
 
             if (wi_value_is_foreign(value)) {
                 wi_state_call_foreign(state, wi_value_as_foreign(value), arg_count);
+                _UPDATE_FRAME();
                 _DISPATCH();
             }
 
@@ -1380,6 +1381,7 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
 
             if (wi_value_is_foreign(value)) {
                 wi_state_call_foreign(state, wi_value_as_foreign(value), arg_count);
+                _UPDATE_FRAME();
                 /*
                     we can't reuse the call frame because well... it does not exist to begin with
                     so we use WI_OP_RETURN, which, removes the frame!
