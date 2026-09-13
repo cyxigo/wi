@@ -1,12 +1,15 @@
-local start = os.clock()
-local list = {}
+start = os.clock()
+list = {}
+
 for i = 0, 999999 do
-  list[i] = i
+    list[i] = i
 end
 
-local sum = 0
+sum = 0
+
 for k, i in pairs(list) do
-  sum = sum + i
+    sum = sum + i
 end
+
 io.write(sum .. "\n")
 io.write(string.format("elapsed: %.8f\n", os.clock() - start))
