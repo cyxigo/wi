@@ -223,7 +223,7 @@ _compiler_end_loop(struct wi_compiler* compiler) {
     uint8_t*        bytes  = compiler->prototype->bytes.data;
 
     while (offset < compiler->prototype->bytes.count) {
-        if (bytes[offset] == WI_OP_LOOP_END) {
+        if (bytes[offset] == WI_OP_BREAK) {
             bytes[offset] = WI_OP_JUMP;
             _compiler_patch_jump(compiler, offset + 1);
             offset += 3;
@@ -1629,7 +1629,7 @@ _compiler_break_stmt(struct wi_compiler* compiler) {
     }
 
     _compiler_pop_loop_locals(compiler);
-    _compiler_emit_jump(compiler, WI_OP_LOOP_END);
+    _compiler_emit_jump(compiler, WI_OP_BREAK);
     wi_parser_expect(compiler->parser, WI_TOKEN_SEMICOLON);
 }
 

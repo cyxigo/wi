@@ -164,7 +164,7 @@ wi_prototype_disasm_instr(struct wi_state* state, struct wi_prototype* prototype
             return _jump_instr(state, "or", 1, prototype, offset);
         case WI_OP_LOOP:
             return _jump_instr(state, "loop", -1, prototype, offset);
-        case WI_OP_LOOP_END:
+        case WI_OP_BREAK:
             return _simple_instr(state, offset, "invalid opcode");
         case WI_OP_PUSH_ARRAY:
             return _short_instr(state, "push_array", "item count", prototype, offset);

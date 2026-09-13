@@ -1263,7 +1263,7 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
             _CHECK_INTERRUPT();
             _DISPATCH();
         }
-        _OPCODE_LABEL(LOOP_END) : {
+        _OPCODE_LABEL(BREAK) : {
             _ERROR("invalid opcode");
         }
         _OPCODE_LABEL(PUSH_ARRAY) : {
