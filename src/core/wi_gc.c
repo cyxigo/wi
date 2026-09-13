@@ -7,6 +7,7 @@
 #include "../../include/wi_conf.h"
 #include "wi_box.h"
 #include "wi_buf.h"
+#include "wi_code.h"
 #include "wi_compiler.h"
 #include "wi_state.h"
 #include "wi_table.h"
@@ -80,8 +81,7 @@ _gc_free_box(struct wi_gc* gc, struct wi_box* box) {
         case WI_BOX_PROTOTYPE: {
             struct wi_prototype* prototype = (struct wi_prototype*)box;
 
-            wi_byte_buf_free(&prototype->bytes);
-            wi_int_buf_free(&prototype->lines);
+            wi_code_free(&prototype->code);
             wi_value_buf_free(&prototype->constants);
             WI_GC_FREE(gc, struct wi_prototype, box);
 

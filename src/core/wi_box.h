@@ -6,6 +6,7 @@
 
 #include "../../include/wi.h"
 #include "wi_buf.h"
+#include "wi_code.h"
 #include "wi_table.h"
 #include "wi_value.h"
 
@@ -129,8 +130,7 @@ struct wi_prototype {
     struct wi_box       box;
     const char*         file_path;
     struct wi_string*   name;
-    struct wi_byte_buf  bytes;
-    struct wi_int_buf   lines;
+    struct wi_code      code;
     struct wi_value_buf constants;
     bool                is_main;
     bool                is_variadic;

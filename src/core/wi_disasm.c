@@ -23,14 +23,15 @@ _simple_instr(struct wi_state* state, int offset, const char* format, ...) {
 static int
 _byte_instr(struct wi_state* state, const char* name, const char* arg_name, struct wi_prototype* prototype,
             int offset) {
-    wi_printf(state->out, "%-16s %hhu (%s)\n", name, prototype->bytes.data[offset + 1], arg_name);
+    wi_printf(state->out, "%-16s %hhu (%s)\n", name, prototype->code.bytes.data[offset + 1], arg_name);
     return offset + 2;
 }
 
 static int
 _short_instr(struct wi_state* state, const char* name, const char* arg_name, struct wi_prototype* prototype,
              int offset) {
-    uint16_t arg = (uint16_t)(prototype->bytes.data[offset + 1] << 8 | prototype->bytes.data[offset + 2]);
+    uint16_t arg =
+        (uint16_t)(prototype->code.bytes.data[offset + 1] << 8 | prototype->code.bytes.data[offset + 2]);
     wi_printf(state->out, "%-16s %hu (%s)\n", name, arg, arg_name);
     return offset + 3;
 }
@@ -38,8 +39,9 @@ _short_instr(struct wi_state* state, const char* name, const char* arg_name, str
 static int
 _constant_instr(struct wi_state* state, const char* name, const char* arg_name, struct wi_prototype* prototype,
                 int offset) {
-    uint16_t constant = (uint16_t)(prototype->bytes.data[offset + 1] << 8 | prototype->bytes.data[offset + 2]);
-    wi_value value    = prototype->constants.data[constant];
+    uint16_t constant =
+        (uint16_t)(prototype->code.bytes.data[offset + 1] << 8 | prototype->code.bytes.data[offset + 2]);
+    wi_value value = prototype->constants.data[constant];
 
     wi_printf(state->out, "%-16s ", name);
     wi_printf(state->out, "C:%05hu ", constant);
@@ -51,7 +53,8 @@ _constant_instr(struct wi_state* state, const char* name, const char* arg_name, 
 
 static int
 _jump_instr(struct wi_state* state, const char* name, int sign, struct wi_prototype* prototype, int offset) {
-    uint16_t jump = (uint16_t)(prototype->bytes.data[offset + 1] << 8 | prototype->bytes.data[offset + 2]);
+    uint16_t jump =
+        (uint16_t)(prototype->code.bytes.data[offset + 1] << 8 | prototype->code.bytes.data[offset + 2]);
     wi_printf(state->out, "%-16s O:%03i -> O:%03i\n", name, offset, offset + 3 + sign * jump);
     return offset + 3;
 }
@@ -59,15 +62,17 @@ _jump_instr(struct wi_state* state, const char* name, int sign, struct wi_protot
 int
 wi_prototype_disasm_instr(struct wi_state* state, struct wi_prototype* prototype, int offset) {
     wi_printf(state->out, "%04i ", offset);
-    int line = prototype->lines.data[offset];
+    uint8_t* bytes = prototype->code.bytes.data;
+    int*     lines = prototype->code.lines.data;
+    int      line  = lines[offset];
 
-    if (offset > 0 && line == prototype->lines.data[offset - 1]) {
+    if (offset > 0 && line == lines[offset - 1]) {
         state->out("   | ");
     } else {
         wi_printf(state->out, "%4i ", line);
     }
 
-    uint8_t opcode = prototype->bytes.data[offset];
+    uint8_t opcode = bytes[offset];
 
     switch (opcode) {
         case WI_OP_PUSH:
@@ -179,7 +184,7 @@ wi_prototype_disasm_instr(struct wi_state* state, struct wi_prototype* prototype
         case WI_OP_PUSH_CLOSURE: {
             offset++;
 
-            uint16_t constant = (uint16_t)(prototype->bytes.data[offset] << 8 | prototype->bytes.data[offset + 1]);
+            uint16_t constant        = (uint16_t)(bytes[offset] << 8 | bytes[offset + 1]);
             wi_value prototype_value = prototype->constants.data[constant];
 
             wi_printf(state->out, "%-16s ", "push_closure");
@@ -189,8 +194,8 @@ wi_prototype_disasm_instr(struct wi_state* state, struct wi_prototype* prototype
             offset += 2;
 
             for (int i = 0; i < wi_value_as_prototype(prototype_value)->upvalue_count; i++) {
-                uint8_t index    = prototype->bytes.data[offset++];
-                uint8_t is_local = prototype->bytes.data[offset++];
+                uint8_t index    = bytes[offset++];
+                uint8_t is_local = bytes[offset++];
                 wi_printf(state->out, "    %04i    | %-16s at %hhu\n", offset - 2, is_local ? "local" : "upvalue",
                           index);
             }
@@ -241,7 +246,7 @@ wi_prototype_disasm(struct wi_state* state, struct wi_prototype* prototype) {
         wi_printf(state->out, "--- anonymous function (%s) ---\n", prototype->file_path);
     }
 
-    wi_printf(state->out, "bytes: %i\n", prototype->bytes.count);
+    wi_printf(state->out, "bytes: %i\n", prototype->code.bytes.count);
     wi_printf(state->out, "constants: %i\n", prototype->constants.count);
 
     for (int i = 0; i < prototype->constants.count; i++) {
@@ -254,7 +259,7 @@ wi_prototype_disasm(struct wi_state* state, struct wi_prototype* prototype) {
 
     state->out("instructions:\n");
 
-    for (int offset = 0; offset < prototype->bytes.count;) {
+    for (int offset = 0; offset < prototype->code.bytes.count;) {
         state->out("    ");
         offset = wi_prototype_disasm_instr(state, prototype, offset);
     }

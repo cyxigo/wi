@@ -7,6 +7,7 @@
 #include <string.h>
 
 #include "wi_buf.h"
+#include "wi_code.h"
 #include "wi_gc.h"
 #include "wi_state.h"
 #include "wi_table.h"
@@ -104,8 +105,7 @@ wi_new_prototype(struct wi_gc* gc, const char* file_path) {
 
     prototype->file_path = file_path;
     prototype->name      = NULL;
-    wi_byte_buf_init(&prototype->bytes, gc);
-    wi_int_buf_init(&prototype->lines, gc);
+    wi_code_init(&prototype->code, gc);
     wi_value_buf_init(&prototype->constants, gc);
     prototype->is_main        = false;
     prototype->is_variadic    = false;
@@ -124,7 +124,7 @@ wi_prototype_instr_size(struct wi_prototype* prototype, int offset) {
 #undef WI_OPCODE
     };
 
-    uint8_t* bytes  = prototype->bytes.data;
+    uint8_t* bytes  = prototype->code.bytes.data;
     uint8_t  opcode = bytes[offset];
     int      size   = opcode_sizes[opcode];
 

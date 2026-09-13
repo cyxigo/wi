@@ -4,6 +4,7 @@
 #include <stdint.h>
 
 #include "wi_buf.h"
+#include "wi_code.h"
 #include "wi_parser.h"
 
 /*
@@ -60,14 +61,12 @@ struct wi_loop {
         the reason we need to even do that is because increment is parsed before the body
         and should be executed... after.
     */
-    struct wi_byte_buf incr_bytes;
-    struct wi_int_buf  incr_lines;
+    struct wi_code incr;
 };
 
 WI_INLINE void
 wi_delete_loop(struct wi_loop* loop) {
-    wi_byte_buf_free(&loop->incr_bytes);
-    wi_int_buf_free(&loop->incr_lines);
+    wi_code_free(&loop->incr);
     free(loop);
 }
 
@@ -80,6 +79,7 @@ struct wi_compiler {
 
     struct wi_module*    module;
     struct wi_prototype* prototype;
+    struct wi_code*      code;
     int                  slot_count;
     struct wi_map*       constants;
 
@@ -91,7 +91,7 @@ struct wi_compiler {
     struct wi_compiler_upvalue* upvalues;
     int                         upvalue_capacity; /* count is prototype->upvalue_count */
 
-    struct wi_loop* innermost_loop;
+    struct wi_loop* loop;
     int             last_call_offset;
 };
 

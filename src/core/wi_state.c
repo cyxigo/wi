@@ -361,7 +361,7 @@ wi_state_error(struct wi_state* state, const char* format, ...) {
     for (int i = state->frame_count - 1; i >= 0; i--) {
         struct wi_call_frame* frame     = &state->frames[i];
         struct wi_prototype*  prototype = frame->closure->prototype;
-        int                   line      = prototype->lines.data[frame->ip - prototype->bytes.data - 1];
+        int                   line      = prototype->code.lines.data[frame->ip - prototype->code.bytes.data - 1];
         wi_printf(state->error, "   --> %s:%i", prototype->file_path, line);
 
         if (prototype->is_main) {
@@ -740,7 +740,7 @@ _state_call(struct wi_state* state, struct wi_closure* closure, uint8_t arg_coun
 
     struct wi_call_frame* frame = &state->frames[state->frame_count++];
     frame->closure              = closure;
-    frame->ip                   = prototype->bytes.data;
+    frame->ip                   = prototype->code.bytes.data;
 
     /*
         for variadic functions, stack looks like:
@@ -790,7 +790,7 @@ _state_tail_call(struct wi_state* state, struct wi_call_frame* frame, struct wi_
     }
 
     frame->closure = closure;
-    frame->ip      = prototype->bytes.data;
+    frame->ip      = prototype->code.bytes.data;
 }
 
 WI_INLINE void

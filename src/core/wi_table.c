@@ -219,16 +219,12 @@ wi_table_reserve(struct wi_table* table, int count) {
 
 void
 wi_table_copy(struct wi_table* src, struct wi_table* dest) {
-    if (src == dest) {
+    if (src->capacity == 0 || src == dest) {
         return;
     }
 
     if (dest->entries) {
         wi_table_free(dest);
-    }
-
-    if (src->capacity == 0) {
-        return;
     }
 
     struct wi_entry* entries = WI_GC_ALLOC(dest->gc, struct wi_entry, src->capacity);
