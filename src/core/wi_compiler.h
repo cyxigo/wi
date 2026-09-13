@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 
+#include "wi_buf.h"
 #include "wi_parser.h"
 
 /*
@@ -43,6 +44,26 @@ struct wi_compiler_upvalue {
     bool    is_local;
 };
 
+struct wi_loop {
+    struct wi_loop* enclosing;
+    int             start;
+    int             scope_depth;
+    /*
+        we need to keep increment part of the for-loop... somewhere. we keep it here!
+        the reason we need to even do that is because increment is parsed before the body
+        and should be executed... after.
+    */
+    struct wi_byte_buf incr_bytes;
+    struct wi_int_buf  incr_lines;
+};
+
+WI_INLINE void
+wi_delete_loop(struct wi_loop* loop) {
+    wi_byte_buf_free(&loop->incr_bytes);
+    wi_int_buf_free(&loop->incr_lines);
+    free(loop);
+}
+
 struct wi_compiler {
     struct wi_compiler* outer;
     struct wi_state*    state;
@@ -63,9 +84,8 @@ struct wi_compiler {
     struct wi_compiler_upvalue* upvalues;
     int                         upvalue_capacity; /* count is prototype->upvalue_count */
 
-    int innermost_loop_start;
-    int innermost_loop_scope_depth;
-    int last_call_offset;
+    struct wi_loop* innermost_loop;
+    int             last_call_offset;
 };
 
 struct wi_compiler*

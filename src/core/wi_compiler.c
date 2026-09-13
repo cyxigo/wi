@@ -83,9 +83,8 @@ wi_new_compiler(struct wi_compiler* outer, struct wi_state* state, struct wi_par
     compiler->upvalues         = NULL;
     compiler->upvalue_capacity = 0;
 
-    compiler->innermost_loop_start       = -1;
-    compiler->innermost_loop_scope_depth = 0;
-    compiler->last_call_offset           = -1;
+    compiler->innermost_loop   = NULL;
+    compiler->last_call_offset = -1;
 
     struct wi_compiler_local* local = _compiler_add_local(compiler);
     local->name                     = WI_BLANK_TOKEN;
@@ -99,6 +98,14 @@ wi_new_compiler(struct wi_compiler* outer, struct wi_state* state, struct wi_par
 
 void
 wi_delete_compiler(struct wi_compiler* compiler) {
+    struct wi_loop* loop = compiler->innermost_loop;
+
+    while (loop) {
+        struct wi_loop* enclosing = loop->enclosing;
+        wi_delete_loop(loop);
+        loop = enclosing;
+    }
+
     free(compiler->locals);
     free(compiler->upvalues);
     free(compiler);
@@ -194,9 +201,26 @@ _compiler_emit_loop(struct wi_compiler* compiler, int loop_start) {
 }
 
 static void
+_compiler_start_loop(struct wi_compiler* compiler) {
+    struct wi_loop* loop = malloc(sizeof(struct wi_loop));
+
+    if (!loop) {
+        wi_parser_oom(compiler->parser, "failed to allocate a loop state (_compiler_start_loop)");
+    }
+
+    loop->enclosing   = compiler->innermost_loop;
+    loop->start       = compiler->prototype->bytes.count;
+    loop->scope_depth = compiler->scope_depth;
+    wi_byte_buf_init(&loop->incr_bytes, compiler->gc);
+    wi_int_buf_init(&loop->incr_lines, compiler->gc);
+    compiler->innermost_loop = loop;
+}
+
+static void
 _compiler_end_loop(struct wi_compiler* compiler) {
-    int      offset = compiler->innermost_loop_start;
-    uint8_t* bytes  = compiler->prototype->bytes.data;
+    struct wi_loop* loop   = compiler->innermost_loop;
+    int             offset = loop->start;
+    uint8_t*        bytes  = compiler->prototype->bytes.data;
 
     while (offset < compiler->prototype->bytes.count) {
         if (bytes[offset] == WI_OP_LOOP_END) {
@@ -207,12 +231,15 @@ _compiler_end_loop(struct wi_compiler* compiler) {
             offset += wi_prototype_instr_size(compiler->prototype, offset);
         }
     }
+
+    compiler->innermost_loop = loop->enclosing;
+    wi_delete_loop(loop);
 }
 
 static void
 _compiler_pop_loop_locals(struct wi_compiler* compiler) {
     for (int i = compiler->local_count - 1;
-         i >= 0 && compiler->locals[i].depth > compiler->innermost_loop_scope_depth; i--) {
+         i >= 0 && compiler->locals[i].depth > compiler->innermost_loop->scope_depth; i--) {
         /*
             emit byte directly instead of emit opcode because we don't need to account the stack effect here
             so break/continue inside a branch won't undercount the prototype->max_slot_count
@@ -1490,11 +1517,7 @@ _compiler_if_stmt(struct wi_compiler* compiler) {
 
 static void
 _compiler_while_stmt(struct wi_compiler* compiler) {
-    int enclosing_start       = compiler->innermost_loop_start;
-    int enclosing_scope_depth = compiler->innermost_loop_scope_depth;
-
-    compiler->innermost_loop_start       = compiler->prototype->bytes.count;
-    compiler->innermost_loop_scope_depth = compiler->scope_depth;
+    _compiler_start_loop(compiler);
 
     wi_parser_expect(compiler->parser, WI_TOKEN_OPEN_PAREN);
     _compiler_expr(compiler);
@@ -1503,13 +1526,10 @@ _compiler_while_stmt(struct wi_compiler* compiler) {
     int exit_jump = _compiler_emit_jump(compiler, WI_OP_JUMP_IF_FALSE);
     wi_parser_expect(compiler->parser, WI_TOKEN_OPEN_BRACE);
     _compiler_block_stmt(compiler);
-    _compiler_emit_loop(compiler, compiler->innermost_loop_start);
+    _compiler_emit_loop(compiler, compiler->innermost_loop->start);
 
     _compiler_patch_jump(compiler, exit_jump);
     _compiler_end_loop(compiler);
-
-    compiler->innermost_loop_start       = enclosing_start;
-    compiler->innermost_loop_scope_depth = enclosing_scope_depth;
 }
 
 static void
@@ -1538,21 +1558,43 @@ _compiler_for_cond(struct wi_compiler* compiler) {
 }
 
 static void
+_compiler_emit_incr(struct wi_compiler* compiler) {
+    struct wi_byte_buf* bytes = &compiler->innermost_loop->incr_bytes;
+    struct wi_int_buf*  lines = &compiler->innermost_loop->incr_lines;
+
+    for (int i = 0; i < bytes->count; i++) {
+        wi_byte_buf_add(&compiler->prototype->bytes, bytes->data[i]);
+        wi_int_buf_add(&compiler->prototype->lines, lines->data[i]);
+    }
+}
+
+static void
 _compiler_for_incr(struct wi_compiler* compiler) {
     if (wi_parser_match(compiler->parser, WI_TOKEN_CLOSE_PAREN)) {
         return;
     }
 
-    int body_jump  = _compiler_emit_jump(compiler, WI_OP_JUMP);
-    int incr_start = compiler->prototype->bytes.count;
+    /*
+        we swap current prototype bytes for our loop state bytes
+        which we emit when we enter a new loop iteration (continue/end of the for body)
+    */
+    struct wi_prototype* prototype = compiler->prototype;
+    struct wi_loop*      loop      = compiler->innermost_loop;
+    struct wi_byte_buf   bytes     = prototype->bytes;
+    struct wi_int_buf    lines     = prototype->lines;
+
+    prototype->bytes = loop->incr_bytes;
+    prototype->lines = loop->incr_lines;
 
     _compiler_expr(compiler);
     _compiler_emit_opcode(compiler, WI_OP_POP);
     wi_parser_expect(compiler->parser, WI_TOKEN_CLOSE_PAREN);
 
-    _compiler_emit_loop(compiler, compiler->innermost_loop_start);
-    compiler->innermost_loop_start = incr_start;
-    _compiler_patch_jump(compiler, body_jump);
+    loop->incr_bytes = prototype->bytes;
+    loop->incr_lines = prototype->lines;
+
+    prototype->bytes = bytes;
+    prototype->lines = lines;
 }
 
 static void
@@ -1561,19 +1603,16 @@ _compiler_for_stmt(struct wi_compiler* compiler) {
     wi_parser_expect(compiler->parser, WI_TOKEN_OPEN_PAREN);
 
     _compiler_for_init(compiler);
-
-    int enclosing_start       = compiler->innermost_loop_start;
-    int enclosing_scope_depth = compiler->innermost_loop_scope_depth;
-
-    compiler->innermost_loop_start       = compiler->prototype->bytes.count;
-    compiler->innermost_loop_scope_depth = compiler->scope_depth;
+    _compiler_start_loop(compiler);
 
     int exit_jump = _compiler_for_cond(compiler);
     _compiler_for_incr(compiler);
 
     wi_parser_expect(compiler->parser, WI_TOKEN_OPEN_BRACE);
     _compiler_block_stmt(compiler);
-    _compiler_emit_loop(compiler, compiler->innermost_loop_start);
+
+    _compiler_emit_incr(compiler);
+    _compiler_emit_loop(compiler, compiler->innermost_loop->start);
 
     if (exit_jump != -1) {
         _compiler_patch_jump(compiler, exit_jump);
@@ -1581,14 +1620,11 @@ _compiler_for_stmt(struct wi_compiler* compiler) {
 
     _compiler_end_loop(compiler);
     _compiler_end_scope(compiler);
-
-    compiler->innermost_loop_start       = enclosing_start;
-    compiler->innermost_loop_scope_depth = enclosing_scope_depth;
 }
 
 static void
 _compiler_break_stmt(struct wi_compiler* compiler) {
-    if (compiler->innermost_loop_start == -1) {
+    if (!compiler->innermost_loop) {
         wi_parser_error_at_prev(compiler->parser, "cannot use 'break' outside of a loop");
     }
 
@@ -1599,12 +1635,13 @@ _compiler_break_stmt(struct wi_compiler* compiler) {
 
 static void
 _compiler_continue_stmt(struct wi_compiler* compiler) {
-    if (compiler->innermost_loop_start == -1) {
+    if (!compiler->innermost_loop) {
         wi_parser_error_at_prev(compiler->parser, "cannot use 'continue' outside of a loop");
     }
 
     _compiler_pop_loop_locals(compiler);
-    _compiler_emit_loop(compiler, compiler->innermost_loop_start);
+    _compiler_emit_incr(compiler);
+    _compiler_emit_loop(compiler, compiler->innermost_loop->start);
     wi_parser_expect(compiler->parser, WI_TOKEN_SEMICOLON);
 }
 
