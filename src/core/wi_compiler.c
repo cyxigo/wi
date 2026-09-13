@@ -1582,13 +1582,21 @@ _compiler_for_incr(struct wi_compiler* compiler) {
     struct wi_loop* loop = compiler->loop;
     struct wi_code* code = compiler->code;
 
-    compiler->code = &loop->incr;
+    /*
+        reset/capture tco while we compile increment expression
+        if increment expression does a call, our compiler, after swapped back to original buffer,
+        will think "ohhh last call where is it" but offset is COMPLELETY wrong for the original buffer
+    */
+    int last_call_offset       = compiler->last_call_offset;
+    compiler->last_call_offset = -1;
+    compiler->code             = &loop->incr;
 
     _compiler_expr(compiler);
     _compiler_emit_opcode(compiler, WI_OP_POP);
     wi_parser_expect(compiler->parser, WI_TOKEN_CLOSE_PAREN);
 
-    compiler->code = code;
+    compiler->code             = code;
+    compiler->last_call_offset = last_call_offset;
 }
 
 static void
