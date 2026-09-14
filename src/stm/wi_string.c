@@ -203,6 +203,7 @@ _string_split(struct wi_state* state, uint8_t arg_count) {
 
     if (sep_count == 0) {
         wi_value_buf_add(&result->items, state->ffi_stack[1]);
+        WI_GC_WRITE_BARRIER(state->gc, result, state->ffi_stack[1]);
         return;
     }
 
@@ -215,6 +216,7 @@ _string_split(struct wi_state* state, uint8_t arg_count) {
 
             WI_GC_PUSH_ROOT(state->gc, part);
             wi_value_buf_add(&result->items, WI_MAKE_BOX_VALUE(part));
+            WI_GC_WRITE_BARRIER(state->gc, result, state->ffi_stack[1]);
             wi_gc_pop_root(state->gc);
 
             i += sep_count;
@@ -228,6 +230,7 @@ _string_split(struct wi_state* state, uint8_t arg_count) {
 
     WI_GC_PUSH_ROOT(state->gc, last);
     wi_value_buf_add(&result->items, WI_MAKE_BOX_VALUE(last));
+    WI_GC_WRITE_BARRIER(state->gc, result, state->ffi_stack[1]);
     wi_gc_pop_root(state->gc);
 }
 

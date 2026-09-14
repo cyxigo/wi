@@ -241,7 +241,9 @@ _array_select(struct wi_state* state, uint8_t arg_count) {
             wi_state_error(state, "array resized during iteration");
         }
 
-        wi_value_buf_add(&result->items, wi_state_pop(state));
+        wi_value value = wi_state_pop(state);
+        wi_value_buf_add(&result->items, value);
+        WI_GC_WRITE_BARRIER(state->gc, result, value);
     }
 }
 
@@ -266,6 +268,7 @@ _array_where(struct wi_state* state, uint8_t arg_count) {
 
         if (!wi_value_is_falsy(wi_state_pop(state))) {
             wi_value_buf_add(&result->items, item);
+            WI_GC_WRITE_BARRIER(state->gc, result, item);
         }
     }
 }

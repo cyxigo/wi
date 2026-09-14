@@ -53,6 +53,7 @@ _os_args(struct wi_state* state, uint8_t arg_count) {
 
         WI_GC_PUSH_ROOT(state->gc, arg_box);
         wi_value_buf_add(&result->items, WI_MAKE_BOX_VALUE(arg_box));
+        WI_GC_WRITE_BARRIER(state->gc, result, WI_MAKE_BOX_VALUE(arg_box));
         wi_gc_pop_root(state->gc);
     }
 }
