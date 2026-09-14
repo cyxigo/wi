@@ -181,6 +181,31 @@ wi_state_pop_recovery(struct wi_state* state);
 
 WI_NORETURN void
 wi_state_error(struct wi_state* state, const char* format, ...);
+
+WI_NORETURN WI_INLINE void
+wi_state_int_error(struct wi_state* state, wi_real real) {
+    wi_state_error(state, "real " WI_REAL_FORMAT " has no integer representation", real);
+}
+
+/*
+    check if a real can even be an integer
+    e.g. if we need a valid index or a valid integer in a bitwise operation
+    that's... actually all use cases uhh
+*/
+WI_INLINE int64_t
+wi_state_real_to_int(struct wi_state* state, wi_real real) {
+    if (real != trunc(real)) {
+        wi_state_int_error(state, real);
+    }
+
+    /* INT64_MIN and INT64_MAX but like as doubles */
+    if (real < -9223372036854775808.0 || real >= 9223372036854775808.0) {
+        wi_state_int_error(state, real);
+    }
+
+    return (int64_t)real;
+}
+
 WI_NORETURN void
 wi_state_oom(struct wi_state* state, const char* what);
 

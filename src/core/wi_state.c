@@ -489,13 +489,13 @@ _state_validate_index(struct wi_state* state, const char* target, wi_value value
         wi_state_error(state, "%s index must be a real but got %s", target, wi_value_type(value));
     }
 
-    int index = (int)wi_value_as_real(value);
+    int64_t index = wi_state_real_to_int(state, wi_value_as_real(value));
 
     if (WI_UNLIKELY(index < 0 || index >= count)) {
-        wi_state_error(state, "%s index out of range: %i", target, index);
+        wi_state_error(state, "%s index out of range: %lld", target, index);
     }
 
-    return index;
+    return (int)index;
 }
 
 static void
@@ -916,6 +916,11 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
         frame->ip = ip;                     \
         wi_state_error(state, __VA_ARGS__); \
     } while (false)
+#define _INT_ERROR(real)                 \
+    do {                                 \
+        frame->ip = ip;                  \
+        wi_state_int_error(state, real); \
+    } while (false)
 
 #if defined(__GNUC__) || defined(__clang__)
     static void* dispatch_table[] = {
@@ -961,39 +966,41 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
                                                                                                   \
         wi_state_push(state, maker(a_real op b_real));                                            \
     } while (false)
-#define _BIT_OP(op)                                                                               \
-    do {                                                                                          \
-        wi_value b = wi_state_pop(state);                                                         \
-        wi_value a = wi_state_pop(state);                                                         \
-                                                                                                  \
-        if (WI_UNLIKELY(!wi_value_is_real(a) || !wi_value_is_real(b))) {                          \
-            _ERROR("cannot use operator '" #op "' on values of type %s and %s", wi_value_type(a), \
-                   wi_value_type(b));                                                             \
-        }                                                                                         \
-                                                                                                  \
-        int64_t a_int = (int64_t)wi_value_as_real(a);                                             \
-        int64_t b_int = (int64_t)wi_value_as_real(b);                                             \
-                                                                                                  \
-        wi_state_push(state, wi_make_real_value((wi_real)(a_int op b_int)));                      \
+#define _BIT_OP(op)                                                                                              \
+    do {                                                                                                         \
+        wi_value b = wi_state_pop(state);                                                                        \
+        wi_value a = wi_state_pop(state);                                                                        \
+        frame->ip  = ip;                                                                                         \
+                                                                                                                 \
+        if (WI_UNLIKELY(!wi_value_is_real(a) || !wi_value_is_real(b))) {                                         \
+            wi_state_error(state, "cannot use operator '" #op "' on values of type %s and %s", wi_value_type(a), \
+                           wi_value_type(b));                                                                    \
+        }                                                                                                        \
+                                                                                                                 \
+        int64_t a_int = wi_state_real_to_int(state, wi_value_as_real(a));                                        \
+        int64_t b_int = wi_state_real_to_int(state, wi_value_as_real(b));                                        \
+                                                                                                                 \
+        wi_state_push(state, wi_make_real_value((wi_real)(a_int op b_int)));                                     \
     } while (false)
-#define _SHIFT_OP(op)                                                                             \
-    do {                                                                                          \
-        wi_value b = wi_state_pop(state);                                                         \
-        wi_value a = wi_state_pop(state);                                                         \
-                                                                                                  \
-        if (WI_UNLIKELY(!wi_value_is_real(a) || !wi_value_is_real(b))) {                          \
-            _ERROR("cannot use operator '" #op "' on values of type %s and %s", wi_value_type(a), \
-                   wi_value_type(b));                                                             \
-        }                                                                                         \
-                                                                                                  \
-        int64_t a_int = (int64_t)wi_value_as_real(a);                                             \
-        int64_t b_int = (int64_t)wi_value_as_real(b);                                             \
-                                                                                                  \
-        if (WI_UNLIKELY(b_int < 0 || b_int >= 64)) {                                              \
-            _ERROR("shift amount out of range: %lld", b_int);                                     \
-        }                                                                                         \
-                                                                                                  \
-        wi_state_push(state, wi_make_real_value((wi_real)(a_int op b_int)));                      \
+#define _SHIFT_OP(op)                                                                                            \
+    do {                                                                                                         \
+        wi_value b = wi_state_pop(state);                                                                        \
+        wi_value a = wi_state_pop(state);                                                                        \
+        frame->ip  = ip;                                                                                         \
+                                                                                                                 \
+        if (WI_UNLIKELY(!wi_value_is_real(a) || !wi_value_is_real(b))) {                                         \
+            wi_state_error(state, "cannot use operator '" #op "' on values of type %s and %s", wi_value_type(a), \
+                           wi_value_type(b));                                                                    \
+        }                                                                                                        \
+                                                                                                                 \
+        int64_t a_int = wi_state_real_to_int(state, wi_value_as_real(a));                                        \
+        int64_t b_int = wi_state_real_to_int(state, wi_value_as_real(b));                                        \
+                                                                                                                 \
+        if (WI_UNLIKELY(b_int < 0 || b_int >= 64)) {                                                             \
+            wi_state_error(state, "shift amount out of range: %lld", b_int);                                     \
+        }                                                                                                        \
+                                                                                                                 \
+        wi_state_push(state, wi_make_real_value((wi_real)(a_int op b_int)));                                     \
     } while (false)
 
     _INTERPRET {
@@ -1182,7 +1189,10 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
                 _ERROR("cannot use operator '~' on a value of type %s", wi_value_type(a));
             }
 
-            wi_state_push(state, wi_make_real_value((wi_real) ~(int64_t)wi_value_as_real(a)));
+            frame->ip     = ip;
+            int64_t a_int = wi_state_real_to_int(state, wi_value_as_real(a));
+
+            wi_state_push(state, wi_make_real_value((wi_real)~a_int));
             _DISPATCH();
         }
         _OPCODE_LABEL(BIT_SHL) : {
@@ -1579,6 +1589,7 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
 #undef _UPDATE_FRAME
 
 #undef _ERROR
+#undef _INT_ERROR
 
 #undef _INTERPRET
 #undef _DISPATCH
