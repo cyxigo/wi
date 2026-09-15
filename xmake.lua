@@ -15,7 +15,7 @@ option("union")
     set_showmenu(true)
 option_end()
 
-if has_config("union") then 
+if has_config("union") then
     add_defines("WI_UNION_TAGGING")
 end
 
@@ -96,7 +96,7 @@ target("wi")
         add_ldflags("-rdynamic", {force = true})
     end
 
-    if is_plat("windows") then 
+    if is_plat("windows") then
         add_files("windows/wi.rc")
     end
 
