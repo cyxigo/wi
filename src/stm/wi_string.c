@@ -16,7 +16,7 @@ _string_sub(struct wi_state* state, uint8_t arg_count) {
     int64_t end    = wi_state_real_to_int(state, wi_arg_real(state, 3));
 
     if (start < 0 || start > len || end < 0 || end > len || start > end) {
-        wi_state_error(state, "string sub bounds out of range: %i to %i", start, end);
+        wi_state_error(state, "string sub bounds out of range: %lld to %lld", start, end);
     }
 
     int byte_start = wi_utf8_cp_offset(string, count, (int)start);

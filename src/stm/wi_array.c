@@ -141,7 +141,7 @@ _array_remove_at(struct wi_state* state, uint8_t arg_count) {
     int64_t          index = wi_state_real_to_int(state, wi_arg_real(state, 2));
 
     if (index < 0 || index >= array->items.count) {
-        wi_state_error(state, "array index out of range: %i", index);
+        wi_state_error(state, "array index out of range: %lld", index);
     }
 
     wi_value removed = array->items.data[index];
@@ -194,7 +194,7 @@ _array_slice(struct wi_state* state, uint8_t arg_count) {
     int64_t          end   = wi_state_real_to_int(state, wi_arg_real(state, 3));
 
     if (start < 0 || start > array->items.count || end < 0 || end > array->items.count || start > end) {
-        wi_state_error(state, "array slice bounds out of range: %i to %i", start, end);
+        wi_state_error(state, "array slice bounds out of range: %lld to %lld", start, end);
     }
 
     struct wi_array* result = wi_new_array(state->gc);
