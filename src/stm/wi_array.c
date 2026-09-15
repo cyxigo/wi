@@ -1,4 +1,5 @@
 #include <stdbool.h>
+#include <stdint.h>
 
 #include "../../include/wi.h"
 #include "../core/wi_state.h"
@@ -137,7 +138,7 @@ static void
 _array_remove_at(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     struct wi_array* array = wi_arg_array(state, 1);
-    int              index = (int)wi_arg_real(state, 2);
+    int64_t          index = wi_state_real_to_int(state, wi_arg_real(state, 2));
 
     if (index < 0 || index >= array->items.count) {
         wi_state_error(state, "array index out of range: %i", index);
@@ -145,7 +146,7 @@ _array_remove_at(struct wi_state* state, uint8_t arg_count) {
 
     wi_value removed = array->items.data[index];
 
-    for (int i = index; i < array->items.count - 1; i++) {
+    for (int64_t i = index; i < array->items.count - 1; i++) {
         array->items.data[i] = array->items.data[i + 1];
     }
 
@@ -189,8 +190,8 @@ static void
 _array_slice(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     struct wi_array* array = wi_arg_array(state, 1);
-    int              start = (int)wi_arg_real(state, 2);
-    int              end   = (int)wi_arg_real(state, 3);
+    int64_t          start = wi_state_real_to_int(state, wi_arg_real(state, 2));
+    int64_t          end   = wi_state_real_to_int(state, wi_arg_real(state, 3));
 
     if (start < 0 || start > array->items.count || end < 0 || end > array->items.count || start > end) {
         wi_state_error(state, "array slice bounds out of range: %i to %i", start, end);
@@ -198,11 +199,11 @@ _array_slice(struct wi_state* state, uint8_t arg_count) {
 
     struct wi_array* result = wi_new_array(state->gc);
     wi_state_ppush(state, WI_MAKE_BOX_VALUE(result));
-    int count = end - start;
+    int64_t count = end - start;
 
     wi_value_buf_reserve(&result->items, count);
     memcpy(result->items.data, array->items.data + start, sizeof(wi_value) * (size_t)count);
-    result->items.count = count;
+    result->items.count = (int)count;
 }
 
 static void

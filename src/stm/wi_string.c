@@ -9,18 +9,18 @@
 static void
 _string_sub(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
-    int   len;
-    int   count;
-    char* string = wi_arg_string(state, 1, &count, &len);
-    int   start  = (int)wi_arg_real(state, 2);
-    int   end    = (int)wi_arg_real(state, 3);
+    int     len;
+    int     count;
+    char*   string = wi_arg_string(state, 1, &count, &len);
+    int64_t start  = wi_state_real_to_int(state, wi_arg_real(state, 2));
+    int64_t end    = wi_state_real_to_int(state, wi_arg_real(state, 3));
 
     if (start < 0 || start > len || end < 0 || end > len || start > end) {
         wi_state_error(state, "string sub bounds out of range: %i to %i", start, end);
     }
 
-    int byte_start = wi_utf8_cp_offset(string, count, start);
-    int byte_end   = wi_utf8_cp_offset(string, count, end);
+    int byte_start = wi_utf8_cp_offset(string, count, (int)start);
+    int byte_end   = wi_utf8_cp_offset(string, count, (int)end);
 
     struct wi_string* result = wi_copy_cstring(state->gc, string + byte_start, byte_end - byte_start);
     wi_state_ppush(state, WI_MAKE_BOX_VALUE(result));
