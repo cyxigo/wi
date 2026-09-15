@@ -201,7 +201,7 @@ _array_slice(struct wi_state* state, uint8_t arg_count) {
     wi_state_ppush(state, WI_MAKE_BOX_VALUE(result));
     int64_t count = end - start;
 
-    wi_value_buf_reserve(&result->items, count);
+    wi_value_buf_reserve(&result->items, (int)count);
     memcpy(result->items.data, array->items.data + start, sizeof(wi_value) * (size_t)count);
     result->items.count = (int)count;
 }
