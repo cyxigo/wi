@@ -400,6 +400,35 @@ wi_state_interrupt(struct wi_state* state) {
     state->interrupted = 1;
 }
 
+WI_INLINE void
+_bit_shift(struct wi_state* state, bool right) {
+    wi_value b = wi_state_pop(state);
+    wi_value a = wi_state_pop(state);
+
+    if (WI_UNLIKELY(!wi_value_is_real(a) || !wi_value_is_real(b))) {
+        wi_state_error(state, "cannot use operator '%s' on values of type %s and %s", right ? ">>" : "<<",
+                       wi_value_type(a), wi_value_type(b));
+    }
+
+    int64_t  b_signed = wi_state_real_to_int(state, wi_value_as_real(b));
+    uint64_t a_int    = (uint64_t)wi_state_real_to_int(state, wi_value_as_real(a));
+
+    if (WI_UNLIKELY(b_signed < 0 || b_signed >= 64)) {
+        wi_state_error(state, "shift amount out of range: %lld", b_signed);
+    }
+
+    uint64_t b_int = (uint64_t)b_signed;
+    uint64_t result;
+
+    if (right) {
+        result = a_int >> b_int;
+    } else {
+        result = a_int << b_int;
+    }
+
+    wi_state_push(state, wi_make_real_value((wi_real)result));
+}
+
 static void
 _state_concat(struct wi_state* state) {
     wi_value a = wi_state_peek(state, 1);
@@ -982,26 +1011,6 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
                                                                                                                  \
         wi_state_push(state, wi_make_real_value((wi_real)(a_int op b_int)));                                     \
     } while (false)
-#define _SHIFT_OP(op)                                                                                            \
-    do {                                                                                                         \
-        wi_value b = wi_state_pop(state);                                                                        \
-        wi_value a = wi_state_pop(state);                                                                        \
-        frame->ip  = ip;                                                                                         \
-                                                                                                                 \
-        if (WI_UNLIKELY(!wi_value_is_real(a) || !wi_value_is_real(b))) {                                         \
-            wi_state_error(state, "cannot use operator '" #op "' on values of type %s and %s", wi_value_type(a), \
-                           wi_value_type(b));                                                                    \
-        }                                                                                                        \
-                                                                                                                 \
-        int64_t a_int = wi_state_real_to_int(state, wi_value_as_real(a));                                        \
-        int64_t b_int = wi_state_real_to_int(state, wi_value_as_real(b));                                        \
-                                                                                                                 \
-        if (WI_UNLIKELY(b_int < 0 || b_int >= 64)) {                                                             \
-            wi_state_error(state, "shift amount out of range: %lld", b_int);                                     \
-        }                                                                                                        \
-                                                                                                                 \
-        wi_state_push(state, wi_make_real_value((wi_real)(a_int op b_int)));                                     \
-    } while (false)
 
     _INTERPRET {
         _OPCODE_LABEL(PUSH) : {
@@ -1196,11 +1205,13 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
             _DISPATCH();
         }
         _OPCODE_LABEL(BIT_SHL) : {
-            _SHIFT_OP(<<);
+            frame->ip = ip;
+            _bit_shift(state, false);
             _DISPATCH();
         }
         _OPCODE_LABEL(BIT_SHR) : {
-            _SHIFT_OP(>>);
+            frame->ip = ip;
+            _bit_shift(state, true);
             _DISPATCH();
         }
         _OPCODE_LABEL(LEN) : {
@@ -1602,7 +1613,6 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
 
 #undef _BINARY_OP
 #undef _BIT_OP
-#undef _SHIFT_OP
 
     return WI_RUN_OK;
 }
