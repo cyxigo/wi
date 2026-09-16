@@ -9,16 +9,26 @@
 ![Code size](https://img.shields.io/github/languages/code-size/cyxigo/wi)
 
 ```scala
-obj_person := object {
-    name: "";
-    greet: |self| => std::puts("Hello, ${self.name}!");
+obj_hunter := object {
+    pounce: |self| => std::puts("${self.name} pounces on the yarn!");
 };
 
-slava := new obj_person {
-    name: "Slava";
+obj_sleeper := object {
+    nap: |self| => std::puts("${self.name} takes a nap in the sun.");
 };
 
-slava->greet(); // Hello, Slava!
+obj_cat := new obj_hunter, obj_sleeper {
+    name: "Kitty";
+    meow: |self| => std::puts("${self.name} says meow! (=^･ω･^=)");
+};
+
+whiskers := new obj_cat {
+    name: "Whiskers";
+};
+
+whiskers->pounce(); // Whiskers pounces on the yarn!
+whiskers->nap();    // Whiskers takes a nap in the sun.
+whiskers->meow();   // Whiskers says meow! (=^･ω･^=)
 ```
 
 - **Wi is small**. The [entire implementation](https://github.com/cyxigo/wi/tree/main/src) is under 15,000 lines of code.
