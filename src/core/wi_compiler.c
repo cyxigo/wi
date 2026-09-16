@@ -33,7 +33,7 @@
 #include "wi_value.h"
 
 static struct wi_compiler_local*
-_compiler_add_local(struct wi_compiler* compiler) {
+_compiler_add_local(struct wi_compiler* compiler, struct wi_token name, wi_attrs attrs, bool init) {
     if (WI_UNLIKELY(compiler->local_count + 1 > compiler->local_capacity)) {
         int capacity = wi_grow_capacity(compiler->local_capacity);
 
@@ -50,7 +50,14 @@ _compiler_add_local(struct wi_compiler* compiler) {
         compiler->local_capacity = capacity;
     }
 
-    return &compiler->locals[compiler->local_count++];
+    struct wi_compiler_local* local = &compiler->locals[compiler->local_count++];
+    local->name                     = name;
+    local->depth                    = init ? compiler->scope_depth : -1;
+    local->is_captured              = false;
+    local->used                     = init;
+    local->attrs                    = attrs;
+
+    return local;
 }
 
 struct wi_compiler*
@@ -85,16 +92,12 @@ wi_new_compiler(struct wi_compiler* outer, struct wi_state* state, struct wi_par
     compiler->upvalues         = NULL;
     compiler->upvalue_capacity = 0;
 
-    compiler->loop      = NULL;
+    compiler->loop    = NULL;
+    compiler->switch_ = NULL;
+
     compiler->last_call = -1;
 
-    struct wi_compiler_local* local = _compiler_add_local(compiler);
-    local->name                     = WI_BLANK_TOKEN;
-    local->depth                    = 0;
-    local->is_captured              = false;
-    local->used                     = true;
-    local->attrs                    = WI_DEFAULT_ATTRS;
-
+    _compiler_add_local(compiler, WI_BLANK_TOKEN, WI_DEFAULT_ATTRS, true);
     return compiler;
 }
 
@@ -106,6 +109,14 @@ wi_delete_compiler(struct wi_compiler* compiler) {
         struct wi_loop* enclosing = loop->enclosing;
         wi_delete_loop(loop);
         loop = enclosing;
+    }
+
+    struct wi_switch* switch_ = compiler->switch_;
+
+    while (switch_) {
+        struct wi_switch* enclosing = switch_->enclosing;
+        wi_delete_switch(switch_);
+        switch_ = enclosing;
     }
 
     free(compiler->locals);
@@ -350,12 +361,7 @@ _compiler_decl_var(struct wi_compiler* compiler, struct wi_token name, wi_attrs 
         }
     }
 
-    struct wi_compiler_local* local = _compiler_add_local(compiler);
-    local->name                     = name;
-    local->depth                    = -1;
-    local->is_captured              = false;
-    local->used                     = false;
-    local->attrs                    = attrs;
+    _compiler_add_local(compiler, name, attrs, false);
 }
 
 static void
@@ -1462,6 +1468,9 @@ static struct _parse_rule _g_rules[] = {
     [WI_TOKEN_FOR]             = {NULL,                    NULL,                          _PREC_NONE      },
     [WI_TOKEN_BREAK]           = {NULL,                    NULL,                          _PREC_NONE      },
     [WI_TOKEN_CONTINUE]        = {NULL,                    NULL,                          _PREC_NONE      },
+    [WI_TOKEN_SWITCH]          = {NULL,                    NULL,                          _PREC_NONE      },
+    [WI_TOKEN_CASE]            = {NULL,                    NULL,                          _PREC_NONE      },
+    [WI_TOKEN_DEFAULT]         = {NULL,                    NULL,                          _PREC_NONE      },
     [WI_TOKEN_RETURN]          = {NULL,                    NULL,                          _PREC_NONE      },
     [WI_TOKEN_OBJECT]          = {_compiler_object_expr,   NULL,                          _PREC_NONE      },
     [WI_TOKEN_NEW]             = {_compiler_new_expr,      NULL,                          _PREC_NONE      },
@@ -1651,6 +1660,89 @@ _compiler_continue_stmt(struct wi_compiler* compiler) {
 }
 
 static void
+_compiler_switch_stmt(struct wi_compiler* compiler) {
+    wi_parser_expect(compiler->parser, WI_TOKEN_OPEN_PAREN);
+    _compiler_expr(compiler);
+    wi_parser_expect(compiler->parser, WI_TOKEN_CLOSE_PAREN);
+    wi_parser_expect(compiler->parser, WI_TOKEN_OPEN_BRACE);
+
+    _compiler_begin_scope(compiler);
+    /*
+        huh?! what is this mysterious local doing here? why did we even begin a scope?
+        because switch value can be... leaked! but how?
+        if we simply emitted a naive POP opcode at the end of a switch
+        and that switch was in a loop
+        and then one of the cases had break statement in it
+        we would break out of the loop yes, but we also would have a situation like this:
+        0017    | jump_if_false    O:017 -> O:026
+        0020    | jump             O:020 -> O:037 <------ break
+        0023    | jump             O:023 -> O:026 <------ jump that is SUPPOSED TO jump to our naive POP
+        see that? we completely, and naively, skipped that one POP, and the switch value is now on the stack!
+        so this local is a small trick - we leave the job of popping the switch value to the compiler
+        (normally - via _compiler_end_scope, in a situation like this, via - _compiler_pop_loop_locals)
+    */
+    _compiler_add_local(compiler, WI_BLANK_TOKEN, WI_DEFAULT_ATTRS, true);
+    struct wi_switch* switch_ = malloc(sizeof(struct wi_switch));
+
+    if (!switch_) {
+        wi_parser_oom(compiler->parser, "failed to allocate a switch state (_compiler_switch_stmt)");
+    }
+
+    switch_->enclosing = compiler->switch_;
+    wi_int_buf_init(&switch_->end_jumps, compiler->gc);
+    switch_->has_default = false;
+
+    compiler->switch_ = switch_;
+
+    while (!wi_parser_match(compiler->parser, WI_TOKEN_CLOSE_BRACE) && !wi_parser_is_at_end(compiler->parser)) {
+        if (!wi_parser_match(compiler->parser, WI_TOKEN_CASE) &&
+            !wi_parser_match(compiler->parser, WI_TOKEN_DEFAULT)) {
+            wi_parser_error_at_prev(compiler->parser, "unexpected symbol");
+        }
+
+        if (switch_->has_default) {
+            wi_parser_error_at_prev(compiler->parser, "cannot have another case or default after default");
+        }
+
+        enum wi_token_kind kind = compiler->parser->prev.kind;
+
+        if (kind == WI_TOKEN_CASE) {
+            _compiler_emit_opcode(compiler, WI_OP_DUP);         /* [switch, switch] */
+            _compiler_expr(compiler);                           /* [switch, switch, case] */
+            wi_parser_expect(compiler->parser, WI_TOKEN_COLON); /* ...a colon */
+            _compiler_emit_opcode(compiler, WI_OP_EQUAL);       /* [switch, is_equal] */
+
+            /*
+                is_equal -> don't jump, let end_jump execute
+                !is_equal -> skip this case AND end_jump (i.e. go to the next case)
+            */
+            int skip_jump = _compiler_emit_jump(compiler, WI_OP_JUMP_IF_FALSE);
+            _compiler_stmt(compiler);
+
+            /* jump over the rest of the switch */
+            int end_jump = _compiler_emit_jump(compiler, WI_OP_JUMP);
+            wi_int_buf_add(&switch_->end_jumps, end_jump);
+
+            _compiler_patch_jump(compiler, skip_jump);
+        }
+
+        if (kind == WI_TOKEN_DEFAULT) {
+            switch_->has_default = true;
+            wi_parser_expect(compiler->parser, WI_TOKEN_COLON);
+            _compiler_stmt(compiler);
+        }
+    }
+
+    for (int i = 0; i < switch_->end_jumps.count; i++) {
+        _compiler_patch_jump(compiler, switch_->end_jumps.data[i]);
+    }
+
+    _compiler_end_scope(compiler); /* the trickery... */
+    compiler->switch_ = switch_->enclosing;
+    wi_delete_switch(switch_);
+}
+
+static void
 _compiler_return_stmt(struct wi_compiler* compiler) {
     if (!compiler->outer) {
         wi_parser_error_at_prev(compiler->parser, "cannot return from top-level code");
@@ -1730,6 +1822,10 @@ _compiler_stmt(struct wi_compiler* compiler) {
         case WI_TOKEN_CONTINUE:
             wi_parser_advance(compiler->parser);
             _compiler_continue_stmt(compiler);
+            break;
+        case WI_TOKEN_SWITCH:
+            wi_parser_advance(compiler->parser);
+            _compiler_switch_stmt(compiler);
             break;
         case WI_TOKEN_RETURN:
             wi_parser_advance(compiler->parser);

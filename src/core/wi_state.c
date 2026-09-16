@@ -1033,6 +1033,10 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
             wi_state_drop(state);
             _DISPATCH();
         }
+        _OPCODE_LABEL(DUP) : {
+            wi_state_push(state, wi_state_top(state));
+            _DISPATCH();
+        }
         _OPCODE_LABEL(DEF_GLOBAL) : {
             wi_value          name   = _READ_CONSTANT();
             struct wi_module* module = frame->closure->module;

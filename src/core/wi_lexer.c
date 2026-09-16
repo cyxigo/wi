@@ -122,6 +122,12 @@ wi_token_kind_to_string(enum wi_token_kind kind) {
             return "break";
         case WI_TOKEN_CONTINUE:
             return "continue";
+        case WI_TOKEN_SWITCH:
+            return "switch";
+        case WI_TOKEN_CASE:
+            return "case";
+        case WI_TOKEN_DEFAULT:
+            return "default";
         case WI_TOKEN_RETURN:
             return "return";
         case WI_TOKEN_OBJECT:
@@ -289,7 +295,20 @@ _lexer_name_kind(struct wi_lexer* lexer) {
         case 'b':
             return _lexer_check_kw(lexer, 1, 4, "reak", WI_TOKEN_BREAK);
         case 'c':
-            return _lexer_check_kw(lexer, 1, 7, "ontinue", WI_TOKEN_CONTINUE);
+            if (lexer->curr - lexer->start > 1) {
+                switch (lexer->start[1]) {
+                    case 'o':
+                        return _lexer_check_kw(lexer, 2, 6, "ntinue", WI_TOKEN_CONTINUE);
+                    case 'a':
+                        return _lexer_check_kw(lexer, 2, 2, "se", WI_TOKEN_CASE);
+                }
+            }
+
+            break;
+        case 's':
+            return _lexer_check_kw(lexer, 1, 5, "witch", WI_TOKEN_SWITCH);
+        case 'd':
+            return _lexer_check_kw(lexer, 1, 6, "efault", WI_TOKEN_DEFAULT);
         case 'r':
             return _lexer_check_kw(lexer, 1, 5, "eturn", WI_TOKEN_RETURN);
         case 'o':

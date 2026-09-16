@@ -208,11 +208,6 @@ wi_parser_match(struct wi_parser* parser, enum wi_token_kind kind) {
     return true;
 }
 
-bool
-wi_parser_is_at_end(struct wi_parser* parser) {
-    return wi_parser_check(parser, WI_TOKEN_EOF);
-}
-
 struct wi_token
 wi_parser_expect(struct wi_parser* parser, enum wi_token_kind kind) {
     if (wi_parser_match(parser, kind)) {

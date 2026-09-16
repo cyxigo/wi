@@ -70,6 +70,18 @@ wi_delete_loop(struct wi_loop* loop) {
     free(loop);
 }
 
+struct wi_switch {
+    struct wi_switch* enclosing;
+    struct wi_int_buf end_jumps; /* each case needs to jump over the whole switch */
+    bool              has_default;
+};
+
+WI_INLINE void
+wi_delete_switch(struct wi_switch* switch_) {
+    wi_int_buf_free(&switch_->end_jumps);
+    free(switch_);
+}
+
 struct wi_compiler {
     struct wi_compiler* outer;
     struct wi_state*    state;
@@ -91,8 +103,10 @@ struct wi_compiler {
     struct wi_compiler_upvalue* upvalues;
     int                         upvalue_capacity; /* count is prototype->upvalue_count */
 
-    struct wi_loop* loop;
-    int             last_call;
+    struct wi_loop*   loop;
+    struct wi_switch* switch_;
+
+    int last_call;
 };
 
 struct wi_compiler*
