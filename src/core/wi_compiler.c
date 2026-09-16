@@ -1270,7 +1270,7 @@ _compiler_import_foreign(struct wi_compiler* compiler, struct wi_string* lib_pat
     size_t remaining = path_size - path_len;
 
     /* 10: '\lib\' + '.dll' + '\0' */
-    if (remaining < 14 || raw_path_len > (remaining - 14)) {
+    if (remaining < 10 || raw_path_len > (remaining - 10)) {
         wi_parser_error_at_prev(compiler->parser, "library path too long");
     }
 
