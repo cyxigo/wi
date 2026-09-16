@@ -1707,10 +1707,21 @@ _compiler_switch_stmt(struct wi_compiler* compiler) {
         enum wi_token_kind kind = compiler->parser->prev.kind;
 
         if (kind == WI_TOKEN_CASE) {
-            _compiler_emit_opcode(compiler, WI_OP_DUP);         /* [switch, switch] */
-            _compiler_expr(compiler);                           /* [switch, switch, case] */
+            _compiler_emit_opcode(compiler, WI_OP_DUP);   /* [switch, switch] */
+            _compiler_expr(compiler);                     /* [switch, switch, case] */
+            _compiler_emit_opcode(compiler, WI_OP_EQUAL); /* [switch, is_equal] */
+
+            /* parse multiple values, i.e. just emit OR for each is_equal */
+            while (wi_parser_match(compiler->parser, WI_TOKEN_COMMA)) {
+                int or_jump = _compiler_emit_jump(compiler, WI_OP_OR);
+                _compiler_emit_opcode(compiler, WI_OP_DUP);   /* [switch, switch] */
+                _compiler_expr(compiler);                     /* [switch, switch, case] */
+                _compiler_emit_opcode(compiler, WI_OP_EQUAL); /* [switch, is_equal] */
+                _compiler_patch_jump(compiler, or_jump);      /* patch OR! */
+                /* stack is back to [switch, is_equal] */
+            }
+
             wi_parser_expect(compiler->parser, WI_TOKEN_COLON); /* ...a colon */
-            _compiler_emit_opcode(compiler, WI_OP_EQUAL);       /* [switch, is_equal] */
 
             /*
                 is_equal -> don't jump, let end_jump execute
