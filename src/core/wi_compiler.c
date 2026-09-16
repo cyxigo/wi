@@ -34,6 +34,10 @@
 
 static struct wi_compiler_local*
 _compiler_add_local(struct wi_compiler* compiler, struct wi_token name, wi_attrs attrs, bool init) {
+    if (compiler->local_count >= WI_LOCAL_MAX) {
+        wi_parser_error_at(compiler->parser, name, "too many local variables (limit is %i)", WI_LOCAL_MAX);
+    }
+
     if (WI_UNLIKELY(compiler->local_count + 1 > compiler->local_capacity)) {
         int capacity = wi_grow_capacity(compiler->local_capacity);
 
@@ -340,11 +344,6 @@ _compiler_end(struct wi_compiler* compiler) {
 static void
 _compiler_decl_var(struct wi_compiler* compiler, struct wi_token name, wi_attrs attrs) {
     if (compiler->scope_depth == 0) {
-        return;
-    }
-
-    if (compiler->local_count >= WI_LOCAL_MAX) {
-        wi_parser_error_at(compiler->parser, name, "too many local variables (limit is %i)", WI_LOCAL_MAX);
         return;
     }
 
