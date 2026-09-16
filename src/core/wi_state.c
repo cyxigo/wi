@@ -1638,6 +1638,11 @@ wi_state_call_foreign(struct wi_state* state, struct wi_foreign* foreign, uint8_
 
 enum wi_run_result
 wi_state_call(struct wi_state* state, wi_value callable, uint8_t arg_count, bool drop_result) {
+    if (state->c_depth == WI_CSTACK_MAX) {
+        _state_capture_overflow_ctx(state);
+        wi_state_error(state, "C stack overflow (limit is %i)", WI_CSTACK_MAX);
+    }
+
     if (wi_value_is_foreign(callable)) {
         wi_state_call_foreign(state, wi_value_as_foreign(callable), arg_count);
 
@@ -1646,11 +1651,6 @@ wi_state_call(struct wi_state* state, wi_value callable, uint8_t arg_count, bool
         }
 
         return WI_RUN_OK;
-    }
-
-    if (state->c_depth == WI_CSTACK_MAX) {
-        _state_capture_overflow_ctx(state);
-        wi_state_error(state, "C stack overflow (limit is %i)", WI_CSTACK_MAX);
     }
 
     struct wi_closure* closure = wi_value_as_closure(callable);
