@@ -34,17 +34,26 @@
 
             <h2>Wi is a small, fast, embeddable, prototype-based scripting language</h2>
             <pre>
-<span class="token-name">obj_person</span> := <span class="token-kw">object</span> {
-    <span class="token-name">name</span>: <span class="token-string">""</span>;
-    <span class="token-name">greet</span>: |<span class="token-name">self</span>| => <span class="token-name">std</span>::<span class="token-name">puts</span>(<span class="token-string">"Hello, </span>${self.name}<span class="token-string">!"</span>);
+<span class="token-name">obj_hunter</span> := <span class="token-kw">object</span> {
+    <span class="token-name">pounce</span>: |<span class="token-name">self</span>| => <span class="token-name">std</span>::<span class="token-name">puts</span>(<span class="token-string">"</span>${<span class="token-name">self</span>.<span class="token-name">name</span>}<span class="token-string"> pounces on the yarn!"</span>);
 };
 
-<span class="token-name">slava</span> := <span class="token-kw">new</span> <span class="token-name">obj_person</span> {
-    <span class="token-name">name</span>: <span class="token-string">"Slava"</span>;
+<span class="token-name">obj_sleeper</span> := <span class="token-kw">object</span> {
+    <span class="token-name">nap</span>: |<span class="token-name">self</span>| => <span class="token-name">std</span>::<span class="token-name">puts</span>(<span class="token-string">"</span>${<span class="token-name">self</span>.<span class="token-name">name</span>} <span class="token-string">takes a nap in the sun."</span>);
 };
 
-<span class="token-name">slava</span>-><span class="token-name">greet</span>(); <span class="token-comment">// Hello, Slava!</span></pre>
+<span class="token-name">obj_cat</span> := <span class="token-kw">new</span> <span class="token-name">obj_hunter</span>, <span class="token-name">obj_sleeper</span> {
+    <span class="token-name">name</span>: <span class="token-string">"Kitty"</span>;
+    <span class="token-name">meow</span>: |<span class="token-name">self</span>| => <span class="token-name">std</span>::<span class="token-name">puts</span>(<span class="token-string">"</span>${<span class="token-name">self</span>.<span class="token-name">name</span>} <span class="token-string">says meow! (=^･ω･^=)"</span>);
+};
 
+<span class="token-name">whiskers</span> := <span class="token-kw">new</span> <span class="token-name">obj_cat</span> {
+    <span class="token-name">name</span>: <span class="token-string">"Whiskers"</span>;
+};
+
+<span class="token-name">whiskers</span>-><span class="token-name">pounce()</span>; <span class="token-comment">// Whiskers pounces on the yarn!</span>
+<span class="token-name">whiskers</span>-><span class="token-name">nap()</span>;    <span class="token-comment">// Whiskers takes a nap in the sun.</span>
+<span class="token-name">whiskers</span>-><span class="token-name">meow()</span>;   <span class="token-comment">// Whiskers says meow! (=^･ω･^=)</span></pre>
             <ul>
                 <li>
                     <b>Wi is small.</b> The
