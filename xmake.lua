@@ -73,17 +73,18 @@ function common()
     set_targetdir("bin")
 end
 
-target("wi_shared")
+function library(kind)
     set_enabled(not is_plat("wasm"))
-    set_kind("shared")
+    set_kind(kind)
     set_group("libs")
     set_basename("wi")
 
     common()
 
-    if is_gnu_compatible() then
+    if kind == "shared" and is_gnu_compatible() then
         add_cflags("-fvisibility=hidden", {force = true})
     end
+end
 
 target("wi")
     set_enabled(not is_plat("wasm"))
@@ -104,6 +105,12 @@ target("wi")
         add_defines("WI_USE_READLINE")
         add_packages("readline")
     end
+
+target("wi_shared")
+    library("shared")
+
+target("wi_static")
+    library("static")
 
 target("wi_wasm")
     set_enabled(is_plat("wasm"))
