@@ -4,3 +4,4 @@ CompileFlags:
     - -std=c99
     - -xc
     - -Isrc
+    - -Iinclude
