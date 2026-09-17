@@ -278,10 +278,10 @@ _base_fields(struct wi_state* state, uint8_t arg_count) {
 }
 
 static bool
-_equals(wi_value a, wi_value b);
+_equals(struct wi_state* state, wi_value a, wi_value b, int c_depth);
 
 static bool
-_tables_equal(struct wi_table* a, struct wi_table* b) {
+_tables_equal(struct wi_state* state, struct wi_table* a, struct wi_table* b, int c_depth) {
     if (a->live_count != b->live_count) {
         return false;
     }
@@ -295,7 +295,7 @@ _tables_equal(struct wi_table* a, struct wi_table* b) {
 
         wi_value b_value;
 
-        if (!wi_table_get(b, entry->key, &b_value) || !_equals(entry->value, b_value)) {
+        if (!wi_table_get(b, entry->key, &b_value) || !_equals(state, entry->value, b_value, c_depth + 1)) {
             return false;
         }
     }
@@ -304,9 +304,13 @@ _tables_equal(struct wi_table* a, struct wi_table* b) {
 }
 
 static bool
-_equals(wi_value a, wi_value b) {
+_equals(struct wi_state* state, wi_value a, wi_value b, int c_depth) {
     if (wi_values_equal(a, b)) {
         return true;
+    }
+
+    if (WI_UNLIKELY(c_depth == WI_CSTACK_MAX)) {
+        wi_state_error(state, "C stack overflow (limit is %i)", WI_CSTACK_MAX);
     }
 
     if (wi_value_is_array(a) && wi_value_is_array(b)) {
@@ -318,7 +322,7 @@ _equals(wi_value a, wi_value b) {
         }
 
         for (int i = 0; i < a_box->items.count; i++) {
-            if (!_equals(a_box->items.data[i], b_box->items.data[i])) {
+            if (!_equals(state, a_box->items.data[i], b_box->items.data[i], c_depth + 1)) {
                 return false;
             }
         }
@@ -327,11 +331,11 @@ _equals(wi_value a, wi_value b) {
     }
 
     if (wi_value_is_map(a) && wi_value_is_map(b)) {
-        return _tables_equal(&wi_value_as_map(a)->items, &wi_value_as_map(b)->items);
+        return _tables_equal(state, &wi_value_as_map(a)->items, &wi_value_as_map(b)->items, c_depth + 1);
     }
 
     if (wi_value_is_object(a) && wi_value_is_object(b)) {
-        return _tables_equal(&wi_value_as_object(a)->fields, &wi_value_as_object(b)->fields);
+        return _tables_equal(state, &wi_value_as_object(a)->fields, &wi_value_as_object(b)->fields, c_depth + 1);
     }
 
     return false;
@@ -340,7 +344,7 @@ _equals(wi_value a, wi_value b) {
 static void
 _base_equals(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
-    wi_push_bool(state, _equals(state->ffi_stack[1], state->ffi_stack[2]));
+    wi_push_bool(state, _equals(state, state->ffi_stack[1], state->ffi_stack[2], state->c_depth));
 }
 
 void
