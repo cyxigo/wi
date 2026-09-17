@@ -171,6 +171,7 @@ _map_where(struct wi_state* state, uint8_t arg_count) {
     int            mod_count = map->items.mod_count;
     struct wi_map* result    = wi_new_map(state->gc);
     wi_state_ppush(state, WI_MAKE_BOX_VALUE(result));
+    wi_table_reserve(&result->items, map->items.count);
 
     for (int i = 0; i < map->items.capacity; i++) {
         struct wi_entry* entry = &map->items.entries[i];

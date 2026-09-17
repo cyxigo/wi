@@ -255,6 +255,7 @@ _array_where(struct wi_state* state, uint8_t arg_count) {
     int              count  = array->items.count;
     struct wi_array* result = wi_new_array(state->gc);
     wi_state_ppush(state, WI_MAKE_BOX_VALUE(result));
+    wi_value_buf_reserve(&result->items, count);
 
     for (int i = 0; i < array->items.count; i++) {
         wi_value item = array->items.data[i];
