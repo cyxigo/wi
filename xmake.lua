@@ -123,6 +123,7 @@ target("wi")
     set_group("apps")
 
     set_flags()
+    set_targetdir("bin")
     add_deps("wi_static")
     add_files("src/core/wi.c")
     
