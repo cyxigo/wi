@@ -51,7 +51,7 @@ end
 
 -- check if our toolchain can accept gnu flags like -fno-common -fno-stack-protector
 -- on anything other than god forsaken windows we just return true
-function is_gnu_compatible()
+function is_gnu()
     if not is_plat("windows") then
         return true -- linux/macosx/bsd default toolchains are always gcc/clang
     end
@@ -63,18 +63,18 @@ end
 -- compiler flags shared by every native (non-wasm) target
 function set_flags()
     if is_mode("debug") then
-        if is_gnu_compatible() then
+        if is_gnu() then
             add_cflags("-fno-omit-frame-pointer")
         end
     
         set_optimize("none")
         set_symbols("debug")
     elseif is_mode("release") then
-        if is_gnu_compatible() then
+        if is_gnu() then
             add_cflags("-fno-stack-protector", "-fno-common")
         end
 
-        set_policy("build.optimization.lto", true) -- thanks xmake for that one
+        set_policy("build.optimization.lto", true)
         set_optimize("fastest")
         set_strip("all")
     end
@@ -87,7 +87,7 @@ function set_flags()
         -- C4709: comma operator in subscript
     end
 
-    if is_gnu_compatible() then
+    if is_gnu() then
         add_cflags("-Wconversion")
     end
 end
@@ -135,7 +135,7 @@ target("wi_shared")
         add_packages("readline")
     end
 
-    if is_gnu_compatible() then
+    if is_gnu() then
         add_cflags("-fvisibility=hidden", { force = true })
     end
 
