@@ -1,4 +1,4 @@
-name: "Build Wi (GCC/MSVC)"
+name: "Build Wi (GCC/MSVC/MinGW/EMCC)"
 
 on:
   push:
@@ -8,6 +8,7 @@ on:
 
 jobs:
   linux:
+    name: GCC (Linux)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -24,6 +25,7 @@ jobs:
           xmake
 
   windows:
+    name: MSVC (Windows)
     runs-on: windows-latest
     steps:
       - name: Checkout code
@@ -38,3 +40,43 @@ jobs:
         run: |
           xmake f --toolchain=msvc 
           xmake -j1
+
+  mingw:
+    name: MinGW (Linux)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install mingw-w64
+        run: sudo apt-get update && sudo apt-get install -y mingw-w64
+
+      - name: Install xmake
+        uses: xmake-io/github-action-setup-xmake@v1
+        with:
+          xmake-version: latest
+
+      - name: Build with MinGW
+        run: |
+          xmake f -p windows --toolchain=mingw
+          xmake
+
+  wasm:
+    name: EMCC (Linux)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install xmake
+        uses: xmake-io/github-action-setup-xmake@v1
+        with:
+          xmake-version: latest
+
+      - name: Install emscripten
+        uses: mymindstorm/setup-emsdk@v14
+
+      - name: Build with emcc
+        run: |
+          xmake f -p wasm
+          xmake
