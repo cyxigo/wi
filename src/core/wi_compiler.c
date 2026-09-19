@@ -32,7 +32,7 @@
 #include "wi_util.h"
 #include "wi_value.h"
 
-static struct wi_compiler_local*
+static struct wi_local*
 _compiler_add_local(struct wi_compiler* compiler, struct wi_token name, wi_attrs attrs, bool init) {
     if (compiler->local_count >= WI_LOCAL_MAX) {
         wi_parser_error_at(compiler->parser, name, "too many local variables (limit is %i)", WI_LOCAL_MAX);
@@ -45,8 +45,7 @@ _compiler_add_local(struct wi_compiler* compiler, struct wi_token name, wi_attrs
             capacity = WI_LOCAL_MAX;
         }
 
-        compiler->locals = (struct wi_compiler_local*)realloc(compiler->locals,
-                                                              sizeof(struct wi_compiler_local) * (size_t)capacity);
+        compiler->locals = (struct wi_local*)realloc(compiler->locals, sizeof(struct wi_local) * (size_t)capacity);
 
         if (!compiler->locals) {
             wi_parser_oom(compiler->parser, "failed to allocate compiler locals (_compiler_add_local)");
@@ -55,12 +54,12 @@ _compiler_add_local(struct wi_compiler* compiler, struct wi_token name, wi_attrs
         compiler->local_capacity = capacity;
     }
 
-    struct wi_compiler_local* local = &compiler->locals[compiler->local_count++];
-    local->name                     = name;
-    local->depth                    = init ? compiler->scope_depth : -1;
-    local->is_captured              = false;
-    local->used                     = init;
-    local->attrs                    = attrs;
+    struct wi_local* local = &compiler->locals[compiler->local_count++];
+    local->name            = name;
+    local->depth           = init ? compiler->scope_depth : -1;
+    local->is_captured     = false;
+    local->used            = init;
+    local->attrs           = attrs;
 
     return local;
 }
@@ -349,7 +348,7 @@ _compiler_decl_var(struct wi_compiler* compiler, struct wi_token name, wi_attrs 
     }
 
     for (int i = compiler->local_count - 1; i >= 0; i--) {
-        struct wi_compiler_local* local = &compiler->locals[i];
+        struct wi_local* local = &compiler->locals[i];
 
         if (local->depth != -1 && local->depth < compiler->scope_depth) {
             break;
@@ -403,7 +402,7 @@ _compiler_begin_scope(struct wi_compiler* compiler) {
 }
 
 static void
-_compiler_warn_unused(struct wi_compiler* compiler, struct wi_compiler_local* local) {
+_compiler_warn_unused(struct wi_compiler* compiler, struct wi_local* local) {
     if (!local->used && !wi_attr_is_set(local->attrs, WI_ATTR_UNUSED)) {
         wi_parser_warning_at(compiler->parser, local->name, "local variable %.*s was defined but not used",
                              local->name.count, local->name.start);
@@ -413,7 +412,7 @@ _compiler_warn_unused(struct wi_compiler* compiler, struct wi_compiler_local* lo
 static void
 _compiler_end_scope(struct wi_compiler* compiler) {
     compiler->scope_depth--;
-    struct wi_compiler_local* local;
+    struct wi_local* local;
 
     while (compiler->local_count > 0 &&
            ((local = &compiler->locals[compiler->local_count - 1]))->depth > compiler->scope_depth) {
@@ -455,7 +454,7 @@ _compiler_block(struct wi_compiler* compiler) {
 static int
 _compiler_resolve_local(struct wi_compiler* compiler, struct wi_token name, wi_attrs* attrs) {
     for (int i = compiler->local_count - 1; i >= 0; i--) {
-        struct wi_compiler_local* local = &compiler->locals[i];
+        struct wi_local* local = &compiler->locals[i];
 
         if (wi_token_lexemes_equal(name, local->name)) {
             if (local->depth == -1) {
@@ -481,7 +480,7 @@ _compiler_add_upvalue(struct wi_compiler* compiler, uint8_t index, bool is_local
     int upvalue_count = compiler->prototype->upvalue_count;
 
     for (int i = 0; i < upvalue_count; i++) {
-        struct wi_compiler_upvalue* upvalue = &compiler->upvalues[i];
+        struct wi_cupvalue* upvalue = &compiler->upvalues[i];
 
         if (upvalue->index == index && upvalue->is_local == is_local) {
             return i;
@@ -499,8 +498,8 @@ _compiler_add_upvalue(struct wi_compiler* compiler, uint8_t index, bool is_local
             capacity = WI_UPVALUE_MAX;
         }
 
-        compiler->upvalues = (struct wi_compiler_upvalue*)realloc(
-            compiler->upvalues, sizeof(struct wi_compiler_upvalue) * (size_t)capacity);
+        compiler->upvalues =
+            (struct wi_cupvalue*)realloc(compiler->upvalues, sizeof(struct wi_cupvalue) * (size_t)capacity);
 
         if (!compiler->upvalues) {
             wi_parser_oom(compiler->parser, "failed to allocate compiler upvalues (_compiler_add_upvalue)");
@@ -509,9 +508,9 @@ _compiler_add_upvalue(struct wi_compiler* compiler, uint8_t index, bool is_local
         compiler->upvalue_capacity = capacity;
     }
 
-    struct wi_compiler_upvalue* upvalue = &compiler->upvalues[upvalue_count];
-    upvalue->index                      = index;
-    upvalue->is_local                   = is_local;
+    struct wi_cupvalue* upvalue = &compiler->upvalues[upvalue_count];
+    upvalue->index              = index;
+    upvalue->is_local           = is_local;
 
     return compiler->prototype->upvalue_count++;
 }
@@ -1138,7 +1137,7 @@ _compiler_function_expr(struct wi_compiler* outer, bool can_assign) {
     _compiler_emit_opcode_short(outer, WI_OP_PUSH_CLOSURE, constant);
 
     for (int i = 0; i < prototype->upvalue_count; i++) {
-        struct wi_compiler_upvalue* upvalue = &compiler->upvalues[i];
+        struct wi_cupvalue* upvalue = &compiler->upvalues[i];
         _compiler_emit_byte(outer, upvalue->index);
         _compiler_emit_byte(outer, upvalue->is_local ? 1 : 0);
     }

@@ -32,7 +32,7 @@ wi_attr_is_set(wi_attrs attrs, enum wi_attr attr) {
     return attrs & ((wi_attrs)1 << attr);
 }
 
-struct wi_compiler_local {
+struct wi_local {
     struct wi_token name;
     int             depth; /* -1 = uninitialized */
     bool            is_captured;
@@ -40,7 +40,11 @@ struct wi_compiler_local {
     wi_attrs        attrs;
 };
 
-struct wi_compiler_upvalue {
+/*
+    compiler upvalue.
+    ...nah it's obviously cup value
+*/
+struct wi_cupvalue {
     uint8_t index;
     bool    is_local;
 };
@@ -95,13 +99,13 @@ struct wi_compiler {
     int                  slot_count;
     struct wi_map*       constants;
 
-    struct wi_compiler_local* locals;
-    int                       local_count;
-    int                       local_capacity;
-    int                       scope_depth;
+    struct wi_local* locals;
+    int              local_count;
+    int              local_capacity;
+    int              scope_depth;
 
-    struct wi_compiler_upvalue* upvalues;
-    int                         upvalue_capacity; /* count is prototype->upvalue_count */
+    struct wi_cupvalue* upvalues;
+    int                 upvalue_capacity; /* count is prototype->upvalue_count */
 
     struct wi_loop*   loop;
     struct wi_switch* switch_;
