@@ -83,8 +83,9 @@ function set_flags()
     if is_msvc() then
         add_defines("_CRT_SECURE_NO_WARNINGS")
         add_cxflags("-wd4324", "-wd4709", { force = true })
-        -- C4324: structure was padded
-        -- C4709: comma operator in subscript
+        -- thank you windows for cryptic ass error codes that i need to explain in comments:
+        -- C4324: structure was padded (triggers on wi_recovery)
+        -- C4709: comma operator in subscript (triggers on _READ_SHORT in _state_interpreter_loop)
     end
 
     if is_gnu() then
