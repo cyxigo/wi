@@ -1,11 +1,10 @@
 set_project("Wi")
+
 set_version("9.2.0-beta")
 set_description("The Wi programming language")
 set_license("MIT")
 
 set_languages("c99")
-set_policy("build.warning", true)
-set_warnings("all", "extra", "pedantic")
 
 -- NaN boxing is not nearly a portable thingy so Wi has an option to use union tagging
 -- of course, it makes Wi slower overall. so union tagging is opt-in
@@ -27,8 +26,12 @@ option("werror")
     set_showmenu(true)
 option_end()
 
+set_policy("build.warning", true)
+
 if has_config("werror") then
-    set_warnings("error")
+    set_warnings("all", "extra", "pedantic", "error")
+else
+    set_warnings("all", "extra", "pedantic")
 end
 
 -- wi uses horrid winapi on windows with ReadConsoleW and other winapi horror functions
