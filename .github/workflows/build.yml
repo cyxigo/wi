@@ -37,4 +37,4 @@ jobs:
       - name: Build with MSVC
         run: |
           xmake f --toolchain=msvc 
-          xmake
+          xmake -j1

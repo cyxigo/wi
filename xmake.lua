@@ -4,7 +4,17 @@ set_version("9.2.0-beta")
 set_description("The Wi programming language")
 set_license("MIT")
 
-set_languages("c99")
+-- i hate msvc
+function is_msvc()
+    return is_plat("windows") and get_config("toolchain") == "msvc"
+end
+
+-- i hate msvc
+if is_msvc() then
+    set_languages("c11")
+else
+    set_languages("c99")
+end
 
 -- NaN boxing is not nearly a portable thingy so Wi has an option to use union tagging
 -- of course, it makes Wi slower overall. so union tagging is opt-in
@@ -36,7 +46,7 @@ end
 
 -- wi uses horrid winapi on windows with ReadConsoleW and other winapi horror functions
 if not is_plat("windows") then
-    add_requires("readline", {optional = true})
+    add_requires("readline", { optional = true })
 end
 
 -- check if our toolchain can accept gnu flags like -fno-common -fno-stack-protector
@@ -56,7 +66,7 @@ function set_flags()
         if is_gnu_compatible() then
             add_cflags("-fno-omit-frame-pointer")
         end
-
+    
         set_optimize("none")
         set_symbols("debug")
     elseif is_mode("release") then
@@ -67,6 +77,14 @@ function set_flags()
         set_policy("build.optimization.lto", true) -- thanks xmake for that one
         set_optimize("fastest")
         set_strip("all")
+    end
+
+    -- i hate msvc
+    if is_msvc() then
+        add_defines("_CRT_SECURE_NO_WARNINGS")
+        add_cxflags("-wd4324", "-wd4709", { force = true })
+        -- C4324: structure was padded
+        -- C4709: comma operator in subscript
     end
 
     if is_gnu_compatible() then
@@ -92,11 +110,15 @@ target("wi")
     add_files("src/core/wi.c")
     
     if is_plat("linux") then
-        add_ldflags("-rdynamic", {force = true})
+        add_ldflags("-rdynamic", { force = true })
     end
 
     if is_plat("windows") then
         add_files("windows/wi.rc")
+    end
+
+    if is_msvc() then
+        add_ldflags("/IMPLIB:bin/wi_exe.lib", { force = true })
     end
 
 target("wi_shared")
@@ -113,7 +135,9 @@ target("wi_shared")
         add_packages("readline")
     end
 
-    add_cflags("-fvisibility=hidden", {force = true})
+    if is_gnu_compatible() then
+        add_cflags("-fvisibility=hidden", { force = true })
+    end
 
 target("wi_wasm")
     set_enabled(is_plat("wasm"))
@@ -127,7 +151,7 @@ target("wi_wasm")
 
     if is_mode("debug") then
         set_optimize("none")
-        add_ldflags("-sASSERTIONS=1", "-sSAFE_HEAP=1", "-gsource-map", {force = true})
+        add_ldflags("-sASSERTIONS=1", "-sSAFE_HEAP=1", "-gsource-map", { force = true })
     elseif is_mode("release") then
         set_optimize("fastest")
     end
@@ -136,7 +160,7 @@ target("wi_wasm")
         "-sEXPORTED_FUNCTIONS=['_wi_wasm_init','_wi_wasm_run']",
         "-sEXPORTED_RUNTIME_METHODS=['ccall']",
         "-sALLOW_MEMORY_GROWTH=1", 
-        {force = true}
+        { force = true }
     )
 
     set_src()
