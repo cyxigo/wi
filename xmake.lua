@@ -79,52 +79,13 @@ function set_src()
     add_includedirs("src/core", "src/std", "src/stm", "include")
 end
 
-function library(kind)
-    set_enabled(not is_plat("wasm"))
-    set_kind(kind)
-    set_group("libs")
-    set_basename("wi")
-
-    set_flags()
-    set_src()
-    
-    if has_package("readline") then
-        add_defines("WI_USE_READLINE")
-        add_packages("readline")
-    end
-
-    if kind ~= "shared" then
-        return
-    end
-
-    -- for static libraries this would be no-op but as i said somewhere else
-    -- it costs nothing to be correct!
-    if is_gnu_compatible() then
-        add_cflags("-fvisibility=hidden", {force = true})
-    end
-
-    -- this might seem VERY weird so i will explain
-    -- on windows, xmake names a shared target's import library the same as a static
-    -- target's archive (i.e. both are just "wi.lib"), so wi_shared and wi_static fight over
-    -- the same file and weird stuff happens and they just corrupt each other in the process
-    -- so we isolate wi_shared
-    if is_plat("windows") then
-        set_targetdir("$(builddir)/wi_shared")
-
-        after_build(function(target)
-            os.cp(target:targetfile(), "bin/wi.dll")
-        end)
-    end
-end
-
 target("wi")
     set_enabled(not is_plat("wasm"))
     set_kind("binary")
     set_group("apps")
 
     set_flags()
-    set_targetdir("bin")
-    add_deps("wi_static")
+    set_src()
     add_files("src/core/wi.c")
     
     if is_plat("linux") then
@@ -136,10 +97,20 @@ target("wi")
     end
 
 target("wi_shared")
-    library("shared")
+    set_enabled(not is_plat("wasm"))
+    set_kind("shared")
+    set_group("libs")
+    set_basename("wi")
 
-target("wi_static")
-    library("static")
+    set_flags()
+    set_src()
+    
+    if has_package("readline") then
+        add_defines("WI_USE_READLINE")
+        add_packages("readline")
+    end
+
+    add_cflags("-fvisibility=hidden", {force = true})
 
 target("wi_wasm")
     set_enabled(is_plat("wasm"))
