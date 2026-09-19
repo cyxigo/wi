@@ -66,7 +66,7 @@ function set_flags()
         if is_gnu() then
             add_cflags("-fno-omit-frame-pointer")
         end
-    
+
         set_optimize("none")
         set_symbols("debug")
     elseif is_mode("release") then
@@ -77,6 +77,11 @@ function set_flags()
         set_policy("build.optimization.lto", true)
         set_optimize("fastest")
         set_strip("all")
+    end
+
+    if has_package("readline") then
+        add_defines("WI_USE_READLINE")
+        add_packages("readline")
     end
 
     -- i hate msvc
@@ -130,11 +135,6 @@ target("wi_shared")
 
     set_flags()
     set_src()
-    
-    if has_package("readline") then
-        add_defines("WI_USE_READLINE")
-        add_packages("readline")
-    end
 
     if is_gnu() then
         add_cflags("-fvisibility=hidden", { force = true })
@@ -156,7 +156,7 @@ target("wi_wasm")
     elseif is_mode("release") then
         set_optimize("fastest")
     end
-    
+
     add_ldflags(
         "-sEXPORTED_FUNCTIONS=['_wi_wasm_init','_wi_wasm_run']",
         "-sEXPORTED_RUNTIME_METHODS=['ccall']",
