@@ -140,13 +140,10 @@ wi_token_lexemes_equal(struct wi_token a, struct wi_token b) {
 
 WI_INLINE struct wi_token
 wi_token_make_error(const char* msg, int line, int col) {
-    return (struct wi_token){
-        .kind  = WI_TOKEN_ERROR,
-        .start = msg,
-        .count = 1,
-        .line  = line,
-        .col   = col,
+    struct wi_token token = {
+        WI_TOKEN_ERROR, msg, 1, line, col,
     };
+    return token;
 }
 
 const char*

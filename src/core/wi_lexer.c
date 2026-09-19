@@ -6,11 +6,7 @@
 #include <string.h>
 
 const struct wi_token WI_BLANK_TOKEN = {
-    .kind  = WI_TOKEN_BLANK,
-    .start = "",
-    .count = 0,
-    .line  = 0,
-    .col   = 0,
+    WI_TOKEN_BLANK, "", 0, 0, 0,
 };
 
 const char*
@@ -162,9 +158,9 @@ wi_lexer_init(struct wi_lexer* lexer, const char* file_path, const char* src) {
 static struct wi_token
 _lexer_make_token(struct wi_lexer* lexer, enum wi_token_kind kind) {
     struct wi_token token = {
-        .kind = kind,
-        .line = lexer->line,
+        kind,
     };
+    token.line = lexer->line;
 
     if (token.kind == WI_TOKEN_EOF) {
         token.start = "<eof>";
