@@ -16,7 +16,7 @@
 
 struct wi_box*
 wi_new_box(struct wi_gc* gc, size_t size, enum wi_box_kind kind) {
-    struct wi_box* box = wi_gc_realloc(gc, NULL, 0, size);
+    struct wi_box* box = (struct wi_box*)wi_gc_realloc(gc, NULL, 0, size);
 
     box->kind          = kind;
     box->next          = gc->young;

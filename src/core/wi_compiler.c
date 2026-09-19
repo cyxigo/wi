@@ -45,7 +45,8 @@ _compiler_add_local(struct wi_compiler* compiler, struct wi_token name, wi_attrs
             capacity = WI_LOCAL_MAX;
         }
 
-        compiler->locals = realloc(compiler->locals, sizeof(struct wi_compiler_local) * (size_t)capacity);
+        compiler->locals = (struct wi_compiler_local*)realloc(compiler->locals,
+                                                              sizeof(struct wi_compiler_local) * (size_t)capacity);
 
         if (!compiler->locals) {
             wi_parser_oom(compiler->parser, "failed to allocate compiler locals (_compiler_add_local)");
@@ -67,7 +68,7 @@ _compiler_add_local(struct wi_compiler* compiler, struct wi_token name, wi_attrs
 struct wi_compiler*
 wi_new_compiler(struct wi_compiler* outer, struct wi_state* state, struct wi_parser* parser,
                 struct wi_module* module) {
-    struct wi_compiler* compiler = malloc(sizeof(struct wi_compiler));
+    struct wi_compiler* compiler = (struct wi_compiler*)malloc(sizeof(struct wi_compiler));
 
     if (!compiler) {
         return NULL;
@@ -217,7 +218,7 @@ _compiler_emit_loop(struct wi_compiler* compiler, int loop_start) {
 
 static void
 _compiler_start_loop(struct wi_compiler* compiler) {
-    struct wi_loop* loop = malloc(sizeof(struct wi_loop));
+    struct wi_loop* loop = (struct wi_loop*)malloc(sizeof(struct wi_loop));
 
     if (!loop) {
         wi_parser_oom(compiler->parser, "failed to allocate a loop state (_compiler_start_loop)");
@@ -498,7 +499,8 @@ _compiler_add_upvalue(struct wi_compiler* compiler, uint8_t index, bool is_local
             capacity = WI_UPVALUE_MAX;
         }
 
-        compiler->upvalues = realloc(compiler->upvalues, sizeof(struct wi_compiler_upvalue) * (size_t)capacity);
+        compiler->upvalues = (struct wi_compiler_upvalue*)realloc(
+            compiler->upvalues, sizeof(struct wi_compiler_upvalue) * (size_t)capacity);
 
         if (!compiler->upvalues) {
             wi_parser_oom(compiler->parser, "failed to allocate compiler upvalues (_compiler_add_upvalue)");
@@ -1681,7 +1683,7 @@ _compiler_switch_stmt(struct wi_compiler* compiler) {
         (normally - via _compiler_end_scope, in a situation like this, via - _compiler_pop_loop_locals)
     */
     _compiler_add_local(compiler, WI_BLANK_TOKEN, WI_DEFAULT_ATTRS, true);
-    struct wi_switch* switch_ = malloc(sizeof(struct wi_switch));
+    struct wi_switch* switch_ = (struct wi_switch*)malloc(sizeof(struct wi_switch));
 
     if (!switch_) {
         wi_parser_oom(compiler->parser, "failed to allocate a switch state (_compiler_switch_stmt)");

@@ -65,7 +65,7 @@ _io_open(struct wi_state* state, uint8_t arg_count) {
         wi_state_error(state, "failed to open file %s: %s", file_path, strerror(errno));
     }
 
-    struct wi_file* file = malloc(sizeof(struct wi_file));
+    struct wi_file* file = (struct wi_file*)malloc(sizeof(struct wi_file));
 
     if (!file) {
         fclose(ptr);
@@ -155,7 +155,7 @@ _io_read(struct wi_state* state, uint8_t arg_count) {
         wi_state_error(state, "failed to get file size (file %s)", file->path);
     }
 
-    char* content = malloc((size_t)size + 1);
+    char* content = (char*)malloc((size_t)size + 1);
 
     if (!content) {
         wi_state_oom(state, "failed to allocate file contents (_io_read)");

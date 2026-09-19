@@ -97,7 +97,7 @@ _state_import_exists(struct wi_state* state, const char* path) {
 
 struct wi_state*
 wi_new_state(wi_conf* conf) {
-    struct wi_state* state = malloc(sizeof(struct wi_state));
+    struct wi_state* state = (struct wi_state*)malloc(sizeof(struct wi_state));
 
     if (!state) {
         return NULL;
@@ -131,7 +131,7 @@ wi_new_state(wi_conf* conf) {
     state->frames         = NULL;
     state->frame_capacity = 0;
 
-    state->stack          = malloc(sizeof(wi_value) * WI_STACK_MIN);
+    state->stack          = (wi_value*)malloc(sizeof(wi_value) * WI_STACK_MIN);
     state->stack_capacity = WI_STACK_MIN;
 
     if (!state->stack) {
@@ -241,7 +241,7 @@ wi_state_add_lib(struct wi_state* state, wi_lib_handle handle) {
         lib = lib->next;
     }
 
-    struct wi_lib_node* new_lib = malloc(sizeof(struct wi_lib_node));
+    struct wi_lib_node* new_lib = (struct wi_lib_node*)malloc(sizeof(struct wi_lib_node));
 
     if (!new_lib) {
         wi_lib_close(handle);
@@ -281,7 +281,7 @@ wi_state_push_recovery(struct wi_state* state) {
         wi_state_error(state, "too many error buffers (limit is %i)", WI_CSTACK_MAX);
     }
 
-    struct wi_recovery* recovery = malloc(sizeof(struct wi_recovery));
+    struct wi_recovery* recovery = (struct wi_recovery*)malloc(sizeof(struct wi_recovery));
 
     if (!recovery) {
         wi_state_oom(state, "failed to allocate an error buffer (wi_state_push_recovery)");
@@ -751,8 +751,9 @@ _state_call(struct wi_state* state, struct wi_closure* closure, uint8_t arg_coun
 
     /* grow the frames if needed */
     if (WI_UNLIKELY(state->frame_count == state->frame_capacity)) {
-        int capacity  = wi_grow_capacity(state->frame_capacity);
-        state->frames = realloc(state->frames, sizeof(struct wi_call_frame) * (size_t)capacity);
+        int capacity = wi_grow_capacity(state->frame_capacity);
+        state->frames =
+            (struct wi_call_frame*)realloc(state->frames, sizeof(struct wi_call_frame) * (size_t)capacity);
 
         if (WI_UNLIKELY(!state->frames)) {
             wi_state_oom(state, "failed to allocate call frames (_state_call)");

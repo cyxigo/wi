@@ -13,7 +13,7 @@
 
 struct wi_parser*
 wi_new_parser(struct wi_lexer* lexer, struct wi_gc* gc) {
-    struct wi_parser* parser = malloc(sizeof(struct wi_parser));
+    struct wi_parser* parser = (struct wi_parser*)malloc(sizeof(struct wi_parser));
 
     if (!parser) {
         return NULL;

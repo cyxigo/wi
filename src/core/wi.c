@@ -66,7 +66,7 @@ _repl_append_line(char* buf, size_t* buf_len, char* line) {
         *buf_len > 0 checks whether we need a '\n' to glue onto the previous line
     */
     size_t new_buf_offset = *buf_len + (*buf_len > 0);
-    char*  new_buf        = realloc(buf, new_buf_offset + line_len + 1);
+    char*  new_buf        = (char*)realloc(buf, new_buf_offset + line_len + 1);
 
     if (!new_buf) {
         fprintf(stderr, "%s: out of memory: failed to allocate the repl input buffer\n", _g_exec);

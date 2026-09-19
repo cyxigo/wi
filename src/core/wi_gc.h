@@ -70,7 +70,8 @@ WI_INLINE void
 wi_gc_push_root(struct wi_gc* gc, struct wi_box* root) {
     if (WI_UNLIKELY(gc->temp_root_count + 1 > gc->temp_root_capacity)) {
         gc->temp_root_capacity = wi_grow_capacity(gc->temp_root_capacity);
-        gc->temp_roots         = realloc(gc->temp_roots, sizeof(struct wi_box*) * (size_t)gc->temp_root_capacity);
+        gc->temp_roots =
+            (struct wi_box**)realloc(gc->temp_roots, sizeof(struct wi_box*) * (size_t)gc->temp_root_capacity);
 
         if (!gc->temp_roots) {
             wi_state_oom(gc->state, "failed to allocate temp roots (wi_gc_push_root)");
@@ -120,7 +121,7 @@ wi_gc_collect_minor(struct wi_gc* gc);
 void
 wi_gc_collect_major(struct wi_gc* gc);
 
-#define WI_GC_ALLOC(gc, type, count) wi_gc_realloc(gc, NULL, 0, sizeof(type) * (size_t)(count))
+#define WI_GC_ALLOC(gc, type, count) (type*)wi_gc_realloc(gc, NULL, 0, sizeof(type) * (size_t)(count))
 #define WI_GC_FREE_BUF(gc, type, ptr, count) wi_gc_realloc(gc, ptr, sizeof(type) * (size_t)(count), 0)
 #define WI_GC_FREE(gc, type, ptr) wi_gc_realloc(gc, ptr, sizeof(type), 0)
 

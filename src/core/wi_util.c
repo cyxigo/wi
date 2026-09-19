@@ -32,7 +32,7 @@ wi_vasprintf(const char* format, va_list args) {
         return NULL;
     }
 
-    char* buf = malloc((size_t)(len + 1));
+    char* buf = (char*)malloc((size_t)(len + 1));
 
     if (WI_UNLIKELY(!buf)) {
         return NULL;
@@ -220,7 +220,7 @@ wi_read_stream(FILE* stream) {
         return NULL;
     }
 
-    char* buf = malloc((size_t)file_size + 1);
+    char* buf = (char*)malloc((size_t)file_size + 1);
 
     if (!buf) {
         return NULL;
@@ -267,7 +267,7 @@ wi_read_line(char** line, const char* prompt) {
     wbuf[read] = L'\0';
 
     int   len = WideCharToMultiByte(CP_UTF8, 0, wbuf, (int)read, NULL, 0, NULL, NULL);
-    char* buf = malloc((size_t)(len + 1));
+    char* buf = (char*)malloc((size_t)(len + 1));
 
     if (!buf) {
         return false;
