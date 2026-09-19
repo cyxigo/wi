@@ -47,6 +47,7 @@ _map_keys(struct wi_state* state, uint8_t arg_count) {
 
         if (!wi_value_is_empty(entry->key)) {
             wi_value_buf_add(&result->items, entry->key);
+            WI_GC_WRITE_BARRIER(state->gc, result, entry->key);
         }
     }
 }
@@ -64,6 +65,7 @@ _map_values(struct wi_state* state, uint8_t arg_count) {
 
         if (!wi_value_is_empty(entry->key)) {
             wi_value_buf_add(&result->items, entry->value);
+            WI_GC_WRITE_BARRIER(state->gc, result, entry->value);
         }
     }
 }
