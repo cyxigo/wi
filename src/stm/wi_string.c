@@ -323,12 +323,11 @@ _string_repeat(struct wi_state* state, uint8_t arg_count) {
         return;
     }
 
-    int64_t len = (int64_t)count * times;
-
-    if (len > INT_MAX - 1) {
-        wi_state_error(state, "string repeat result too large: %lld bytes", len);
+    if (times > (INT_MAX - 1) / count) {
+        wi_state_error(state, "string repeat result too large: %i bytes times %lld", count, times);
     }
 
+    int   len = count * (int)times;
     char* buf = WI_GC_ALLOC(state->gc, char, len + 1);
 
     for (int64_t i = 0; i < times; i++) {
@@ -336,7 +335,7 @@ _string_repeat(struct wi_state* state, uint8_t arg_count) {
     }
 
     buf[len]              = '\0';
-    struct wi_string* box = wi_take_cstring(state->gc, buf, (int)len);
+    struct wi_string* box = wi_take_cstring(state->gc, buf, len);
     wi_state_ppush(state, WI_MAKE_BOX_VALUE(box));
 }
 
