@@ -1,0 +1,5 @@
+compile error: cannot redefine a foreign variable math
+   | 
+ 3 | math := "bug";
+   | ^^^^
+   --> test/bug/foreign_redef.wi:3:1

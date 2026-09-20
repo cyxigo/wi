@@ -1,0 +1,5 @@
+compile error: expected {
+   | 
+ 3 | if (true) x := 10;
+   |          ^
+   --> test/bug/stmt_decl.wi:3:10

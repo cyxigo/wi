@@ -28,10 +28,3 @@
     std::puts(select(2));
     std::puts(select(2, 3, 4, 5));
 }
-
-// Expected:
-// oops!
-// oops! this happened:
-// array index out of range: 2
-// -1
-// 5
