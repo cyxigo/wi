@@ -429,7 +429,43 @@ _lexer_skip_line(struct wi_lexer* lexer) {
     }
 }
 
-static void
+static struct wi_token
+_lexer_skip_block(struct wi_lexer* lexer) {
+    int nesting = 1;
+    int line    = lexer->line;
+    int col     = lexer->curr_col;
+
+    /* skip the opening '/' and '*' that got us here */
+    _lexer_advance(lexer); /* / */
+    _lexer_advance(lexer); /* * */
+
+    while (nesting > 0) {
+        if (_lexer_is_at_end(lexer)) {
+            return wi_token_make_error("unfinished block comment", line, col);
+        }
+
+        if (_lexer_check(lexer, '/') && _lexer_check_next(lexer, '*')) {
+            _lexer_advance(lexer); /* / */
+            _lexer_advance(lexer); /* * */
+            nesting++;
+            continue;
+        }
+
+        if (_lexer_check(lexer, '*') && _lexer_check_next(lexer, '/')) {
+            _lexer_advance(lexer); /* * */
+            _lexer_advance(lexer); /* / */
+            nesting--;
+            continue;
+        }
+
+        /* regular character */
+        _lexer_advance(lexer);
+    }
+
+    return WI_BLANK_TOKEN;
+}
+
+static struct wi_token
 _lexer_skip_whitespace(struct wi_lexer* lexer) {
     for (;;) {
         char c = _lexer_peek(lexer);
@@ -448,37 +484,36 @@ _lexer_skip_whitespace(struct wi_lexer* lexer) {
                     break;
                 }
 
-                return;
+                return WI_BLANK_TOKEN;
             case '/':
                 if (_lexer_check_next(lexer, '/')) {
                     _lexer_skip_line(lexer);
                 } else if (_lexer_check_next(lexer, '*')) {
-                    _lexer_advance(lexer);
-                    _lexer_advance(lexer);
+                    struct wi_token error = _lexer_skip_block(lexer);
 
-                    while (!_lexer_is_at_end(lexer)) {
-                        if (_lexer_check(lexer, '*') && _lexer_check_next(lexer, '/')) {
-                            _lexer_advance(lexer);
-                            _lexer_advance(lexer);
-                            break;
-                        }
-
-                        _lexer_advance(lexer);
+                    if (error.kind != WI_TOKEN_BLANK) {
+                        return error;
                     }
+
+                    break;
                 } else {
-                    return;
+                    return WI_BLANK_TOKEN;
                 }
 
                 break;
             default:
-                return;
+                return WI_BLANK_TOKEN;
         }
     }
 }
 
 struct wi_token
 wi_lexer_next(struct wi_lexer* lexer) {
-    _lexer_skip_whitespace(lexer);
+    struct wi_token ws_error = _lexer_skip_whitespace(lexer);
+
+    if (ws_error.kind != WI_TOKEN_BLANK) {
+        return ws_error;
+    }
 
     lexer->start     = lexer->curr;
     lexer->start_col = lexer->curr_col;
