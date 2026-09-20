@@ -140,7 +140,7 @@ typedef void (*wi_userdata_finalizer_fn)(void* data);
 
 /**
  * A single { name, function, arity, is_variadic } row, used to register foreign (C) functions via
- * `WI_DEF_FOREIGN_ALL`/`WI_OBJECT_SET_FOREIGN_ALL`
+ * `WI_DEF_FOREIGN_ALL`/`WI_OBJECT_SET_FOREIGN_ALL`/`WI_MODULE_EXPORT_FOREIGN_ALL`
  */
 typedef struct wi_foreign_entry {
     const char*   name;
