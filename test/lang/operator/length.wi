@@ -1,0 +1,5 @@
+// $ok
+std::puts(#[1, 2, 3]);
+std::puts(#"string");
+std::puts(#"строка");
+std::puts(#{ "x": 10, "y": 20 });

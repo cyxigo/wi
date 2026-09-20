@@ -1,0 +1,15 @@
+// $ok
+obj_person := object {
+    name: "";
+};
+
+alice := new obj_person {
+    name: "Alice";
+};
+
+bob := new obj_person {
+    name: "Bob";
+};
+
+std::puts(alice.name);
+std::puts(bob.name);

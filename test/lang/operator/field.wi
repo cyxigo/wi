@@ -1,0 +1,7 @@
+// $ok
+obj := object {
+    x: 0;
+};
+
+obj.x = 10;
+std::puts(obj.x);

@@ -1,0 +1,7 @@
+// $ok
+std::puts(5 | 3);
+std::puts(5 ^ 3);
+std::puts(5 & 3);
+std::puts(5 << 1);
+std::puts(5 >> 1);
+std::puts(~5);

@@ -1,0 +1,14 @@
+// $ok
+std::puts(10 + 5);
+std::puts(10 - 5);
+std::puts(10 * 5);
+std::puts(10 / 5);
+std::puts(10 % 3);
+std::puts(2 ** 3);
+
+std::puts(10 == 10);
+std::puts(10 != 10);
+std::puts(1 > 2);
+std::puts(2 >= 2);
+std::puts(1 < 2);
+std::puts(2 <= 2);

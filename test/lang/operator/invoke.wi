@@ -1,0 +1,12 @@
+// $ok
+obj := object {
+    method: |self @unused, argument| => std::puts(argument);
+};
+
+obj.method(obj, 2);
+obj->method(2);
+
+std::puts("string"->sub(1, 4));
+std::puts("строка"->sub(1, 4));
+std::puts([10]->count());
+({ "a": 1, "b": 2 })->keys()->each(std::puts);

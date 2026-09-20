@@ -1,0 +1,5 @@
+// $ok
+std::puts([1, 2, 3][0]);
+std::puts("Hello"[0]);
+std::puts("Привет"[0]);
+std::puts({ "x": 10 }["x"]);
