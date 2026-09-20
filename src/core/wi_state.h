@@ -184,8 +184,7 @@ wi_state_error(struct wi_state* state, const char* format, ...);
 
 /*
     check if a real can even be an integer
-    e.g. if we need a valid index or a valid integer in a bitwise operation
-    that's... actually all use cases uhh
+    e.g. if we need a valid index or a valid integer in a bitwise operation, etc.
 */
 WI_INLINE int64_t
 wi_state_real_to_int(struct wi_state* state, wi_real real) {

@@ -3,6 +3,7 @@
 #include <ctype.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 
 #include "../../include/wi.h"
 
@@ -293,6 +294,34 @@ end:;
 }
 
 static void
+_string_repeat(struct wi_state* state, uint8_t arg_count) {
+    WI_UNUSED(arg_count);
+    int     count;
+    char*   string = wi_arg_string(state, 1, &count, NULL);
+    int64_t times  = wi_state_real_to_int(state, wi_arg_real(state, 2));
+
+    if (times < 0) {
+        wi_state_error(state, "string repeat count must not be negative: %lld", times);
+    }
+
+    if (times == 0 || count == 0) {
+        wi_push_string(state, "");
+        return;
+    }
+
+    int   len = count * (int)times;
+    char* buf = WI_GC_ALLOC(state->gc, char, len + 1);
+
+    for (int64_t i = 0; i < times; i++) {
+        memcpy(buf + i * count, string, (size_t)count);
+    }
+
+    buf[len]              = '\0';
+    struct wi_string* box = wi_take_cstring(state->gc, buf, len);
+    wi_state_ppush(state, WI_MAKE_BOX_VALUE(box));
+}
+
+static void
 _string_each(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     int   count;
@@ -404,6 +433,7 @@ wi_state_def_stm_string(struct wi_state* state) {
     wi_table_set_foreign(table, "replace", _string_replace, 3, false);
     wi_table_set_foreign(table, "split", _string_split, 2, false);
     wi_table_set_foreign(table, "reverse", _string_reverse, 1, false);
+    wi_table_set_foreign(table, "repeat", _string_repeat, 2, false);
     wi_table_set_foreign(table, "each", _string_each, 2, false);
     wi_table_set_foreign(table, "select", _string_select, 2, false);
     wi_table_set_foreign(table, "where", _string_where, 2, false);
