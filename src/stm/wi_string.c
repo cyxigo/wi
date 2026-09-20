@@ -315,7 +315,7 @@ _string_repeat(struct wi_state* state, uint8_t arg_count) {
     int64_t times  = wi_state_real_to_int(state, wi_arg_real(state, 2));
 
     if (times < 0) {
-        wi_state_error(state, "string repeat count must not be negative: %lld", times);
+        wi_state_error(state, "string repeat count must be positive: %lld", times);
     }
 
     if (times == 0 || count == 0) {

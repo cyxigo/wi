@@ -1,13 +1,17 @@
+#ifndef _WIN32
+#define _POSIX_C_SOURCE 199309L
+#endif
+
 #include "wi_os.h"
 
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #include "../../include/wi.h"
 #include "../core/wi_gc.h"
-#include "time.h"
 
 static void
 _os_clock(struct wi_state* state, uint8_t arg_count) {
@@ -83,6 +87,27 @@ _os_rename(struct wi_state* state, uint8_t arg_count) {
     wi_push_bool(state, rename(old, new) == 0);
 }
 
+static void
+_os_sleep(struct wi_state* state, uint8_t arg_count) {
+    WI_UNUSED(arg_count);
+    int64_t ms = wi_state_real_to_int(state, wi_arg_real(state, 1));
+
+    if (ms < 0) {
+        wi_state_error(state, "time must be positive: %llu", ms);
+    }
+
+#ifdef _WIN32
+    Sleep((DWORD)ms);
+#else
+    struct timespec ts;
+    ts.tv_sec  = ms / 1000;
+    ts.tv_nsec = (ms % 1000) * 1000000;
+    nanosleep(&ts, NULL);
+#endif /* _WIN32 */
+
+    wi_push_null(state);
+}
+
 void
 wi_state_def_std_os(struct wi_state* state) {
     struct wi_module* module = wi_push_module(state);
@@ -95,6 +120,7 @@ wi_state_def_std_os(struct wi_state* state) {
         {"system",  _os_system,  1, false},
         {"remove",  _os_remove,  1, false},
         {"rename",  _os_rename,  2, false},
+        {"sleep",   _os_sleep,   1, false},
     };
 
     WI_MODULE_EXPORT_FOREIGN_ALL(state, module, functions);
