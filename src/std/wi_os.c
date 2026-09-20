@@ -1,6 +1,8 @@
 #include "wi_os.h"
 
+#include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "../../include/wi.h"
 #include "../core/wi_gc.h"
@@ -36,6 +38,12 @@ _os_get_env(struct wi_state* state, uint8_t arg_count) {
 }
 
 static void
+_os_system(struct wi_state* state, uint8_t arg_count) {
+    WI_UNUSED(arg_count);
+    wi_push_real(state, system(wi_arg_string(state, 1, NULL, NULL)));
+}
+
+static void
 _os_args(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     struct wi_array* result = wi_new_array(state->gc);
@@ -67,6 +75,7 @@ wi_state_def_std_os(struct wi_state* state) {
         {"time",    _os_time,    0, false},
         {"get_env", _os_get_env, 1, false},
         {"args",    _os_args,    0, false},
+        {"system",  _os_system,  1, false},
     };
 
     WI_MODULE_EXPORT_FOREIGN_ALL(state, module, functions);
