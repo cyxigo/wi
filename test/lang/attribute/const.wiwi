@@ -1,0 +1,5 @@
+compile error: cannot reassign variable a
+   | 
+ 3 | a = 20;
+   |   ^
+   --> test/lang/attribute/const.wi:3:3

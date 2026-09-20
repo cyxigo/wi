@@ -1,0 +1,5 @@
+compile warning: local variable x was defined but not used
+   | 
+ 2 | f1 := |x| => {
+   |        ^
+   --> test/lang/attribute/unused.wi:2:8

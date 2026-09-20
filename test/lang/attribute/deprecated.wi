@@ -1,0 +1,3 @@
+// $ok
+x @deprecated := "hi";
+std::puts(x);

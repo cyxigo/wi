@@ -1,0 +1,6 @@
+compile warning: use of deprecated variable x
+   | 
+ 3 | std::puts(x);
+   |           ^
+   --> test/lang/attribute/deprecated.wi:3:11
+hi
