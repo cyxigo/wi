@@ -155,9 +155,37 @@ _math_rad(struct wi_state* state, uint8_t arg_count) {
 }
 
 static void
-_math_random(struct wi_state* state, uint8_t arg_count) {
+_math_seed(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
-    wi_push_real(state, (wi_real)rand() / ((wi_real)RAND_MAX + 1.0));
+    int64_t seed = wi_state_real_to_int(state, wi_arg_real(state, 1));
+    srand((unsigned)seed);
+    wi_push_null(state);
+}
+
+static void
+_math_random(struct wi_state* state, uint8_t arg_count) {
+    if (arg_count == 0) {
+        wi_push_real(state, (wi_real)rand() / ((wi_real)RAND_MAX + 1.0));
+        return;
+    }
+
+    if (arg_count != 2) {
+        wi_state_error(state, "random() takes only 0 or 2 arguments");
+    }
+
+    int64_t min = wi_state_real_to_int(state, wi_arg_real(state, 1));
+    int64_t max = wi_state_real_to_int(state, wi_arg_real(state, 2));
+
+    if (min > max) {
+        wi_state_error(state, "random bounds out of range: %lld to %lld", min, max);
+    }
+
+    /*
+        i hate just how excruciating it is to calculate [min, max]
+        not providing this option in wi earlier was a crime from me
+    */
+    int64_t range = max - min + 1;
+    wi_push_real(state, (wi_real)(min + (int64_t)((wi_real)rand() / ((wi_real)RAND_MAX + 1.0) * (wi_real)range)));
 }
 
 static void
@@ -214,7 +242,8 @@ wi_state_def_std_math(struct wi_state* state) {
         {"min",    _math_min,    2, true },
         {"pow",    _math_pow,    2, false},
         {"rad",    _math_rad,    1, false},
-        {"random", _math_random, 0, false},
+        {"seed",   _math_seed,   1, false},
+        {"random", _math_random, 0, true },
         {"round",  _math_round,  1, false},
         {"sin",    _math_sin,    1, false},
         {"sign",   _math_sign,   1, false},
