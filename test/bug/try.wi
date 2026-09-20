@@ -1,6 +1,7 @@
 // $ok
 // Bug in v8.2.0-beta won't let the last of these snippets pass
 // All should pass
+// This test also handles std::try as a feature overall, so no test/lang test
 {
     select := |n, ...args| => args[n];
     result := std::try(select, 2);
