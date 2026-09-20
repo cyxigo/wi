@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <string.h>
 
-struct wi_file {
+struct _file {
     FILE* ptr;
     char* path;
     char* mode;
@@ -15,7 +15,7 @@ struct wi_file {
 };
 
 static void
-_file_close(struct wi_file* file) {
+_file_close(struct _file* file) {
     if (file->ptr) {
         fclose(file->ptr);
         file->ptr = NULL;
@@ -24,7 +24,7 @@ _file_close(struct wi_file* file) {
 
 static void
 _file_finalizer(void* data) {
-    struct wi_file* file = data;
+    struct _file* file = data;
     _file_close(file);
     free(file->path);
     free(file->mode);
@@ -32,7 +32,7 @@ _file_finalizer(void* data) {
 }
 
 static void
-_file_check_open(struct wi_state* state, struct wi_file* file) {
+_file_check_open(struct wi_state* state, struct _file* file) {
     if (!file->ptr) {
         wi_state_error(state, "file %s is closed", file->path);
     }
@@ -65,7 +65,7 @@ _io_open(struct wi_state* state, uint8_t arg_count) {
         wi_state_error(state, "failed to open file %s: %s", file_path, strerror(errno));
     }
 
-    struct wi_file* file = (struct wi_file*)malloc(sizeof(struct wi_file));
+    struct _file* file = (struct _file*)malloc(sizeof(struct _file));
 
     if (!file) {
         fclose(ptr);
@@ -91,7 +91,7 @@ _io_open(struct wi_state* state, uint8_t arg_count) {
 static void
 _io_close(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
-    struct wi_file* file = wi_arg_userdata(state, 1, "file");
+    struct _file* file = wi_arg_userdata(state, 1, "file");
     _file_close(file);
     wi_push_null(state);
 }
@@ -99,7 +99,7 @@ _io_close(struct wi_state* state, uint8_t arg_count) {
 static void
 _io_write(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
-    struct wi_file* file = wi_arg_userdata(state, 1, "file");
+    struct _file* file = wi_arg_userdata(state, 1, "file");
     _file_check_open(state, file);
 
     if (file->mode[0] != 'w' && file->mode[0] != 'a' && !file->updating) {
@@ -140,7 +140,7 @@ _io_write(struct wi_state* state, uint8_t arg_count) {
 static void
 _io_read(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
-    struct wi_file* file = wi_arg_userdata(state, 1, "file");
+    struct _file* file = wi_arg_userdata(state, 1, "file");
     _file_check_open(state, file);
 
     if (file->mode[0] != 'r' && !file->updating) {
