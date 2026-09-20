@@ -1,0 +1,21 @@
+// $ok
+obj_person := object {
+    name: "";
+    greet: |self| => {
+        std::puts("Hello ${self.name}!");
+    };
+};
+
+alice := new obj_person {
+    name: "Alice";
+};
+
+alice->greet();
+
+bob := new obj_person {
+    name: "Bob";
+    job: "unemployed";
+};
+
+bob->greet();
+std::puts(bob.job);
