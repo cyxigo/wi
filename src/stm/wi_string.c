@@ -1,6 +1,7 @@
 #include "wi_string.h"
 
 #include <ctype.h>
+#include <limits.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -323,7 +324,12 @@ _string_repeat(struct wi_state* state, uint8_t arg_count) {
         return;
     }
 
-    int   len = count * (int)times;
+    int64_t len = (int64_t)count * times;
+
+    if (len > INT_MAX - 1) {
+        wi_state_error(state, "string repeat result too large: %lld bytes", len);
+    }
+
     char* buf = WI_GC_ALLOC(state->gc, char, len + 1);
 
     for (int64_t i = 0; i < times; i++) {
@@ -331,7 +337,7 @@ _string_repeat(struct wi_state* state, uint8_t arg_count) {
     }
 
     buf[len]              = '\0';
-    struct wi_string* box = wi_take_cstring(state->gc, buf, len);
+    struct wi_string* box = wi_take_cstring(state->gc, buf, (int)len);
     wi_state_ppush(state, WI_MAKE_BOX_VALUE(box));
 }
 
