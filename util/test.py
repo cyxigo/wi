@@ -8,27 +8,21 @@ from subprocess import run
 #
 # why .wiwi? because .out is git-ignored and idk i couldn't come up with something better
 wi = "wi"
+stats = {"passed": 0, "failed": 0, "skipped": 0}
 exit_code = 0
-passed = 0
-failed = 0
-skipped = 0
 
 
 def test(path, recursive=False):
+    global exit_code
     path = Path(path)
     scripts = path.rglob("*.wi") if recursive else path.glob("*.wi")
-
-    global exit_code
-    global passed
-    global failed
 
     for script in sorted(scripts):
         out = script.with_suffix(".wiwi")
 
         def skip(msg):
             print(f"[SKIP] {script} {msg}")
-            global skipped
-            skipped += 1
+            stats["skipped"] += 1
 
         kind = script.read_text().splitlines()[0]
         stream = None
@@ -52,19 +46,18 @@ def test(path, recursive=False):
         actual = getattr(result, stream)
         expected = out.read_text()
 
-        if (actual != expected):
+        if actual != expected:
             print(f"[FAIL] {script} has unexpected output!")
             print(f"--- expected ---\n{expected}")
             print(f"--- actual ---\n{actual}")
-
             exit_code = 1
-            failed += 1
+            stats["failed"] += 1
         else:
             print(f"[PASS] {script} passed!")
-            passed += 1
+            stats["passed"] += 1
 
 
 test("./test/bug")
 test("./test/lang", recursive=True)
-print(f"[RESULT] {passed} passed, {failed} failed, {skipped} skipped")
+print(f"[RESULT] {stats["passed"]} passed, {stats["failed"]} failed, {stats["skipped"]} skipped")
 exit(exit_code)

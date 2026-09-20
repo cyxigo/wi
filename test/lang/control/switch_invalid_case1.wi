@@ -1,0 +1,11 @@
+// $fail
+x := 0;
+
+switch (x) {
+    case 0: {
+        y := 2;
+        std::puts("zero, also did you know y is ${y}?");
+    }
+    default: std::puts("something else");
+    case 1, 2: std::puts("one or two");
+}

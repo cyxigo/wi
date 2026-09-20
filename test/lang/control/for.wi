@@ -1,0 +1,10 @@
+// $ok
+for (i := 0; i < 10; i = i + 1) {
+    std::puts(i);
+}
+
+a := [1, 2, 3, 4];
+
+for (i := 0; i < #a; i = i + 1) {
+    std::puts(a[i]);
+}

@@ -1,0 +1,5 @@
+compile error: cannot have another case or default after default
+    | 
+ 10 |     case 1, 2: std::puts("one or two");
+    |     ^^^^
+   --> test/lang/control/switch_invalid_case1.wi:10:5

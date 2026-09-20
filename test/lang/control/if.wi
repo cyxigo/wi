@@ -1,0 +1,18 @@
+// $ok
+if (1 < 0) {
+    std::puts("Won't execute");
+}
+
+if (1 < 0) {
+    std::puts("Won't execute");
+} else {
+    std::puts("This will execute");
+}
+
+if (1 < 0) {
+    std::puts("Won't execute");
+} else if (1 > 0) {
+    std::puts("This will execute");
+} else {
+    std::puts("Won't execute");
+}

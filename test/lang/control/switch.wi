@@ -1,0 +1,31 @@
+// $ok
+check1 := |x| => {
+    switch (x) {
+        case 0: std::puts("zero");
+        case 1, 2: std::puts("one or two");
+        default: std::puts("something else");
+    }
+};
+
+check2 := |x| => {
+    switch (x) {
+        case 0: {
+            y := 2;
+            std::puts("zero, also did you know y is ${y}?");
+        }
+        case 1, 2: std::puts("one or two");
+        default: std::puts("something else");
+    }
+};
+
+check1(0);
+check1(1);
+check1(2);
+check1(3);
+
+check2(0);
+check2(1);
+check2(2);
+check2(3);
+
+std::puts("after!");
