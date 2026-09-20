@@ -1,0 +1,9 @@
+// $ok
+a := null;
+a = "a";
+std::puts(a);
+
+b := "b";
+c := "c";
+a = b = c;
+std::puts(a, b, c);

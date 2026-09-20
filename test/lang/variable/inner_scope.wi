@@ -1,0 +1,6 @@
+// $fail
+{
+    a @unused := 10;
+}
+
+std::puts(a);

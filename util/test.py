@@ -11,10 +11,11 @@ wi = "wi"
 failed = 0
 
 
-def test(dir):
-    dir = Path(dir)
+def test(path, recursive=False):
+    path = Path(path)
+    scripts = path.rglob("*.wi") if recursive else path.glob("*.wi")
 
-    for script in sorted(dir.glob("*.wi")):
+    for script in sorted(scripts):
         out = script.with_suffix(".wiwi")
 
         if not out.is_file():
@@ -47,4 +48,6 @@ def test(dir):
 
 
 test("./test/bug")
+test("./test/lang", recursive=True)
+
 exit(failed)

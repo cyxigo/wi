@@ -1,0 +1,5 @@
+compile error: variable a is used but not defined
+   | 
+ 6 | std::puts(a);
+   |           ^
+   --> test/lang/variable/inner_scope.wi:6:11

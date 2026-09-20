@@ -1,0 +1,5 @@
+compile error: variable a is already defined
+   | 
+ 3 | a := 20;
+   | ^
+   --> test/lang/variable/redefinition.wi:3:1
