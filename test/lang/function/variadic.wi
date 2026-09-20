@@ -1,0 +1,13 @@
+// $ok
+f1 := |...args| => {
+    args->each(std::puts);
+};
+
+f1(1, 2, 3, 4);
+
+f2 := |a, ...args| => {
+    std::puts(a);
+    args->each(std::puts);
+};
+
+f2(1, 2, 3, 4);

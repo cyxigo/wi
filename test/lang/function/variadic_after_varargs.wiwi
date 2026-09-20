@@ -1,0 +1,5 @@
+compile error: expected |
+   | 
+ 2 | f := |...args, b| => {
+   |              ^
+   --> test/lang/function/variadic_after_varargs.wi:2:14

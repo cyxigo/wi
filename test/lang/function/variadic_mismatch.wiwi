@@ -1,0 +1,2 @@
+runtime error: expected at least 1 arguments but got 0
+   --> test/lang/function/variadic_mismatch.wi:5 in main function

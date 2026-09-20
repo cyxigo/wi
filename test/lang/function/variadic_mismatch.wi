@@ -1,0 +1,5 @@
+// $fail
+f := |a @unused, ...args @unused| => {
+};
+
+f();

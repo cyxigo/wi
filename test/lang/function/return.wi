@@ -1,0 +1,28 @@
+// $ok
+f1 := |x @unused| => {
+};
+
+std::puts(f1(10));
+
+f2 := |x| => {
+    return x;
+};
+
+std::puts(f2(10));
+
+f3 := |x| => {
+    if (x == 4) {
+        return;
+    }
+
+    std::puts(x);
+};
+
+f3(4);
+f3(10);
+
+add := |a, b| => a + b;
+std::puts(add(2, 2));
+
+say_hi := |name| => std::puts("Hi ${name}!");
+say_hi("Bob");
