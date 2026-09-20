@@ -30,7 +30,7 @@ for script in scripts:
     for _ in range(N):
         run_res = run([lang, script], capture_output=True, text=True)
         times.append(float(run_res.stdout.splitlines()[-1].removeprefix("elapsed: ")))
-    
+
     time = min(times)
     res[script.stem.replace("_", " ").capitalize()][lang.capitalize()] = time
 
@@ -38,10 +38,10 @@ with open("bench.md", "w") as f:
     for test in sorted(res.keys()):
         langs = res[test]
         f.write(f"# {test}\n")
-        
+
         sorted_langs = sorted(langs.items(), key=lambda x: float(x[1]))
-        
+
         for lang, time in sorted_langs:
             f.write(f"- {lang}: {time:.3f}\n")
-        
+
         f.write("\n")
