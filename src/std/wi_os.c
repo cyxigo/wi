@@ -1,6 +1,7 @@
 #include "wi_os.h"
 
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -38,12 +39,6 @@ _os_get_env(struct wi_state* state, uint8_t arg_count) {
 }
 
 static void
-_os_system(struct wi_state* state, uint8_t arg_count) {
-    WI_UNUSED(arg_count);
-    wi_push_real(state, system(wi_arg_string(state, 1, NULL, NULL)));
-}
-
-static void
 _os_args(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     struct wi_array* result = wi_new_array(state->gc);
@@ -66,6 +61,28 @@ _os_args(struct wi_state* state, uint8_t arg_count) {
     }
 }
 
+static void
+_os_system(struct wi_state* state, uint8_t arg_count) {
+    WI_UNUSED(arg_count);
+    char* command = wi_arg_string(state, 1, NULL, NULL);
+    wi_push_real(state, system(command));
+}
+
+static void
+_os_remove(struct wi_state* state, uint8_t arg_count) {
+    WI_UNUSED(arg_count);
+    char* file_path = wi_arg_string(state, 1, NULL, NULL);
+    wi_push_bool(state, remove(file_path) == 0);
+}
+
+static void
+_os_rename(struct wi_state* state, uint8_t arg_count) {
+    WI_UNUSED(arg_count);
+    char* old = wi_arg_string(state, 1, NULL, NULL);
+    char* new = wi_arg_string(state, 2, NULL, NULL);
+    wi_push_bool(state, rename(old, new) == 0);
+}
+
 void
 wi_state_def_std_os(struct wi_state* state) {
     struct wi_module* module = wi_push_module(state);
@@ -76,6 +93,8 @@ wi_state_def_std_os(struct wi_state* state) {
         {"get_env", _os_get_env, 1, false},
         {"args",    _os_args,    0, false},
         {"system",  _os_system,  1, false},
+        {"remove",  _os_remove,  1, false},
+        {"rename",  _os_rename,  2, false},
     };
 
     WI_MODULE_EXPORT_FOREIGN_ALL(state, module, functions);
