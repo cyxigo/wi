@@ -1,0 +1,4 @@
+// $ok
+module := import "module_pt";
+std::puts(module::x);
+std::puts(module::y);

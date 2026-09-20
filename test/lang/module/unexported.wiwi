@@ -1,0 +1,2 @@
+runtime error: variable z was not exported from module test/lang/module/module_pt.wi
+   --> test/lang/module/unexported.wi:5 in main function
