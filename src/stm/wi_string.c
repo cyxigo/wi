@@ -8,6 +8,20 @@
 #include "../../include/wi.h"
 
 static void
+_string_bytes(struct wi_state* state, uint8_t arg_count) {
+    WI_UNUSED(arg_count);
+    int              count;
+    char*            string = wi_arg_string(state, 1, &count, NULL);
+    struct wi_array* array  = wi_push_array(state);
+    wi_value_buf_reserve(&array->items, count);
+
+    for (int i = 0; i < count; i++) {
+        wi_push_real(state, (wi_real)string[i]);
+        wi_array_add(state, array);
+    }
+}
+
+static void
 _string_sub(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     int     len;
@@ -421,6 +435,7 @@ _string_where(struct wi_state* state, uint8_t arg_count) {
 void
 wi_state_def_stm_string(struct wi_state* state) {
     struct wi_table* table = &state->stm_string;
+    wi_table_set_foreign(table, "bytes", _string_bytes, 1, false);
     wi_table_set_foreign(table, "sub", _string_sub, 3, false);
     wi_table_set_foreign(table, "upper", _string_upper, 1, false);
     wi_table_set_foreign(table, "lower", _string_lower, 1, false);
