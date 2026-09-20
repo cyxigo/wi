@@ -207,6 +207,57 @@ _array_slice(struct wi_state* state, uint8_t arg_count) {
 }
 
 static void
+_array_join(struct wi_state* state, uint8_t arg_count) {
+    WI_UNUSED(arg_count);
+    struct wi_array* array = wi_arg_array(state, 1);
+    int              sep_count;
+    char*            sep = wi_arg_string(state, 2, &sep_count, NULL);
+
+    struct wi_char_buf buf;
+    wi_char_buf_init(&buf, state->gc);
+
+    for (int i = 0; i < array->items.count; i++) {
+        if (i > 0) {
+            for (int j = 0; j < sep_count; j++) {
+                wi_char_buf_add(&buf, sep[j]);
+            }
+        }
+
+        wi_value item = array->items.data[i];
+        char*    item_buf;
+        int      item_count;
+        bool     owned = false;
+
+        if (wi_value_is_string(item)) {
+            item_buf   = wi_value_as_cstring(item);
+            item_count = wi_value_as_string(item)->count;
+        } else {
+            item_buf = wi_value_to_string(item);
+
+            if (!item_buf) {
+                wi_char_buf_free(&buf);
+                wi_state_oom(state, "failed to allocate a string for join (_array_join)");
+            }
+
+            item_count = (int)strlen(item_buf);
+            owned      = true;
+        }
+
+        for (int j = 0; j < item_count; j++) {
+            wi_char_buf_add(&buf, item_buf[j]);
+        }
+
+        if (owned) {
+            free(item_buf);
+        }
+    }
+
+    struct wi_string* result = wi_copy_cstring(state->gc, buf.data, buf.count);
+    wi_char_buf_free(&buf);
+    wi_state_ppush(state, WI_MAKE_BOX_VALUE(result));
+}
+
+static void
 _array_each(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     struct wi_array* array = wi_arg_array(state, 1);
@@ -360,6 +411,7 @@ wi_state_def_stm_array(struct wi_state* state) {
     wi_table_set_foreign(table, "pop", _array_pop, 1, false);
     wi_table_set_foreign(table, "concat", _array_concat, 0, true);
     wi_table_set_foreign(table, "slice", _array_slice, 3, false);
+    wi_table_set_foreign(table, "join", _array_join, 2, false);
     wi_table_set_foreign(table, "each", _array_each, 2, false);
     wi_table_set_foreign(table, "select", _array_select, 2, false);
     wi_table_set_foreign(table, "where", _array_where, 2, false);
