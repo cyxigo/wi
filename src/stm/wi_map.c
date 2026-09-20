@@ -7,8 +7,7 @@ static void
 _map_copy(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     struct wi_map* src  = wi_arg_map(state, 1);
-    struct wi_map* dest = wi_new_map(state->gc);
-    wi_state_ppush(state, WI_MAKE_BOX_VALUE(dest));
+    struct wi_map* dest = wi_push_map(state);
     wi_table_copy(&src->items, &dest->items);
 }
 
@@ -38,8 +37,7 @@ static void
 _map_keys(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     struct wi_map*   map    = wi_arg_map(state, 1);
-    struct wi_array* result = wi_new_array(state->gc);
-    wi_state_ppush(state, WI_MAKE_BOX_VALUE(result));
+    struct wi_array* result = wi_push_array(state);
     wi_value_buf_reserve(&result->items, map->items.live_count);
 
     for (int i = 0; i < map->items.capacity; i++) {
@@ -56,8 +54,7 @@ static void
 _map_values(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     struct wi_map*   map    = wi_arg_map(state, 1);
-    struct wi_array* result = wi_new_array(state->gc);
-    wi_state_ppush(state, WI_MAKE_BOX_VALUE(result));
+    struct wi_array* result = wi_push_array(state);
     wi_value_buf_reserve(&result->items, map->items.live_count);
 
     for (int i = 0; i < map->items.capacity; i++) {
@@ -129,8 +126,7 @@ _map_select(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     struct wi_map* map       = wi_arg_map(state, 1);
     int            mod_count = map->items.mod_count;
-    struct wi_map* result    = wi_new_map(state->gc);
-    wi_state_ppush(state, WI_MAKE_BOX_VALUE(result));
+    struct wi_map* result    = wi_push_map(state);
     wi_table_reserve(&result->items, map->items.count);
 
     for (int i = 0; i < map->items.capacity; i++) {
@@ -171,8 +167,7 @@ _map_where(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     struct wi_map* map       = wi_arg_map(state, 1);
     int            mod_count = map->items.mod_count;
-    struct wi_map* result    = wi_new_map(state->gc);
-    wi_state_ppush(state, WI_MAKE_BOX_VALUE(result));
+    struct wi_map* result    = wi_push_map(state);
     wi_table_reserve(&result->items, map->items.count);
 
     for (int i = 0; i < map->items.capacity; i++) {

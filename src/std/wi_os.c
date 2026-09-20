@@ -45,8 +45,7 @@ _os_get_env(struct wi_state* state, uint8_t arg_count) {
 static void
 _os_args(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
-    struct wi_array* result = wi_new_array(state->gc);
-    wi_state_ppush(state, WI_MAKE_BOX_VALUE(result));
+    struct wi_array* result = wi_push_array(state);
     wi_value_buf_reserve(&result->items, state->script_argc);
 
     for (int i = 0; i < state->script_argc; i++) {

@@ -272,8 +272,7 @@ static void
 _base_fields(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     struct wi_object* object = wi_arg_object(state, 1);
-    struct wi_map*    fields = wi_new_map(state->gc);
-    wi_state_ppush(state, WI_MAKE_BOX_VALUE(fields));
+    struct wi_map*    fields = wi_push_map(state);
     wi_table_copy(&object->fields, &fields->items);
 }
 

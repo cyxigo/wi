@@ -8,8 +8,7 @@ static void
 _array_copy(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     struct wi_array* array     = wi_arg_array(state, 1);
-    struct wi_array* new_array = wi_new_array(state->gc);
-    wi_state_ppush(state, WI_MAKE_BOX_VALUE(new_array));
+    struct wi_array* new_array = wi_push_array(state);
 
     if (array->items.count > 0) {
         wi_value_buf_reserve(&new_array->items, array->items.count);
@@ -57,8 +56,7 @@ static void
 _array_reversed(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     struct wi_array* array     = wi_arg_array(state, 1);
-    struct wi_array* new_array = wi_new_array(state->gc);
-    wi_state_ppush(state, WI_MAKE_BOX_VALUE(new_array));
+    struct wi_array* new_array = wi_push_array(state);
 
     int count = array->items.count;
     wi_value_buf_reserve(&new_array->items, count);
@@ -169,8 +167,7 @@ _array_pop(struct wi_state* state, uint8_t arg_count) {
 
 static void
 _array_concat(struct wi_state* state, uint8_t arg_count) {
-    struct wi_array* result = wi_new_array(state->gc);
-    wi_state_ppush(state, WI_MAKE_BOX_VALUE(result));
+    struct wi_array* result = wi_push_array(state);
 
     for (int i = 0; i < arg_count; i++) {
         struct wi_array* array = wi_arg_array(state, (uint8_t)(i + 1));
@@ -197,9 +194,8 @@ _array_slice(struct wi_state* state, uint8_t arg_count) {
         wi_state_error(state, "array slice bounds out of range: %lld to %lld", start, end);
     }
 
-    struct wi_array* result = wi_new_array(state->gc);
-    wi_state_ppush(state, WI_MAKE_BOX_VALUE(result));
-    int64_t count = end - start;
+    struct wi_array* result = wi_push_array(state);
+    int64_t          count  = end - start;
 
     wi_value_buf_reserve(&result->items, (int)count);
     memcpy(result->items.data, array->items.data + start, sizeof(wi_value) * (size_t)count);
@@ -280,8 +276,7 @@ _array_select(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     struct wi_array* array  = wi_arg_array(state, 1);
     int              count  = array->items.count;
-    struct wi_array* result = wi_new_array(state->gc);
-    wi_state_ppush(state, WI_MAKE_BOX_VALUE(result));
+    struct wi_array* result = wi_push_array(state);
     wi_value_buf_reserve(&result->items, array->items.count);
 
     for (int i = 0; i < array->items.count; i++) {
@@ -304,8 +299,7 @@ _array_where(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     struct wi_array* array  = wi_arg_array(state, 1);
     int              count  = array->items.count;
-    struct wi_array* result = wi_new_array(state->gc);
-    wi_state_ppush(state, WI_MAKE_BOX_VALUE(result));
+    struct wi_array* result = wi_push_array(state);
     wi_value_buf_reserve(&result->items, count);
 
     for (int i = 0; i < array->items.count; i++) {

@@ -214,8 +214,7 @@ _string_split(struct wi_state* state, uint8_t arg_count) {
     int   sep_count;
     char* sep = wi_arg_string(state, 2, &sep_count, NULL);
 
-    struct wi_array* result = wi_new_array(state->gc);
-    wi_state_ppush(state, WI_MAKE_BOX_VALUE(result));
+    struct wi_array* result = wi_push_array(state);
 
     if (sep_count == 0) {
         wi_value_buf_add(&result->items, state->ffi_stack[1]);
