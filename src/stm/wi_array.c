@@ -338,8 +338,14 @@ _aqsort_partition(struct wi_state* state, struct wi_array* array, int lo, int hi
     int pii = lo + rand() % (hi - lo + 1);
     _aqsort_swap(array, pii, hi);
 
-    wi_value pi = array->items.data[hi];
-    int      i  = lo - 1;
+    wi_value pi        = array->items.data[hi];
+    bool     pi_is_box = wi_value_is_box(pi);
+
+    if (pi_is_box) {
+        WI_GC_PUSH_ROOT(state->gc, wi_value_as_box(pi));
+    }
+
+    int i = lo - 1;
 
     for (int j = lo; j < hi; j++) {
         wi_arg_function(state, 2, 2);
@@ -355,6 +361,10 @@ _aqsort_partition(struct wi_state* state, struct wi_array* array, int lo, int hi
             i++;
             _aqsort_swap(array, i, j);
         }
+    }
+
+    if (pi_is_box) {
+        wi_gc_pop_root(state->gc);
     }
 
     _aqsort_swap(array, i + 1, hi);
