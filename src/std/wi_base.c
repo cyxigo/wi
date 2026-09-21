@@ -207,7 +207,7 @@ _base_is_falsy(struct wi_state* state, uint8_t arg_count) {
 }
 
 static void
-_base_to_real(struct wi_state* state, uint8_t arg_count) {
+_base_real(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     wi_value value = state->ffi_stack[1];
     wi_value result;
@@ -236,13 +236,13 @@ _base_to_real(struct wi_state* state, uint8_t arg_count) {
 }
 
 static void
-_base_to_bool(struct wi_state* state, uint8_t arg_count) {
+_base_bool(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     wi_push_bool(state, !wi_value_is_falsy(state->ffi_stack[1]));
 }
 
 static void
-_base_to_string(struct wi_state* state, uint8_t arg_count) {
+_base_string(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
 
     if (wi_arg_is_string(state, 1)) {
@@ -414,9 +414,9 @@ wi_state_def_std_base(struct wi_state* state) {
         {"is_userdata", _base_is_userdata, 1, false},
         {"is_falsy",    _base_is_falsy,    1, false},
 
-        {"to_real",     _base_to_real,     1, false},
-        {"to_bool",     _base_to_bool,     1, false},
-        {"to_string",   _base_to_string,   1, false},
+        {"real",        _base_real,        1, false},
+        {"bool",        _base_bool,        1, false},
+        {"string",      _base_string,      1, false},
         {"char",        _base_char,        1, false},
 
         {"has_field",   _base_has_field,   2, false},
