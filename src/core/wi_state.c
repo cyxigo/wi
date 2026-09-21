@@ -557,10 +557,10 @@ _state_subscript_get(struct wi_state* state, wi_value target, wi_value index) {
         i                        = wi_utf8_cp_offset(string->buf, string->count, i);
         size_t cp_len            = wi_utf8_cp_len(string->buf[i]);
 
-        char buf[5] = {0};
-        memcpy(buf, string->buf + i, cp_len);
+        char cp_buf[5] = {0};
+        memcpy(cp_buf, string->buf + i, cp_len);
 
-        return WI_MAKE_BOX_VALUE(wi_copy_cstring(state->gc, buf, (int)cp_len));
+        return WI_MAKE_BOX_VALUE(wi_copy_cstring(state->gc, cp_buf, (int)cp_len));
     }
 
     if (wi_value_is_array(target)) {

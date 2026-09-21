@@ -261,6 +261,46 @@ _base_to_string(struct wi_state* state, uint8_t arg_count) {
 }
 
 static void
+_base_char(struct wi_state* state, uint8_t arg_count) {
+    WI_UNUSED(arg_count);
+    int64_t cp = wi_state_real_to_int(state, wi_arg_real(state, 1));
+
+    if (cp < 0 || cp > 0x10ffff) {
+        wi_state_error(state, "invalid codepoint: %lld", cp);
+    }
+
+    char cp_buf[5] = {0};
+    int  cp_len;
+
+    if (cp < 0x80) { /* 0xxxxxxx */
+        cp_buf[0] = (char)cp;
+        cp_len    = 1;
+    } else if (cp < 0x800) { /* 110xxxxx 10xxxxxx */
+        cp_buf[0] = (char)(0xc0 | (cp >> 6));
+        cp_buf[1] = (char)(0x80 | (cp & 0x3f));
+        cp_len    = 2;
+    } else if (cp < 0x10000) { /* 1110xxxx 10xxxxxx 10xxxxxx */
+        cp_buf[0] = (char)(0xe0 | (cp >> 12));
+        cp_buf[1] = (char)(0x80 | ((cp >> 6) & 0x3f));
+        cp_buf[2] = (char)(0x80 | (cp & 0x3f));
+        cp_len    = 3;
+    } else { /* 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx */
+        cp_buf[0] = (char)(0xf0 | (cp >> 18));
+        cp_buf[1] = (char)(0x80 | ((cp >> 12) & 0x3f));
+        cp_buf[2] = (char)(0x80 | ((cp >> 6) & 0x3f));
+        cp_buf[3] = (char)(0x80 | (cp & 0x3f));
+        cp_len    = 4;
+    }
+
+    if (!wi_utf8_validate(cp_buf, cp_len)) {
+        wi_state_error(state, "invalid codepoint: %lld", cp);
+    }
+
+    struct wi_string* box = wi_copy_cstring(state->gc, cp_buf, cp_len);
+    wi_state_ppush(state, WI_MAKE_BOX_VALUE(box));
+}
+
+static void
 _base_has_field(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     struct wi_object* object = wi_arg_object(state, 1);
@@ -377,6 +417,7 @@ wi_state_def_std_base(struct wi_state* state) {
         {"to_real",     _base_to_real,     1, false},
         {"to_bool",     _base_to_bool,     1, false},
         {"to_string",   _base_to_string,   1, false},
+        {"char",        _base_char,        1, false},
 
         {"has_field",   _base_has_field,   2, false},
         {"fields",      _base_fields,      1, false},
