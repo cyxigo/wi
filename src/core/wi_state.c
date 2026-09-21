@@ -376,8 +376,6 @@ wi_state_error(struct wi_state* state, const char* format, ...) {
     _state_reset(state);
     wi_gc_reset_roots(state->gc);
     longjmp(state->jmp, WI_RUN_ERROR);
-
-#undef _APPEND_FORMAT
 }
 
 WI_NORETURN void
