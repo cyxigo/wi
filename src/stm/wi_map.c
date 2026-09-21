@@ -139,6 +139,12 @@ _map_select(struct wi_state* state, uint8_t arg_count) {
             continue;
         }
 
+        bool value_is_box = wi_value_is_box(value);
+
+        if (value_is_box) {
+            WI_GC_PUSH_ROOT(state->gc, wi_value_as_box(value));
+        }
+
         wi_arg_function(state, 2, 1);
         wi_state_ppush(state, key);
         wi_call(state, 1, false);
@@ -146,6 +152,10 @@ _map_select(struct wi_state* state, uint8_t arg_count) {
         wi_arg_function(state, 3, 1);
         wi_state_ppush(state, value);
         wi_call(state, 1, false);
+
+        if (value_is_box) {
+            wi_gc_pop_root(state->gc);
+        }
 
         if (WI_UNLIKELY(map->items.mod_count != mod_count)) {
             wi_state_error(state, "map resized during iteration");
