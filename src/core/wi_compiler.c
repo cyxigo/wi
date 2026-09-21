@@ -1598,16 +1598,16 @@ _compiler_for_incr(struct wi_compiler* compiler) {
         this is mostly unreachable, like, really really really really hard to even trigger
         buuuutttttt it costs nothing to be correct!
     */
-    int last_call_offset = compiler->last_call;
-    compiler->last_call  = -1;
-    compiler->code       = &loop->incr;
+    int last_call       = compiler->last_call;
+    compiler->last_call = -1;
+    compiler->code      = &loop->incr;
 
     _compiler_expr(compiler);
     _compiler_emit_opcode(compiler, WI_OP_POP);
     wi_parser_expect(compiler->parser, WI_TOKEN_CLOSE_PAREN);
 
     compiler->code      = code;
-    compiler->last_call = last_call_offset;
+    compiler->last_call = last_call;
 }
 
 static void
@@ -1897,9 +1897,9 @@ wi_compile(struct wi_state* state, const char* file_path, const char* src, struc
     }
 
     /*
-        we capture this because of the load statement
-        when a compilation of the script fails, we need to close any open lib handles by
-        the load statement, but using wi_state_close_libs would close every single handle opened
+        we capture this because of the foreign importing
+        when a compilation of the script fails, we need to close any open lib handles that were opened
+        via import statement, but using wi_state_close_libs would close every single handle opened
         even by a different script, so we do this:
 
         script1: [lib1] [lib2]
