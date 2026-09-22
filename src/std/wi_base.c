@@ -64,7 +64,7 @@ _base_input(struct wi_state* state, uint8_t arg_count) {
 }
 
 static void
-_base_is_main(struct wi_state* state, uint8_t arg_count) {
+_base_ismain(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     struct wi_call_frame* frame = wi_state_frame(state);
     wi_push_bool(state, frame->closure->module->is_main);
@@ -136,74 +136,74 @@ _base_type(struct wi_state* state, uint8_t arg_count) {
 }
 
 static void
-_is_type_function(struct wi_state* state, bool (*fn)(wi_value value)) {
+_istype(struct wi_state* state, bool (*fn)(wi_value value)) {
     wi_push_bool(state, fn(state->ffi_stack[1]));
 }
 
 static void
-_base_is_real(struct wi_state* state, uint8_t arg_count) {
+_base_isreal(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
-    _is_type_function(state, wi_value_is_real);
+    _istype(state, wi_value_is_real);
 }
 
 static void
-_base_is_null(struct wi_state* state, uint8_t arg_count) {
+_base_isnull(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
-    _is_type_function(state, wi_value_is_null);
+    _istype(state, wi_value_is_null);
 }
 
 static void
-_base_is_bool(struct wi_state* state, uint8_t arg_count) {
+_base_isbool(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
-    _is_type_function(state, wi_value_is_bool);
+    _istype(state, wi_value_is_bool);
 }
 
 static void
-_base_is_string(struct wi_state* state, uint8_t arg_count) {
+_base_isstring(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
-    _is_type_function(state, wi_value_is_string);
+    _istype(state, wi_value_is_string);
 }
 
 static void
-_base_is_array(struct wi_state* state, uint8_t arg_count) {
+_base_isarray(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
-    _is_type_function(state, wi_value_is_array);
+    _istype(state, wi_value_is_array);
 }
 
 static void
-_base_is_map(struct wi_state* state, uint8_t arg_count) {
+_base_ismap(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
-    _is_type_function(state, wi_value_is_map);
+    _istype(state, wi_value_is_map);
 }
 
 static void
-_base_is_foreign(struct wi_state* state, uint8_t arg_count) {
+_base_isforeign(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
-    _is_type_function(state, wi_value_is_foreign);
+    _istype(state, wi_value_is_foreign);
 }
 
 static void
-_base_is_function(struct wi_state* state, uint8_t arg_count) {
+_base_isfunction(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
-    _is_type_function(state, wi_value_is_closure);
+    _istype(state, wi_value_is_closure);
 }
 
 static void
-_base_is_object(struct wi_state* state, uint8_t arg_count) {
+_base_isobject(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
-    _is_type_function(state, wi_value_is_object);
+    _istype(state, wi_value_is_object);
 }
 
 static void
-_base_is_userdata(struct wi_state* state, uint8_t arg_count) {
+_base_isuserdata(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
-    _is_type_function(state, wi_value_is_userdata);
+    _istype(state, wi_value_is_userdata);
 }
 
 static void
-_base_is_falsy(struct wi_state* state, uint8_t arg_count) {
+_base_isfalsy(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
-    _is_type_function(state, wi_value_is_falsy);
+    _istype(state, wi_value_is_falsy);
 }
 
 static void
@@ -301,7 +301,7 @@ _base_char(struct wi_state* state, uint8_t arg_count) {
 }
 
 static void
-_base_has_field(struct wi_state* state, uint8_t arg_count) {
+_base_hasfield(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     struct wi_object* object = wi_arg_object(state, 1);
     wi_arg_string(state, 2, NULL, NULL);
@@ -391,38 +391,38 @@ wi_state_def_std_base(struct wi_state* state) {
     struct wi_module* module = wi_push_module(state);
     wi_def(state, "std");
     wi_foreign_entry functions[] = {
-        {"print",       _base_print,       0, true },
-        {"puts",        _base_puts,        0, true },
-        {"input",       _base_input,       0, true },
-        {"is_main",     _base_is_main,     0, false},
-        {"exit",        _base_exit,        0, false},
+        {"print",      _base_print,      0, true },
+        {"puts",       _base_puts,       0, true },
+        {"input",      _base_input,      0, true },
+        {"ismain",     _base_ismain,     0, false},
+        {"exit",       _base_exit,       0, false},
 
-        {"error",       _base_error,       1, false},
-        {"assert",      _base_assert,      2, false},
-        {"try",         _base_try,         1, true },
+        {"error",      _base_error,      1, false},
+        {"assert",     _base_assert,     2, false},
+        {"try",        _base_try,        1, true },
 
-        {"type",        _base_type,        1, false},
-        {"is_real",     _base_is_real,     1, false},
-        {"is_null",     _base_is_null,     1, false},
-        {"is_bool",     _base_is_bool,     1, false},
-        {"is_string",   _base_is_string,   1, false},
-        {"is_array",    _base_is_array,    1, false},
-        {"is_map",      _base_is_map,      1, false},
-        {"is_foreign",  _base_is_foreign,  1, false},
-        {"is_function", _base_is_function, 1, false},
-        {"is_object",   _base_is_object,   1, false},
-        {"is_userdata", _base_is_userdata, 1, false},
-        {"is_falsy",    _base_is_falsy,    1, false},
+        {"type",       _base_type,       1, false},
+        {"isreal",     _base_isreal,     1, false},
+        {"isnull",     _base_isnull,     1, false},
+        {"isbool",     _base_isbool,     1, false},
+        {"isstring",   _base_isstring,   1, false},
+        {"isarray",    _base_isarray,    1, false},
+        {"ismap",      _base_ismap,      1, false},
+        {"isforeign",  _base_isforeign,  1, false},
+        {"isfunction", _base_isfunction, 1, false},
+        {"isobject",   _base_isobject,   1, false},
+        {"isuserdata", _base_isuserdata, 1, false},
+        {"isfalsy",    _base_isfalsy,    1, false},
 
-        {"real",        _base_real,        1, false},
-        {"bool",        _base_bool,        1, false},
-        {"string",      _base_string,      1, false},
-        {"char",        _base_char,        1, false},
+        {"real",       _base_real,       1, false},
+        {"bool",       _base_bool,       1, false},
+        {"string",     _base_string,     1, false},
+        {"char",       _base_char,       1, false},
 
-        {"has_field",   _base_has_field,   2, false},
-        {"fields",      _base_fields,      1, false},
+        {"hasfield",   _base_hasfield,   2, false},
+        {"fields",     _base_fields,     1, false},
 
-        {"equals",      _base_equals,      2, false},
+        {"equals",     _base_equals,     2, false},
     };
 
     WI_MODULE_EXPORT_FOREIGN_ALL(state, module, functions);
