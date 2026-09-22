@@ -184,8 +184,8 @@ _math_random(struct wi_state* state, uint8_t arg_count) {
         i hate just how excruciating it is to calculate [min, max]
         not providing this option in wi earlier was a crime from me
     */
-    int64_t range = max - min + 1;
-    wi_push_real(state, (wi_real)(min + (int64_t)((wi_real)rand() / ((wi_real)RAND_MAX + 1.0) * (wi_real)range)));
+    wi_real range = (wi_real)max - (wi_real)min + 1.0;
+    wi_push_real(state, (wi_real)min + floor((wi_real)rand() / ((wi_real)RAND_MAX + 1.0) * range));
 }
 
 static void
