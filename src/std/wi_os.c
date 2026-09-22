@@ -13,6 +13,8 @@
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#else
+#include <sys/wait.h>
 #endif
 
 #include "../../include/wi.h"
@@ -124,7 +126,16 @@ static void
 _os_system(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     char* command = wi_arg_string(state, 1, NULL, NULL);
-    wi_push_real(state, system(command));
+    int   status  = system(command);
+
+    /* on POSIX, system() returns a wait code instead of an exit code, we need the latter */
+#ifndef _WIN32
+    if (status != -1 && WIFEXITED(status)) {
+        status = WEXITSTATUS(status);
+    }
+#endif
+
+    wi_push_real(state, status);
 }
 
 static void
