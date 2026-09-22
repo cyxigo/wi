@@ -39,6 +39,21 @@ _file_check_open(struct wi_state* state, struct _file* file) {
 }
 
 static void
+_io_exists(struct wi_state* state, uint8_t arg_count) {
+    WI_UNUSED(arg_count);
+    char* path = wi_arg_string(state, 1, NULL, NULL);
+    FILE* file = fopen(path, "rb");
+
+    if (!file) {
+        wi_push_bool(state, false);
+        return;
+    }
+
+    fclose(file);
+    wi_push_bool(state, true);
+}
+
+static void
 _io_open(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
 
@@ -184,10 +199,11 @@ wi_state_def_std_io(struct wi_state* state) {
     struct wi_module* module = wi_push_module(state);
     wi_def(state, "io");
     wi_foreign_entry functions[] = {
-        {"open",  _io_open,  2, false},
-        {"close", _io_close, 1, false},
-        {"write", _io_write, 2, false},
-        {"read",  _io_read,  1, false},
+        {"exists", _io_exists, 1, false},
+        {"open",   _io_open,   2, false},
+        {"close",  _io_close,  1, false},
+        {"write",  _io_write,  2, false},
+        {"read",   _io_read,   1, false},
     };
 
     WI_MODULE_EXPORT_FOREIGN_ALL(state, module, functions);
