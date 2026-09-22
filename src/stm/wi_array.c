@@ -96,7 +96,7 @@ _array_has(struct wi_state* state, uint8_t arg_count) {
 }
 
 static void
-_array_index_of(struct wi_state* state, uint8_t arg_count) {
+_array_indexof(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     struct wi_array* array = wi_arg_array(state, 1);
     int              index = -1;
@@ -136,7 +136,7 @@ _array_remove(struct wi_state* state, uint8_t arg_count) {
 }
 
 static void
-_array_remove_at(struct wi_state* state, uint8_t arg_count) {
+_array_removeat(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     struct wi_array* array = wi_arg_array(state, 1);
     int64_t          index = wi_state_real_to_int(state, wi_arg_real(state, 2));
@@ -417,9 +417,9 @@ wi_state_def_stm_array(struct wi_state* state) {
     wi_table_set_foreign(table, "reversed", _array_reversed, 1, false);
     wi_table_set_foreign(table, "add", _array_add, 2, false);
     wi_table_set_foreign(table, "has", _array_has, 2, false);
-    wi_table_set_foreign(table, "index_of", _array_index_of, 2, false);
+    wi_table_set_foreign(table, "indexof", _array_indexof, 2, false);
     wi_table_set_foreign(table, "remove", _array_remove, 2, false);
-    wi_table_set_foreign(table, "remove_at", _array_remove_at, 2, false);
+    wi_table_set_foreign(table, "removeat", _array_removeat, 2, false);
     wi_table_set_foreign(table, "pop", _array_pop, 1, false);
     wi_table_set_foreign(table, "concat", _array_concat, 0, true);
     wi_table_set_foreign(table, "slice", _array_slice, 3, false);

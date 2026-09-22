@@ -110,7 +110,7 @@ _string_has(struct wi_state* state, uint8_t arg_count) {
 }
 
 static void
-_string_index_of(struct wi_state* state, uint8_t arg_count) {
+_string_indexof(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     int   count;
     char* string = wi_arg_string(state, 1, &count, NULL);
@@ -133,7 +133,7 @@ _string_index_of(struct wi_state* state, uint8_t arg_count) {
 }
 
 static void
-_string_starts_with(struct wi_state* state, uint8_t arg_count) {
+_string_startswith(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     int   count;
     char* string = wi_arg_string(state, 1, &count, NULL);
@@ -145,7 +145,7 @@ _string_starts_with(struct wi_state* state, uint8_t arg_count) {
 }
 
 static void
-_string_ends_with(struct wi_state* state, uint8_t arg_count) {
+_string_endswith(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     int   count;
     char* string = wi_arg_string(state, 1, &count, NULL);
@@ -445,9 +445,9 @@ wi_state_def_stm_string(struct wi_state* state) {
     wi_table_set_foreign(table, "lower", _string_lower, 1, false);
     wi_table_set_foreign(table, "trim", _string_trim, 1, false);
     wi_table_set_foreign(table, "has", _string_has, 2, false);
-    wi_table_set_foreign(table, "index_of", _string_index_of, 2, false);
-    wi_table_set_foreign(table, "starts_with", _string_starts_with, 2, false);
-    wi_table_set_foreign(table, "ends_with", _string_ends_with, 2, false);
+    wi_table_set_foreign(table, "indexof", _string_indexof, 2, false);
+    wi_table_set_foreign(table, "startswith", _string_startswith, 2, false);
+    wi_table_set_foreign(table, "endswith", _string_endswith, 2, false);
     wi_table_set_foreign(table, "compare", _string_compare, 2, false);
     wi_table_set_foreign(table, "replace", _string_replace, 3, false);
     wi_table_set_foreign(table, "split", _string_split, 2, false);

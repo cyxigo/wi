@@ -78,7 +78,7 @@ _map_has(struct wi_state* state, uint8_t arg_count) {
 }
 
 static void
-_map_get_or_default(struct wi_state* state, uint8_t arg_count) {
+_map_getordefault(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     struct wi_map* map = wi_arg_map(state, 1);
     wi_value       value;
@@ -223,7 +223,7 @@ wi_state_def_stm_map(struct wi_state* state) {
     wi_table_set_foreign(table, "keys", _map_keys, 1, false);
     wi_table_set_foreign(table, "values", _map_values, 1, false);
     wi_table_set_foreign(table, "has", _map_has, 2, false);
-    wi_table_set_foreign(table, "get_or_default", _map_get_or_default, 3, false);
+    wi_table_set_foreign(table, "getordefault", _map_getordefault, 3, false);
     wi_table_set_foreign(table, "remove", _map_remove, 2, false);
     wi_table_set_foreign(table, "each", _map_each, 2, false);
     wi_table_set_foreign(table, "select", _map_select, 3, false);
