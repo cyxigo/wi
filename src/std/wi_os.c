@@ -1,5 +1,5 @@
 #ifndef _WIN32
-#define _POSIX_C_SOURCE 199309L
+#define _POSIX_C_SOURCE 200112L
 #endif
 
 #include "wi_os.h"
@@ -9,6 +9,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#endif
 
 #include "../../include/wi.h"
 #include "../core/wi_gc.h"
@@ -23,6 +28,27 @@ static void
 _os_time(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     wi_push_real(state, (wi_real)time(NULL));
+}
+
+static void
+_os_setenv(struct wi_state* state, uint8_t arg_count) {
+    WI_UNUSED(arg_count);
+    char* name      = wi_arg_string(state, 1, NULL, NULL);
+    char* value     = wi_arg_string(state, 2, NULL, NULL);
+    bool  overwrite = wi_arg_bool(state, 3);
+    bool  result;
+
+#ifdef _WIN32
+    if (!overwrite && GetEnvironmentVariableA(name, NULL, 0) > 0) {
+        result = true;
+    } else {
+        result = SetEnvironmentVariableA(name, value) != 0;
+    }
+#else
+    result = setenv(name, value, (int)overwrite) == 0;
+#endif
+
+    wi_push_bool(state, result);
 }
 
 static void
@@ -114,6 +140,7 @@ wi_state_def_std_os(struct wi_state* state) {
     wi_foreign_entry functions[] = {
         {"clock",  _os_clock,  0, false},
         {"time",   _os_time,   0, false},
+        {"setenv", _os_setenv, 3, false},
         {"getenv", _os_getenv, 1, false},
         {"args",   _os_args,   0, false},
         {"system", _os_system, 1, false},
