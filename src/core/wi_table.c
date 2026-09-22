@@ -116,6 +116,7 @@ wi_table_set(struct wi_table* table, wi_value key, wi_value value) {
 
     entry->key   = key;
     entry->value = value;
+    table->mod_count++;
 
     return is_new_key;
 }
@@ -168,6 +169,7 @@ wi_table_delete(struct wi_table* table, wi_value key) {
     entry->key   = wi_make_empty_value();
     entry->value = wi_make_true_value();
     table->live_count--;
+    table->mod_count++;
 
     return true;
 }
