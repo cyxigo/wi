@@ -29,13 +29,18 @@ _os_clock(struct wi_state* state, uint8_t arg_count) {
 static void
 _os_date(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
-    time_t    t = (time_t)wi_arg_real(state, 1);
+    wi_real   time_real = wi_arg_real(state, 1);
+    time_t    time      = (time_t)time_real;
     struct tm tm;
 
 #ifdef _WIN32
-    gmtime_s(&tm, &t);
+    if (gmtime_s(&tm, &time) != 0) {
+        wi_state_error(state, "date out of range: " WI_REAL_FORMAT, time_real);
+    }
 #else
-    gmtime_r(&t, &tm);
+    if (!gmtime_r(&time, &tm)) {
+        wi_state_error(state, "date out of range: " WI_REAL_FORMAT, time_real);
+    }
 #endif
 
     struct wi_object* result = wi_push_object(state);
