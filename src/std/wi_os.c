@@ -26,7 +26,7 @@ _os_time(struct wi_state* state, uint8_t arg_count) {
 }
 
 static void
-_os_get_env(struct wi_state* state, uint8_t arg_count) {
+_os_getenv(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     char* value = getenv(wi_arg_string(state, 1, NULL, NULL));
 
@@ -36,7 +36,7 @@ _os_get_env(struct wi_state* state, uint8_t arg_count) {
     }
 
     if (!wi_utf8_validate(value, (int)strlen(value))) {
-        wi_state_error(state, "invalid utf-8 sequence from os.get_env()");
+        wi_state_error(state, "invalid utf-8 sequence from os.getenv()");
     }
 
     wi_push_string(state, value);
@@ -112,14 +112,14 @@ wi_state_def_std_os(struct wi_state* state) {
     struct wi_module* module = wi_push_module(state);
     wi_def(state, "os");
     wi_foreign_entry functions[] = {
-        {"clock",   _os_clock,   0, false},
-        {"time",    _os_time,    0, false},
-        {"get_env", _os_get_env, 1, false},
-        {"args",    _os_args,    0, false},
-        {"system",  _os_system,  1, false},
-        {"remove",  _os_remove,  1, false},
-        {"rename",  _os_rename,  2, false},
-        {"sleep",   _os_sleep,   1, false},
+        {"clock",  _os_clock,  0, false},
+        {"time",   _os_time,   0, false},
+        {"getenv", _os_getenv, 1, false},
+        {"args",   _os_args,   0, false},
+        {"system", _os_system, 1, false},
+        {"remove", _os_remove, 1, false},
+        {"rename", _os_rename, 2, false},
+        {"sleep",  _os_sleep,  1, false},
     };
 
     WI_MODULE_EXPORT_FOREIGN_ALL(state, module, functions);
