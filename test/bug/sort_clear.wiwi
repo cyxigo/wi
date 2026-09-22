@@ -1,2 +1,2 @@
-runtime error: array resized during iteration
+runtime error: array modified during iteration
    --> test/bug/sort_clear.wi:7 in main function
