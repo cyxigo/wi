@@ -27,13 +27,15 @@ wi_grow_capacity(int capacity) {
         type*         data;                                                                                  \
         int           capacity;                                                                              \
         int           count;                                                                                 \
+        int           mod_count;                                                                             \
     };                                                                                                       \
                                                                                                              \
     WI_INLINE void wi_##name##_buf_init(struct wi_##name##_buf* buf, struct wi_gc* gc) {                     \
-        buf->gc       = gc;                                                                                  \
-        buf->data     = NULL;                                                                                \
-        buf->capacity = 0;                                                                                   \
-        buf->count    = 0;                                                                                   \
+        buf->gc        = gc;                                                                                 \
+        buf->data      = NULL;                                                                               \
+        buf->capacity  = 0;                                                                                  \
+        buf->count     = 0;                                                                                  \
+        buf->mod_count = 0;                                                                                  \
     }                                                                                                        \
                                                                                                              \
     WI_INLINE void wi_##name##_buf_free(struct wi_##name##_buf* buf) {                                       \
@@ -63,6 +65,7 @@ wi_grow_capacity(int capacity) {
         }                                                                                                    \
                                                                                                              \
         buf->data[buf->count++] = item;                                                                      \
+        buf->mod_count++;                                                                                    \
         return buf->count - 1;                                                                               \
     }
 

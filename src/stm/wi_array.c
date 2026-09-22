@@ -125,6 +125,7 @@ _array_remove(struct wi_state* state, uint8_t arg_count) {
         }
 
         array->items.count--;
+        array->items.mod_count++;
         found = true;
         break;
     }
@@ -149,6 +150,7 @@ _array_remove_at(struct wi_state* state, uint8_t arg_count) {
     }
 
     array->items.count--;
+    array->items.mod_count++;
     wi_state_ppush(state, removed);
 }
 
@@ -163,6 +165,7 @@ _array_pop(struct wi_state* state, uint8_t arg_count) {
 
     wi_state_ppush(state, array->items.data[array->items.count - 1]);
     array->items.count--;
+    array->items.mod_count++;
 }
 
 static void
@@ -256,8 +259,8 @@ _array_join(struct wi_state* state, uint8_t arg_count) {
 static void
 _array_each(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
-    struct wi_array* array = wi_arg_array(state, 1);
-    int              count = array->items.count;
+    struct wi_array* array     = wi_arg_array(state, 1);
+    int              mod_count = array->items.mod_count;
     wi_state_ppush(state, WI_MAKE_BOX_VALUE(array));
 
     for (int i = 0; i < array->items.count; i++) {
@@ -265,8 +268,8 @@ _array_each(struct wi_state* state, uint8_t arg_count) {
         wi_state_ppush(state, array->items.data[i]);
         wi_call(state, 1, true);
 
-        if (WI_UNLIKELY(array->items.count != count)) {
-            wi_state_error(state, "array resized during iteration");
+        if (WI_UNLIKELY(array->items.mod_count != mod_count)) {
+            wi_state_error(state, "array modified during iteration");
         }
     }
 }
@@ -274,9 +277,9 @@ _array_each(struct wi_state* state, uint8_t arg_count) {
 static void
 _array_select(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
-    struct wi_array* array  = wi_arg_array(state, 1);
-    int              count  = array->items.count;
-    struct wi_array* result = wi_push_array(state);
+    struct wi_array* array     = wi_arg_array(state, 1);
+    int              mod_count = array->items.mod_count;
+    struct wi_array* result    = wi_push_array(state);
     wi_value_buf_reserve(&result->items, array->items.count);
 
     for (int i = 0; i < array->items.count; i++) {
@@ -284,8 +287,8 @@ _array_select(struct wi_state* state, uint8_t arg_count) {
         wi_state_ppush(state, array->items.data[i]);
         wi_call(state, 1, false);
 
-        if (WI_UNLIKELY(array->items.count != count)) {
-            wi_state_error(state, "array resized during iteration");
+        if (WI_UNLIKELY(array->items.mod_count != mod_count)) {
+            wi_state_error(state, "array modified during iteration");
         }
 
         wi_value value = wi_state_pop(state);
@@ -297,10 +300,10 @@ _array_select(struct wi_state* state, uint8_t arg_count) {
 static void
 _array_where(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
-    struct wi_array* array  = wi_arg_array(state, 1);
-    int              count  = array->items.count;
-    struct wi_array* result = wi_push_array(state);
-    wi_value_buf_reserve(&result->items, count);
+    struct wi_array* array     = wi_arg_array(state, 1);
+    int              mod_count = array->items.mod_count;
+    struct wi_array* result    = wi_push_array(state);
+    wi_value_buf_reserve(&result->items, array->items.count);
 
     for (int i = 0; i < array->items.count; i++) {
         wi_value item = array->items.data[i];
@@ -309,8 +312,8 @@ _array_where(struct wi_state* state, uint8_t arg_count) {
         wi_state_ppush(state, item);
         wi_call(state, 1, false);
 
-        if (WI_UNLIKELY(array->items.count != count)) {
-            wi_state_error(state, "array resized during iteration");
+        if (WI_UNLIKELY(array->items.mod_count != mod_count)) {
+            wi_state_error(state, "array modified during iteration");
         }
 
         if (!wi_value_is_falsy(wi_state_pop(state))) {
@@ -337,7 +340,7 @@ _aqsort_swap(struct wi_state* state, struct wi_array* array, int i, int j) {
 }
 
 static int
-_aqsort_partition(struct wi_state* state, struct wi_array* array, int lo, int hi, int count) {
+_aqsort_partition(struct wi_state* state, struct wi_array* array, int lo, int hi, int mod_count) {
     int pii = lo + rand() % (hi - lo + 1);
     _aqsort_swap(state, array, pii, hi);
 
@@ -356,8 +359,8 @@ _aqsort_partition(struct wi_state* state, struct wi_array* array, int lo, int hi
         wi_state_ppush(state, pi);
         wi_call(state, 2, false);
 
-        if (WI_UNLIKELY(array->items.count != count)) {
-            wi_state_error(state, "array resized during iteration");
+        if (WI_UNLIKELY(array->items.mod_count != mod_count)) {
+            wi_state_error(state, "array modified during iteration");
         }
 
         if (!wi_value_is_falsy(wi_state_pop(state))) {
@@ -375,15 +378,15 @@ _aqsort_partition(struct wi_state* state, struct wi_array* array, int lo, int hi
 }
 
 static void
-_aqsort(struct wi_state* state, struct wi_array* array, int lo, int hi, int count) {
+_aqsort(struct wi_state* state, struct wi_array* array, int lo, int hi, int mod_count) {
     while (lo < hi) { /* loop for tail recursion */
-        int pi = _aqsort_partition(state, array, lo, hi, count);
+        int pi = _aqsort_partition(state, array, lo, hi, mod_count);
 
         if (pi - lo < hi - pi) {
-            _aqsort(state, array, lo, pi - 1, count);
+            _aqsort(state, array, lo, pi - 1, mod_count);
             lo = pi + 1;
         } else {
-            _aqsort(state, array, pi + 1, hi, count);
+            _aqsort(state, array, pi + 1, hi, mod_count);
             hi = pi - 1;
         }
     }
@@ -395,7 +398,7 @@ _array_sort(struct wi_state* state, uint8_t arg_count) {
     struct wi_array* array = wi_arg_array(state, 1);
 
     if (array->items.count > 1) {
-        _aqsort(state, array, 0, array->items.count - 1, array->items.count);
+        _aqsort(state, array, 0, array->items.count - 1, array->items.mod_count);
     }
 
     wi_state_ppush(state, state->ffi_stack[1]);
