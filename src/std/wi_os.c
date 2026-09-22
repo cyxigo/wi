@@ -25,6 +25,36 @@ _os_clock(struct wi_state* state, uint8_t arg_count) {
 }
 
 static void
+_os_date(struct wi_state* state, uint8_t arg_count) {
+    WI_UNUSED(arg_count);
+    time_t    t = (time_t)wi_arg_real(state, 1);
+    struct tm tm;
+
+#ifdef _WIN32
+    gmtime_s(&tm, &t);
+#else
+    gmtime_r(&t, &tm);
+#endif
+
+    struct wi_object* result = wi_push_object(state);
+
+    wi_push_real(state, tm.tm_year + 1900);
+    wi_object_set(state, result, "year");
+    wi_push_real(state, tm.tm_mon + 1);
+    wi_object_set(state, result, "month");
+    wi_push_real(state, tm.tm_mday);
+    wi_object_set(state, result, "day");
+    wi_push_real(state, tm.tm_hour);
+    wi_object_set(state, result, "hour");
+    wi_push_real(state, tm.tm_min);
+    wi_object_set(state, result, "minute");
+    wi_push_real(state, tm.tm_sec);
+    wi_object_set(state, result, "second");
+    wi_push_real(state, tm.tm_wday);
+    wi_object_set(state, result, "weekday");
+}
+
+static void
 _os_time(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     wi_push_real(state, (wi_real)time(NULL));
@@ -139,6 +169,7 @@ wi_state_def_std_os(struct wi_state* state) {
     wi_def(state, "os");
     wi_foreign_entry functions[] = {
         {"clock",  _os_clock,  0, false},
+        {"date",   _os_date,   1, false},
         {"time",   _os_time,   0, false},
         {"setenv", _os_setenv, 3, false},
         {"getenv", _os_getenv, 1, false},
