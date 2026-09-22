@@ -20,8 +20,10 @@ _array_copy(struct wi_state* state, uint8_t arg_count) {
 static void
 _array_clear(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
-    struct wi_array* array = wi_arg_array(state, 1);
+    struct wi_array* array     = wi_arg_array(state, 1);
+    int              mod_count = array->items.mod_count;
     wi_value_buf_free(&array->items);
+    array->items.mod_count = mod_count + 1;
     wi_push_null(state);
 }
 

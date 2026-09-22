@@ -14,8 +14,10 @@ _map_copy(struct wi_state* state, uint8_t arg_count) {
 static void
 _map_clear(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
-    struct wi_map* map = wi_arg_map(state, 1);
+    struct wi_map* map       = wi_arg_map(state, 1);
+    int            mod_count = map->items.mod_count;
     wi_table_free(&map->items);
+    map->items.mod_count = mod_count + 1;
     wi_push_null(state);
 }
 
