@@ -77,7 +77,7 @@ The Wi source code is organized into the following directories:
 
 ## Notes
 
-This programming language was created by me, and only me – a single person. It's in beta, because I'm still designing it and **breaking syntax changes can happen**, though right now – very unlikely; the project is finally gaining some stability both in syntax and in FFI/API. The standard library is not something mind-blowing, but it's useful. Other than the FFI/API, the code is not heavily commented.
+This programming language was created by me, and only me – a single person. It's in beta, because I'm still designing it and **breaking syntax changes can happen**, though right now – very unlikely; the project is finally gaining some stability both in syntax and in FFI/API. The standard library is designed to be minimal, but useful. Other than the FFI/API, the code is not heavily commented.
 
 Some parts may still need polish, and I'm very open to suggestions – if you have one, [open an issue](https://github.com/cyxigo/wi/issues)!
 
