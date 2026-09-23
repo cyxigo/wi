@@ -52,6 +52,8 @@ _array_reverse(struct wi_state* state, uint8_t arg_count) {
         array->items.data[i] = array->items.data[j];
         array->items.data[j] = temp;
     }
+
+    array->items.mod_count++;
 }
 
 static void
