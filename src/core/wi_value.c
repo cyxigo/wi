@@ -250,15 +250,15 @@ wi_string_to_real(const char* string, int len, char** end_ptr) {
         char c = string[1];
 
         if (c == 'x' || c == 'X') {
-            return (wi_real)strtoll(string + 2, end_ptr, 16);
+            return (wi_real)strtoull(string + 2, end_ptr, 16);
         }
 
         if (c == 'o' || c == 'O') {
-            return (wi_real)strtoll(string + 2, end_ptr, 8);
+            return (wi_real)strtoull(string + 2, end_ptr, 8);
         }
 
         if (c == 'b' || c == 'B') {
-            return (wi_real)strtoll(string + 2, end_ptr, 2);
+            return (wi_real)strtoull(string + 2, end_ptr, 2);
         }
     }
 
