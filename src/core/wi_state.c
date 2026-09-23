@@ -885,6 +885,10 @@ _state_import(struct wi_state* state, wi_value path_value) {
     char* path = wi_value_as_cstring(path_value);
     char* src  = state->import_load(state, path);
 
+    if (!src) {
+        wi_state_error(state, "failed to load module %s", path);
+    }
+
     struct wi_module* module = wi_new_module(state->gc, path);
     WI_GC_PUSH_ROOT(state->gc, module);
 
