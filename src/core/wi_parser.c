@@ -86,7 +86,17 @@ _parser_print_token_line(struct wi_parser* parser, wi_print_fn fn, struct wi_tok
     wi_printf(state, fn, " %*i | %.*s\n", line_width, token.line, (int)(line_end - line_start), line_start);
     wi_printf(state, fn, " %*s | %*s", line_width, "", token.col - 1, "");
 
-    int caret_count = wi_utf8_len(token.start, token.count);
+    /*
+        a token can span multiple lines (raw strings!) and only the first line got printed above
+        so point to that first line and not somewhere else
+    */
+    int count = 0;
+
+    while (count < token.count && token.start[count] != '\n') {
+        count++;
+    }
+
+    int caret_count = wi_utf8_len(token.start, count);
 
     for (int i = 0; i < caret_count; i++) {
         fn(state, "^");
@@ -221,8 +231,29 @@ wi_parser_expect(struct wi_parser* parser, enum wi_token_kind kind) {
         return WI_BLANK_TOKEN;
     }
 
-    struct wi_token* prev = &parser->prev;
-    prev->col += wi_utf8_len(prev->start, prev->count);
+    /*
+        some heavy machinery here so i will explain!
+        we blame everything on the previous token, we take it and point just past its end
+        for a normal sane-single-line token that's simply its column + its count
+        BUT for the raw strings, which can span multiple lines, the situation is quite different
+        "just past its end" might land somewhere completely unrelated!
+        so we walk previous token's text, count the newlines, remember where the last line starts
+        and if we found one, measure the column from there instead of from prev->start
+    */
+    struct wi_token* prev      = &parser->prev;
+    const char*      last_line = prev->start;
+
+    for (int i = 0; i < prev->count; i++) {
+        if (prev->start[i] == '\n') {
+            prev->line++;
+            last_line = prev->start + i + 1;
+        }
+    }
+
+    /* magic calculations that i really am uncertain about but they somehow work */
+    prev->col   = last_line == prev->start
+                      ? prev->col + wi_utf8_len(prev->start, prev->count)
+                      : wi_utf8_len(last_line, (int)(prev->start + prev->count - last_line)) + 1;
     prev->count = 1;
     wi_parser_error_at_prev(parser, "expected %s", wi_token_kind_to_string(kind));
 

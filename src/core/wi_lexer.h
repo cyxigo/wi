@@ -43,6 +43,7 @@ enum wi_token_kind {
 
     WI_TOKEN_REAL,
     WI_TOKEN_STRING,
+    WI_TOKEN_RAW_STRING,
     /*
         there is not a SINGLE sane, completely normal and adequate way to implement string interpolation.
         how Wi does it?

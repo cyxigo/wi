@@ -790,6 +790,11 @@ _compiler_lit_expr(struct wi_compiler* compiler, bool can_assign) {
         case WI_TOKEN_STRING:
             _compiler_push_string(compiler, compiler->parser->prev);
             break;
+        case WI_TOKEN_RAW_STRING: {
+            wi_value value = WI_MAKE_BOX_VALUE(wi_copy_cstring(compiler->gc, literal.start, literal.count));
+            _compiler_emit_push(compiler, value);
+            break;
+        }
         case WI_TOKEN_NULL:
             _compiler_emit_opcode(compiler, WI_OP_PUSH_NULL);
             break;
@@ -1427,6 +1432,7 @@ static struct _parse_rule _g_rules[] = {
     [WI_TOKEN_NAME]            = {_compiler_var_expr,      NULL,                          _PREC_NONE      },
     [WI_TOKEN_REAL]            = {_compiler_lit_expr,      NULL,                          _PREC_NONE      },
     [WI_TOKEN_STRING]          = {_compiler_lit_expr,      NULL,                          _PREC_NONE      },
+    [WI_TOKEN_RAW_STRING]      = {_compiler_lit_expr,      NULL,                          _PREC_NONE      },
     [WI_TOKEN_INTERP]          = {_compiler_interp_expr,   NULL,                          _PREC_NONE      },
     [WI_TOKEN_OPEN_PAREN]      = {_compiler_group_expr,    _compiler_call_expr,           _PREC_CALL      },
     [WI_TOKEN_CLOSE_PAREN]     = {NULL,                    NULL,                          _PREC_NONE      },

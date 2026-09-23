@@ -20,6 +20,8 @@ wi_token_kind_to_string(enum wi_token_kind kind) {
             return "real";
         case WI_TOKEN_STRING:
             return "string";
+        case WI_TOKEN_RAW_STRING:
+            return "raw string";
         case WI_TOKEN_INTERP:
             return "string interpolation";
         case WI_TOKEN_OPEN_PAREN:
@@ -422,6 +424,30 @@ _lexer_string(struct wi_lexer* lexer) {
     return token;
 }
 
+static struct wi_token
+_lexer_raw_string(struct wi_lexer* lexer) {
+    /* skip first character, i.e. ` */
+    lexer->start     = lexer->curr;
+    lexer->start_col = lexer->curr_col;
+
+    int line = lexer->line;
+    int col  = lexer->curr_col - 1;
+
+    while (!_lexer_check(lexer, '`') && !_lexer_is_at_end(lexer)) {
+        _lexer_advance(lexer);
+    }
+
+    if (_lexer_is_at_end(lexer)) {
+        return wi_token_make_error("unfinished raw string", line, col);
+    }
+
+    struct wi_token token = _lexer_make_token(lexer, WI_TOKEN_RAW_STRING);
+    token.line            = line; /* content can span lines, keep the line the backtick opened on */
+    _lexer_advance(lexer);        /* ` */
+
+    return token;
+}
+
 static void
 _lexer_skip_line(struct wi_lexer* lexer) {
     while (!_lexer_check(lexer, '\n') && !_lexer_is_at_end(lexer)) {
@@ -544,6 +570,8 @@ wi_lexer_next(struct wi_lexer* lexer) {
     switch (c) {
         case '"':
             return _lexer_string(lexer);
+        case '`':
+            return _lexer_raw_string(lexer);
         case '(':
             return _lexer_make_token(lexer, WI_TOKEN_OPEN_PAREN);
         case ')':
