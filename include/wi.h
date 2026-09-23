@@ -590,6 +590,16 @@ WI_API wi_module*
 wi_pop_module(wi_state* state);
 
 /**
+ * Get the type name of an argument
+ *
+ * @param state Wi state instance
+ * @param arg Argument index (1-[arg_count])
+ * @return Type name
+ */
+WI_API const char*
+wi_arg_type(wi_state* state, uint8_t arg);
+
+/**
  * Check if argument is a real value
  *
  * @param state Wi state instance

@@ -342,6 +342,11 @@ wi_pop_module(struct wi_state* state) {
     return wi_value_as_module(value);
 }
 
+const char*
+wi_arg_type(struct wi_state* state, uint8_t arg) {
+    return wi_value_type(state->ffi_stack[arg]);
+}
+
 bool
 wi_arg_is_real(struct wi_state* state, uint8_t arg) {
     return wi_value_is_real(state->ffi_stack[arg]);
