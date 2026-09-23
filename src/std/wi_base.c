@@ -77,6 +77,19 @@ _base_exit(struct wi_state* state, uint8_t arg_count) {
 }
 
 static void
+_base_gc(struct wi_state* state, uint8_t arg_count) {
+    WI_UNUSED(arg_count);
+    wi_gc_collect_major(state->gc);
+    wi_push_null(state);
+}
+
+static void
+_base_memoryused(struct wi_state* state, uint8_t arg_count) {
+    WI_UNUSED(arg_count);
+    wi_push_real(state, (wi_real)state->gc->bytes_allocated);
+}
+
+static void
 _base_error(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     wi_state_error(state, "%s", wi_arg_string(state, 1, NULL, NULL));
@@ -396,6 +409,9 @@ wi_state_def_std_base(struct wi_state* state) {
         {"input",      _base_input,      0, true },
         {"ismain",     _base_ismain,     0, false},
         {"exit",       _base_exit,       0, false},
+
+        {"gc",         _base_gc,         0, false},
+        {"memoryused", _base_memoryused, 0, false},
 
         {"error",      _base_error,      1, false},
         {"assert",     _base_assert,     2, false},
