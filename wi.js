@@ -118,7 +118,7 @@ function initRuntime() {
     runtimeInitialized = true;
     if (!Module["noFSInit"] && !FS.initialized) FS.init();
     TTY.init();
-    wasmExports["z"]();
+    wasmExports["I"]();
     FS.ignorePermissions = false;
 }
 function postRun() {
@@ -614,7 +614,10 @@ var MEMFS = {
                 stream: { llseek: MEMFS.stream_ops.llseek },
             },
             file: {
-                node: { getattr: MEMFS.node_ops.getattr, setattr: MEMFS.node_ops.setattr },
+                node: {
+                    getattr: MEMFS.node_ops.getattr,
+                    setattr: MEMFS.node_ops.setattr,
+                },
                 stream: {
                     llseek: MEMFS.stream_ops.llseek,
                     read: MEMFS.stream_ops.read,
@@ -632,7 +635,10 @@ var MEMFS = {
                 stream: {},
             },
             chrdev: {
-                node: { getattr: MEMFS.node_ops.getattr, setattr: MEMFS.node_ops.setattr },
+                node: {
+                    getattr: MEMFS.node_ops.getattr,
+                    setattr: MEMFS.node_ops.setattr,
+                },
                 stream: FS.chrdev_stream_ops,
             },
         };
@@ -853,7 +859,14 @@ var MEMFS = {
 };
 var FS_modeStringToFlags = (str) => {
     if (typeof str != "string") return str;
-    var flagModes = { r: 0, "r+": 2, w: 512 | 64 | 1, "w+": 512 | 64 | 2, a: 1024 | 64 | 1, "a+": 1024 | 64 | 2 };
+    var flagModes = {
+        r: 0,
+        "r+": 2,
+        w: 512 | 64 | 1,
+        "w+": 512 | 64 | 2,
+        a: 1024 | 64 | 1,
+        "a+": 1024 | 64 | 2,
+    };
     var flags = flagModes[str];
     if (typeof flags == "undefined") {
         throw new Error(`Unknown file open mode: ${str}`);
@@ -1690,7 +1703,11 @@ var FS = {
         return FS.stat(path, true);
     },
     doChmod(stream, node, mode, dontFollow) {
-        FS.doSetAttr(stream, node, { mode: (mode & 4095) | (node.mode & ~4095), ctime: Date.now(), dontFollow });
+        FS.doSetAttr(stream, node, {
+            mode: (mode & 4095) | (node.mode & ~4095),
+            ctime: Date.now(),
+            dontFollow,
+        });
     },
     chmod(path, mode, dontFollow) {
         var node;
@@ -1782,7 +1799,10 @@ var FS = {
             node = path;
         } else {
             isDirPath = path.endsWith("/");
-            var lookup = FS.lookupPath(path, { follow: !(flags & 131072), noent_okay: true });
+            var lookup = FS.lookupPath(path, {
+                follow: !(flags & 131072),
+                noent_okay: true,
+            });
             node = lookup.node;
             path = lookup.path;
         }
@@ -2542,6 +2562,20 @@ function ___syscall_fcntl64(fd, cmd, varargs) {
         return -e.errno;
     }
 }
+var stringToUTF8 = (str, outPtr, maxBytesToWrite) => stringToUTF8Array(str, HEAPU8, outPtr, maxBytesToWrite);
+function ___syscall_getcwd(buf, size) {
+    try {
+        if (!size) return -28;
+        var cwd = FS.cwd();
+        var cwdLengthInBytes = lengthBytesUTF8(cwd) + 1;
+        if (size < cwdLengthInBytes) return -68;
+        stringToUTF8(cwd, buf, size);
+        return cwdLengthInBytes;
+    } catch (e) {
+        if (typeof FS == "undefined" || !(e.name === "ErrnoError")) throw e;
+        return -e.errno;
+    }
+}
 function ___syscall_ioctl(fd, op, varargs) {
     SYSCALLS.varargs = varargs;
     try {
@@ -2638,6 +2672,18 @@ function ___syscall_ioctl(fd, op, varargs) {
         return -e.errno;
     }
 }
+function ___syscall_mkdirat(dirfd, path, mode) {
+    try {
+        path = SYSCALLS.getStr(path);
+        path = SYSCALLS.calculateAt(dirfd, path);
+        mode &= ~SYSCALLS.currentUmask;
+        FS.mkdir(path, mode, 0);
+        return 0;
+    } catch (e) {
+        if (typeof FS == "undefined" || !(e.name === "ErrnoError")) throw e;
+        return -e.errno;
+    }
+}
 function ___syscall_openat(dirfd, path, flags, varargs) {
     SYSCALLS.varargs = varargs;
     try {
@@ -2653,16 +2699,134 @@ function ___syscall_openat(dirfd, path, flags, varargs) {
         return -e.errno;
     }
 }
+function ___syscall_renameat(olddirfd, oldpath, newdirfd, newpath) {
+    try {
+        oldpath = SYSCALLS.getStr(oldpath);
+        newpath = SYSCALLS.getStr(newpath);
+        oldpath = SYSCALLS.calculateAt(olddirfd, oldpath);
+        newpath = SYSCALLS.calculateAt(newdirfd, newpath);
+        FS.rename(oldpath, newpath);
+        return 0;
+    } catch (e) {
+        if (typeof FS == "undefined" || !(e.name === "ErrnoError")) throw e;
+        return -e.errno;
+    }
+}
+function ___syscall_rmdir(path) {
+    try {
+        path = SYSCALLS.getStr(path);
+        FS.rmdir(path);
+        return 0;
+    } catch (e) {
+        if (typeof FS == "undefined" || !(e.name === "ErrnoError")) throw e;
+        return -e.errno;
+    }
+}
+function ___syscall_unlinkat(dirfd, path, flags) {
+    try {
+        path = SYSCALLS.getStr(path);
+        path = SYSCALLS.calculateAt(dirfd, path);
+        if (!flags) {
+            FS.unlink(path);
+        } else if (flags === 512) {
+            FS.rmdir(path);
+        } else {
+            return -28;
+        }
+        return 0;
+    } catch (e) {
+        if (typeof FS == "undefined" || !(e.name === "ErrnoError")) throw e;
+        return -e.errno;
+    }
+}
+var __emscripten_system = (command) => {
+    if (ENVIRONMENT_IS_NODE) {
+        if (!command) return 1;
+        var cmdstr = UTF8ToString(command);
+        if (!cmdstr.length) return 0;
+        var cp = require("node:child_process");
+        var ret = cp.spawnSync(cmdstr, [], { shell: true, stdio: "inherit" });
+        var _W_EXITCODE = (ret, sig) => (ret << 8) | sig;
+        if (ret.status === null) {
+            var signalToNumber = (sig) => {
+                switch (sig) {
+                    case "SIGHUP":
+                        return 1;
+                    case "SIGQUIT":
+                        return 3;
+                    case "SIGFPE":
+                        return 8;
+                    case "SIGKILL":
+                        return 9;
+                    case "SIGALRM":
+                        return 14;
+                    case "SIGTERM":
+                        return 15;
+                    default:
+                        return 2;
+                }
+            };
+            return _W_EXITCODE(0, signalToNumber(ret.signal));
+        }
+        return _W_EXITCODE(ret.status, 0);
+    }
+    if (!command) return 0;
+    return -52;
+};
 var __emscripten_throw_longjmp = () => {
     throw new EmscriptenSjLj();
+};
+var INT53_MAX = 9007199254740992;
+var INT53_MIN = -9007199254740992;
+var bigintToI53Checked = (num) => (num < INT53_MIN || num > INT53_MAX ? NaN : Number(num));
+function __gmtime_js(time, tmPtr) {
+    time = bigintToI53Checked(time);
+    var date = new Date(time * 1e3);
+    if (isNaN(date.getTime())) {
+        return 1;
+    }
+    HEAP32[tmPtr >> 2] = date.getUTCSeconds();
+    HEAP32[(tmPtr + 4) >> 2] = date.getUTCMinutes();
+    HEAP32[(tmPtr + 8) >> 2] = date.getUTCHours();
+    HEAP32[(tmPtr + 12) >> 2] = date.getUTCDate();
+    HEAP32[(tmPtr + 16) >> 2] = date.getUTCMonth();
+    HEAP32[(tmPtr + 20) >> 2] = date.getUTCFullYear() - 1900;
+    HEAP32[(tmPtr + 24) >> 2] = date.getUTCDay();
+    var start = Date.UTC(date.getUTCFullYear(), 0, 1, 0, 0, 0, 0);
+    var yday = ((date.getTime() - start) / (1e3 * 60 * 60 * 24)) | 0;
+    HEAP32[(tmPtr + 28) >> 2] = yday;
+    return 0;
+}
+var __tzset_js = (timezone, daylight, std_name, dst_name) => {
+    var currentYear = new Date().getFullYear();
+    var winter = new Date(currentYear, 0, 1);
+    var summer = new Date(currentYear, 6, 1);
+    var winterOffset = winter.getTimezoneOffset();
+    var summerOffset = summer.getTimezoneOffset();
+    var stdTimezoneOffset = Math.max(winterOffset, summerOffset);
+    HEAPU32[timezone >> 2] = stdTimezoneOffset * 60;
+    HEAP32[daylight >> 2] = Number(winterOffset != summerOffset);
+    var extractZone = (timezoneOffset) => {
+        var sign = timezoneOffset >= 0 ? "-" : "+";
+        var absOffset = Math.abs(timezoneOffset);
+        var hours = String(Math.floor(absOffset / 60)).padStart(2, "0");
+        var minutes = String(absOffset % 60).padStart(2, "0");
+        return `UTC${sign}${hours}${minutes}`;
+    };
+    var winterName = extractZone(winterOffset);
+    var summerName = extractZone(summerOffset);
+    if (summerOffset < winterOffset) {
+        stringToUTF8(winterName, std_name, 17);
+        stringToUTF8(summerName, dst_name, 17);
+    } else {
+        stringToUTF8(winterName, dst_name, 17);
+        stringToUTF8(summerName, std_name, 17);
+    }
 };
 var _emscripten_get_now = () => performance.now();
 var _emscripten_date_now = () => Date.now();
 var nowIsMonotonic = 1;
 var checkWasiClock = (clock_id) => clock_id >= 0 && clock_id <= 3;
-var INT53_MAX = 9007199254740992;
-var INT53_MIN = -9007199254740992;
-var bigintToI53Checked = (num) => (num < INT53_MIN || num > INT53_MAX ? NaN : Number(num));
 function _clock_time_get(clk_id, ignored_precision, ptime) {
     ignored_precision = bigintToI53Checked(ignored_precision);
     if (!checkWasiClock(clk_id)) {
@@ -2735,7 +2899,6 @@ var getEnvStrings = () => {
     }
     return getEnvStrings.strings;
 };
-var stringToUTF8 = (str, outPtr, maxBytesToWrite) => stringToUTF8Array(str, HEAPU8, outPtr, maxBytesToWrite);
 var _environ_get = (__environ, environ_buf) => {
     var bufSize = 0;
     var envp = 0;
@@ -2949,35 +3112,44 @@ var _wi_wasm_init,
     wasmMemory,
     wasmTable;
 function assignWasmExports(wasmExports) {
-    _wi_wasm_init = Module["_wi_wasm_init"] = wasmExports["B"];
-    _wi_wasm_run = Module["_wi_wasm_run"] = wasmExports["C"];
-    _setThrew = wasmExports["D"];
-    __emscripten_stack_restore = wasmExports["E"];
-    __emscripten_stack_alloc = wasmExports["F"];
-    _emscripten_stack_get_current = wasmExports["G"];
-    memory = wasmMemory = wasmExports["y"];
-    __indirect_function_table = wasmTable = wasmExports["A"];
+    _wi_wasm_init = Module["_wi_wasm_init"] = wasmExports["K"];
+    _wi_wasm_run = Module["_wi_wasm_run"] = wasmExports["L"];
+    _setThrew = wasmExports["M"];
+    __emscripten_stack_restore = wasmExports["N"];
+    __emscripten_stack_alloc = wasmExports["O"];
+    _emscripten_stack_get_current = wasmExports["P"];
+    memory = wasmMemory = wasmExports["H"];
+    __indirect_function_table = wasmTable = wasmExports["J"];
 }
 var wasmImports = {
-    x: ___syscall_faccessat,
-    i: ___syscall_fcntl64,
-    t: ___syscall_ioctl,
-    u: ___syscall_openat,
-    n: __emscripten_throw_longjmp,
-    k: _print_err,
-    l: _print_out,
-    w: _clock_time_get,
-    v: _emscripten_date_now,
-    o: _emscripten_resize_heap,
-    q: _environ_get,
-    r: _environ_sizes_get,
-    g: _fd_close,
-    s: _fd_read,
-    p: _fd_seek,
-    h: _fd_write,
-    j: invoke_ii,
+    G: ___syscall_faccessat,
+    j: ___syscall_fcntl64,
+    A: ___syscall_getcwd,
+    C: ___syscall_ioctl,
+    w: ___syscall_mkdirat,
+    D: ___syscall_openat,
+    r: ___syscall_renameat,
+    s: ___syscall_rmdir,
+    t: ___syscall_unlinkat,
+    q: __emscripten_system,
+    o: __emscripten_throw_longjmp,
+    u: __gmtime_js,
+    l: _print_err,
+    m: _print_out,
+    v: __tzset_js,
+    F: _clock_time_get,
+    E: _emscripten_date_now,
+    g: _emscripten_get_now,
+    p: _emscripten_resize_heap,
+    y: _environ_get,
+    z: _environ_sizes_get,
+    h: _fd_close,
+    B: _fd_read,
+    x: _fd_seek,
+    i: _fd_write,
+    k: invoke_ii,
     d: invoke_iii,
-    m: invoke_iiii,
+    n: invoke_iiii,
     f: invoke_iiiii,
     c: invoke_vi,
     b: invoke_vii,
