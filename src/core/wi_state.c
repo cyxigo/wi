@@ -1060,9 +1060,11 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
             wi_value name = _READ_CONSTANT();
             wi_value value;
 
-            wi_table_get(&frame->closure->module->vars, name, &value);
-            wi_state_push(state, value);
+            if (WI_UNLIKELY(!wi_table_get(&frame->closure->module->vars, name, &value))) {
+                _ERROR("variable %s is used but not defined", wi_value_as_cstring(name));
+            }
 
+            wi_state_push(state, value);
             _DISPATCH();
         }
         _OPCODE_LABEL(STORE_LOCAL) : {
@@ -1591,7 +1593,10 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
             }
 
             wi_value value;
-            wi_table_get(&module->vars, name, &value);
+
+            if (WI_UNLIKELY(!wi_table_get(&module->vars, name, &value))) {
+                _ERROR("variable %s is used but not defined", wi_value_as_cstring(name));
+            }
 
             wi_state_drop(state);
             wi_state_push(state, value);
