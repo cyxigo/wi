@@ -15,6 +15,7 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #else
+#include <sys/stat.h>
 #include <sys/wait.h>
 #include <unistd.h>
 #endif
@@ -187,6 +188,18 @@ _os_cwd(struct wi_state* state, uint8_t arg_count) {
 }
 
 static void
+_os_mkdir(struct wi_state* state, uint8_t arg_count) {
+    WI_UNUSED(arg_count);
+    char* path = wi_arg_string(state, 1, NULL, NULL);
+
+#ifdef _WIN32
+    wi_push_bool(state, CreateDirectoryA(path, NULL) != 0);
+#else
+    wi_push_bool(state, mkdir(path, 0777) == 0);
+#endif
+}
+
+static void
 _os_sleep(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     int64_t ms = wi_state_real_to_int(state, wi_arg_real(state, 1));
@@ -222,6 +235,7 @@ wi_state_def_std_os(struct wi_state* state) {
         {"remove", _os_remove, 1, false},
         {"rename", _os_rename, 2, false},
         {"cwd",    _os_cwd,    0, false},
+        {"mkdir",  _os_mkdir,  1, false},
         {"sleep",  _os_sleep,  1, false},
     };
 

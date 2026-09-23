@@ -8,11 +8,6 @@
 
 #include "../../include/wi.h"
 
-#ifdef _WIN32
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#endif
-
 #if defined(__clang__) || (defined(__GNUC__) && __GNUC__ > 4)
 #define WI_NORETURN __attribute__((noreturn))
 #define WI_UNLIKELY(x) __builtin_expect(!!(x), 0)
@@ -28,12 +23,7 @@
 #endif
 
 #define WI_UNUSED(x) (void)x
-
-#ifdef _WIN32
-#define WI_PATH_MAX PATH_MAX
-#else
 #define WI_PATH_MAX 4096
-#endif
 
 char*
 wi_vasprintf(const char* format, va_list args);
