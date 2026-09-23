@@ -1051,11 +1051,7 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
         _OPCODE_LABEL(GET_GLOBAL) : {
             wi_value name = _READ_CONSTANT();
             wi_value value;
-
-            if (WI_UNLIKELY(!wi_table_get(&frame->closure->module->vars, name, &value))) {
-                _ERROR("variable %s is used but not defined", wi_value_as_cstring(name));
-            }
-
+            wi_table_get(&frame->closure->module->vars, name, &value);
             wi_state_push(state, value);
             _DISPATCH();
         }
