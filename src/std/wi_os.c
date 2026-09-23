@@ -33,7 +33,7 @@ static void
 _os_date(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     wi_real   time_real = wi_arg_real(state, 1);
-    time_t    time      = (time_t)time_real;
+    time_t    time      = (time_t)wi_state_real_to_int(state, time_real);
     struct tm tm;
 
 #ifdef _WIN32
