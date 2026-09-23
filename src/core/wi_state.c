@@ -121,6 +121,8 @@ wi_new_state(wi_conf* conf) {
     state->import_load   = _state_read_file;
     state->import_exists = _state_import_exists;
 
+    state->extra = NULL;
+
     state->script_argc = 0;
     state->script_argv = NULL;
 
@@ -220,6 +222,16 @@ void
 wi_state_set_args(struct wi_state* state, int argc, const char** argv) {
     state->script_argc = argc;
     state->script_argv = argv;
+}
+
+void
+wi_state_set_extra(struct wi_state* state, void* extra) {
+    state->extra = extra;
+}
+
+void*
+wi_state_get_extra(struct wi_state* state) {
+    return state->extra;
 }
 
 bool

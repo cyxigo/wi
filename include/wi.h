@@ -212,6 +212,26 @@ WI_API void
 wi_state_set_args(wi_state* state, int argc, const char** argv);
 
 /**
+ * Set an opague pointer on the state, for the embedder put application context
+ * (e.g. a widget, some handle, anything)
+ *
+ * Extra pointer is not touched by Wi in any way
+ *
+ * @param state Wi state instance
+ * @param extra Pointer to store, or `NULL`
+ */
+WI_API void
+wi_state_set_extra(wi_state* state, void* extra);
+
+/**
+ * Get the pointer set by `wi_state_set_extra`, or `NULL` if none was set
+ *
+ * @param state Wi state instance
+ */
+WI_API void*
+wi_state_get_extra(wi_state* state);
+
+/**
  * Throw a runtime error in the state
  *
  * @param state Wi state instance

@@ -73,6 +73,8 @@ struct wi_state {
     wi_import_load_fn   import_load;
     wi_import_exists_fn import_exists;
 
+    void* extra;
+
     int          script_argc;
     const char** script_argv;
 
@@ -166,6 +168,10 @@ wi_state_set_callbacks(struct wi_state* state, wi_print_fn out_fn, wi_print_fn e
 
 void
 wi_state_set_args(struct wi_state* state, int argc, const char** argv);
+void
+wi_state_set_extra(struct wi_state* state, void* extra);
+void*
+wi_state_get_extra(struct wi_state* state);
 
 bool
 wi_state_add_lib(struct wi_state* state, wi_lib_handle lib);
