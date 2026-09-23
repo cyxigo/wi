@@ -391,6 +391,14 @@ _compiler_def_var(struct wi_compiler* compiler, struct wi_token name, wi_attrs a
         wi_parser_error_at(compiler->parser, name, "variable %s is already defined", name_box->buf);
     }
 
+    /*
+        real global value gets written by DEF_GLOBAL, but there can be rare cases (e.g REPL) where
+        it just doesn't execute and compiler will think "yeah this is defined" while it's actually not
+        and if we try to check the value of that variable we will, obviously, get garbage
+        so instead we explicitly set value to null here, and instead of garbage we get expected null!
+    */
+    wi_table_set(&compiler->module->vars, name_value, wi_make_null_value());
+
     wi_gc_pop_root(compiler->gc);
     uint16_t constant = _compiler_make_constant(compiler, name_value);
     _compiler_emit_opcode_short(compiler, WI_OP_DEF_GLOBAL, constant);
