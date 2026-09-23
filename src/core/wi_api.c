@@ -142,6 +142,12 @@ wi_is_map(struct wi_state* state) {
 }
 
 bool
+wi_is_function(struct wi_state* state) {
+    wi_value value = wi_state_top(state);
+    return wi_value_is_foreign(value) || wi_value_is_closure(value);
+}
+
+bool
 wi_is_object(struct wi_state* state) {
     return wi_value_is_object(wi_state_top(state));
 }

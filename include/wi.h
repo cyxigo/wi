@@ -380,6 +380,14 @@ WI_API bool
 wi_is_map(wi_state* state);
 
 /**
+ * Check if the value at the stack top is a function value (Wi/C function)
+ *
+ * @param state Wi state instance
+ */
+WI_API bool
+wi_is_function(wi_state* state);
+
+/**
  * Check if the value at the stack top is an object
  *
  * @param state Wi state instance
@@ -636,7 +644,7 @@ WI_API bool
 wi_arg_is_map(wi_state* state, uint8_t arg);
 
 /**
- * Check if argument is a function value
+ * Check if argument is a function value (Wi/C function)
  *
  * @param state Wi state instance
  * @param arg Argument index (1-[arg_count])
