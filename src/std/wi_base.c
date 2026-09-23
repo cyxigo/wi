@@ -19,7 +19,7 @@ _print(struct wi_state* state, uint8_t arg_count, bool newline) {
             continue;
         }
 
-        state->out("\n");
+        state->out(state, "\n");
     }
 
     wi_push_null(state);

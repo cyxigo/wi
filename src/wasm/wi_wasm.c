@@ -17,25 +17,27 @@ static wi_state* _g_state = NULL;
 static wi_conf   _g_conf  = WI_DEFAULT_CONF;
 
 #ifdef __EMSCRIPTEN__
-EM_JS(void, _print_out, (const char* text), {
+EM_JS(void, _print_out, (struct wi_state * state, const char* text), {
     if (Module.print) {
         Module.print(UTF8ToString(text));
     }
 })
 
-EM_JS(void, _print_err, (const char* text), {
+EM_JS(void, _print_err, (struct wi_state * state, const char* text), {
     if (Module.printErr) {
         Module.printErr(UTF8ToString(text));
     }
 })
 #else
 static void
-_print_out(const char* text) {
+_print_out(struct wi_state* state, const char* text) {
+    WI_UNUSED(state);
     WI_UNUSED(text);
 }
 
 static void
-_print_err(const char* text) {
+_print_err(struct wi_state* state, const char* text) {
+    WI_UNUSED(state);
     WI_UNUSED(text);
 }
 #endif

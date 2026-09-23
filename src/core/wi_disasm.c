@@ -13,8 +13,8 @@ _simple_instr(struct wi_state* state, int offset, const char* format, ...) {
     va_list args;
     va_start(args, format);
 
-    wi_vprintf(state->out, format, args);
-    state->out("\n");
+    wi_vprintf(state, state->out, format, args);
+    state->out(state, "\n");
 
     va_end(args);
     return offset + 1;
@@ -23,7 +23,7 @@ _simple_instr(struct wi_state* state, int offset, const char* format, ...) {
 static int
 _byte_instr(struct wi_state* state, const char* name, const char* arg_name, struct wi_prototype* prototype,
             int offset) {
-    wi_printf(state->out, "%-16s %hhu (%s)\n", name, prototype->code.bytes.data[offset + 1], arg_name);
+    wi_printf(state, state->out, "%-16s %hhu (%s)\n", name, prototype->code.bytes.data[offset + 1], arg_name);
     return offset + 2;
 }
 
@@ -32,7 +32,7 @@ _short_instr(struct wi_state* state, const char* name, const char* arg_name, str
              int offset) {
     uint16_t arg =
         (uint16_t)(prototype->code.bytes.data[offset + 1] << 8 | prototype->code.bytes.data[offset + 2]);
-    wi_printf(state->out, "%-16s %hu (%s)\n", name, arg, arg_name);
+    wi_printf(state, state->out, "%-16s %hu (%s)\n", name, arg, arg_name);
     return offset + 3;
 }
 
@@ -43,10 +43,10 @@ _constant_instr(struct wi_state* state, const char* name, const char* arg_name, 
         (uint16_t)(prototype->code.bytes.data[offset + 1] << 8 | prototype->code.bytes.data[offset + 2]);
     wi_value value = prototype->constants.data[constant];
 
-    wi_printf(state->out, "%-16s ", name);
-    wi_printf(state->out, "C:%05hu ", constant);
+    wi_printf(state, state->out, "%-16s ", name);
+    wi_printf(state, state->out, "C:%05hu ", constant);
     wi_value_print(state, value);
-    wi_printf(state->out, " (%s)\n", arg_name);
+    wi_printf(state, state->out, " (%s)\n", arg_name);
 
     return offset + 3;
 }
@@ -55,21 +55,21 @@ static int
 _jump_instr(struct wi_state* state, const char* name, int sign, struct wi_prototype* prototype, int offset) {
     uint16_t jump =
         (uint16_t)(prototype->code.bytes.data[offset + 1] << 8 | prototype->code.bytes.data[offset + 2]);
-    wi_printf(state->out, "%-16s O:%03i -> O:%03i\n", name, offset, offset + 3 + sign * jump);
+    wi_printf(state, state->out, "%-16s O:%03i -> O:%03i\n", name, offset, offset + 3 + sign * jump);
     return offset + 3;
 }
 
 int
 wi_prototype_disasm_instr(struct wi_state* state, struct wi_prototype* prototype, int offset) {
-    wi_printf(state->out, "%04i ", offset);
+    wi_printf(state, state->out, "%04i ", offset);
     uint8_t* bytes = prototype->code.bytes.data;
     int*     lines = prototype->code.lines.data;
     int      line  = lines[offset];
 
     if (offset > 0 && line == lines[offset - 1]) {
-        state->out("   | ");
+        state->out(state, "   | ");
     } else {
-        wi_printf(state->out, "%4i ", line);
+        wi_printf(state, state->out, "%4i ", line);
     }
 
     uint8_t opcode = bytes[offset];
@@ -189,17 +189,17 @@ wi_prototype_disasm_instr(struct wi_state* state, struct wi_prototype* prototype
             uint16_t constant        = (uint16_t)(bytes[offset] << 8 | bytes[offset + 1]);
             wi_value prototype_value = prototype->constants.data[constant];
 
-            wi_printf(state->out, "%-16s ", "push_closure");
+            wi_printf(state, state->out, "%-16s ", "push_closure");
             wi_value_print(state, prototype_value);
-            state->out("\n");
+            state->out(state, "\n");
 
             offset += 2;
 
             for (int i = 0; i < wi_value_as_prototype(prototype_value)->upvalue_count; i++) {
                 uint8_t index    = bytes[offset++];
                 uint8_t is_local = bytes[offset++];
-                wi_printf(state->out, "    %04i    | %-16s at %hhu\n", offset - 2, is_local ? "local" : "upvalue",
-                          index);
+                wi_printf(state, state->out, "    %04i    | %-16s at %hhu\n", offset - 2,
+                          is_local ? "local" : "upvalue", index);
             }
 
             return offset;
@@ -234,35 +234,35 @@ wi_prototype_disasm_instr(struct wi_state* state, struct wi_prototype* prototype
             return _constant_instr(state, "get_module_var", "module variable name", prototype, offset);
     }
 
-    wi_printf(state->out, "invalid opcode %hhu\n", opcode);
+    wi_printf(state, state->out, "invalid opcode %hhu\n", opcode);
     return offset + 1;
 }
 
 void
 wi_prototype_disasm(struct wi_state* state, struct wi_prototype* prototype) {
     if (prototype->is_main) {
-        wi_printf(state->out, "--- main function (%s) ---\n", prototype->file_path);
+        wi_printf(state, state->out, "--- main function (%s) ---\n", prototype->file_path);
     } else if (prototype->name) {
-        wi_printf(state->out, "--- %s() (%s) ---\n", prototype->name->buf, prototype->file_path);
+        wi_printf(state, state->out, "--- %s() (%s) ---\n", prototype->name->buf, prototype->file_path);
     } else {
-        wi_printf(state->out, "--- anonymous function (%s) ---\n", prototype->file_path);
+        wi_printf(state, state->out, "--- anonymous function (%s) ---\n", prototype->file_path);
     }
 
-    wi_printf(state->out, "bytes: %i\n", prototype->code.bytes.count);
-    wi_printf(state->out, "constants: %i\n", prototype->constants.count);
+    wi_printf(state, state->out, "bytes: %i\n", prototype->code.bytes.count);
+    wi_printf(state, state->out, "constants: %i\n", prototype->constants.count);
 
     for (int i = 0; i < prototype->constants.count; i++) {
         wi_value value = prototype->constants.data[i];
 
-        wi_printf(state->out, "    C:%05i ", i);
+        wi_printf(state, state->out, "    C:%05i ", i);
         wi_value_print(state, value);
-        wi_printf(state->out, " (%s)\n", wi_value_type(value));
+        wi_printf(state, state->out, " (%s)\n", wi_value_type(value));
     }
 
-    state->out("instructions:\n");
+    state->out(state, "instructions:\n");
 
     for (int offset = 0; offset < prototype->code.bytes.count;) {
-        state->out("    ");
+        state->out(state, "    ");
         offset = wi_prototype_disasm_instr(state, prototype, offset);
     }
 }

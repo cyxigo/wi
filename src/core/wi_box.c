@@ -26,7 +26,8 @@ wi_new_box(struct wi_gc* gc, size_t size, enum wi_box_kind kind) {
     gc->young          = box;
 
     if (WI_UNLIKELY(wi_log_gc(gc))) {
-        wi_printf(gc->state->out, "allocate box at %p (%zu bytes) of kind %d\n", (void*)box, size, kind);
+        wi_printf(gc->state, gc->state->out, "allocate box at %p (%zu bytes) of kind %d\n", (void*)box, size,
+                  kind);
     }
 
     return box;
