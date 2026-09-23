@@ -236,4 +236,5 @@ wi_table_copy(struct wi_table* src, struct wi_table* dest) {
     dest->capacity   = src->capacity;
     dest->count      = src->count;
     dest->live_count = src->live_count;
+    dest->mod_count++;
 }
