@@ -408,22 +408,14 @@ _bit_shift(struct wi_state* state, bool right) {
                        wi_value_type(a), wi_value_type(b));
     }
 
-    int64_t  b_signed = wi_state_real_to_int(state, wi_value_as_real(b));
-    uint64_t a_int    = (uint64_t)wi_state_real_to_int(state, wi_value_as_real(a));
+    int64_t b_int = wi_state_real_to_int(state, wi_value_as_real(b));
+    int64_t a_int = wi_state_real_to_int(state, wi_value_as_real(a));
 
-    if (WI_UNLIKELY(b_signed < 0 || b_signed >= 64)) {
-        wi_state_error(state, "shift amount out of range: %lld", b_signed);
+    if (WI_UNLIKELY(b_int < 0 || b_int >= 64)) {
+        wi_state_error(state, "shift amount out of range: %lld", b_int);
     }
 
-    uint64_t b_int = (uint64_t)b_signed;
-    uint64_t result;
-
-    if (right) {
-        result = a_int >> b_int;
-    } else {
-        result = a_int << b_int;
-    }
-
+    int64_t result = right ? a_int >> b_int : (int64_t)((uint64_t)a_int << (uint64_t)b_int);
     wi_state_push(state, wi_make_real_value((wi_real)result));
 }
 
