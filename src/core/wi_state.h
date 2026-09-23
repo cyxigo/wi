@@ -119,6 +119,9 @@ struct wi_state {
     struct wi_table stm_string;
     struct wi_table stm_array;
     struct wi_table stm_map;
+
+    struct wi_table refs;
+    int             ref_next;
 };
 
 WI_INLINE void

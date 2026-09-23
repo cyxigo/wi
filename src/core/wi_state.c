@@ -157,6 +157,9 @@ wi_new_state(wi_conf* conf) {
     wi_table_init(&state->stm_array, state->gc);
     wi_table_init(&state->stm_map, state->gc);
 
+    wi_table_init(&state->refs, state->gc);
+    state->ref_next = 0;
+
     srand((unsigned)time(NULL));
     return state;
 }
@@ -173,6 +176,7 @@ wi_delete_state(struct wi_state* state) {
     wi_table_free(&state->stm_array);
     wi_table_free(&state->stm_map);
 
+    wi_table_free(&state->refs);
     wi_delete_gc(state->gc);
 
     wi_state_close_libs(state);

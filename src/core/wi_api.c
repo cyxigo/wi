@@ -17,6 +17,31 @@
 #include "wi_util.h"
 #include "wi_value.h"
 
+wi_ref
+wi_ref_create(struct wi_state* state) {
+    wi_value value = wi_state_top(state);
+    wi_table_set(&state->refs, wi_make_real_value(state->ref_next), value);
+    wi_state_drop(state);
+    return state->ref_next++;
+}
+
+bool
+wi_ref_push(struct wi_state* state, wi_ref ref) {
+    wi_value value;
+
+    if (!wi_table_get(&state->refs, wi_make_real_value(ref), &value)) {
+        return false;
+    }
+
+    wi_state_ppush(state, value);
+    return true;
+}
+
+void
+wi_ref_delete(struct wi_state* state, wi_ref ref) {
+    wi_table_delete(&state->refs, wi_make_real_value(ref));
+}
+
 void
 wi_def_stm(struct wi_state* state) {
     wi_state_def_stm_string(state);

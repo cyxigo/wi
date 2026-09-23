@@ -74,12 +74,17 @@
 typedef double wi_real;
 
 /**
+ * Handle to a persistent Wi value reference, see `wi_ref_create`
+ */
+typedef int wi_ref;
+
+/**
  * Opaque Wi array handle
  */
 typedef struct wi_array wi_array;
 
 /**
- * Opague Wi map handle
+ * Opaque Wi map handle
  */
 typedef struct wi_map wi_map;
 
@@ -89,7 +94,7 @@ typedef struct wi_map wi_map;
 typedef struct wi_object wi_object;
 
 /**
- * Opague Wi module handle
+ * Opaque Wi module handle
  */
 typedef struct wi_module wi_module;
 
@@ -212,8 +217,8 @@ WI_API void
 wi_state_set_args(wi_state* state, int argc, const char** argv);
 
 /**
- * Set an opague pointer on the state, for the embedder put application context
- * (e.g. a widget, some handle, anything)
+ * Set an opaque pointer on the state, for the embedder to attach application context to
+ * (e.g. a widget, some handle, anything).
  *
  * Extra pointer is not touched by Wi in any way
  *
@@ -273,6 +278,36 @@ wi_state_interrupt(wi_state* state);
  */
 WI_API wi_run_result
 wi_state_run(wi_state* state, const char* file_path, const char* src);
+
+/**
+ * Create a persistent reference to the value at the stack top, popping it.
+ *
+ * Reference created by this function will survive until it is deleted (`wi_ref_delete`)
+ * or the state is (`wi_delete_state`)
+ *
+ * @param state Wi state instance
+ */
+WI_API wi_ref
+wi_ref_create(wi_state* state);
+
+/**
+ * Push the value held by a reference onto the stack
+ *
+ * @param state Wi state instance
+ * @param ref Target reference
+ * @return `false` if the reference does not exist (already deleted or invalid)
+ */
+WI_API bool
+wi_ref_push(wi_state* state, wi_ref ref);
+
+/**
+ * Release a reference, letting the garbage collector reclaim its value
+ *
+ * @param state Wi state instance
+ * @param ref Target reference
+ */
+WI_API void
+wi_ref_delete(wi_state* state, wi_ref ref);
 
 /**
  * Define the standard library (STD) in a state
