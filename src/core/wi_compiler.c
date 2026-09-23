@@ -1248,7 +1248,7 @@ _compiler_import_foreign(struct wi_compiler* compiler, struct wi_string* lib_pat
 
     size_t raw_path_len = (size_t)lib_path->count;
     char*  raw_path     = lib_path->buf;
-    char   path[4096]; /* i assume 4kb is enough for this mess */
+    char   path[WI_PATH_MAX];
     size_t path_size = sizeof(path);
 
     typedef struct wi_module* (*wi_module_init_fn)(struct wi_state* state);

@@ -4,6 +4,7 @@
 
 #include "wi_os.h"
 
+#include <errno.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,6 +16,7 @@
 #include <windows.h>
 #else
 #include <sys/wait.h>
+#include <unistd.h>
 #endif
 
 #include "../../include/wi.h"
@@ -159,6 +161,32 @@ _os_rename(struct wi_state* state, uint8_t arg_count) {
 }
 
 static void
+_os_cwd(struct wi_state* state, uint8_t arg_count) {
+    WI_UNUSED(arg_count);
+    char buf[WI_PATH_MAX];
+
+#ifdef _WIN32
+    DWORD count = GetCurrentDirectoryA(sizeof(buf), buf);
+
+    if (count == 0 || count >= sizeof(buf)) {
+        wi_state_error(state, "failed to get current working directory");
+    }
+#else
+    if (!getcwd(buf, sizeof(buf))) {
+        wi_state_error(state, "failed to get current working directory: %s", strerror(errno));
+    }
+
+    size_t count = strlen(buf);
+#endif
+
+    if (!wi_utf8_validate(buf, (int)count)) {
+        wi_state_error(state, "invalid utf-8 sequence in current working directory");
+    }
+
+    wi_push_string(state, buf);
+}
+
+static void
 _os_sleep(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     int64_t ms = wi_state_real_to_int(state, wi_arg_real(state, 1));
@@ -193,6 +221,7 @@ wi_state_def_std_os(struct wi_state* state) {
         {"system", _os_system, 1, false},
         {"remove", _os_remove, 1, false},
         {"rename", _os_rename, 2, false},
+        {"cwd",    _os_cwd,    0, false},
         {"sleep",  _os_sleep,  1, false},
     };
 
