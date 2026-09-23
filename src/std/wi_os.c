@@ -102,7 +102,7 @@ _os_getenv(struct wi_state* state, uint8_t arg_count) {
     }
 
     if (!wi_utf8_validate(value, (int)strlen(value))) {
-        wi_state_error(state, "invalid utf-8 sequence from os.getenv()");
+        wi_state_error(state, "invalid utf-8 sequence in environment variable");
     }
 
     wi_push_string(state, value);

@@ -1882,7 +1882,7 @@ struct wi_prototype*
 wi_compile(struct wi_state* state, const char* file_path, const char* src, struct wi_module* module) {
     if (!wi_utf8_validate(src, (int)strlen(src))) {
         /* we can't use amazing wi_parser_X functions so... we do it the barbaric way... */
-        state->error("compile error: invalid utf-8 sequence\n");
+        state->error("compile error: invalid utf-8 sequence in script\n");
         wi_printf(state->error, "   --> %s\n", file_path);
         return NULL;
     }
