@@ -185,9 +185,10 @@ WI_API void
 wi_state_tune_gc(wi_state* state, size_t min_heap, size_t heap_grow_factor, size_t young_max);
 
 /**
- * Checks if the last compile error occurred at EOF
+ * Check if the last compile error occurred at EOF
  *
  * @param state Wi state instance
+ * @return `true` if the last compile error occurred at EOF, `false` otherwise
  */
 WI_API bool
 wi_state_was_eof_error(wi_state* state);
@@ -229,9 +230,10 @@ WI_API void
 wi_state_set_extra(wi_state* state, void* extra);
 
 /**
- * Get the pointer set by `wi_state_set_extra`, or `NULL` if none was set
+ * Get the pointer set by `wi_state_set_extra`
  *
  * @param state Wi state instance
+ * @return The extra pointer, or `NULL` if none was set
  */
 WI_API void*
 wi_state_get_extra(wi_state* state);
@@ -286,6 +288,7 @@ wi_state_run(wi_state* state, const char* file_path, const char* src);
  * or the state is (`wi_delete_state`)
  *
  * @param state Wi state instance
+ * @return The new reference
  */
 WI_API wi_ref
 wi_ref_create(wi_state* state);
@@ -295,7 +298,8 @@ wi_ref_create(wi_state* state);
  *
  * @param state Wi state instance
  * @param ref Target reference
- * @return `false` if the reference does not exist (already deleted or invalid)
+ * @return `true` if the reference exists and its value was pushed, `false` if it does not exist (already
+ * deleted or invalid)
  */
 WI_API bool
 wi_ref_push(wi_state* state, wi_ref ref);
@@ -341,6 +345,7 @@ wi_def(wi_state* state, const char* name);
  *
  * @param state Wi state instance
  * @param name Variable name
+ * @return `true` if the variable was found and pushed, `false` otherwise
  */
 WI_API bool
 wi_find(wi_state* state, const char* name);
@@ -362,6 +367,7 @@ wi_call(wi_state* state, uint8_t arg_count, bool drop);
  * @param arg_count Argument count
  * @param drop Whether to leave the return value at the stack or not
  * @param error Optional pointer to store the error message (if any), can be `NULL`, must be freed manually
+ * @return `true` if the call succeeded, `false` if it raised an error
  */
 WI_API bool
 wi_pcall(wi_state* state, uint8_t arg_count, bool drop, char** error);
@@ -376,33 +382,37 @@ WI_API const char*
 wi_type(wi_state* state);
 
 /**
- * Check if the value at the stack top is a real value
+ * Check if the value at the stack top is a real
  *
  * @param state Wi state instance
+ * @return `true` if the value is a real, `false` otherwise
  */
 WI_API bool
 wi_is_real(wi_state* state);
 
 /**
- * Check if the value at the stack top is a null value
+ * Check if the value at the stack top is null
  *
  * @param state Wi state instance
+ * @return `true` if the value is null, `false` otherwise
  */
 WI_API bool
 wi_is_null(wi_state* state);
 
 /**
- * Check if the value at the stack top is a boolean value
+ * Check if the value at the stack top is a bool
  *
  * @param state Wi state instance
+ * @return `true` if the value is a bool, `false` otherwise
  */
 WI_API bool
 wi_is_bool(wi_state* state);
 
 /**
- * Check if the value at the stack top is a string value
+ * Check if the value at the stack top is a string
  *
  * @param state Wi state instance
+ * @return `true` if the value is a string, `false` otherwise
  */
 WI_API bool
 wi_is_string(wi_state* state);
@@ -411,6 +421,7 @@ wi_is_string(wi_state* state);
  * Check if the value at the stack top is an array
  *
  * @param state Wi state instance
+ * @return `true` if the value is an array, `false` otherwise
  */
 WI_API bool
 wi_is_array(wi_state* state);
@@ -419,14 +430,16 @@ wi_is_array(wi_state* state);
  * Check if the value at the stack top is a map
  *
  * @param state Wi state instance
+ * @return `true` if the value is a map, `false` otherwise
  */
 WI_API bool
 wi_is_map(wi_state* state);
 
 /**
- * Check if the value at the stack top is a function value (Wi/C function)
+ * Check if the value at the stack top is a function (Wi or C)
  *
  * @param state Wi state instance
+ * @return `true` if the value is a function (Wi or C), `false` otherwise
  */
 WI_API bool
 wi_is_function(wi_state* state);
@@ -435,6 +448,7 @@ wi_is_function(wi_state* state);
  * Check if the value at the stack top is an object
  *
  * @param state Wi state instance
+ * @return `true` if the value is an object, `false` otherwise
  */
 WI_API bool
 wi_is_object(wi_state* state);
@@ -444,6 +458,7 @@ wi_is_object(wi_state* state);
  *
  * @param state Wi state instance
  * @param name Userdata name, used for type-checking
+ * @return `true` if the value is userdata of the given name, `false` otherwise
  */
 WI_API bool
 wi_is_userdata(wi_state* state, const char* name);
@@ -452,12 +467,13 @@ wi_is_userdata(wi_state* state, const char* name);
  * Check if the value at the stack top is a module
  *
  * @param state Wi state instance
+ * @return `true` if the value is a module, `false` otherwise
  */
 WI_API bool
 wi_is_module(wi_state* state);
 
 /**
- * Push a real value onto the stack
+ * Push a real onto the stack
  *
  * @param state Wi state instance
  * @param real Real
@@ -466,7 +482,7 @@ WI_API void
 wi_push_real(wi_state* state, wi_real real);
 
 /**
- * Push a null value onto the stack
+ * Push null onto the stack
  *
  * @param state Wi state instance
  */
@@ -474,16 +490,16 @@ WI_API void
 wi_push_null(wi_state* state);
 
 /**
- * Push a boolean value onto the stack
+ * Push a bool onto the stack
  *
  * @param state Wi state instance
- * @param boolean Boolean
+ * @param bool_ Bool
  */
 WI_API void
-wi_push_bool(wi_state* state, bool boolean);
+wi_push_bool(wi_state* state, bool bool_);
 
 /**
- * Push a string value onto the stack
+ * Push a string onto the stack
  *
  * @param state Wi state instance
  * @param string String (**must** be valid UTF-8, invalid - undefined behaviour)
@@ -559,15 +575,16 @@ WI_API void
 wi_drop(wi_state* state);
 
 /**
- * Pop a real value from the stack with type-checking
+ * Pop a real from the stack with type-checking
  *
  * @param state Wi state instance
+ * @return The popped real
  */
 WI_API wi_real
 wi_pop_real(wi_state* state);
 
 /**
- * Pop a null value from the stack with type-checking
+ * Pop null from the stack with type-checking
  *
  * @param state Wi state instance
  */
@@ -575,19 +592,21 @@ WI_API void
 wi_pop_null(wi_state* state);
 
 /**
- * Pop a boolean value from the stack with type-checking
+ * Pop a bool from the stack with type-checking
  *
  * @param state Wi state instance
+ * @return The popped bool
  */
 WI_API bool
 wi_pop_bool(wi_state* state);
 
 /**
- * Pop a string value from the stack with type-checking
+ * Pop a string from the stack with type-checking
  *
  * @param state Wi state instance
  * @param count Optional pointer to store the string byte count, can be `NULL`
  * @param len Optional pointer to store the string length (codepoint count), can be `NULL`
+ * @return The popped string
  */
 WI_API char*
 wi_pop_string(wi_state* state, int* count, int* len);
@@ -596,6 +615,7 @@ wi_pop_string(wi_state* state, int* count, int* len);
  * Pop an array from the stack with type-checking
  *
  * @param state Wi state instance
+ * @return The popped array
  */
 WI_API wi_array*
 wi_pop_array(wi_state* state);
@@ -604,6 +624,7 @@ wi_pop_array(wi_state* state);
  * Pop a map from the stack with type-checking
  *
  * @param state Wi state instance
+ * @return The popped map
  */
 WI_API wi_map*
 wi_pop_map(wi_state* state);
@@ -613,6 +634,7 @@ wi_pop_map(wi_state* state);
  *
  * @param state Wi state instance
  * @param name Userdata name, used for type-checking
+ * @return The popped userdata's data pointer
  */
 WI_API void*
 wi_pop_userdata(wi_state* state, const char* name);
@@ -621,6 +643,7 @@ wi_pop_userdata(wi_state* state, const char* name);
  * Pop an object from the stack with type-checking
  *
  * @param state Wi state instance
+ * @return The popped object
  */
 WI_API wi_object*
 wi_pop_object(wi_state* state);
@@ -629,6 +652,7 @@ wi_pop_object(wi_state* state);
  * Pop a module from the stack with type-checking
  *
  * @param state Wi state instance
+ * @return The popped module
  */
 WI_API wi_module*
 wi_pop_module(wi_state* state);
@@ -644,37 +668,41 @@ WI_API const char*
 wi_arg_type(wi_state* state, uint8_t arg);
 
 /**
- * Check if argument is a real value
+ * Check if argument is a real
  *
  * @param state Wi state instance
  * @param arg Argument index (1-[arg_count])
+ * @return `true` if the argument is a real, `false` otherwise
  */
 WI_API bool
 wi_arg_is_real(wi_state* state, uint8_t arg);
 
 /**
- * Check if argument is a null value
+ * Check if argument is null
  *
  * @param state Wi state instance
  * @param arg Argument index (1-[arg_count])
+ * @return `true` if the argument is null, `false` otherwise
  */
 WI_API bool
 wi_arg_is_null(wi_state* state, uint8_t arg);
 
 /**
- * Check if argument is a boolean value
+ * Check if argument is a bool
  *
  * @param state Wi state instance
  * @param arg Argument index (1-[arg_count])
+ * @return `true` if the argument is a bool, `false` otherwise
  */
 WI_API bool
 wi_arg_is_bool(wi_state* state, uint8_t arg);
 
 /**
- * Check if argument is a string value
+ * Check if argument is a string
  *
  * @param state Wi state instance
  * @param arg Argument index (1-[arg_count])
+ * @return `true` if the argument is a string, `false` otherwise
  */
 WI_API bool
 wi_arg_is_string(wi_state* state, uint8_t arg);
@@ -684,6 +712,7 @@ wi_arg_is_string(wi_state* state, uint8_t arg);
  *
  * @param state Wi state instance
  * @param arg Argument index (1-[arg_count])
+ * @return `true` if the argument is an array, `false` otherwise
  */
 WI_API bool
 wi_arg_is_array(wi_state* state, uint8_t arg);
@@ -693,15 +722,17 @@ wi_arg_is_array(wi_state* state, uint8_t arg);
  *
  * @param state Wi state instance
  * @param arg Argument index (1-[arg_count])
+ * @return `true` if the argument is a map, `false` otherwise
  */
 WI_API bool
 wi_arg_is_map(wi_state* state, uint8_t arg);
 
 /**
- * Check if argument is a function value (Wi/C function)
+ * Check if argument is a function (Wi or C)
  *
  * @param state Wi state instance
  * @param arg Argument index (1-[arg_count])
+ * @return `true` if the argument is a function (Wi or C), `false` otherwise
  */
 WI_API bool
 wi_arg_is_function(wi_state* state, uint8_t arg);
@@ -712,6 +743,7 @@ wi_arg_is_function(wi_state* state, uint8_t arg);
  * @param state Wi state instance
  * @param arg Argument index (1-[arg_count])
  * @param name Userdata name, used for type-checking
+ * @return `true` if the argument is userdata of the given name, `false` otherwise
  */
 WI_API bool
 wi_arg_is_userdata(wi_state* state, uint8_t arg, const char* name);
@@ -721,6 +753,7 @@ wi_arg_is_userdata(wi_state* state, uint8_t arg, const char* name);
  *
  * @param state Wi state instance
  * @param arg Argument index (1-[arg_count])
+ * @return `true` if the argument is an object, `false` otherwise
  */
 WI_API bool
 wi_arg_is_object(wi_state* state, uint8_t arg);
@@ -730,6 +763,7 @@ wi_arg_is_object(wi_state* state, uint8_t arg);
  *
  * @param state Wi state instance
  * @param arg Argument index (1-[arg_count])
+ * @return `true` if the argument is a module, `false` otherwise
  */
 WI_API bool
 wi_arg_is_module(wi_state* state, uint8_t arg);
@@ -745,7 +779,7 @@ WI_API wi_real
 wi_arg_real(wi_state* state, uint8_t arg);
 
 /**
- * Type-check if argument is a null value
+ * Type-check if argument is null
  *
  * @param state Wi state instance
  * @param arg Argument index (1-[arg_count])
@@ -754,11 +788,11 @@ WI_API void
 wi_arg_null(wi_state* state, uint8_t arg);
 
 /**
- * Get a boolean argument with type-checking
+ * Get a bool argument with type-checking
  *
  * @param state Wi state instance
  * @param arg Argument index (1-[arg_count])
- * @return Boolean argument
+ * @return Bool argument
  */
 WI_API bool
 wi_arg_bool(wi_state* state, uint8_t arg);
@@ -840,6 +874,7 @@ wi_arg_module(wi_state* state, uint8_t arg);
  * Get the number of items in an array
  *
  * @param array Target array
+ * @return The item count
  */
 WI_API int
 wi_array_count(wi_array* array);
@@ -854,23 +889,23 @@ WI_API void
 wi_array_add(wi_state* state, wi_array* array);
 
 /**
- * Set the value at the stack top as an array item at index, popping it.
- * Returns false if out of range
+ * Set the value at the stack top as an array item at index, popping it
  *
  * @param state Wi state instance
  * @param array Target array
  * @param index Item index
+ * @return `true` if the index was in range and the item was set, `false` otherwise
  */
 WI_API bool
 wi_array_set(wi_state* state, wi_array* array, int index);
 
 /**
  * Get an array item by index and push it onto the stack.
- * Pushes nothing and returns false if the index is out of range
  *
  * @param state Wi state instance
  * @param array Target array
  * @param index Item index
+ * @return `true` and pushes the item if the index was in range, `false` and pushes nothing otherwise
  */
 WI_API bool
 wi_array_get(wi_state* state, wi_array* array, int index);
@@ -879,6 +914,7 @@ wi_array_get(wi_state* state, wi_array* array, int index);
  * Get the number of entries in a map
  *
  * @param map Target map
+ * @return The entry count
  */
 WI_API int
 wi_map_count(wi_map* map);
@@ -893,11 +929,11 @@ WI_API void
 wi_map_set(wi_state* state, wi_map* map);
 
 /**
- * Look up map key which is at the stack top.
- * Pushes nothing and returns false if key is not found
+ * Look up map key which is at the stack top
  *
  * @param state Wi state instance
  * @param map Target map
+ * @return `true` and pushes the value if the key was found, `false` and pushes nothing otherwise
  */
 WI_API bool
 wi_map_get(wi_state* state, wi_map* map);
@@ -925,12 +961,12 @@ WI_API void
 wi_object_set(wi_state* state, wi_object* object, const char* name);
 
 /**
- * Get a field from an object and push it onto the stack.
- * Pushes nothing and returns false if the field doesn't exist
+ * Get a field from an object and push it onto the stack
  *
  * @param state Wi state instance
  * @param object Target object
  * @param name Field name
+ * @return `true` and pushes the value if the field exists, `false` and pushes nothing otherwise
  */
 WI_API bool
 wi_object_get(wi_state* state, wi_object* object, const char* name);
@@ -958,12 +994,12 @@ WI_API void
 wi_module_set(wi_state* state, wi_module* module, const char* name);
 
 /**
- * Get a global variable from a module and push it onto the stack.
- * Pushes nothing and returns false if the variable doesn't exist
+ * Get a global variable from a module and push it onto the stack
  *
  * @param state Wi state instance
  * @param module Target module
  * @param name Export name
+ * @return `true` and pushes the value if the variable exists, `false` and pushes nothing otherwise
  */
 WI_API bool
 wi_module_get(wi_state* state, wi_module* module, const char* name);

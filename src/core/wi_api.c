@@ -208,8 +208,8 @@ wi_push_null(struct wi_state* state) {
 }
 
 void
-wi_push_bool(struct wi_state* state, bool boolean) {
-    wi_state_ppush(state, wi_make_bool_value(boolean));
+wi_push_bool(struct wi_state* state, bool bool_) {
+    wi_state_ppush(state, wi_make_bool_value(bool_));
 }
 
 void

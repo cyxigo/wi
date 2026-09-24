@@ -74,8 +74,8 @@ wi_make_false_value(void) {
 }
 
 WI_INLINE wi_value
-wi_make_bool_value(bool boolean) {
-    return boolean ? wi_make_true_value() : wi_make_false_value();
+wi_make_bool_value(bool bool_) {
+    return bool_ ? wi_make_true_value() : wi_make_false_value();
 }
 
 WI_INLINE wi_value
@@ -184,8 +184,8 @@ wi_make_false_value(void) {
 }
 
 WI_INLINE wi_value
-wi_make_bool_value(bool boolean) {
-    return boolean ? wi_make_true_value() : wi_make_false_value();
+wi_make_bool_value(bool bool_) {
+    return bool_ ? wi_make_true_value() : wi_make_false_value();
 }
 
 WI_INLINE wi_value
