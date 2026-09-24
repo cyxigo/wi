@@ -903,6 +903,18 @@ WI_API bool
 wi_map_get(wi_state* state, wi_map* map);
 
 /**
+ * Iterate over a map's entries. Pass *iter = 0 on the first call.
+ * Each call that finds a live entry pushes its key then value and advances *iter
+ *
+ * @param state Wi state instance
+ * @param map Target map
+ * @param iter Iteration cursor, updated in place
+ * @return `true` and pushes key/value, `false` and pushes nothing once every entry has been visited
+ */
+WI_API bool
+wi_map_next(wi_state* state, wi_map* map, int* iter);
+
+/**
  * Set the value at the stack top as a field on an object, popping it
  *
  * @param state Wi state instance
@@ -924,6 +936,18 @@ WI_API bool
 wi_object_get(wi_state* state, wi_object* object, const char* name);
 
 /**
+ * Iterate over an object's fields. Pass *iter = 0 on the first call.
+ * Each call that finds a live field entry pushes its name then value and advances *iter
+ *
+ * @param state Wi state instance
+ * @param object Target object
+ * @param iter Iteration cursor, updated in place
+ * @return `true` and pushes name/value, `false` and pushes nothing once every field entry has been visited
+ */
+WI_API bool
+wi_object_next(wi_state* state, wi_object* object, int* iter);
+
+/**
  * Export the value at the stack top as a module variable, popping it
  *
  * @param state Wi state instance
@@ -934,7 +958,7 @@ WI_API void
 wi_module_set(wi_state* state, wi_module* module, const char* name);
 
 /**
- * Get an exported variable from a module and push it onto the stack.
+ * Get a global variable from a module and push it onto the stack.
  * Pushes nothing and returns false if the variable doesn't exist
  *
  * @param state Wi state instance
@@ -943,5 +967,17 @@ wi_module_set(wi_state* state, wi_module* module, const char* name);
  */
 WI_API bool
 wi_module_get(wi_state* state, wi_module* module, const char* name);
+
+/**
+ * Iterate over a module's variables, including ones that were not exported. Pass *iter = 0 on the first call.
+ * Each call that finds a live variable entry pushes its name then value and advances *iter
+ *
+ * @param state Wi state instance
+ * @param module Target module
+ * @param iter Iteration cursor, updated in place
+ * @return `true` and pushes name/value, `false` and pushes nothing once every variable entry has been visited
+ */
+WI_API bool
+wi_module_next(wi_state* state, wi_module* module, int* iter);
 
 #endif

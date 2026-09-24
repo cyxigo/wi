@@ -620,6 +620,28 @@ wi_map_get(struct wi_state* state, struct wi_map* map) {
     return true;
 }
 
+static bool
+_table_next(struct wi_state* state, struct wi_table* table, int* iter) {
+    while (*iter < table->capacity) {
+        struct wi_entry* entry = &table->entries[(*iter)++];
+
+        if (wi_value_is_empty(entry->key)) {
+            continue;
+        }
+
+        wi_state_ppush(state, entry->key);
+        wi_state_ppush(state, entry->value);
+        return true;
+    }
+
+    return false;
+}
+
+bool
+wi_map_next(struct wi_state* state, struct wi_map* map, int* iter) {
+    return _table_next(state, &map->items, iter);
+}
+
 void
 wi_object_set(struct wi_state* state, struct wi_object* object, const char* name) {
     wi_value value = wi_state_top(state);
@@ -640,6 +662,11 @@ wi_object_set(struct wi_state* state, struct wi_object* object, const char* name
 bool
 wi_object_get(struct wi_state* state, struct wi_object* object, const char* name) {
     return _find_in_table(state, &object->fields, name);
+}
+
+bool
+wi_object_next(struct wi_state* state, struct wi_object* object, int* iter) {
+    return _table_next(state, &object->fields, iter);
 }
 
 void
@@ -664,4 +691,9 @@ wi_module_set(struct wi_state* state, struct wi_module* module, const char* name
 bool
 wi_module_get(struct wi_state* state, struct wi_module* module, const char* name) {
     return _find_in_table(state, &module->vars, name);
+}
+
+bool
+wi_module_next(struct wi_state* state, struct wi_module* module, int* iter) {
+    return _table_next(state, &module->vars, iter);
 }
