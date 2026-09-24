@@ -136,6 +136,11 @@ wi_pcall(struct wi_state* state, uint8_t arg_count, bool drop, char** error) {
     return !failed;
 }
 
+const char*
+wi_type(struct wi_state* state) {
+    return wi_value_type(wi_state_top(state));
+}
+
 bool
 wi_is_real(struct wi_state* state) {
     return wi_value_is_real(wi_state_top(state));

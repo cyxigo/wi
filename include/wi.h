@@ -367,6 +367,15 @@ WI_API bool
 wi_pcall(wi_state* state, uint8_t arg_count, bool drop, char** error);
 
 /**
+ * Get the type of the value at the stack top
+ *
+ * @param state Wi state instance
+ * @return Type name
+ */
+WI_API const char*
+wi_type(wi_state* state);
+
+/**
  * Check if the value at the stack top is a real value
  *
  * @param state Wi state instance
