@@ -190,8 +190,19 @@ _math_random(struct wi_state* state, uint8_t arg_count) {
 
 static void
 _math_round(struct wi_state* state, uint8_t arg_count) {
-    WI_UNUSED(arg_count);
-    _math_single_arg_function(state, round);
+    wi_real real = wi_arg_real(state, 1);
+
+    if (arg_count == 1) {
+        wi_push_real(state, round(real));
+        return;
+    }
+
+    if (arg_count != 2) {
+        wi_state_error(state, "math::round takes only 1 or 2 arguments");
+    }
+
+    double scale = pow(10.0, wi_arg_real(state, 2));
+    wi_push_real(state, round(real * scale) / scale);
 }
 
 static void
@@ -244,7 +255,7 @@ wi_state_def_std_math(struct wi_state* state) {
         {"rad",    _math_rad,    1, false},
         {"seed",   _math_seed,   1, false},
         {"random", _math_random, 0, true },
-        {"round",  _math_round,  1, false},
+        {"round",  _math_round,  1, true },
         {"sin",    _math_sin,    1, false},
         {"sign",   _math_sign,   1, false},
         {"sqrt",   _math_sqrt,   1, false},
