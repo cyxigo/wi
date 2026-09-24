@@ -222,14 +222,14 @@ _io_writebytes(struct wi_state* state, uint8_t arg_count) {
 
         if (!wi_value_is_real(value)) {
             free(buf);
-            wi_state_error(state, "real %i has no byte representation", i, wi_value_type(value));
+            wi_state_error(state, "real %i has no byte representation", i);
         }
 
         int64_t byte = wi_state_real_to_int(state, wi_value_as_real(value));
 
         if (byte < 0 || byte > 255) {
             free(buf);
-            wi_state_error(state, "real %i has no byte representation", i, wi_value_type(value));
+            wi_state_error(state, "real %i has no byte representation", i);
         }
 
         buf[i] = (uint8_t)byte;
