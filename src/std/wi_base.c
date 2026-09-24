@@ -44,7 +44,7 @@ _base_input(struct wi_state* state, uint8_t arg_count) {
     } else if (arg_count == 0) {
         /* do nothing */
     } else {
-        wi_state_error(state, "input() takes only 0 or 1 arguments");
+        wi_state_error(state, "expected 0 or 1 arguments but got %hhu", arg_count);
     }
 
     char* line;
@@ -56,7 +56,7 @@ _base_input(struct wi_state* state, uint8_t arg_count) {
 
     if (!wi_utf8_validate(line, (int)strlen(line))) {
         free(line);
-        wi_state_error(state, "invalid utf-8 sequence in input()");
+        wi_state_error(state, "invalid utf-8 sequence in input");
     }
 
     struct wi_string* line_box = wi_take_calloc_string(state->gc, line, (int)strlen(line));

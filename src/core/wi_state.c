@@ -194,6 +194,16 @@ wi_state_tune_gc(struct wi_state* state, size_t min_heap, size_t heap_grow_facto
     gc->next_major       = min_heap;
 }
 
+size_t
+wi_state_memory_used(struct wi_state* state) {
+    return state->gc->bytes_allocated;
+}
+
+void
+wi_state_collect_garbage(struct wi_state* state) {
+    wi_gc_collect_major(state->gc);
+}
+
 bool
 wi_state_was_eof_error(wi_state* state) {
     return state->was_eof_error;

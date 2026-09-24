@@ -170,7 +170,7 @@ _math_random(struct wi_state* state, uint8_t arg_count) {
     }
 
     if (arg_count != 2) {
-        wi_state_error(state, "random() takes only 0 or 2 arguments");
+        wi_state_error(state, "expected 0 or 2 arguments but got %hhu", arg_count);
     }
 
     int64_t min = wi_state_real_to_int(state, wi_arg_real(state, 1));
@@ -198,7 +198,7 @@ _math_round(struct wi_state* state, uint8_t arg_count) {
     }
 
     if (arg_count != 2) {
-        wi_state_error(state, "math::round takes only 1 or 2 arguments");
+        wi_state_error(state, "expected 1 or 2 arguments but got %hhu", arg_count);
     }
 
     double scale = pow(10.0, wi_arg_real(state, 2));

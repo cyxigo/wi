@@ -197,7 +197,7 @@ _io_read(struct wi_state* state, uint8_t arg_count) {
 
     if (!wi_utf8_validate(content, (int)read)) {
         free(content);
-        wi_state_error(state, "invalid utf-8 in file %s", file->path);
+        wi_state_error(state, "invalid utf-8 sequence in file %s", file->path);
     }
 
     struct wi_string* box = wi_take_calloc_string(state->gc, content, (int)read);

@@ -161,9 +161,13 @@ wi_delete_state(struct wi_state* state);
 
 void
 wi_state_tune_gc(wi_state* state, size_t min_heap, size_t heap_grow_factor, size_t young_max);
+size_t
+wi_state_memory_used(struct wi_state* state);
+void
+wi_state_collect_garbage(struct wi_state* state);
+
 bool
 wi_state_was_eof_error(wi_state* state);
-
 void
 wi_state_set_callbacks(struct wi_state* state, wi_print_fn out_fn, wi_print_fn error_fn,
                        wi_on_compile_fn on_compile_fn, wi_import_load_fn import_load_fn,

@@ -185,6 +185,23 @@ WI_API void
 wi_state_tune_gc(wi_state* state, size_t min_heap, size_t heap_grow_factor, size_t young_max);
 
 /**
+ * Get the total number of bytes currently allocated by the garbage collector
+ *
+ * @param state Wi state instance
+ * @return Total bytes allocated
+ */
+WI_API size_t
+wi_state_memory_used(wi_state* state);
+
+/**
+ * Force a major garbage collection cycle
+ *
+ * @param state Wi state instance
+ */
+WI_API void
+wi_state_collect_garbage(wi_state* state);
+
+/**
  * Check if the last compile error occurred at EOF
  *
  * @param state Wi state instance
