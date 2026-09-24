@@ -15,6 +15,7 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #else
+#include <dirent.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <unistd.h>
@@ -200,6 +201,69 @@ _os_mkdir(struct wi_state* state, uint8_t arg_count) {
 }
 
 static void
+_os_listdir(struct wi_state* state, uint8_t arg_count) {
+    WI_UNUSED(arg_count);
+    char*            path   = wi_arg_string(state, 1, NULL, NULL);
+    struct wi_array* result = wi_push_array(state);
+
+#ifdef _WIN32
+    char* pattern = wi_sprintf("%s\\*", path);
+
+    if (!pattern) {
+        wi_state_oom(state, "failed to allocate a directory pattern (_os_listdir)");
+    }
+
+    WIN32_FIND_DATAA data;
+    HANDLE           hfind = FindFirstFileA(pattern, &data);
+    free(pattern);
+
+    if (hfind == INVALID_HANDLE_VALUE) {
+        wi_state_error(state, "failed to list directory %s (error %lu)", path, GetLastError());
+    }
+
+    do {
+        if (strcmp(data.cFileName, ".") == 0 || strcmp(data.cFileName, "..") == 0) {
+            continue;
+        }
+
+        if (!wi_utf8_validate(data.cFileName, (int)strlen(data.cFileName))) {
+            FindClose(hfind);
+            wi_state_error(state, "invalid utf-8 sequence in directory entry");
+        }
+
+        wi_push_string(state, data.cFileName);
+        wi_array_add(state, result);
+    } while (FindNextFileA(hfind, &data));
+
+    FindClose(hfind);
+#else
+    DIR* dir = opendir(path);
+
+    if (!dir) {
+        wi_state_error(state, "failed to list directory %s: %s", path, strerror(errno));
+    }
+
+    struct dirent* entry;
+
+    while ((entry = readdir(dir))) {
+        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
+            continue;
+        }
+
+        if (!wi_utf8_validate(entry->d_name, (int)strlen(entry->d_name))) {
+            closedir(dir);
+            wi_state_error(state, "invalid utf-8 sequence in directory entry");
+        }
+
+        wi_push_string(state, entry->d_name);
+        wi_array_add(state, result);
+    }
+
+    closedir(dir);
+#endif
+}
+
+static void
 _os_sleep(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     int64_t ms = wi_state_real_to_int(state, wi_arg_real(state, 1));
@@ -225,18 +289,19 @@ wi_state_def_std_os(struct wi_state* state) {
     struct wi_module* module = wi_push_module(state);
     wi_def(state, "os");
     wi_foreign_entry functions[] = {
-        {"clock",  _os_clock,  0, false},
-        {"date",   _os_date,   1, false},
-        {"time",   _os_time,   0, false},
-        {"setenv", _os_setenv, 3, false},
-        {"getenv", _os_getenv, 1, false},
-        {"args",   _os_args,   0, false},
-        {"system", _os_system, 1, false},
-        {"remove", _os_remove, 1, false},
-        {"rename", _os_rename, 2, false},
-        {"cwd",    _os_cwd,    0, false},
-        {"mkdir",  _os_mkdir,  1, false},
-        {"sleep",  _os_sleep,  1, false},
+        {"clock",   _os_clock,   0, false},
+        {"date",    _os_date,    1, false},
+        {"time",    _os_time,    0, false},
+        {"setenv",  _os_setenv,  3, false},
+        {"getenv",  _os_getenv,  1, false},
+        {"args",    _os_args,    0, false},
+        {"system",  _os_system,  1, false},
+        {"remove",  _os_remove,  1, false},
+        {"rename",  _os_rename,  2, false},
+        {"cwd",     _os_cwd,     0, false},
+        {"mkdir",   _os_mkdir,   1, false},
+        {"listdir", _os_listdir, 1, false},
+        {"sleep",   _os_sleep,   1, false},
     };
 
     WI_MODULE_EXPORT_FOREIGN_ALL(state, module, functions);
