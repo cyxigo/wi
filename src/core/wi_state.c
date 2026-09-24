@@ -416,6 +416,11 @@ wi_state_interrupt(struct wi_state* state) {
     state->interrupted = 1;
 }
 
+WI_INLINE wi_value
+_make_arith_value(wi_real real) {
+    return wi_make_real_value(wi_canon_real(real));
+}
+
 WI_INLINE void
 _bit_shift(struct wi_state* state, bool right) {
     wi_value b = wi_state_pop(state);
@@ -1114,19 +1119,19 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
         }
         /* clang-format on */
         _OPCODE_LABEL(ADD) : {
-            _BINARY_OP(+, wi_make_real_value);
+            _BINARY_OP(+, _make_arith_value);
             _DISPATCH();
         }
         _OPCODE_LABEL(SUBTRACT) : {
-            _BINARY_OP(-, wi_make_real_value);
+            _BINARY_OP(-, _make_arith_value);
             _DISPATCH();
         }
         _OPCODE_LABEL(MULTIPLY) : {
-            _BINARY_OP(*, wi_make_real_value);
+            _BINARY_OP(*, _make_arith_value);
             _DISPATCH();
         }
         _OPCODE_LABEL(DIVIDE) : {
-            _BINARY_OP(/, wi_make_real_value);
+            _BINARY_OP(/, _make_arith_value);
             _DISPATCH();
         }
         _OPCODE_LABEL(NEGATE) : {
@@ -1147,7 +1152,7 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
                 _ERROR("cannot use operator '**' on values of type %s and %s", wi_value_type(a), wi_value_type(b));
             }
 
-            wi_state_push(state, wi_make_real_value(pow(wi_value_as_real(a), wi_value_as_real(b))));
+            wi_state_push(state, _make_arith_value(pow(wi_value_as_real(a), wi_value_as_real(b))));
             _DISPATCH();
         }
         _OPCODE_LABEL(MODULO) : {
@@ -1158,7 +1163,7 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
                 _ERROR("cannot use operator '%%' on values of type %s and %s", wi_value_type(a), wi_value_type(b));
             }
 
-            wi_state_push(state, wi_make_real_value(fmod(wi_value_as_real(a), wi_value_as_real(b))));
+            wi_state_push(state, _make_arith_value(fmod(wi_value_as_real(a), wi_value_as_real(b))));
             _DISPATCH();
         }
         _OPCODE_LABEL(GREATER) : {
