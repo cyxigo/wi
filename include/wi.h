@@ -229,7 +229,7 @@ wi_state_set_callbacks(wi_state* state, wi_print_fn out_fn, wi_print_fn error_fn
  *
  * @param state Wi state instance
  * @param argc Number of arguments
- * @param argv Array of argument strings (**must** be valid UTF-8, invalid - undefined behaviour)
+ * @param argv Array of argument strings (**must** be valid UTF-8, invalid - undefined behavior)
  */
 WI_API void
 wi_state_set_args(wi_state* state, int argc, const char** argv);
@@ -369,6 +369,9 @@ wi_find(wi_state* state, const char* name);
 
 /**
  * Call a Wi function that is *at the stack top*
+ *
+ * Must only be called while the state is running (i.e. from within a foreign function called by Wi code).
+ * Calling it outside that context is undefined behavior
  *
  * @param state Wi state instance
  * @param arg_count Argument count
@@ -519,7 +522,7 @@ wi_push_bool(wi_state* state, bool bool_);
  * Push a string onto the stack
  *
  * @param state Wi state instance
- * @param string String (**must** be valid UTF-8, invalid - undefined behaviour)
+ * @param string String (**must** be valid UTF-8, invalid - undefined behavior)
  */
 WI_API void
 wi_push_string(wi_state* state, const char* string);

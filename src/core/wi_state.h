@@ -83,7 +83,7 @@ struct wi_state {
 
     /*
         recoveries are implemented as a linked list because using a dynamic
-        array with realloc on a structure with jmp_buf is undefined behaviour™
+        array with realloc on a structure with jmp_buf is undefined behavior™
     */
     struct wi_recovery* recoveries;
     uint8_t             recovery_count;
