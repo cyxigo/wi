@@ -233,8 +233,13 @@ _base_real(struct wi_state* state, uint8_t arg_count) {
         result = wi_make_real_value(wi_value_as_bool(value) ? 1 : 0);
     } else if (wi_value_is_string(value)) {
         struct wi_string* string = wi_value_as_string(state->ffi_stack[1]);
-        char*             end    = NULL;
-        wi_real           real   = wi_string_to_real(string->buf, string->count, &end);
+
+        if (string->count == 0) {
+            wi_state_error(state, "invalid real format");
+        }
+
+        char*   end  = NULL;
+        wi_real real = wi_string_to_real(string->buf, string->count, &end);
 
         if (end != string->buf + string->count) {
             wi_state_error(state, "invalid real format %s", string->buf);
