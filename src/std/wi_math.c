@@ -3,7 +3,6 @@
 #include <math.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdlib.h>
 
 #include "../../include/wi.h"
 
@@ -158,14 +157,30 @@ static void
 _math_seed(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     int64_t seed = wi_state_real_to_int(state, wi_arg_real(state, 1));
-    srand((unsigned)seed);
+    wi_state_seed_rand(state, (uint64_t)seed);
     wi_push_null(state);
+}
+
+static wi_real
+_rand_real(struct wi_state* state) {
+    /*
+        from https://prng.di.unimi.it/:
+
+        A standard double (64-bit) floating-point number in IEEE floating-point format has 52 bits of significand,
+        plus an implicit bit at the left of the significand. Thus, the representation can actually store numbers
+        with 53 significant binary digits. Because of this fact, in C99 a 64-bit unsigned integer x should be
+        converted to a 64-bit double using the expression:
+
+        (x >> 11) * 0x1.0p-53
+    */
+    uint64_t bits = wi_state_rand_next(state);
+    return (wi_real)(bits >> 11) * (1.0 / (1ULL << 53));
 }
 
 static void
 _math_random(struct wi_state* state, uint8_t arg_count) {
     if (arg_count == 0) {
-        wi_push_real(state, (wi_real)rand() / ((wi_real)RAND_MAX + 1.0));
+        wi_push_real(state, _rand_real(state));
         return;
     }
 
@@ -185,7 +200,7 @@ _math_random(struct wi_state* state, uint8_t arg_count) {
         not providing this option in wi earlier was a crime from me
     */
     wi_real range = (wi_real)max - (wi_real)min + 1.0;
-    wi_push_real(state, (wi_real)min + floor((wi_real)rand() / ((wi_real)RAND_MAX + 1.0) * range));
+    wi_push_real(state, (wi_real)min + floor(_rand_real(state) * range));
 }
 
 static void

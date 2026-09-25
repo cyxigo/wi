@@ -345,7 +345,7 @@ _aqsort_swap(struct wi_state* state, struct wi_array* array, int i, int j) {
 
 static int
 _aqsort_partition(struct wi_state* state, struct wi_array* array, int lo, int hi, int mod_count) {
-    int pii = lo + rand() % (hi - lo + 1);
+    int pii = lo + (int)(wi_state_rand_next(state) % (uint64_t)(hi - lo + 1));
     _aqsort_swap(state, array, pii, hi);
 
     wi_value pi        = array->items.data[hi];

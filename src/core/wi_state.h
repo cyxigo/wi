@@ -122,6 +122,9 @@ struct wi_state {
 
     struct wi_table refs;
     int             ref_next;
+
+    /* wi uses xoshiro256** for random */
+    uint64_t rand_state[4];
 };
 
 WI_INLINE void
@@ -238,5 +241,10 @@ wi_state_call(struct wi_state* state, wi_value callable, uint8_t arg_count, bool
 
 enum wi_run_result
 wi_state_run(struct wi_state* state, const char* file_path, const char* src);
+
+uint64_t
+wi_state_rand_next(struct wi_state* state);
+void
+wi_state_seed_rand(struct wi_state* state, uint64_t seed);
 
 #endif

@@ -162,7 +162,7 @@ wi_new_state(wi_conf* conf) {
     wi_table_init(&state->refs, state->gc);
     state->ref_next = 0;
 
-    srand((unsigned)time(NULL));
+    wi_state_seed_rand(state, (uint64_t)time(NULL) ^ (uint64_t)(uintptr_t)state);
     return state;
 }
 
@@ -1729,4 +1729,42 @@ wi_state_run(struct wi_state* state, const char* file_path, const char* src) {
     _state_call(state, closure, 0);
 
     return _state_interpreter_loop(state, 0, true);
+}
+
+/*
+    xoshiro256**
+    _wi_ here since _rotl is actually a function in windows libc
+    words cannot describe how much i hate windows
+*/
+static uint64_t
+_wi_rotl(uint64_t x, int k) {
+    return (x << k) | (x >> (64 - k));
+}
+
+uint64_t
+wi_state_rand_next(struct wi_state* state) {
+    uint64_t* s      = state->rand_state;
+    uint64_t  result = _wi_rotl(s[1] * 5, 7) * 9;
+    uint64_t  t      = s[1] << 17;
+
+    s[2] ^= s[0];
+    s[3] ^= s[1];
+    s[1] ^= s[2];
+    s[0] ^= s[3];
+    s[2] ^= t;
+    s[3] = _wi_rotl(s[3], 45);
+
+    return result;
+}
+
+/* splitmix64 */
+void
+wi_state_seed_rand(struct wi_state* state, uint64_t seed) {
+    for (int i = 0; i < 4; i++) {
+        seed += 0x9e3779b97f4a7c15ull;
+        uint64_t z           = seed;
+        z                    = (z ^ (z >> 30)) * 0xbf58476d1ce4e5b9ull;
+        z                    = (z ^ (z >> 27)) * 0x94d049bb133111ebull;
+        state->rand_state[i] = z ^ (z >> 31);
+    }
 }
