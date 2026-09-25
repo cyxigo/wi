@@ -132,6 +132,15 @@ _io_close(struct wi_state* state, uint8_t arg_count) {
 }
 
 static void
+_io_flush(struct wi_state* state, uint8_t arg_count) {
+    WI_UNUSED(arg_count);
+    struct _file* file = wi_arg_userdata(state, 1, "file");
+    _file_check_open(state, file);
+    fflush(file->ptr);
+    wi_push_null(state);
+}
+
+static void
 _io_write(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     struct _file* file = wi_arg_userdata(state, 1, "file");
@@ -263,6 +272,7 @@ wi_state_def_std_io(struct wi_state* state) {
         {"exists",     _io_exists,     1, false},
         {"open",       _io_open,       2, false},
         {"close",      _io_close,      1, false},
+        {"flush",      _io_flush,      1, false},
         {"write",      _io_write,      2, false},
         {"read",       _io_read,       1, false},
         {"writebytes", _io_writebytes, 2, false},
