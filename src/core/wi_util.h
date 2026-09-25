@@ -47,7 +47,7 @@ bool
 wi_utf8_validate(const char* buf, int count);
 
 char*
-wi_read_stream(FILE* stream);
+wi_read_stream(FILE* stream, int* count);
 bool
 wi_read_line(char** line, const char* prompt);
 

@@ -211,7 +211,7 @@ wi_utf8_validate(const char* buf, int count) {
 }
 
 char*
-wi_read_stream(FILE* stream) {
+wi_read_stream(FILE* stream, int* count) {
     fseek(stream, 0L, SEEK_END);
     long file_size = ftell(stream);
     rewind(stream);
@@ -234,6 +234,11 @@ wi_read_stream(FILE* stream) {
     }
 
     buf[bytes_read] = '\0';
+
+    if (count) {
+        *count = (int)bytes_read;
+    }
+
     return buf;
 }
 

@@ -92,7 +92,9 @@ _io_open(struct wi_state* state, uint8_t arg_count) {
         wi_state_error(state, "invalid file mode %s", mode);
     }
 
-    FILE* ptr = fopen(file_path, mode);
+    char binary_mode[4];
+    snprintf(binary_mode, sizeof(binary_mode), "%sb", mode);
+    FILE* ptr = fopen(file_path, binary_mode);
 
     if (!ptr) {
         wi_state_error(state, "failed to open file %s: %s", file_path, strerror(errno));
@@ -172,35 +174,19 @@ _io_read(struct wi_state* state, uint8_t arg_count) {
     struct _file* file = wi_arg_userdata(state, 1, "file");
     _file_check_read(state, file);
 
-    fseek(file->ptr, 0L, SEEK_END);
-    long size = ftell(file->ptr);
-    rewind(file->ptr);
-
-    if (size < 0) {
-        wi_state_error(state, "failed to get file size (file %s)", file->path);
-    }
-
-    char* content = (char*)malloc((size_t)size + 1);
+    int   count;
+    char* content = wi_read_stream(file->ptr, &count);
 
     if (!content) {
-        wi_state_oom(state, "failed to allocate file contents (_io_read)");
-    }
-
-    size_t read = fread(content, sizeof(char), (size_t)size, file->ptr);
-
-    if (read < (size_t)size) {
-        free(content);
         wi_state_error(state, "failed to read file %s", file->path);
     }
 
-    content[read] = '\0';
-
-    if (!wi_utf8_validate(content, (int)read)) {
+    if (!wi_utf8_validate(content, count)) {
         free(content);
         wi_state_error(state, "invalid utf-8 sequence in file %s", file->path);
     }
 
-    struct wi_string* box = wi_take_calloc_string(state->gc, content, (int)read);
+    struct wi_string* box = wi_take_calloc_string(state->gc, content, count);
     wi_state_ppush(state, WI_MAKE_BOX_VALUE(box));
 }
 
@@ -251,35 +237,21 @@ _io_readbytes(struct wi_state* state, uint8_t arg_count) {
     struct _file* file = wi_arg_userdata(state, 1, "file");
     _file_check_read(state, file);
 
-    fseek(file->ptr, 0L, SEEK_END);
-    long size = ftell(file->ptr);
-    rewind(file->ptr);
-
-    if (size < 0) {
-        wi_state_error(state, "failed to get file size (file %s)", file->path);
-    }
-
-    uint8_t* content = (uint8_t*)malloc((size_t)size + 1);
+    int   count;
+    char* content = wi_read_stream(file->ptr, &count);
 
     if (!content) {
-        wi_state_oom(state, "failed to allocate file contents (_io_readbytes)");
-    }
-
-    size_t read = fread(content, sizeof(uint8_t), (size_t)size, file->ptr);
-
-    if (read < (size_t)size) {
-        free(content);
         wi_state_error(state, "failed to read file %s", file->path);
     }
 
     struct wi_array* result = wi_push_array(state);
-    wi_value_buf_reserve(&result->items, (int)read);
+    wi_value_buf_reserve(&result->items, count);
 
-    for (size_t i = 0; i < read; i++) {
-        result->items.data[i] = wi_make_real_value(content[i]);
+    for (int i = 0; i < count; i++) {
+        result->items.data[i] = wi_make_real_value((uint8_t)content[i]);
     }
 
-    result->items.count = (int)read;
+    result->items.count = count;
     free(content);
 }
 

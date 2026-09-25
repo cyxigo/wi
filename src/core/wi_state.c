@@ -77,7 +77,7 @@ _state_read_file(struct wi_state* state, const char* file_path) {
         wi_state_error(state, "failed to open file %s: %s", file_path, strerror(errno));
     }
 
-    char* buf = wi_read_stream(file);
+    char* buf = wi_read_stream(file, NULL);
     fclose(file);
 
     if (!buf) {

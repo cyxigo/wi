@@ -144,7 +144,7 @@ _read_file(const char* file_path) {
         exit(EXIT_FAILURE);
     }
 
-    char* buf = wi_read_stream(file);
+    char* buf = wi_read_stream(file, NULL);
     fclose(file);
 
     if (!buf) {
