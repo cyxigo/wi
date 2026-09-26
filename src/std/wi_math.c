@@ -107,35 +107,29 @@ _math_ln(struct wi_state* state, uint8_t arg_count) {
 }
 
 static void
-_math_max(struct wi_state* state, uint8_t arg_count) {
-    WI_UNUSED(arg_count);
-    wi_real max = wi_arg_real(state, 1);
+_math_extreme(struct wi_state* state, uint8_t arg_count, bool max) {
+    wi_real result = wi_arg_real(state, 1);
 
     for (int i = 1; i < arg_count; i++) {
         wi_real arg = wi_arg_real(state, (uint8_t)(i + 1));
 
-        if (arg > max) {
-            max = arg;
+        /* arg != arg is NaN: NaN always wins here */
+        if (arg != arg || (max ? arg > result : arg < result)) {
+            result = arg;
         }
     }
 
-    wi_push_real(state, max);
+    wi_push_real(state, result);
 }
 
 static void
 _math_min(struct wi_state* state, uint8_t arg_count) {
-    WI_UNUSED(arg_count);
-    wi_real min = wi_arg_real(state, 1);
+    _math_extreme(state, arg_count, false);
+}
 
-    for (int i = 1; i < arg_count; i++) {
-        wi_real arg = wi_arg_real(state, (uint8_t)(i + 1));
-
-        if (arg < min) {
-            min = arg;
-        }
-    }
-
-    wi_push_real(state, min);
+static void
+_math_max(struct wi_state* state, uint8_t arg_count) {
+    _math_extreme(state, arg_count, true);
 }
 
 static void
@@ -264,8 +258,8 @@ wi_state_def_std_math(struct wi_state* state) {
         {"log",    _math_log,    2, false},
         {"log10",  _math_log10,  1, false},
         {"ln",     _math_ln,     1, false},
-        {"max",    _math_max,    2, true },
         {"min",    _math_min,    2, true },
+        {"max",    _math_max,    2, true },
         {"pow",    _math_pow,    2, false},
         {"rad",    _math_rad,    1, false},
         {"seed",   _math_seed,   1, false},
