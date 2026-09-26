@@ -461,8 +461,8 @@ _lexer_skip_block(struct wi_lexer* lexer) {
     int line    = lexer->line;
     int col     = lexer->curr_col;
 
-    /* skip the opening '/' and '*' that got us here */
-    _lexer_advance(lexer); /* / */
+    /* skip the opening % and * that got us here */
+    _lexer_advance(lexer); /* % */
     _lexer_advance(lexer); /* * */
 
     while (nesting > 0) {
@@ -470,16 +470,16 @@ _lexer_skip_block(struct wi_lexer* lexer) {
             return wi_token_make_error("unfinished block comment", line, col);
         }
 
-        if (_lexer_check(lexer, '/') && _lexer_check_next(lexer, '*')) {
-            _lexer_advance(lexer); /* / */
+        if (_lexer_check(lexer, '%') && _lexer_check_next(lexer, '*')) {
+            _lexer_advance(lexer); /* % */
             _lexer_advance(lexer); /* * */
             nesting++;
             continue;
         }
 
-        if (_lexer_check(lexer, '*') && _lexer_check_next(lexer, '/')) {
+        if (_lexer_check(lexer, '*') && _lexer_check_next(lexer, '%')) {
             _lexer_advance(lexer); /* * */
-            _lexer_advance(lexer); /* / */
+            _lexer_advance(lexer); /* % */
             nesting--;
             continue;
         }
@@ -511,8 +511,8 @@ _lexer_skip_whitespace(struct wi_lexer* lexer) {
                 }
 
                 return WI_BLANK_TOKEN;
-            case '/':
-                if (_lexer_check_next(lexer, '/')) {
+            case '%':
+                if (_lexer_check_next(lexer, '%')) {
                     _lexer_skip_line(lexer);
                 } else if (_lexer_check_next(lexer, '*')) {
                     struct wi_token error = _lexer_skip_block(lexer);
