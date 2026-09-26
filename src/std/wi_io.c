@@ -1,3 +1,7 @@
+#ifndef _WIN32
+#define _POSIX_C_SOURCE 200809L
+#endif
+
 #include "wi_io.h"
 
 #include <errno.h>
@@ -264,6 +268,34 @@ _io_readbytes(struct wi_state* state, uint8_t arg_count) {
     free(content);
 }
 
+static void
+_io_seek(struct wi_state* state, uint8_t arg_count) {
+    WI_UNUSED(arg_count);
+    struct _file* file = wi_arg_userdata(state, 1, "file");
+    _file_check_open(state, file);
+
+    int64_t offset = wi_state_real_to_int(state, wi_arg_real(state, 2));
+    int64_t whence = wi_state_real_to_int(state, wi_arg_real(state, 3));
+
+    if (whence != SEEK_SET && whence != SEEK_CUR && whence != SEEK_END) {
+        wi_state_error(state, "invalid seek origin: %lld", whence);
+    }
+
+#ifdef _WIN32
+    if (_fseeki64(file->ptr, offset, (int)whence) != 0) {
+        wi_state_error(state, "failed to seek file %s", file->path);
+    }
+
+    wi_push_real(state, (wi_real)_ftelli64(file->ptr));
+#else
+    if (fseeko(file->ptr, offset, (int)whence) != 0) {
+        wi_state_error(state, "failed to seek file %s", file->path);
+    }
+
+    wi_push_real(state, (wi_real)ftello(file->ptr));
+#endif
+}
+
 void
 wi_state_def_std_io(struct wi_state* state) {
     struct wi_module* module = wi_push_module(state);
@@ -277,7 +309,17 @@ wi_state_def_std_io(struct wi_state* state) {
         {"read",       _io_read,       1, false},
         {"writebytes", _io_writebytes, 2, false},
         {"readbytes",  _io_readbytes,  1, false},
+        {"seek",       _io_seek,       3, false},
     };
 
     WI_MODULE_EXPORT_FOREIGN_ALL(state, module, functions);
+
+    wi_push_real(state, SEEK_SET);
+    wi_module_set(state, module, "SEEK_SET");
+
+    wi_push_real(state, SEEK_CUR);
+    wi_module_set(state, module, "SEEK_CUR");
+
+    wi_push_real(state, SEEK_END);
+    wi_module_set(state, module, "SEEK_END");
 }
