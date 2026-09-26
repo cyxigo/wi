@@ -31,6 +31,22 @@ _os_clock(struct wi_state* state, uint8_t arg_count) {
 }
 
 static void
+_os_monotonic(struct wi_state* state, uint8_t arg_count) {
+    WI_UNUSED(arg_count);
+#ifdef _WIN32
+    LARGE_INTEGER freq;
+    LARGE_INTEGER counter;
+    QueryPerformanceFrequency(&freq);
+    QueryPerformanceCounter(&counter);
+    wi_push_real(state, (wi_real)counter.QuadPart / (wi_real)freq.QuadPart);
+#else
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    wi_push_real(state, (wi_real)ts.tv_sec + (wi_real)ts.tv_nsec / 1e9);
+#endif
+}
+
+static void
 _os_time(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     wi_push_real(state, (wi_real)time(NULL));
@@ -289,19 +305,20 @@ wi_state_def_std_os(struct wi_state* state) {
     struct wi_module* module = wi_push_module(state);
     wi_def(state, "os");
     wi_foreign_entry functions[] = {
-        {"clock",   _os_clock,   0, false},
-        {"time",    _os_time,    0, false},
-        {"date",    _os_date,    1, false},
-        {"setenv",  _os_setenv,  3, false},
-        {"getenv",  _os_getenv,  1, false},
-        {"args",    _os_args,    0, false},
-        {"system",  _os_system,  1, false},
-        {"remove",  _os_remove,  1, false},
-        {"rename",  _os_rename,  2, false},
-        {"cwd",     _os_cwd,     0, false},
-        {"mkdir",   _os_mkdir,   1, false},
-        {"listdir", _os_listdir, 1, false},
-        {"sleep",   _os_sleep,   1, false},
+        {"clock",     _os_clock,     0, false},
+        {"monotonic", _os_monotonic, 0, false},
+        {"time",      _os_time,      0, false},
+        {"date",      _os_date,      1, false},
+        {"setenv",    _os_setenv,    3, false},
+        {"getenv",    _os_getenv,    1, false},
+        {"args",      _os_args,      0, false},
+        {"system",    _os_system,    1, false},
+        {"remove",    _os_remove,    1, false},
+        {"rename",    _os_rename,    2, false},
+        {"cwd",       _os_cwd,       0, false},
+        {"mkdir",     _os_mkdir,     1, false},
+        {"listdir",   _os_listdir,   1, false},
+        {"sleep",     _os_sleep,     1, false},
     };
 
     WI_MODULE_EXPORT_FOREIGN_ALL(state, module, functions);
