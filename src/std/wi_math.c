@@ -174,7 +174,7 @@ _rand_real(struct wi_state* state) {
         (x >> 11) * 0x1.0p-53
     */
     uint64_t bits = wi_state_rand_next(state);
-    return (wi_real)(bits >> 11) * (1.0 / (1ULL << 53));
+    return (wi_real)(bits >> 11) * (1.0 / (1ull << 53));
 }
 
 static void

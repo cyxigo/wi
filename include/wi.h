@@ -859,7 +859,17 @@ WI_API wi_map*
 wi_arg_map(wi_state* state, uint8_t arg);
 
 /**
- * Check if argument is a function, check it's arity, and push it onto the stack
+ * Check if argument is a function and check its arity, without pushing it onto the stack
+ *
+ * @param state Wi state instance
+ * @param arg Argument index (1-[arg_count])
+ * @param arity Function arity
+ */
+WI_API void
+wi_arg_check_function(wi_state* state, uint8_t arg, uint8_t arity);
+
+/**
+ * Check if argument is a function, check its arity, and push it onto the stack
  *
  * @param state Wi state instance
  * @param arg Argument index (1-[arg_count])

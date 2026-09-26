@@ -496,8 +496,8 @@ wi_arg_map(struct wi_state* state, uint8_t arg) {
     return wi_value_as_map(state->ffi_stack[arg]);
 }
 
-void
-wi_arg_function(struct wi_state* state, uint8_t arg, uint8_t arity) {
+static void
+_check_function_arity(struct wi_state* state, uint8_t arg, uint8_t arity) {
     wi_value function = state->ffi_stack[arg];
 
     if (!wi_value_is_foreign(function) && !wi_value_is_closure(function)) {
@@ -512,8 +512,17 @@ wi_arg_function(struct wi_state* state, uint8_t arg, uint8_t arity) {
         struct wi_foreign* foreign = wi_value_as_foreign(function);
         wi_state_check_arity(state, foreign->arity, arity, foreign->is_variadic);
     }
+}
 
-    wi_state_ppush(state, function);
+void
+wi_arg_check_function(struct wi_state* state, uint8_t arg, uint8_t arity) {
+    _check_function_arity(state, arg, arity);
+}
+
+void
+wi_arg_function(struct wi_state* state, uint8_t arg, uint8_t arity) {
+    _check_function_arity(state, arg, arity);
+    wi_state_ppush(state, state->ffi_stack[arg]);
 }
 
 struct wi_object*
