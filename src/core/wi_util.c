@@ -1,5 +1,6 @@
 #include "wi_util.h"
 
+#include <limits.h>
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -216,7 +217,7 @@ wi_read_stream(FILE* stream, int* count) {
     long file_size = ftell(stream);
     rewind(stream);
 
-    if (file_size < 0) {
+    if (file_size < 0 || file_size > INT_MAX) {
         return NULL;
     }
 
