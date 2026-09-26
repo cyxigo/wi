@@ -186,7 +186,7 @@ wi_state_set_args(struct wi_state* state, int argc, const char** argv);
 void
 wi_state_set_extra(struct wi_state* state, void* extra);
 void*
-wi_state_get_extra(struct wi_state* state);
+wi_state_extra(struct wi_state* state);
 
 bool
 wi_state_add_lib(struct wi_state* state, wi_lib_handle lib);

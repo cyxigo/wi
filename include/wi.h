@@ -262,7 +262,7 @@ wi_state_set_extra(wi_state* state, void* extra);
  * @return The extra pointer, or `NULL` if none was set
  */
 WI_API void*
-wi_state_get_extra(wi_state* state);
+wi_state_extra(wi_state* state);
 
 /**
  * Throw a runtime error in the state
