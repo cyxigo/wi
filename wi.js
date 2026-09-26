@@ -118,7 +118,7 @@ function initRuntime() {
     runtimeInitialized = true;
     if (!Module["noFSInit"] && !FS.initialized) FS.init();
     TTY.init();
-    wasmExports["I"]();
+    wasmExports["K"]();
     FS.ignorePermissions = false;
 }
 function postRun() {
@@ -614,10 +614,7 @@ var MEMFS = {
                 stream: { llseek: MEMFS.stream_ops.llseek },
             },
             file: {
-                node: {
-                    getattr: MEMFS.node_ops.getattr,
-                    setattr: MEMFS.node_ops.setattr,
-                },
+                node: { getattr: MEMFS.node_ops.getattr, setattr: MEMFS.node_ops.setattr },
                 stream: {
                     llseek: MEMFS.stream_ops.llseek,
                     read: MEMFS.stream_ops.read,
@@ -635,10 +632,7 @@ var MEMFS = {
                 stream: {},
             },
             chrdev: {
-                node: {
-                    getattr: MEMFS.node_ops.getattr,
-                    setattr: MEMFS.node_ops.setattr,
-                },
+                node: { getattr: MEMFS.node_ops.getattr, setattr: MEMFS.node_ops.setattr },
                 stream: FS.chrdev_stream_ops,
             },
         };
@@ -859,14 +853,7 @@ var MEMFS = {
 };
 var FS_modeStringToFlags = (str) => {
     if (typeof str != "string") return str;
-    var flagModes = {
-        r: 0,
-        "r+": 2,
-        w: 512 | 64 | 1,
-        "w+": 512 | 64 | 2,
-        a: 1024 | 64 | 1,
-        "a+": 1024 | 64 | 2,
-    };
+    var flagModes = { r: 0, "r+": 2, w: 512 | 64 | 1, "w+": 512 | 64 | 2, a: 1024 | 64 | 1, "a+": 1024 | 64 | 2 };
     var flags = flagModes[str];
     if (typeof flags == "undefined") {
         throw new Error(`Unknown file open mode: ${str}`);
@@ -1703,11 +1690,7 @@ var FS = {
         return FS.stat(path, true);
     },
     doChmod(stream, node, mode, dontFollow) {
-        FS.doSetAttr(stream, node, {
-            mode: (mode & 4095) | (node.mode & ~4095),
-            ctime: Date.now(),
-            dontFollow,
-        });
+        FS.doSetAttr(stream, node, { mode: (mode & 4095) | (node.mode & ~4095), ctime: Date.now(), dontFollow });
     },
     chmod(path, mode, dontFollow) {
         var node;
@@ -1799,10 +1782,7 @@ var FS = {
             node = path;
         } else {
             isDirPath = path.endsWith("/");
-            var lookup = FS.lookupPath(path, {
-                follow: !(flags & 131072),
-                noent_okay: true,
-            });
+            var lookup = FS.lookupPath(path, { follow: !(flags & 131072), noent_okay: true });
             node = lookup.node;
             path = lookup.path;
         }
@@ -2576,6 +2556,53 @@ function ___syscall_getcwd(buf, size) {
         return -e.errno;
     }
 }
+function ___syscall_getdents64(fd, dirp, count) {
+    try {
+        var stream = SYSCALLS.getStreamFromFD(fd);
+        stream.getdents ||= FS.readdir(stream.path);
+        var struct_size = 280;
+        var pos = 0;
+        var off = FS.llseek(stream, 0, 1);
+        var startIdx = Math.floor(off / struct_size);
+        var endIdx = Math.min(stream.getdents.length, startIdx + Math.floor(count / struct_size));
+        for (var idx = startIdx; idx < endIdx; idx++) {
+            var id;
+            var type;
+            var name = stream.getdents[idx];
+            if (name === ".") {
+                id = stream.node.id;
+                type = 4;
+            } else if (name === "..") {
+                var lookup = FS.lookupPath(stream.path, { parent: true });
+                id = lookup.node.id;
+                type = 4;
+            } else {
+                var child;
+                try {
+                    child = FS.lookupNode(stream.node, name);
+                } catch (e) {
+                    if (e?.errno === 28) {
+                        continue;
+                    }
+                    throw e;
+                }
+                id = child.id;
+                type = FS.isChrdev(child.mode) ? 2 : FS.isDir(child.mode) ? 4 : FS.isLink(child.mode) ? 10 : 8;
+            }
+            HEAP64[(dirp + pos) >> 3] = BigInt(id);
+            HEAP64[(dirp + pos + 8) >> 3] = BigInt((idx + 1) * struct_size);
+            HEAP16[(dirp + pos + 16) >> 1] = 280;
+            HEAP8[dirp + pos + 18] = type;
+            stringToUTF8(name, dirp + pos + 19, 256);
+            pos += struct_size;
+        }
+        FS.llseek(stream, idx * struct_size, 0);
+        return pos;
+    } catch (e) {
+        if (typeof FS == "undefined" || !(e.name === "ErrnoError")) throw e;
+        return -e.errno;
+    }
+}
 function ___syscall_ioctl(fd, op, varargs) {
     SYSCALLS.varargs = varargs;
     try {
@@ -3091,12 +3118,12 @@ FS.staticInit();
     }
 }
 Module["ccall"] = ccall;
-function _print_out(text) {
+function _print_out(state, text) {
     if (Module.print) {
         Module.print(UTF8ToString(text));
     }
 }
-function _print_err(text) {
+function _print_err(state, text) {
     if (Module.printErr) {
         Module.printErr(UTF8ToString(text));
     }
@@ -3112,49 +3139,51 @@ var _wi_wasm_init,
     wasmMemory,
     wasmTable;
 function assignWasmExports(wasmExports) {
-    _wi_wasm_init = Module["_wi_wasm_init"] = wasmExports["K"];
-    _wi_wasm_run = Module["_wi_wasm_run"] = wasmExports["L"];
-    _setThrew = wasmExports["M"];
-    __emscripten_stack_restore = wasmExports["N"];
-    __emscripten_stack_alloc = wasmExports["O"];
-    _emscripten_stack_get_current = wasmExports["P"];
-    memory = wasmMemory = wasmExports["H"];
-    __indirect_function_table = wasmTable = wasmExports["J"];
+    _wi_wasm_init = Module["_wi_wasm_init"] = wasmExports["M"];
+    _wi_wasm_run = Module["_wi_wasm_run"] = wasmExports["N"];
+    _setThrew = wasmExports["O"];
+    __emscripten_stack_restore = wasmExports["P"];
+    __emscripten_stack_alloc = wasmExports["Q"];
+    _emscripten_stack_get_current = wasmExports["R"];
+    memory = wasmMemory = wasmExports["J"];
+    __indirect_function_table = wasmTable = wasmExports["L"];
 }
 var wasmImports = {
-    G: ___syscall_faccessat,
+    H: ___syscall_faccessat,
     j: ___syscall_fcntl64,
-    A: ___syscall_getcwd,
-    C: ___syscall_ioctl,
-    w: ___syscall_mkdirat,
-    D: ___syscall_openat,
+    C: ___syscall_getcwd,
+    v: ___syscall_getdents64,
+    E: ___syscall_ioctl,
+    y: ___syscall_mkdirat,
+    k: ___syscall_openat,
     r: ___syscall_renameat,
     s: ___syscall_rmdir,
-    t: ___syscall_unlinkat,
+    u: ___syscall_unlinkat,
     q: __emscripten_system,
     o: __emscripten_throw_longjmp,
-    u: __gmtime_js,
-    l: _print_err,
+    w: __gmtime_js,
+    I: _print_err,
     m: _print_out,
-    v: __tzset_js,
-    F: _clock_time_get,
-    E: _emscripten_date_now,
-    g: _emscripten_get_now,
+    x: __tzset_js,
+    G: _clock_time_get,
+    F: _emscripten_date_now,
+    h: _emscripten_get_now,
     p: _emscripten_resize_heap,
-    y: _environ_get,
-    z: _environ_sizes_get,
-    h: _fd_close,
-    B: _fd_read,
-    x: _fd_seek,
+    A: _environ_get,
+    B: _environ_sizes_get,
+    d: _fd_close,
+    D: _fd_read,
+    z: _fd_seek,
     i: _fd_write,
-    k: invoke_ii,
-    d: invoke_iii,
+    l: invoke_ii,
+    e: invoke_iii,
     n: invoke_iiii,
-    f: invoke_iiiii,
+    g: invoke_iiiii,
     c: invoke_vi,
     b: invoke_vii,
     a: invoke_viii,
-    e: invoke_vij,
+    t: invoke_viiii,
+    f: invoke_vij,
 };
 function invoke_ii(index, a1) {
     var sp = stackSave();
@@ -3176,10 +3205,20 @@ function invoke_iii(index, a1, a2) {
         _setThrew(1, 0);
     }
 }
-function invoke_vi(index, a1) {
+function invoke_vii(index, a1, a2) {
     var sp = stackSave();
     try {
-        getWasmTableEntry(index)(a1);
+        getWasmTableEntry(index)(a1, a2);
+    } catch (e) {
+        stackRestore(sp);
+        if (!(e instanceof EmscriptenEH)) throw e;
+        _setThrew(1, 0);
+    }
+}
+function invoke_viiii(index, a1, a2, a3, a4) {
+    var sp = stackSave();
+    try {
+        getWasmTableEntry(index)(a1, a2, a3, a4);
     } catch (e) {
         stackRestore(sp);
         if (!(e instanceof EmscriptenEH)) throw e;
@@ -3196,20 +3235,20 @@ function invoke_viii(index, a1, a2, a3) {
         _setThrew(1, 0);
     }
 }
-function invoke_vii(index, a1, a2) {
+function invoke_iiiii(index, a1, a2, a3, a4) {
     var sp = stackSave();
     try {
-        getWasmTableEntry(index)(a1, a2);
+        return getWasmTableEntry(index)(a1, a2, a3, a4);
     } catch (e) {
         stackRestore(sp);
         if (!(e instanceof EmscriptenEH)) throw e;
         _setThrew(1, 0);
     }
 }
-function invoke_iiiii(index, a1, a2, a3, a4) {
+function invoke_vi(index, a1) {
     var sp = stackSave();
     try {
-        return getWasmTableEntry(index)(a1, a2, a3, a4);
+        getWasmTableEntry(index)(a1);
     } catch (e) {
         stackRestore(sp);
         if (!(e instanceof EmscriptenEH)) throw e;
