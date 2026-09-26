@@ -308,6 +308,20 @@ WI_API wi_run_result
 wi_state_run(wi_state* state, const char* file_path, const char* src);
 
 /**
+ * Compile Wi code into a function without running it, pushing it onto the stack.
+ * Running this function will run the code and hand you back a module on the stack, so technically the same as
+ * `import`ing a script.
+ * `arg_count` for the said function will be `0`
+ *
+ * @param state Wi state instance
+ * @param file_path Path to the script, used for error messages
+ * @param src Code string
+ * @return `true` and pushes the function on success, `false` and pushes nothing on a compile error
+ */
+WI_API bool
+wi_load(wi_state* state, const char* file_path, const char* src);
+
+/**
  * Create a persistent reference to the value at the stack top, popping it.
  *
  * Reference created by this function will survive until it is deleted (`wi_ref_delete`)
