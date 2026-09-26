@@ -497,31 +497,31 @@ wi_arg_map(struct wi_state* state, uint8_t arg) {
 }
 
 static void
-_check_function_arity(struct wi_state* state, uint8_t arg, uint8_t arity) {
-    wi_value function = state->ffi_stack[arg];
+_check_function(struct wi_state* state, uint8_t arg, uint8_t arity) {
+    wi_value value = state->ffi_stack[arg];
 
-    if (!wi_value_is_foreign(function) && !wi_value_is_closure(function)) {
-        wi_state_error(state, "bad argument %i - cannot use a value of type %s as a callback", arg,
-                       wi_value_type(function));
+    if (!wi_value_is_foreign(value) && !wi_value_is_closure(value)) {
+        wi_state_error(state, "bad argument %i - expected a value of type function but got %s", arg,
+                       wi_value_type(value));
     }
 
-    if (wi_value_is_closure(function)) {
-        struct wi_prototype* prototype = wi_value_as_closure(function)->prototype;
+    if (wi_value_is_closure(value)) {
+        struct wi_prototype* prototype = wi_value_as_closure(value)->prototype;
         wi_state_check_arity(state, prototype->arity, arity, prototype->is_variadic);
     } else {
-        struct wi_foreign* foreign = wi_value_as_foreign(function);
+        struct wi_foreign* foreign = wi_value_as_foreign(value);
         wi_state_check_arity(state, foreign->arity, arity, foreign->is_variadic);
     }
 }
 
 void
 wi_arg_check_function(struct wi_state* state, uint8_t arg, uint8_t arity) {
-    _check_function_arity(state, arg, arity);
+    _check_function(state, arg, arity);
 }
 
 void
 wi_arg_function(struct wi_state* state, uint8_t arg, uint8_t arity) {
-    _check_function_arity(state, arg, arity);
+    _check_function(state, arg, arity);
     wi_state_ppush(state, state->ffi_stack[arg]);
 }
 
