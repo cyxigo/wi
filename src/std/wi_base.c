@@ -72,7 +72,12 @@ _base_ismain(struct wi_state* state, uint8_t arg_count) {
 
 static void
 _base_exit(struct wi_state* state, uint8_t arg_count) {
-    WI_UNUSED(arg_count);
+    if (arg_count == 1) {
+        state->exit_code = (int)wi_state_real_to_int(state, wi_arg_real(state, 1));
+    } else if (arg_count != 0) {
+        wi_state_error(state, "expected 0 or 1 arguments but got %hhu", arg_count);
+    }
+
     wi_state_abort(state);
 }
 

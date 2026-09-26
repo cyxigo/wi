@@ -65,7 +65,9 @@ struct wi_state {
     wi_conf*      conf;
     struct wi_gc* gc;
 
-    bool        was_eof_error;
+    bool was_eof_error;
+    int  exit_code;
+
     wi_print_fn out;
     wi_print_fn error;
 
@@ -171,6 +173,9 @@ wi_state_collect_garbage(struct wi_state* state);
 
 bool
 wi_state_was_eof_error(wi_state* state);
+int
+wi_state_exit_code(wi_state* state);
+
 void
 wi_state_set_callbacks(struct wi_state* state, wi_print_fn out_fn, wi_print_fn error_fn,
                        wi_on_compile_fn on_compile_fn, wi_import_load_fn import_load_fn,

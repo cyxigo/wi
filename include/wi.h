@@ -211,6 +211,15 @@ WI_API bool
 wi_state_was_eof_error(wi_state* state);
 
 /**
+ * Get the exit code set by the last call to `std::exit` (defaults to 0)
+ *
+ * @param state Wi state instance
+ * @return The exit code
+ */
+WI_API int
+wi_state_exit_code(wi_state* state);
+
+/**
  * Set the state callbacks. Safe to pass `NULL` for each. For more info about callbacks, check their definitions
  *
  * @param state Wi state instance
@@ -225,7 +234,7 @@ wi_state_set_callbacks(wi_state* state, wi_print_fn out_fn, wi_print_fn error_fn
                        wi_import_load_fn import_load_fn, wi_import_exists_fn import_exists_fn);
 
 /**
- * Set the command line arguments that will be available to Wi scripts via os.args
+ * Set the command line arguments that will be available to Wi scripts via os::args
  *
  * @param state Wi state instance
  * @param argc Number of arguments

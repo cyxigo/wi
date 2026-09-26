@@ -116,8 +116,10 @@ wi_new_state(wi_conf* conf) {
     state->gc->state = state;
 
     state->was_eof_error = false;
-    state->out           = _state_out;
-    state->error         = _state_error;
+    state->exit_code     = 0;
+
+    state->out   = _state_out;
+    state->error = _state_error;
 
     state->on_compile    = _state_on_compile;
     state->import_load   = _state_read_file;
@@ -207,6 +209,11 @@ wi_state_collect_garbage(struct wi_state* state) {
 bool
 wi_state_was_eof_error(wi_state* state) {
     return state->was_eof_error;
+}
+
+int
+wi_state_exit_code(struct wi_state* state) {
+    return state->exit_code;
 }
 
 void
