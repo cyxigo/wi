@@ -103,6 +103,7 @@ _map_each(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     struct wi_map* map       = wi_arg_map(state, 1);
     int            mod_count = map->items.mod_count;
+    wi_arg_check_function(state, 2, 2);
     wi_state_ppush(state, WI_MAKE_BOX_VALUE(map));
 
     for (int i = 0; i < map->items.capacity; i++) {
@@ -128,7 +129,9 @@ _map_select(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     struct wi_map* map       = wi_arg_map(state, 1);
     int            mod_count = map->items.mod_count;
-    struct wi_map* result    = wi_push_map(state);
+    wi_arg_check_function(state, 2, 1);
+    wi_arg_check_function(state, 3, 1);
+    struct wi_map* result = wi_push_map(state);
     wi_table_reserve(&result->items, map->items.count);
 
     for (int i = 0; i < map->items.capacity; i++) {
@@ -179,7 +182,8 @@ _map_where(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     struct wi_map* map       = wi_arg_map(state, 1);
     int            mod_count = map->items.mod_count;
-    struct wi_map* result    = wi_push_map(state);
+    wi_arg_check_function(state, 2, 2);
+    struct wi_map* result = wi_push_map(state);
     wi_table_reserve(&result->items, map->items.count);
 
     for (int i = 0; i < map->items.capacity; i++) {

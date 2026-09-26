@@ -265,6 +265,7 @@ _array_each(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     struct wi_array* array     = wi_arg_array(state, 1);
     int              mod_count = array->items.mod_count;
+    wi_arg_check_function(state, 2, 1);
     wi_state_ppush(state, WI_MAKE_BOX_VALUE(array));
 
     for (int i = 0; i < array->items.count; i++) {
@@ -283,7 +284,8 @@ _array_select(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     struct wi_array* array     = wi_arg_array(state, 1);
     int              mod_count = array->items.mod_count;
-    struct wi_array* result    = wi_push_array(state);
+    wi_arg_check_function(state, 2, 1);
+    struct wi_array* result = wi_push_array(state);
     wi_value_buf_reserve(&result->items, array->items.count);
 
     for (int i = 0; i < array->items.count; i++) {
@@ -306,7 +308,8 @@ _array_where(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     struct wi_array* array     = wi_arg_array(state, 1);
     int              mod_count = array->items.mod_count;
-    struct wi_array* result    = wi_push_array(state);
+    wi_arg_check_function(state, 2, 1);
+    struct wi_array* result = wi_push_array(state);
     wi_value_buf_reserve(&result->items, array->items.count);
 
     for (int i = 0; i < array->items.count; i++) {
@@ -400,6 +403,7 @@ static void
 _array_sort(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     struct wi_array* array = wi_arg_array(state, 1);
+    wi_arg_check_function(state, 2, 2);
 
     if (array->items.count > 1) {
         _aqsort(state, array, 0, array->items.count - 1, array->items.mod_count);
