@@ -286,10 +286,15 @@ main(int argc, const char** argv) {
         return EXIT_SUCCESS;
     }
 
-    char*         src    = _read_file(file_path);
-    wi_run_result result = _run(file_path, src);
+    char*         src       = _read_file(file_path);
+    wi_run_result result    = _run(file_path, src);
+    int           exit_code = wi_state_exit_code(_g_state);
     free(src);
     _delete_g_state();
 
-    return result == WI_RUN_ERROR ? EXIT_FAILURE : EXIT_SUCCESS;
+    if (result == WI_RUN_ERROR) {
+        return EXIT_FAILURE;
+    }
+
+    return exit_code;
 }
