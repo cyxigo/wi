@@ -418,7 +418,7 @@ wi_state_def_std_base(struct wi_state* state) {
         {"puts",       _base_puts,       0, true },
         {"input",      _base_input,      0, true },
         {"ismain",     _base_ismain,     0, false},
-        {"exit",       _base_exit,       0, false},
+        {"exit",       _base_exit,       0, true },
 
         {"gc",         _base_gc,         0, false},
         {"memoryused", _base_memoryused, 0, false},
