@@ -160,6 +160,7 @@ typedef struct wi_foreign_entry {
  * @param conf Wi configuration, see `wi_conf.h` for more
  * @return Created Wi state instance
  * @note Must be freed via `wi_delete_state`
+ * @return The new Wi state instance
  */
 WI_API wi_state*
 wi_new_state(wi_conf* conf);
@@ -211,7 +212,7 @@ WI_API bool
 wi_state_was_eof_error(wi_state* state);
 
 /**
- * Get the exit code set by the last call to `std::exit` (defaults to 0)
+ * Get the exit code set by the last call to `std::exit` (defaults to `0`)
  *
  * @param state Wi state instance
  * @return The exit code
@@ -276,7 +277,6 @@ wi_state_error(wi_state* state, const char* format, ...);
 
 /**
  * Request the state to stop execution, returning `WI_RUN_ABORT` from `wi_state_run`.
- *
  * Must only be called while a script is running (e.g., from a foreign (C) function).
  * Calling it outside `wi_state_run` is undefined behavior
  *
@@ -378,7 +378,6 @@ wi_find(wi_state* state, const char* name);
 
 /**
  * Call a Wi function that is *at the stack top*
- *
  * Must only be called while the state is running (i.e. from within a foreign function called by Wi code).
  * Calling it outside that context is undefined behavior
  *
@@ -447,6 +446,15 @@ WI_API bool
 wi_is_string(wi_state* state);
 
 /**
+ * Check if the value at the stack top is a function (Wi or C)
+ *
+ * @param state Wi state instance
+ * @return `true` if the value is a function (Wi or C), `false` otherwise
+ */
+WI_API bool
+wi_is_function(wi_state* state);
+
+/**
  * Check if the value at the stack top is an array
  *
  * @param state Wi state instance
@@ -463,15 +471,6 @@ wi_is_array(wi_state* state);
  */
 WI_API bool
 wi_is_map(wi_state* state);
-
-/**
- * Check if the value at the stack top is a function (Wi or C)
- *
- * @param state Wi state instance
- * @return `true` if the value is a function (Wi or C), `false` otherwise
- */
-WI_API bool
-wi_is_function(wi_state* state);
 
 /**
  * Check if the value at the stack top is an object
@@ -737,6 +736,16 @@ WI_API bool
 wi_arg_is_string(wi_state* state, uint8_t arg);
 
 /**
+ * Check if argument is a function (Wi or C)
+ *
+ * @param state Wi state instance
+ * @param arg Argument index (1-[arg_count])
+ * @return `true` if the argument is a function (Wi or C), `false` otherwise
+ */
+WI_API bool
+wi_arg_is_function(wi_state* state, uint8_t arg);
+
+/**
  * Check if argument is an array
  *
  * @param state Wi state instance
@@ -755,16 +764,6 @@ wi_arg_is_array(wi_state* state, uint8_t arg);
  */
 WI_API bool
 wi_arg_is_map(wi_state* state, uint8_t arg);
-
-/**
- * Check if argument is a function (Wi or C)
- *
- * @param state Wi state instance
- * @param arg Argument index (1-[arg_count])
- * @return `true` if the argument is a function (Wi or C), `false` otherwise
- */
-WI_API bool
-wi_arg_is_function(wi_state* state, uint8_t arg);
 
 /**
  * Check if argument is userdata
@@ -839,26 +838,6 @@ WI_API char*
 wi_arg_string(wi_state* state, uint8_t arg, int* count, int* len);
 
 /**
- * Get an array argument with type-checking
- *
- * @param state Wi state instance
- * @param arg Argument index (1-[arg_count])
- * @return Array argument
- */
-WI_API wi_array*
-wi_arg_array(wi_state* state, uint8_t arg);
-
-/**
- * Get a map argument with type-checking
- *
- * @param state Wi state instance
- * @param arg Argument index (1-[arg_count])
- * @return Map argument
- */
-WI_API wi_map*
-wi_arg_map(wi_state* state, uint8_t arg);
-
-/**
  * Check if argument is a function and check its arity, without pushing it onto the stack
  *
  * @param state Wi state instance
@@ -877,6 +856,26 @@ wi_arg_check_function(wi_state* state, uint8_t arg, uint8_t arity);
  */
 WI_API void
 wi_arg_function(wi_state* state, uint8_t arg, uint8_t arity);
+
+/**
+ * Get an array argument with type-checking
+ *
+ * @param state Wi state instance
+ * @param arg Argument index (1-[arg_count])
+ * @return Array argument
+ */
+WI_API wi_array*
+wi_arg_array(wi_state* state, uint8_t arg);
+
+/**
+ * Get a map argument with type-checking
+ *
+ * @param state Wi state instance
+ * @param arg Argument index (1-[arg_count])
+ * @return Map argument
+ */
+WI_API wi_map*
+wi_arg_map(wi_state* state, uint8_t arg);
 
 /**
  * Get userdata argument with type-checking
@@ -939,7 +938,7 @@ WI_API bool
 wi_array_set(wi_state* state, wi_array* array, int index);
 
 /**
- * Get an array item by index and push it onto the stack.
+ * Get an array item by index and push it onto the stack
  *
  * @param state Wi state instance
  * @param array Target array
@@ -978,8 +977,8 @@ WI_API bool
 wi_map_get(wi_state* state, wi_map* map);
 
 /**
- * Iterate over a map's entries. Pass *iter = 0 on the first call.
- * Each call that finds a live entry pushes its key then value and advances *iter
+ * Iterate over a map's entries. Pass `*iter = 0` on the first call.
+ * Each call that finds a live entry pushes its key then value and advances `*iter`
  *
  * @param state Wi state instance
  * @param map Target map

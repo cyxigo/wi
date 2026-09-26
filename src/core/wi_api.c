@@ -162,6 +162,12 @@ wi_is_string(struct wi_state* state) {
 }
 
 bool
+wi_is_function(struct wi_state* state) {
+    wi_value value = wi_state_top(state);
+    return wi_value_is_foreign(value) || wi_value_is_closure(value);
+}
+
+bool
 wi_is_array(struct wi_state* state) {
     return wi_value_is_array(wi_state_top(state));
 }
@@ -169,12 +175,6 @@ wi_is_array(struct wi_state* state) {
 bool
 wi_is_map(struct wi_state* state) {
     return wi_value_is_map(wi_state_top(state));
-}
-
-bool
-wi_is_function(struct wi_state* state) {
-    wi_value value = wi_state_top(state);
-    return wi_value_is_foreign(value) || wi_value_is_closure(value);
 }
 
 bool
@@ -398,6 +398,12 @@ wi_arg_is_string(struct wi_state* state, uint8_t arg) {
 }
 
 bool
+wi_arg_is_function(struct wi_state* state, uint8_t arg) {
+    wi_value value = state->ffi_stack[arg];
+    return wi_value_is_foreign(value) || wi_value_is_closure(value);
+}
+
+bool
 wi_arg_is_array(struct wi_state* state, uint8_t arg) {
     return wi_value_is_array(state->ffi_stack[arg]);
 }
@@ -405,12 +411,6 @@ wi_arg_is_array(struct wi_state* state, uint8_t arg) {
 bool
 wi_arg_is_map(struct wi_state* state, uint8_t arg) {
     return wi_value_is_map(state->ffi_stack[arg]);
-}
-
-bool
-wi_arg_is_function(struct wi_state* state, uint8_t arg) {
-    wi_value value = state->ffi_stack[arg];
-    return wi_value_is_foreign(value) || wi_value_is_closure(value);
 }
 
 bool
@@ -476,26 +476,6 @@ wi_arg_string(struct wi_state* state, uint8_t arg, int* count, int* len) {
     return string->buf;
 }
 
-struct wi_array*
-wi_arg_array(struct wi_state* state, uint8_t arg) {
-    if (WI_UNLIKELY(!wi_arg_is_array(state, arg))) {
-        wi_state_error(state, "bad argument %i - expected a value of type array but got %s", arg,
-                       wi_value_type(state->ffi_stack[arg]));
-    }
-
-    return wi_value_as_array(state->ffi_stack[arg]);
-}
-
-struct wi_map*
-wi_arg_map(struct wi_state* state, uint8_t arg) {
-    if (WI_UNLIKELY(!wi_arg_is_map(state, arg))) {
-        wi_state_error(state, "bad argument %i - expected a value of type map but got %s", arg,
-                       wi_value_type(state->ffi_stack[arg]));
-    }
-
-    return wi_value_as_map(state->ffi_stack[arg]);
-}
-
 static void
 _check_function(struct wi_state* state, uint8_t arg, uint8_t arity) {
     wi_value value = state->ffi_stack[arg];
@@ -523,6 +503,26 @@ void
 wi_arg_function(struct wi_state* state, uint8_t arg, uint8_t arity) {
     _check_function(state, arg, arity);
     wi_state_ppush(state, state->ffi_stack[arg]);
+}
+
+struct wi_array*
+wi_arg_array(struct wi_state* state, uint8_t arg) {
+    if (WI_UNLIKELY(!wi_arg_is_array(state, arg))) {
+        wi_state_error(state, "bad argument %i - expected a value of type array but got %s", arg,
+                       wi_value_type(state->ffi_stack[arg]));
+    }
+
+    return wi_value_as_array(state->ffi_stack[arg]);
+}
+
+struct wi_map*
+wi_arg_map(struct wi_state* state, uint8_t arg) {
+    if (WI_UNLIKELY(!wi_arg_is_map(state, arg))) {
+        wi_state_error(state, "bad argument %i - expected a value of type map but got %s", arg,
+                       wi_value_type(state->ffi_stack[arg]));
+    }
+
+    return wi_value_as_map(state->ffi_stack[arg]);
 }
 
 struct wi_object*
