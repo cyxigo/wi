@@ -607,6 +607,10 @@ wi_map_set(struct wi_state* state, struct wi_map* map) {
     wi_value value = wi_state_top(state);
     wi_value key   = wi_state_peek(state, 1);
 
+    if (WI_UNLIKELY(wi_value_is_nan(key))) {
+        wi_state_error(state, "cannot use NaN as a map key");
+    }
+
     if (wi_table_set(&map->items, key, value)) {
         WI_GC_WRITE_BARRIER(state->gc, map, key);
     }

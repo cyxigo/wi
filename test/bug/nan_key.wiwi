@@ -1,0 +1,2 @@
+runtime error: cannot use NaN as a map key
+   --> test/bug/nan_key.wi:5 in main function

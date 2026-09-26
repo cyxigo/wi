@@ -255,6 +255,11 @@ wi_value_is_falsy(wi_value value) {
            (wi_value_is_real(value) && wi_value_as_real(value) == 0.0);
 }
 
+WI_INLINE bool
+wi_value_is_nan(wi_value value) {
+    return wi_value_is_real(value) && wi_value_as_real(value) != wi_value_as_real(value);
+}
+
 void
 wi_value_print(struct wi_state* state, wi_value value);
 uint32_t

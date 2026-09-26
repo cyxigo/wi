@@ -1,0 +1,9 @@
+// $fail
+m := {};
+nan := 0.0 / 0.0;
+
+m[nan] = "first";
+m[nan] = "second";
+
+std::puts(#m);
+std::puts(m->has(nan));
