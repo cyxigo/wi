@@ -156,6 +156,52 @@ _string_endswith(struct wi_state* state, uint8_t arg_count) {
     wi_push_bool(state, result);
 }
 
+static bool
+_is_digit(unsigned char c) {
+    return c >= '0' && c <= '9';
+}
+
+static bool
+_is_alpha(unsigned char c) {
+    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
+}
+
+static bool
+_is_alnum(unsigned char c) {
+    return _is_digit(c) || _is_alpha(c);
+}
+
+static void
+_string_class_check(struct wi_state* state, bool (*fn)(unsigned char c)) {
+    int   count;
+    char* string = wi_arg_string(state, 1, &count, NULL);
+    bool  result = count > 0;
+
+    for (int i = 0; result && i < count; i++) {
+        result = fn((unsigned char)string[i]);
+    }
+
+    wi_push_bool(state, result);
+}
+
+static void
+_string_isdigit(struct wi_state* state, uint8_t arg_count) {
+    WI_UNUSED(arg_count);
+    _string_class_check(state, _is_digit);
+}
+
+static void
+_string_isalpha(struct wi_state* state, uint8_t arg_count) {
+    WI_UNUSED(arg_count);
+    _string_class_check(state, _is_alpha);
+}
+
+static void
+_string_isalnum(struct wi_state* state, uint8_t arg_count) {
+    WI_UNUSED(arg_count);
+    _string_class_check(state, _is_alnum);
+}
+
 static void
 _string_compare(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
@@ -465,6 +511,9 @@ wi_state_def_stm_string(struct wi_state* state) {
     wi_table_set_foreign(table, "indexof", _string_indexof, 2, false);
     wi_table_set_foreign(table, "startswith", _string_startswith, 2, false);
     wi_table_set_foreign(table, "endswith", _string_endswith, 2, false);
+    wi_table_set_foreign(table, "isdigit", _string_isdigit, 1, false);
+    wi_table_set_foreign(table, "isalpha", _string_isalpha, 1, false);
+    wi_table_set_foreign(table, "isalnum", _string_isalnum, 1, false);
     wi_table_set_foreign(table, "compare", _string_compare, 2, false);
     wi_table_set_foreign(table, "replace", _string_replace, 3, false);
     wi_table_set_foreign(table, "split", _string_split, 2, false);
