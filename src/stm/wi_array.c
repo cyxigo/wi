@@ -159,6 +159,30 @@ _array_removeat(struct wi_state* state, uint8_t arg_count) {
 }
 
 static void
+_array_insertat(struct wi_state* state, uint8_t arg_count) {
+    WI_UNUSED(arg_count);
+    struct wi_array* array = wi_arg_array(state, 1);
+    int64_t          index = wi_state_real_to_int(state, wi_arg_real(state, 2));
+
+    if (index < 0 || index > array->items.count) {
+        wi_state_error(state, "array index out of range: %lld", index);
+    }
+
+    wi_value value = state->ffi_stack[3];
+    wi_value_buf_reserve(&array->items, 1);
+
+    for (int64_t i = array->items.count; i > index; i--) {
+        array->items.data[i] = array->items.data[i - 1];
+    }
+
+    array->items.data[index] = value;
+    array->items.count++;
+    array->items.mod_count++;
+    WI_GC_WRITE_BARRIER(state->gc, array, value);
+    wi_state_ppush(state, value);
+}
+
+static void
 _array_pop(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     struct wi_array* array = wi_arg_array(state, 1);
@@ -426,6 +450,7 @@ wi_state_def_stm_array(struct wi_state* state) {
     wi_table_set_foreign(table, "indexof", _array_indexof, 2, false);
     wi_table_set_foreign(table, "remove", _array_remove, 2, false);
     wi_table_set_foreign(table, "removeat", _array_removeat, 2, false);
+    wi_table_set_foreign(table, "insertat", _array_insertat, 3, false);
     wi_table_set_foreign(table, "pop", _array_pop, 1, false);
     wi_table_set_foreign(table, "concat", _array_concat, 0, true);
     wi_table_set_foreign(table, "slice", _array_slice, 3, false);
