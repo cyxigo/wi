@@ -563,6 +563,7 @@ _state_subscript_set(struct wi_state* state, wi_value target, wi_value index, wi
         struct wi_array* array = wi_value_as_array(target);
         int              i     = _state_validate_index(state, "array", index, array->items.count);
         array->items.data[i]   = value;
+        array->items.mod_count++;
         WI_GC_WRITE_BARRIER(state->gc, array, value);
         return;
     }
