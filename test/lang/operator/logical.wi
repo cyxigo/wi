@@ -1,4 +1,4 @@
-// $ok
+%% $ok
 std::puts(true && false);
 std::puts(true && true);
 std::puts(false && true);

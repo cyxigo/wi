@@ -27,11 +27,11 @@ def test(path, recursive=False):
         kind = script.read_text().splitlines()[0]
         stream = None
 
-        if kind == "// $ok":
+        if kind == "%% $ok":
             stream = "stdout"
-        elif kind == "// $fail":
+        elif kind == "%% $fail":
             stream = "stderr"
-        elif kind == "// $skip":
+        elif kind == "%% $skip":
             skip("$skip")
             continue
         else:

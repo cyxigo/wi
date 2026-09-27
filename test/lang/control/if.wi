@@ -1,4 +1,4 @@
-// $ok
+%% $ok
 if (1 < 0) {
     std::puts("Won't execute");
 }

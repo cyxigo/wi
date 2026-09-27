@@ -1,4 +1,4 @@
-// $ok
+%% $ok
 obj_contact := object {
     email: "";
     phone: "";

@@ -1,4 +1,4 @@
-// $ok
+%% $ok
 a := null;
 a = "a";
 std::puts(a);

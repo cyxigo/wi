@@ -1,4 +1,4 @@
-// $ok
+%% $ok
 check1 := |x| => {
     switch (x) {
         case 0: std::puts("zero");

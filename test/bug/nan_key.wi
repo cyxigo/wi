@@ -1,4 +1,5 @@
-// $fail
+%% $fail
+%% Bug in v9.3.0-beta; NaN behaves verrry weird so better throw an error
 m := {};
 nan := 0.0 / 0.0;
 

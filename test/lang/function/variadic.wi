@@ -1,4 +1,4 @@
-// $ok
+%% $ok
 f1 := |...args| => {
     args->each(std::puts);
 };

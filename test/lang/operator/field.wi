@@ -1,4 +1,4 @@
-// $ok
+%% $ok
 obj := object {
     x: 0;
 };

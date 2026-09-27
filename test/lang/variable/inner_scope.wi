@@ -1,4 +1,4 @@
-// $fail
+%% $fail
 {
     a @unused := 10;
 }

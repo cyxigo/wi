@@ -1,4 +1,4 @@
-// $fail
+%% $fail
 f := |a @unused, ...args @unused| => {
 };
 

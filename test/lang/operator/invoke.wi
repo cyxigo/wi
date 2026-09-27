@@ -1,4 +1,4 @@
-// $ok
+%% $ok
 obj := object {
     method: |self @unused, argument| => std::puts(argument);
 };

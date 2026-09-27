@@ -1,4 +1,4 @@
-// $ok
+%% $ok
 obj_person := object {
     name: "";
 };

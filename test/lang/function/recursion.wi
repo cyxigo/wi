@@ -1,5 +1,5 @@
-// $ok
-// simple
+%% $ok
+%% simple
 factorial := |n| => {
     if (n <= 1) {
         return 1;
@@ -10,7 +10,7 @@ factorial := |n| => {
 
 std::puts(factorial(5));
 
-// tco
+%% tco
 count := |n| => {
     if (n == 0) {
         return 0;
@@ -19,5 +19,5 @@ count := |n| => {
     return count(n - 1);
 };
 
-// should pass and not obliterate the stack because of the tco
+%% should pass and not obliterate the stack because of the tco
 std::puts(count(5000000));

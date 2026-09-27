@@ -1,4 +1,4 @@
-// $ok
+%% $ok
 std::puts(10 + 5);
 std::puts(10 - 5);
 std::puts(10 * 5);

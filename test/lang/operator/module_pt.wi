@@ -1,4 +1,4 @@
-// $skip
+%% $skip
 x := 20;
 
 export {
