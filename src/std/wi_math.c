@@ -39,6 +39,14 @@ _math_atan(struct wi_state* state, uint8_t arg_count) {
 }
 
 static void
+_math_atan2(struct wi_state* state, uint8_t arg_count) {
+    WI_UNUSED(arg_count);
+    wi_real y = wi_arg_real(state, 1);
+    wi_real x = wi_arg_real(state, 2);
+    wi_push_real(state, atan2(y, x));
+}
+
+static void
 _math_ceil(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     _math_single_arg_function(state, ceil);
@@ -248,6 +256,7 @@ wi_state_def_std_math(struct wi_state* state) {
         {"acos",   _math_acos,   1, false},
         {"asin",   _math_asin,   1, false},
         {"atan",   _math_atan,   1, false},
+        {"atan2",  _math_atan2,  2, false},
         {"ceil",   _math_ceil,   1, false},
         {"clamp",  _math_clamp,  3, false},
         {"cos",    _math_cos,    1, false},
