@@ -670,7 +670,7 @@ enum _prec {
     _PREC_BIT_AND,    /* & */
     _PREC_SHIFT,      /* >> << */
     _PREC_TERM,       /* + - */
-    _PREC_FACTOR,     /* % * / */
+    _PREC_FACTOR,     /* % * / // */
     _PREC_POWER,      /* ** */
     _PREC_UNARY,      /* # - ~ ! new */
     _PREC_CALL,       /* () [] . -> */
@@ -991,6 +991,9 @@ _compiler_binary_expr(struct wi_compiler* compiler, bool can_assign) {
             break;
         case WI_TOKEN_SLASH:
             _compiler_emit_opcode(compiler, WI_OP_DIVIDE);
+            break;
+        case WI_TOKEN_SLASH_SLASH:
+            _compiler_emit_opcode(compiler, WI_OP_INT_DIVIDE);
             break;
         case WI_TOKEN_AMPER:
             _compiler_emit_opcode(compiler, WI_OP_BIT_AND);
@@ -1454,6 +1457,7 @@ static struct _parse_rule _g_rules[] = {
     [WI_TOKEN_STAR]            = {NULL,                    _compiler_binary_expr,         _PREC_FACTOR    },
     [WI_TOKEN_STAR_STAR]       = {NULL,                    _compiler_binary_expr,         _PREC_POWER     },
     [WI_TOKEN_SLASH]           = {NULL,                    _compiler_binary_expr,         _PREC_FACTOR    },
+    [WI_TOKEN_SLASH_SLASH]     = {NULL,                    _compiler_binary_expr,         _PREC_FACTOR    },
     [WI_TOKEN_AMPER]           = {NULL,                    _compiler_binary_expr,         _PREC_BIT_AND   },
     [WI_TOKEN_AMPER_AMPER]     = {NULL,                    _compiler_and_expr,            _PREC_AND       },
     [WI_TOKEN_PIPE]            = {_compiler_function_expr, _compiler_binary_expr,         _PREC_BIT_OR    },

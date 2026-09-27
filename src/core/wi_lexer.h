@@ -81,6 +81,7 @@ enum wi_token_kind {
     WI_TOKEN_STAR,
     WI_TOKEN_STAR_STAR,
     WI_TOKEN_SLASH,
+    WI_TOKEN_SLASH_SLASH,
 
     WI_TOKEN_AMPER,
     WI_TOKEN_AMPER_AMPER,

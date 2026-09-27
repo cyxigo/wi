@@ -64,6 +64,8 @@ wi_token_kind_to_string(enum wi_token_kind kind) {
             return "**";
         case WI_TOKEN_SLASH:
             return "/";
+        case WI_TOKEN_SLASH_SLASH:
+            return "//";
         case WI_TOKEN_AMPER:
             return "&";
         case WI_TOKEN_AMPER_AMPER:
@@ -626,7 +628,7 @@ wi_lexer_next(struct wi_lexer* lexer) {
         case '*':
             return _lexer_make_token(lexer, _lexer_match(lexer, '*') ? WI_TOKEN_STAR_STAR : WI_TOKEN_STAR);
         case '/':
-            return _lexer_make_token(lexer, WI_TOKEN_SLASH);
+            return _lexer_make_token(lexer, _lexer_match(lexer, '/') ? WI_TOKEN_SLASH_SLASH : WI_TOKEN_SLASH);
         case '&':
             return _lexer_make_token(lexer, _lexer_match(lexer, '&') ? WI_TOKEN_AMPER_AMPER : WI_TOKEN_AMPER);
         case '|':

@@ -1155,6 +1155,17 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
             _BINARY_OP(/, _make_arith_value);
             _DISPATCH();
         }
+        _OPCODE_LABEL(INT_DIVIDE) : {
+            wi_value b = wi_state_pop(state);
+            wi_value a = wi_state_pop(state);
+
+            if (!wi_value_is_real(a) || !wi_value_is_real(b)) {
+                _ERROR("cannot use operator '//' on values of type %s and %s", wi_value_type(a), wi_value_type(b));
+            }
+
+            wi_state_push(state, _make_arith_value(trunc(wi_value_as_real(a) / wi_value_as_real(b))));
+            _DISPATCH();
+        }
         _OPCODE_LABEL(NEGATE) : {
             wi_value a = wi_state_pop(state);
 

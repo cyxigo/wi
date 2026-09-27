@@ -125,6 +125,8 @@ wi_prototype_disasm_instr(struct wi_state* state, struct wi_prototype* prototype
             return _simple_instr(state, offset, "multiply");
         case WI_OP_DIVIDE:
             return _simple_instr(state, offset, "divide");
+        case WI_OP_INT_DIVIDE:
+            return _simple_instr(state, offset, "int_divide");
         case WI_OP_NEGATE:
             return _simple_instr(state, offset, "negate");
         case WI_OP_POWER:
