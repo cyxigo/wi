@@ -109,7 +109,11 @@ _find_in_table(struct wi_state* state, struct wi_table* table, const char* name)
 
 bool
 wi_find(struct wi_state* state, const char* name) {
-    return _find_in_table(state, &state->main_module->vars, name);
+    if (!_find_in_table(state, &state->foreign, name)) {
+        return _find_in_table(state, &state->main_module->vars, name);
+    }
+
+    return true;
 }
 
 void
