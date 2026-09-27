@@ -179,6 +179,19 @@ _os_rename(struct wi_state* state, uint8_t arg_count) {
 }
 
 static void
+_os_isdir(struct wi_state* state, uint8_t arg_count) {
+    WI_UNUSED(arg_count);
+    char* path = wi_arg_string(state, 1, NULL, NULL);
+#ifdef _WIN32
+    DWORD attrs = GetFileAttributesA(path);
+    wi_push_bool(state, attrs != INVALID_FILE_ATTRIBUTES && (attrs & FILE_ATTRIBUTE_DIRECTORY) != 0);
+#else
+    struct stat st;
+    wi_push_bool(state, stat(path, &st) == 0 && S_ISDIR(st.st_mode));
+#endif
+}
+
+static void
 _os_cwd(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     char buf[WI_PATH_MAX];
@@ -315,6 +328,7 @@ wi_state_def_std_os(struct wi_state* state) {
         {"system",    _os_system,    1, false},
         {"remove",    _os_remove,    1, false},
         {"rename",    _os_rename,    2, false},
+        {"isdir",     _os_isdir,     1, false},
         {"cwd",       _os_cwd,       0, false},
         {"mkdir",     _os_mkdir,     1, false},
         {"listdir",   _os_listdir,   1, false},
