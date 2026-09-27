@@ -904,7 +904,8 @@ _compiler_array_expr(struct wi_compiler* compiler, bool can_assign) {
             }
 
             count++;
-        } while (wi_parser_match(compiler->parser, WI_TOKEN_COMMA));
+        } while (wi_parser_match(compiler->parser, WI_TOKEN_COMMA) &&
+                 !wi_parser_check(compiler->parser, WI_TOKEN_CLOSE_BRACKET));
     }
 
     wi_parser_expect(compiler->parser, WI_TOKEN_CLOSE_BRACKET);
@@ -943,7 +944,8 @@ _compiler_map_expr(struct wi_compiler* compiler, bool can_assign) {
             }
 
             count++;
-        } while (wi_parser_match(compiler->parser, WI_TOKEN_COMMA));
+        } while (wi_parser_match(compiler->parser, WI_TOKEN_COMMA) &&
+                 !wi_parser_check(compiler->parser, WI_TOKEN_CLOSE_BRACE));
     }
 
     wi_parser_expect(compiler->parser, WI_TOKEN_CLOSE_BRACE);
@@ -1831,7 +1833,8 @@ _compiler_export_stmt(struct wi_compiler* compiler) {
             }
 
             wi_table_set(&compiler->module->exports, name_value, wi_make_true_value());
-        } while (wi_parser_match(compiler->parser, WI_TOKEN_COMMA));
+        } while (wi_parser_match(compiler->parser, WI_TOKEN_COMMA) &&
+                 !wi_parser_check(compiler->parser, WI_TOKEN_CLOSE_BRACE));
     }
 
     wi_parser_expect(compiler->parser, WI_TOKEN_CLOSE_BRACE);
