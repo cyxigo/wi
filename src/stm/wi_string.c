@@ -369,6 +369,14 @@ _string_select(struct wi_state* state, uint8_t arg_count) {
 
     struct wi_char_buf buf;
     wi_char_buf_init(&buf, state->gc);
+    struct wi_recovery* recovery = wi_state_push_recovery(state);
+
+    if (setjmp(recovery->jmp) != WI_RUN_OK) {
+        char* error = recovery->error->buf;
+        wi_char_buf_free(&buf);
+        wi_state_pop_recovery(state);
+        wi_state_error(state, "%s", error);
+    }
 
     for (size_t i = 0; i < (size_t)count;) {
         size_t cp_len    = wi_utf8_cp_len(string[i]);
@@ -384,7 +392,6 @@ _string_select(struct wi_state* state, uint8_t arg_count) {
         wi_value s_value = wi_state_top(state);
 
         if (!wi_value_is_string(s_value)) {
-            wi_char_buf_free(&buf);
             wi_state_error(state, "callback must return a string but got %s", wi_value_type(s_value));
         }
 
@@ -398,6 +405,7 @@ _string_select(struct wi_state* state, uint8_t arg_count) {
         i += cp_len;
     }
 
+    wi_state_pop_recovery(state);
     struct wi_string* box = wi_copy_cstring(state->gc, buf.data, buf.count);
     wi_char_buf_free(&buf);
     wi_state_ppush(state, WI_MAKE_BOX_VALUE(box));
@@ -411,6 +419,14 @@ _string_where(struct wi_state* state, uint8_t arg_count) {
 
     struct wi_char_buf buf;
     wi_char_buf_init(&buf, state->gc);
+    struct wi_recovery* recovery = wi_state_push_recovery(state);
+
+    if (setjmp(recovery->jmp) != WI_RUN_OK) {
+        char* error = recovery->error->buf;
+        wi_char_buf_free(&buf);
+        wi_state_pop_recovery(state);
+        wi_state_error(state, "%s", error);
+    }
 
     for (size_t i = 0; i < (size_t)count;) {
         size_t cp_len    = wi_utf8_cp_len(string[i]);
@@ -431,6 +447,7 @@ _string_where(struct wi_state* state, uint8_t arg_count) {
         i += cp_len;
     }
 
+    wi_state_pop_recovery(state);
     struct wi_string* box = wi_copy_cstring(state->gc, buf.data, buf.count);
     wi_char_buf_free(&buf);
     wi_state_ppush(state, WI_MAKE_BOX_VALUE(box));
