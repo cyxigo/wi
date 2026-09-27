@@ -8,7 +8,7 @@
 [![Docs](https://img.shields.io/badge/docs-wiki-blue)](https://github.com/cyxigo/wi/wiki)
 ![Code size](https://img.shields.io/github/languages/code-size/cyxigo/wi)
 
-```scala
+```
 obj_hunter := object {
     pounce: |self| => std::puts("${self.name} pounces on the yarn!");
 };
@@ -26,9 +26,9 @@ whiskers := new obj_cat {
     name: "Whiskers";
 };
 
-whiskers->pounce(); // Whiskers pounces on the yarn!
-whiskers->nap();    // Whiskers takes a nap in the sun.
-whiskers->meow();   // Whiskers says meow! (=^･ω･^=)
+whiskers->pounce(); %% Whiskers pounces on the yarn!
+whiskers->nap();    %% Whiskers takes a nap in the sun.
+whiskers->meow();   %% Whiskers says meow! (=^･ω･^=)
 ```
 
 - **Wi is small**. The [entire implementation](https://github.com/cyxigo/wi/tree/main/src) is under 15,000 lines of code.
