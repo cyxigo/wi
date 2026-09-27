@@ -5,6 +5,7 @@
 #include "wi_io.h"
 
 #include <errno.h>
+#include <math.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -224,14 +225,14 @@ _io_writebytes(struct wi_state* state, uint8_t arg_count) {
             wi_state_error(state, "real %i has no byte representation", i);
         }
 
-        int64_t byte = wi_state_real_to_int(state, wi_value_as_real(value));
+        wi_real real = wi_value_as_real(value);
 
-        if (byte < 0 || byte > 255) {
+        if (real != trunc(real) || real < 0 || real > 255) {
             free(buf);
             wi_state_error(state, "real %i has no byte representation", i);
         }
 
-        buf[i] = (uint8_t)byte;
+        buf[i] = (uint8_t)real;
     }
 
     size_t written = fwrite(buf, sizeof(uint8_t), (size_t)bytes->items.count, file->ptr);
