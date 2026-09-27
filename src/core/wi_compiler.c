@@ -733,11 +733,26 @@ _compiler_var_expr(struct wi_compiler* compiler, bool can_assign) {
 static void
 _compiler_add_esc_char(struct wi_compiler* compiler, struct wi_char_buf* buf, char c) {
     switch (c) {
+        case 'r':
+            wi_char_buf_add(buf, '\r');
+            break;
         case 'n':
             wi_char_buf_add(buf, '\n');
             break;
         case 't':
             wi_char_buf_add(buf, '\t');
+            break;
+        case 'v':
+            wi_char_buf_add(buf, '\v');
+            break;
+        case 'b':
+            wi_char_buf_add(buf, '\b');
+            break;
+        case 'a':
+            wi_char_buf_add(buf, '\a');
+            break;
+        case 'f':
+            wi_char_buf_add(buf, '\f');
             break;
         case '\\':
             wi_char_buf_add(buf, '\\');
