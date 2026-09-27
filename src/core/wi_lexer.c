@@ -375,6 +375,20 @@ _lexer_real(struct wi_lexer* lexer) {
         } while (wi_is_digit(_lexer_peek(lexer)));
     }
 
+    if (_lexer_match(lexer, 'e') || _lexer_match(lexer, 'E')) {
+        if (!_lexer_match(lexer, '+')) {
+            _lexer_match(lexer, '-');
+        }
+
+        if (!wi_is_digit(_lexer_peek(lexer))) {
+            return wi_token_make_error("unfinished scientific notation", lexer->line, lexer->curr_col);
+        }
+
+        while (wi_is_digit(_lexer_peek(lexer))) {
+            _lexer_advance(lexer);
+        }
+    }
+
     return _lexer_make_token(lexer, WI_TOKEN_REAL);
 }
 
