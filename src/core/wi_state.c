@@ -495,6 +495,10 @@ _state_concat(struct wi_state* state) {
         b_buf = wi_value_to_string(b);
 
         if (!b_buf) {
+            if (a_owned) {
+                free(a_buf);
+            }
+
             wi_state_oom(state, "failed to allocate a string for concatenation (_state_concat)");
         }
 
@@ -503,7 +507,19 @@ _state_concat(struct wi_state* state) {
     }
 
     int   len = a_count + b_count;
-    char* buf = WI_GC_ALLOC(state->gc, char, len + 1);
+    char* buf = (char*)malloc((size_t)len + 1);
+
+    if (!buf) {
+        if (a_owned) {
+            free(a_buf);
+        }
+
+        if (b_owned) {
+            free(b_buf);
+        }
+
+        wi_state_oom(state, "failed to allocate a string for concatenation (_state_concat)");
+    }
 
     memcpy(buf, a_buf, (size_t)a_count);
     memcpy(buf + a_count, b_buf, (size_t)b_count);
@@ -517,7 +533,7 @@ _state_concat(struct wi_state* state) {
         free(b_buf);
     }
 
-    struct wi_string* result = wi_take_cstring(state->gc, buf, len);
+    struct wi_string* result = wi_take_calloc_string(state->gc, buf, len);
 
     wi_state_drop(state);
     wi_state_drop(state);
