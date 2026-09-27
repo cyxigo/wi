@@ -59,16 +59,16 @@ bob := new obj_person {
     name: "Bob";
 };
 
-bob->greet();`;
+bob->greet(); %% Hi Bob!`;
 };
 
-var examplePipeline = () => {
+var exampleChaining = () => {
     var code = document.getElementById("code");
     code.value = `numbers := [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 numbers
-    ->where(|x| => x % 2 == 0) // Where... only evens
-    ->select(|x| => x ** 2) // Select... squares
-    ->each(|x| => std::puts("Number: \${x}")); // Each... puts!`;
+    ->where(|x| => x % 2 == 0)                 %% Where... only evens
+    ->select(|x| => x ** 2)                    %% Select... squares
+    ->each(|x| => std::puts("Number: \${x}"));  %% Each... puts!`;
 };
 
 var exampleMerging = () => {
@@ -96,5 +96,5 @@ alice := new obj_person {
     city: "New York";
 };
 
-alice->show_info();`;
+alice->show_info(); %% Alice lives in New York, email: alice@work.com`;
 };

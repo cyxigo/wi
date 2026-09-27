@@ -118,7 +118,7 @@ function initRuntime() {
     runtimeInitialized = true;
     if (!Module["noFSInit"] && !FS.initialized) FS.init();
     TTY.init();
-    wasmExports["K"]();
+    wasmExports["L"]();
     FS.ignorePermissions = false;
 }
 function postRun() {
@@ -2749,6 +2749,15 @@ function ___syscall_rmdir(path) {
         return -e.errno;
     }
 }
+function ___syscall_stat64(path, buf) {
+    try {
+        path = SYSCALLS.getStr(path);
+        return SYSCALLS.writeStat(buf, FS.stat(path));
+    } catch (e) {
+        if (typeof FS == "undefined" || !(e.name === "ErrnoError")) throw e;
+        return -e.errno;
+    }
+}
 function ___syscall_unlinkat(dirfd, path, flags) {
     try {
         path = SYSCALLS.getStr(path);
@@ -3139,41 +3148,42 @@ var _wi_wasm_init,
     wasmMemory,
     wasmTable;
 function assignWasmExports(wasmExports) {
-    _wi_wasm_init = Module["_wi_wasm_init"] = wasmExports["M"];
-    _wi_wasm_run = Module["_wi_wasm_run"] = wasmExports["N"];
-    _setThrew = wasmExports["O"];
-    __emscripten_stack_restore = wasmExports["P"];
-    __emscripten_stack_alloc = wasmExports["Q"];
-    _emscripten_stack_get_current = wasmExports["R"];
-    memory = wasmMemory = wasmExports["J"];
-    __indirect_function_table = wasmTable = wasmExports["L"];
+    _wi_wasm_init = Module["_wi_wasm_init"] = wasmExports["N"];
+    _wi_wasm_run = Module["_wi_wasm_run"] = wasmExports["O"];
+    _setThrew = wasmExports["P"];
+    __emscripten_stack_restore = wasmExports["Q"];
+    __emscripten_stack_alloc = wasmExports["R"];
+    _emscripten_stack_get_current = wasmExports["S"];
+    memory = wasmMemory = wasmExports["K"];
+    __indirect_function_table = wasmTable = wasmExports["M"];
 }
 var wasmImports = {
-    H: ___syscall_faccessat,
+    I: ___syscall_faccessat,
     j: ___syscall_fcntl64,
-    C: ___syscall_getcwd,
-    v: ___syscall_getdents64,
-    E: ___syscall_ioctl,
-    y: ___syscall_mkdirat,
+    D: ___syscall_getcwd,
+    w: ___syscall_getdents64,
+    F: ___syscall_ioctl,
+    z: ___syscall_mkdirat,
     k: ___syscall_openat,
-    r: ___syscall_renameat,
-    s: ___syscall_rmdir,
-    u: ___syscall_unlinkat,
+    s: ___syscall_renameat,
+    t: ___syscall_rmdir,
+    r: ___syscall_stat64,
+    v: ___syscall_unlinkat,
     q: __emscripten_system,
     o: __emscripten_throw_longjmp,
-    w: __gmtime_js,
-    I: _print_err,
+    x: __gmtime_js,
+    J: _print_err,
     m: _print_out,
-    x: __tzset_js,
-    G: _clock_time_get,
-    F: _emscripten_date_now,
+    y: __tzset_js,
+    H: _clock_time_get,
+    G: _emscripten_date_now,
     h: _emscripten_get_now,
     p: _emscripten_resize_heap,
-    A: _environ_get,
-    B: _environ_sizes_get,
+    B: _environ_get,
+    C: _environ_sizes_get,
     d: _fd_close,
-    D: _fd_read,
-    z: _fd_seek,
+    E: _fd_read,
+    A: _fd_seek,
     i: _fd_write,
     l: invoke_ii,
     e: invoke_iii,
@@ -3182,7 +3192,7 @@ var wasmImports = {
     c: invoke_vi,
     b: invoke_vii,
     a: invoke_viii,
-    t: invoke_viiii,
+    u: invoke_viiii,
     f: invoke_vij,
 };
 function invoke_ii(index, a1) {
