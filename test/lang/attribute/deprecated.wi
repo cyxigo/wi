@@ -1,3 +1,3 @@
-%% $ok
+%% $fail
 x @deprecated := "hi";
 std::puts(x);
