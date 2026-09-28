@@ -1258,152 +1258,20 @@ _compiler_new_expr(struct wi_compiler* compiler, bool can_assign) {
     compiler->slot_count -= count;
 }
 
-static void
-_compiler_import_foreign(struct wi_compiler* compiler, struct wi_string* lib_path, struct wi_string* script_path) {
-    wi_value path_value = WI_MAKE_BOX_VALUE(lib_path);
-    wi_value cached;
-
-    if (wi_table_get(&compiler->state->imported, path_value, &cached)) {
-        _compiler_emit_push(compiler, cached);
-        return;
-    }
-
-    /* wasm, macos, etc. */
-#if !defined(_WIN32) && !defined(__linux__)
-    wi_parser_error_at_prev(compiler->parser,
-                            "could not import %s\n   no script %s\n   foreign libraries are not supported on "
-                            "this platform",
-                            lib_path->buf, script_path->buf);
-#else
-
-    /* prepare for seeing horrifying things... platform-specific code!!! */
-    struct wi_state* state = compiler->state;
-
-    size_t raw_path_len = (size_t)lib_path->count;
-    char*  raw_path     = lib_path->buf;
-    char   path[WI_PATH_MAX];
-    size_t path_size = sizeof(path);
-
-    typedef struct wi_module* (*wi_module_init_fn)(struct wi_state* state);
-
-    /* platform-specific code is a legitimate way of torturing */
-#ifdef _WIN32
-    DWORD len = GetModuleFileName(NULL, path, (DWORD)path_size);
-
-    if (len < 1 || len >= path_size) {
-        wi_parser_error_at_prev(compiler->parser, "call to GetModuleFileName failed or path truncated");
-    }
-
-    char* last_slash = strrchr(path, '\\');
-
-    if (last_slash) {
-        *last_slash = '\0';
-    }
-
-    size_t path_len  = strlen(path);
-    size_t remaining = path_size - path_len;
-
-    /* 10: '\lib\' + '.dll' + '\0' */
-    if (remaining < 10 || raw_path_len > (remaining - 10)) {
-        wi_parser_error_at_prev(compiler->parser, "library path too long");
-    }
-
-    snprintf(path + path_len, remaining, "\\lib\\%s.dll", raw_path);
-    HMODULE lib = LoadLibraryA(path);
-
-    if (!lib) {
-        wi_parser_error_at_prev(compiler->parser,
-                                "could not import %s\n   no script %s\n   failed to load library %s (error %lu)",
-                                raw_path, script_path->buf, path, GetLastError());
-    }
-
-    union {
-        FARPROC           proc;
-        wi_module_init_fn fn;
-    } proc_conv;
-
-    proc_conv.proc         = GetProcAddress(lib, "wi_module_init");
-    wi_module_init_fn init = proc_conv.fn;
-#else  /* __linux__ */
-    ssize_t len = readlink("/proc/self/exe", path, path_size - 1);
-
-    if (len == -1) {
-        wi_parser_error_at_prev(compiler->parser, "call to readlink failed");
-    }
-
-    path[len] = '\0';
-
-    char* last_slash = strrchr(path, '/');
-
-    if (last_slash) {
-        *last_slash = '\0';
-    }
-
-    size_t path_len  = strlen(path);
-    size_t remaining = path_size - path_len;
-
-    /* 9: '/lib/' + '.so' + '\0' */
-    if (remaining < 9 || raw_path_len > (remaining - 9)) {
-        wi_parser_error_at_prev(compiler->parser, "library path too long");
-    }
-
-    snprintf(path + path_len, remaining, "/lib/%s.so", raw_path);
-    void* lib = dlopen(path, RTLD_NOW | RTLD_GLOBAL);
-
-    if (!lib) {
-        wi_parser_error_at_prev(compiler->parser,
-                                "could not import %s\n   no script %s\n   failed to load library %s:\n   %s",
-                                raw_path, script_path->buf, path, dlerror());
-    }
-
-    union {
-        void*             ptr;
-        wi_module_init_fn fn;
-    } sym_conv;
-
-    sym_conv.ptr           = dlsym(lib, "wi_module_init");
-    wi_module_init_fn init = sym_conv.fn;
-#endif /* _WIN32 */
-
-    if (!init) {
-        wi_lib_close(lib);
-        wi_parser_error_at_prev(compiler->parser, "library %s did not export wi_module_init", raw_path);
-    }
-
-    struct wi_lib_node* node   = wi_state_add_lib(state, lib);
-    bool                is_new = !node->module;
-
-    if (is_new) {
-        node->module = init(state);
-    }
-
-    wi_value module = WI_MAKE_BOX_VALUE(node->module);
-    wi_table_set(&state->imported, path_value, module);
-    _compiler_emit_push(compiler, module);
-
-    if (is_new) {
-        wi_state_drop(state); /* init pushed module on the stack */
-    }
-
-#endif /* !defined(_WIN32) && !defined(__linux__) */
-}
-
 /*
-    returns the length of the directory part of [path], including the trailing separator
-    or 0 if [path] has no directory in it (e.g. "main.wi", "<stdin>")
+    below is the most horrifying, frightening, spine chilling thing i ever made
+    the import expression implementation
+    i tried my best to make it at least readable, even commented most of the functions
+    but no amount of my pain will ever make platform-specific library loading actually readable
+    it includes such things as string manipulation and... and that's enough to make you horrified
 */
-static int
-_import_dir_len(const char* path) {
-    const char* slash = strrchr(path, '/');
 #ifdef _WIN32
-    const char* backslash = strrchr(path, '\\');
-
-    if (backslash > slash) {
-        slash = backslash;
-    }
+#define _LIB_EXT ".dll"
+#define _LIB_DIR "\\lib\\"
+#else
+#define _LIB_EXT ".so"
+#define _LIB_DIR "/lib/"
 #endif
-    return slash ? (int)(slash - path + 1) : 0;
-}
 
 static bool
 _import_is_absolute(const char* path) {
@@ -1416,41 +1284,238 @@ _import_is_absolute(const char* path) {
 #endif
 }
 
+/* length of the directory part of [path], including the trailing separator */
+static int
+_import_dir_len(const char* path) {
+    int len = (int)strlen(path);
+
+    while (len > 0 && path[len - 1] != '/'
+#ifdef _WIN32
+           && path[len - 1] != '\\'
+#endif
+    ) {
+        len--;
+    }
+
+    return len;
+}
+
+/* path relative to the current script, or [name] if it's absolute */
+static char*
+_import_script_path(struct wi_compiler* compiler, struct wi_token name, const char* ext) {
+    const char* base    = compiler->module->path;
+    int         dir_len = _import_is_absolute(name.start) ? 0 : _import_dir_len(base);
+    char*       path    = wi_sprintf("%.*s%.*s%s", dir_len, base, name.count, name.start, ext);
+
+    if (!path) {
+        wi_parser_oom(compiler->parser, "failed to allocate the import path (_import_script_path)");
+    }
+
+    return path;
+}
+
+/* path in the "lib" directory next to the wi executable, or NULL if that can't be located on this platform */
+static char*
+_import_lib_path(struct wi_compiler* compiler, struct wi_token name, const char* ext) {
+#if !defined(_WIN32) && !defined(__linux__)
+    WI_UNUSED(compiler);
+    WI_UNUSED(name);
+    WI_UNUSED(ext);
+    return NULL;
+#else
+    char exe[WI_PATH_MAX];
+
+#ifdef _WIN32
+    DWORD len = GetModuleFileName(NULL, exe, (DWORD)sizeof(exe));
+
+    if (len < 1 || len >= sizeof(exe)) {
+        wi_parser_error_at_prev(compiler->parser, "call to GetModuleFileName failed or path truncated");
+    }
+
+    char* slash = strrchr(exe, '\\');
+#else
+    ssize_t len = readlink("/proc/self/exe", exe, sizeof(exe) - 1);
+
+    if (len == -1) {
+        wi_parser_error_at_prev(compiler->parser, "call to readlink failed");
+    }
+
+    exe[len]    = '\0';
+    char* slash = strrchr(exe, '/');
+#endif /* _WIN32 */
+
+    if (slash) {
+        *slash = '\0';
+    }
+
+    char* path = wi_sprintf("%s" _LIB_DIR "%.*s%s", exe, name.count, name.start, ext);
+
+    if (!path) {
+        wi_parser_oom(compiler->parser, "failed to allocate the import path (_import_lib_path)");
+    }
+
+    return path;
+#endif /* !defined(_WIN32) && !defined(__linux__) */
+}
+
+/* note one failed attempt at the given path, appending to [*atts] */
+static void
+_import_note_attempt(struct wi_compiler* compiler, char** atts, const char* format, ...) {
+    va_list args;
+    va_start(args, format);
+    char* att = wi_vasprintf(format, args);
+    va_end(args);
+
+    if (!att) {
+        wi_parser_oom(compiler->parser, "failed to allocate an error message (_import_note_attempt)");
+    }
+
+    char* added = wi_sprintf("%s\n   %s", *atts ? *atts : "", att);
+    free(att);
+
+    if (!added) {
+        wi_parser_oom(compiler->parser, "failed to allocate an error message (_import_note_attempt)");
+    }
+
+    free(*atts);
+    *atts = added;
+}
+
+static bool
+_compiler_import_script(struct wi_compiler* compiler, char* path, char** atts) {
+    if (!path) {
+        return false;
+    }
+
+    struct wi_state* state = compiler->state;
+
+    if (state->import_exists(state, path)) {
+        struct wi_string* box      = wi_take_calloc_string(compiler->gc, path, (int)strlen(path));
+        uint16_t          constant = _compiler_make_constant(compiler, WI_MAKE_BOX_VALUE(box));
+        _compiler_emit_opcode_short(compiler, WI_OP_IMPORT, constant);
+        return true;
+    }
+
+    _import_note_attempt(compiler, atts, "no script %s", path);
+    free(path);
+    return false;
+}
+
+#if defined(_WIN32) || defined(__linux__)
+static bool
+_compiler_import_foreign(struct wi_compiler* compiler, char* lib_path, char** atts) {
+    struct wi_state*  state      = compiler->state;
+    struct wi_string* path       = wi_take_calloc_string(compiler->gc, lib_path, (int)strlen(lib_path));
+    wi_value          path_value = WI_MAKE_BOX_VALUE(path);
+    wi_value          cached;
+
+    if (wi_table_get(&state->imported, path_value, &cached)) {
+        _compiler_emit_push(compiler, cached);
+        return true;
+    }
+
+    typedef struct wi_module* (*_module_init_fn)(struct wi_state* state);
+    /* prepare for seeing horrifying things... platform-specific code!!! */
+#ifdef _WIN32
+    HMODULE lib = LoadLibraryA(path->buf);
+
+    if (!lib) {
+        _import_note_attempt(compiler, atts, "failed to load library %s (error %lu)", path->buf, GetLastError());
+        return false;
+    }
+
+    union {
+        FARPROC         proc;
+        _module_init_fn fn;
+    } proc_conv;
+
+    proc_conv.proc       = GetProcAddress(lib, "wi_module_init");
+    _module_init_fn init = proc_conv.fn;
+#else  /* __linux__ */
+    dlerror(); /* reset dlerror */
+    void* lib = dlopen(path->buf, RTLD_NOW | RTLD_GLOBAL);
+
+    if (!lib) {
+        /* dlerror will append the library name for us, including : */
+        _import_note_attempt(compiler, atts, "failed to load library %s", dlerror());
+        return false;
+    }
+
+    union {
+        void*           ptr;
+        _module_init_fn fn;
+    } sym_conv;
+
+    sym_conv.ptr         = dlsym(lib, "wi_module_init");
+    _module_init_fn init = sym_conv.fn;
+#endif /* _WIN32 */
+
+    if (!init) {
+        wi_lib_close(lib);
+        wi_parser_error_at_prev(compiler->parser, "library %s did not export wi_module_init", path->buf);
+    }
+
+    WI_GC_PUSH_ROOT(compiler->gc, path);
+    struct wi_lib_node* node   = wi_state_add_lib(state, lib);
+    bool                is_new = !node->module;
+
+    if (is_new) {
+        node->module = init(state);
+    }
+
+    wi_value module = WI_MAKE_BOX_VALUE(node->module);
+    wi_table_set(&state->imported, path_value, module);
+    _compiler_emit_push(compiler, module);
+
+    if (is_new) {
+        wi_state_drop(state); /* init pushed module to the stack */
+    }
+
+    wi_gc_pop_root(compiler->gc);
+    return true;
+}
+#endif /* defined(_WIN32) || defined(__linux__) */
+
 static void
 _compiler_import_expr(struct wi_compiler* compiler, bool can_assign) {
     WI_UNUSED(can_assign);
-    struct wi_token path_token = wi_parser_expect(compiler->parser, WI_TOKEN_STRING);
+    struct wi_token name = wi_parser_expect(compiler->parser, WI_TOKEN_STRING);
+    char*           atts = NULL;
 
     /*
-        path shenanigans begin here
-        all of this is so we actually search for modules relative to the current module
-        not relative to the CWD
+        ./file.wi
+        lib/file.wi
     */
-    const char* base     = compiler->module->path;
-    int         base_len = _import_is_absolute(path_token.start) ? 0 : _import_dir_len(base);
-
-    char* resolved = wi_sprintf("%.*s%.*s.wi", base_len, base, path_token.count, path_token.start);
-
-    if (!resolved) {
-        wi_parser_oom(compiler->parser, "failed to allocate the import path (_compiler_import_expr)");
-    }
-
-    struct wi_string* script_path = wi_take_calloc_string(compiler->gc, resolved, (int)strlen(resolved));
-    WI_GC_PUSH_ROOT(compiler->gc, script_path);
-
-    if (compiler->state->import_exists(compiler->state, script_path->buf)) {
-        uint16_t path_constant = _compiler_make_constant(compiler, WI_MAKE_BOX_VALUE(script_path));
-        _compiler_emit_opcode_short(compiler, WI_OP_IMPORT, path_constant);
-        wi_gc_pop_root(compiler->gc);
+    if (_compiler_import_script(compiler, _import_script_path(compiler, name, ".wi"), &atts) ||
+        _compiler_import_script(compiler, _import_lib_path(compiler, name, ".wi"), &atts)) {
+        free(atts);
         return;
     }
 
-    struct wi_string* lib_path = wi_copy_cstring(compiler->gc, path_token.start, path_token.count);
-    wi_gc_pop_root(compiler->gc); /* script_path */
-    WI_GC_PUSH_ROOT(compiler->gc, lib_path);
-    _compiler_import_foreign(compiler, lib_path, script_path);
-    wi_gc_pop_root(compiler->gc);
-    /* and never end... */
+    /*
+        ./lib.so
+        lib/lib.so
+    */
+#if defined(_WIN32) || defined(__linux__)
+    if (_compiler_import_foreign(compiler, _import_script_path(compiler, name, _LIB_EXT), &atts) ||
+        _compiler_import_foreign(compiler, _import_lib_path(compiler, name, _LIB_EXT), &atts)) {
+        free(atts);
+        return;
+    }
+#else
+    _import_note_attempt(compiler, &atts, "foreign libraries are not supported on this platform");
+#endif
+
+    char* error = wi_sprintf("failed to import %.*s%s", name.count, name.start, atts);
+    free(atts);
+
+    if (!error) {
+        wi_parser_oom(compiler->parser, "failed to allocate an error message (_compiler_import_expr)");
+    }
+
+    /* boxed so the error longjmp doesn't leak it, gc will free it */
+    struct wi_string* box = wi_take_calloc_string(compiler->gc, error, (int)strlen(error));
+    wi_parser_error_at_prev(compiler->parser, "%s", box->buf);
 }
 
 static struct _parse_rule _g_rules[] = {
