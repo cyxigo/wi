@@ -43,6 +43,7 @@ struct wi_lib_node {
     struct wi_lib_node* next;
     wi_lib_handle       handle;
     struct wi_module*   module;
+    wi_value            path;
 };
 
 struct wi_call_frame {

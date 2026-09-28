@@ -1461,6 +1461,7 @@ _compiler_import_foreign(struct wi_compiler* compiler, char* lib_path, char** at
 
     if (is_new) {
         node->module = init(state);
+        node->path   = path_value;
     }
 
     wi_value module = WI_MAKE_BOX_VALUE(node->module);

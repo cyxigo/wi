@@ -286,6 +286,7 @@ wi_state_add_lib(struct wi_state* state, wi_lib_handle handle) {
     new_lib->next   = state->libs;
     new_lib->handle = handle;
     new_lib->module = NULL;
+    new_lib->path   = wi_make_null_value();
     state->libs     = new_lib;
 
     return new_lib;
@@ -297,6 +298,7 @@ wi_state_close_libs_from(struct wi_state* state, struct wi_lib_node* from) {
 
     while (lib != from) {
         struct wi_lib_node* next = lib->next;
+        wi_table_delete(&state->imported, lib->path);
         wi_lib_close(lib->handle);
         free(lib);
         lib = next;
