@@ -241,7 +241,12 @@ wi_push_bool(struct wi_state* state, bool bool_) {
 
 void
 wi_push_string(struct wi_state* state, const char* string) {
-    struct wi_string* box = wi_make_string(state->gc, string);
+    wi_push_lstring(state, string, (int)strlen(string));
+}
+
+void
+wi_push_lstring(struct wi_state* state, const char* string, int count) {
+    struct wi_string* box = wi_copy_cstring(state->gc, string, count);
     wi_state_ppush(state, WI_MAKE_BOX_VALUE(box));
 }
 
@@ -453,6 +458,11 @@ wi_arg_is_userdata(struct wi_state* state, uint8_t arg, const char* name) {
 bool
 wi_arg_is_module(struct wi_state* state, uint8_t arg) {
     return wi_value_is_module(state->ffi_stack[arg]);
+}
+
+void
+wi_push_arg(struct wi_state* state, uint8_t arg) {
+    wi_state_ppush(state, state->ffi_stack[arg]);
 }
 
 wi_real

@@ -122,7 +122,8 @@ typedef void (*wi_on_compile_fn)(wi_state* state);
 
 /**
  * Function called in the `import` statement. Use this in a custom virtual filesystem (your app, for example).
- * Must return Wi code
+ * Must return Wi code as a NUL-terminated `malloc`ed string (Wi takes ownership and `free`s it) or `NULL` if the
+ * file failed to load
  */
 typedef char* (*wi_import_load_fn)(wi_state* state, const char* path);
 
@@ -550,6 +551,16 @@ WI_API void
 wi_push_string(wi_state* state, const char* string);
 
 /**
+ * Push a string with an explicit byte count onto the stack
+ *
+ * @param state Wi state instance
+ * @param string String (**must** be valid UTF-8, invalid - undefined behavior)
+ * @param count String byte count
+ */
+WI_API void
+wi_push_lstring(wi_state* state, const char* string, int count);
+
+/**
  * Push a new, empty array onto the stack
  *
  * @param state Wi state instance
@@ -809,6 +820,15 @@ wi_arg_is_object(wi_state* state, uint8_t arg);
  */
 WI_API bool
 wi_arg_is_module(wi_state* state, uint8_t arg);
+
+/**
+ * Push a copy of an argument (of any type) onto the stack
+ *
+ * @param state Wi state instance
+ * @param arg Argument index (1-[arg_count])
+ */
+WI_API void
+wi_push_arg(wi_state* state, uint8_t arg);
 
 /**
  * Get a real argument with type-checking
