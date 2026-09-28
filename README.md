@@ -38,6 +38,16 @@ whiskers->meow();   %% Whiskers says meow! (=^･ω･^=)
 
 Want to try it? [Try it here!](https://wi-lang.pages.dev/try)
 
+## Supported platforms
+
+| Platform | Toolchain   | Support                                                                                                                                                             |
+| -------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Linux    | GCC         | Full                                                                                                                                                                |
+| Windows  | MSVC, MinGW | Full                                                                                                                                                                |
+| WASM     | Emscripten  | Partial, only [`wi_wasm_init/wi_wasm_run`](https://github.com/cyxigo/wi/blob/main/src/wasm/wi_wasm.c) are exported (used by "Try Wi online!"), no foreign libraries |
+
+Other platforms (macOS, BSD, etc.) are not officially supported. Wi may build there, but it is not tested and foreign libraries are unavailable. Contributions towards the support of different platforms can be done via [pull requests](https://github.com/cyxigo/wi/pulls)!
+
 ## Building
 
 Requires [`xmake`](https://xmake.io/guide/quick-start.html#installation) and any **C99** compiler. Then simply:
@@ -46,22 +56,8 @@ Requires [`xmake`](https://xmake.io/guide/quick-start.html#installation) and any
 xmake
 ```
 
-For max speed and performance, it is better to use **GNU99** compatible compiler, since Wi uses many **GNU** extensions for performance tweaks. Wi has zero dependencies but it would be nice to have the `readline` library if you're building Wi on Linux (Wi uses it for better REPL).
-
+For max speed and performance, it is better to use **GNU99** compatible compiler, since Wi uses many **GNU** extensions for performance tweaks. Wi has zero dependencies but it would be nice to have the `readline` library if you're building Wi on Linux (Wi uses it for better REPL).  
 This produces Wi shared library and executable.
-
-### WASM
-
-Requires [`emcc`](https://emscripten.org/docs/getting_started/downloads.html). Then:
-
-```bash
-xmake f -p wasm
-xmake
-```
-
-This produces `wi.js` + `wi.wasm` (for functions see [`wi_wasm.c`](https://github.com/cyxigo/wi/blob/main/src/wasm/wi_wasm.c)) for embedding Wi in a web page.
-
-You can also use [`build.sh`](https://github.com/cyxigo/wi/blob/main/util/build.sh) utility script for building Wi (Windows + Linux/WASM).
 
 ## Structure
 
