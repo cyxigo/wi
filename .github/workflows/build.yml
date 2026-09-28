@@ -1,4 +1,4 @@
-name: "Build Wi (GCC/MSVC/MinGW/EMCC)"
+name: "Build Wi (GCC/Clang/MSVC/MinGW/EMCC)"
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
     branches: ["main"]
 
 jobs:
-  linux:
+  gcc:
     name: GCC (Linux)
     runs-on: ubuntu-latest
     steps:
@@ -24,7 +24,24 @@ jobs:
           xmake f --toolchain=gcc
           xmake
 
-  windows:
+  clang:
+    name: Clang (Linux)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install xmake
+        uses: xmake-io/github-action-setup-xmake@v1
+        with:
+          xmake-version: latest
+
+      - name: Build with Clang
+        run: |
+          xmake f --toolchain=clang
+          xmake
+
+  msvc:
     name: MSVC (Windows)
     runs-on: windows-latest
     steps:
@@ -38,7 +55,7 @@ jobs:
 
       - name: Build with MSVC
         run: |
-          xmake f --toolchain=msvc 
+          xmake f --toolchain=msvc
           xmake -j1
 
   mingw:
