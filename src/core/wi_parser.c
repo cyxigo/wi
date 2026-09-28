@@ -176,16 +176,16 @@ wi_parser_warning_at(struct wi_parser* parser, struct wi_token token, const char
         return;
     }
 
-    state->out(state, "compile warning: ");
+    state->error(state, "compile warning: ");
 
     va_list args;
     va_start(args, format);
-    wi_vprintf(state, state->out, format, args);
+    wi_vprintf(state, state->error, format, args);
     va_end(args);
 
-    state->out(state, "\n");
-    _parser_print_token_line(parser, state->out, token);
-    wi_printf(state, state->out, "   --> %s:%i:%i\n", parser->lexer->file_path, token.line, token.col);
+    state->error(state, "\n");
+    _parser_print_token_line(parser, state->error, token);
+    wi_printf(state, state->error, "   --> %s:%i:%i\n", parser->lexer->file_path, token.line, token.col);
 }
 
 void
