@@ -40,11 +40,14 @@ Want to try it? [Try it here!](https://wi-lang.pages.dev/try)
 
 ## Supported platforms
 
-| Platform | Toolchain   | Support                                                                                                                                                             |
-| -------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Linux    | GCC         | Full                                                                                                                                                                |
-| Windows  | MSVC, MinGW | Full                                                                                                                                                                |
-| WASM     | Emscripten  | Partial, only [`wi_wasm_init/wi_wasm_run`](https://github.com/cyxigo/wi/blob/main/src/wasm/wi_wasm.c) are exported (used by "Try Wi online!"), no foreign libraries |
+| Platform | Toolchain         | Support                                                                                                                     |
+| -------- | ----------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| Linux    | GCC, Clang, MinGW | Full                                                                                                                        |
+| Windows  | MSVC, MinGW       | Full                                                                                                                        |
+| WASM     | Emscripten        | Partial, only [`wi_wasm_init/wi_wasm_run`](https://github.com/cyxigo/wi/blob/main/src/wasm/wi_wasm.c), no foreign libraries |
+
+
+WASM support is, as you can see, pretty minimal. Since it's only used by that [little Wi playground](https://wi-lang.pages.dev/try).
 
 Other platforms (macOS, BSD, etc.) are not officially supported. Wi may build there, but it is not tested and foreign libraries are unavailable. Contributions towards the support of different platforms can be done via [pull requests](https://github.com/cyxigo/wi/pulls)!
 
