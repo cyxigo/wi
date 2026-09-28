@@ -257,7 +257,7 @@ wi_state_extra(struct wi_state* state) {
     return state->extra;
 }
 
-bool
+struct wi_lib_node*
 wi_state_add_lib(struct wi_state* state, wi_lib_handle handle) {
     struct wi_lib_node* lib = state->libs;
 
@@ -270,7 +270,7 @@ wi_state_add_lib(struct wi_state* state, wi_lib_handle handle) {
                 of the handle
             */
             wi_lib_close(handle);
-            return false;
+            return lib;
         }
 
         lib = lib->next;
@@ -283,11 +283,12 @@ wi_state_add_lib(struct wi_state* state, wi_lib_handle handle) {
         wi_state_oom(state, "failed to allocate a library node (wi_state_add_lib)");
     }
 
-    new_lib->handle = handle;
     new_lib->next   = state->libs;
+    new_lib->handle = handle;
+    new_lib->module = NULL;
     state->libs     = new_lib;
 
-    return true;
+    return new_lib;
 }
 
 void

@@ -1370,14 +1370,20 @@ _compiler_import_foreign(struct wi_compiler* compiler, struct wi_string* lib_pat
         wi_parser_error_at_prev(compiler->parser, "library %s did not export wi_module_init", raw_path);
     }
 
-    if (!wi_state_add_lib(state, lib)) {
-        return;
+    struct wi_lib_node* node   = wi_state_add_lib(state, lib);
+    bool                is_new = !node->module;
+
+    if (is_new) {
+        node->module = init(state);
     }
 
-    wi_value module = WI_MAKE_BOX_VALUE(init(state));
+    wi_value module = WI_MAKE_BOX_VALUE(node->module);
     wi_table_set(&state->imported, path_value, module);
     _compiler_emit_push(compiler, module);
-    wi_state_drop(state);
+
+    if (is_new) {
+        wi_state_drop(state); /* init pushed module on the stack */
+    }
 
 #endif /* !defined(_WIN32) && !defined(__linux__) */
 }

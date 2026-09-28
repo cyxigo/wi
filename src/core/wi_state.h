@@ -42,6 +42,7 @@ enum {
 struct wi_lib_node {
     struct wi_lib_node* next;
     wi_lib_handle       handle;
+    struct wi_module*   module;
 };
 
 struct wi_call_frame {
@@ -188,7 +189,7 @@ wi_state_set_extra(struct wi_state* state, void* extra);
 void*
 wi_state_extra(struct wi_state* state);
 
-bool
+struct wi_lib_node*
 wi_state_add_lib(struct wi_state* state, wi_lib_handle lib);
 void
 wi_state_close_libs_from(struct wi_state* state, struct wi_lib_node* from);
