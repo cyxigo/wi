@@ -280,7 +280,7 @@ wi_state_add_lib(struct wi_state* state, wi_lib_handle handle) {
 
     if (!new_lib) {
         wi_lib_close(handle);
-        return false;
+        wi_state_oom(state, "failed to allocate a library node (wi_state_add_lib)");
     }
 
     new_lib->handle = handle;
