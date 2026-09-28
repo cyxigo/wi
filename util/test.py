@@ -42,7 +42,7 @@ def test(path, recursive=False):
             skip("has no respective .wiwi file")
             continue
 
-        result = run([wi, script], capture_output=True, text=True)
+        result = run([wi, script.as_posix()], capture_output=True, text=True)
         actual = getattr(result, stream)
         expected = out.read_text()
 
