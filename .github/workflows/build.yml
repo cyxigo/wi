@@ -1,4 +1,4 @@
-name: "Build Wi (GCC/Clang/MSVC/MinGW/EMCC)"
+name: "Build Wi"
 
 on:
   push:
