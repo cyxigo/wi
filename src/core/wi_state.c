@@ -31,8 +31,22 @@
 #include "wi_util.h"
 #include "wi_value.h"
 
+WI_INLINE void
+_state_close_upvalues(struct wi_state* state, wi_value* last) {
+    while (WI_UNLIKELY(state->open_upvalues && state->open_upvalues->location >= last)) {
+        struct wi_upvalue* upvalue = state->open_upvalues;
+
+        upvalue->closed   = *upvalue->location;
+        upvalue->location = &upvalue->closed;
+        WI_GC_WRITE_BARRIER(state->gc, upvalue, upvalue->closed);
+
+        state->open_upvalues = upvalue->next;
+    }
+}
+
 static void
 _state_reset(struct wi_state* state) {
+    _state_close_upvalues(state, state->stack);
     struct wi_recovery* recovery = state->recoveries;
 
     while (recovery) {
@@ -48,7 +62,6 @@ _state_reset(struct wi_state* state) {
     state->ffi_stack      = NULL;
     state->frame_count    = 0;
     state->c_depth        = 0;
-    state->open_upvalues  = NULL;
 }
 
 static void
@@ -146,6 +159,7 @@ wi_new_state(wi_conf* conf) {
         return NULL;
     }
 
+    state->open_upvalues = NULL;
     _state_reset(state);
 
     state->main_module          = NULL;
@@ -350,19 +364,6 @@ wi_state_pop_recovery(struct wi_state* state) {
     state->recoveries = recovery->next;
     free(recovery);
     state->recovery_count--;
-}
-
-WI_INLINE void
-_state_close_upvalues(struct wi_state* state, wi_value* last) {
-    while (WI_UNLIKELY(state->open_upvalues && state->open_upvalues->location >= last)) {
-        struct wi_upvalue* upvalue = state->open_upvalues;
-
-        upvalue->closed   = *upvalue->location;
-        upvalue->location = &upvalue->closed;
-        WI_GC_WRITE_BARRIER(state->gc, upvalue, upvalue->closed);
-
-        state->open_upvalues = upvalue->next;
-    }
 }
 
 WI_NORETURN void
