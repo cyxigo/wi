@@ -203,8 +203,7 @@ _parse_flags(int argc, const char** argv, wi_conf* conf, const char** file_path,
 
         if (arg[0] != '-') {
             if (*file_path) {
-                fprintf(stderr, "error: multiple script files specified\n");
-                exit(EXIT_FAILURE);
+                _flag_parse_error("multiple script files specified");
             }
 
             *file_path = arg;
