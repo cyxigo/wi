@@ -620,6 +620,7 @@ wi_array_set(struct wi_state* state, struct wi_array* array, int index) {
     }
 
     array->items.data[index] = value;
+    array->items.mod_count++;
     WI_GC_WRITE_BARRIER(state->gc, array, value);
     return true;
 }
