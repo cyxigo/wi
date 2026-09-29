@@ -298,7 +298,7 @@ _os_sleep(struct wi_state* state, uint8_t arg_count) {
     int64_t ms = wi_state_real_to_int(state, wi_arg_real(state, 1));
 
     if (ms < 0) {
-        wi_state_error(state, "sleep time must be positive: %lld", ms);
+        wi_state_error(state, "sleep time must not be negative: %lld", ms);
     }
 
 #ifdef _WIN32
