@@ -162,10 +162,6 @@ wi_new_state(wi_conf* conf) {
     state->open_upvalues = NULL;
     _state_reset(state);
 
-    state->main_module          = NULL;
-    state->main_module          = wi_new_module(state->gc, "<main>");
-    state->main_module->is_main = true;
-
     wi_table_init(&state->foreign, state->gc);
     wi_table_init(&state->imported, state->gc);
 
@@ -177,6 +173,11 @@ wi_new_state(wi_conf* conf) {
 
     wi_table_init(&state->refs, state->gc);
     state->ref_next = 0;
+
+    /* last here so every table above is initialized before first allocation can trigger a gc */
+    state->main_module          = NULL;
+    state->main_module          = wi_new_module(state->gc, "<main>");
+    state->main_module->is_main = true;
 
     wi_state_seed_rand(state, (uint64_t)time(NULL) ^ (uint64_t)(uintptr_t)state);
     return state;
