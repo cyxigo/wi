@@ -109,7 +109,11 @@ static void
 _parser_error_va(struct wi_parser* parser, struct wi_token token, const char* format, va_list args) {
     struct wi_state* state = parser->gc->state;
 
-    if (token.kind == WI_TOKEN_EOF) {
+    /*
+        state->frame_count == 0 so if we import something that has e.g. a missing semicolon
+        we won't consider it as "error at eof"
+    */
+    if (token.kind == WI_TOKEN_EOF && state->frame_count == 0) {
         state->was_eof_error = true;
 
         if (wi_conf_is_set(state->conf, WI_CONF_REPL)) {
