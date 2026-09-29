@@ -845,7 +845,7 @@ _state_tail_call(struct wi_state* state, struct wi_call_frame* frame, struct wi_
     struct wi_prototype* prototype = closure->prototype;
     wi_state_check_arity(state, prototype->arity, arg_count, prototype->is_variadic);
     /* calculate and, if needed, grow the slots starting from the reused frame slots */
-    _state_reserve_stack(state, prototype->max_slot_count);
+    _state_reserve_stack(state, prototype->max_slot_count + prototype->is_variadic);
     _state_close_upvalues(state, frame->slots);
 
     /*
