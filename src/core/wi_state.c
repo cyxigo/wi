@@ -775,6 +775,10 @@ _state_reserve_stack(struct wi_state* state, int needed) {
 
 static void
 _state_capture_overflow_ctx(struct wi_state* state) {
+    if (state->recoveries) {
+        return;
+    }
+
     /*
         this is useful considering that without this call stack overflow will show you
         exactly WI_STACK_MAX amount of functions in the backtrace
