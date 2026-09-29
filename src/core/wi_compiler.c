@@ -1268,9 +1268,11 @@ _compiler_new_expr(struct wi_compiler* compiler, bool can_assign) {
 #ifdef _WIN32
 #define _LIB_EXT ".dll"
 #define _LIB_DIR "\\lib\\"
+#define _CUR_DIR ".\\"
 #else
 #define _LIB_EXT ".so"
 #define _LIB_DIR "/lib/"
+#define _CUR_DIR "./"
 #endif
 
 static bool
@@ -1302,10 +1304,13 @@ _import_dir_len(const char* path) {
 
 /* path relative to the current script, or [name] if it's absolute */
 static char*
-_import_script_path(struct wi_compiler* compiler, struct wi_token name, const char* ext) {
-    const char* base    = compiler->module->path;
-    int         dir_len = _import_is_absolute(name.start) ? 0 : _import_dir_len(base);
-    char*       path    = wi_sprintf("%.*s%.*s%s", dir_len, base, name.count, name.start, ext);
+_import_script_path(struct wi_compiler* compiler, struct wi_token name, const char* ext, bool is_lib) {
+    const char* base     = compiler->module->path;
+    bool        absolute = _import_is_absolute(name.start);
+    int         dir_len  = absolute ? 0 : _import_dir_len(base);
+    /* dlopen searches the system directories unless the path has a slash in it */
+    const char* prefix = is_lib && !absolute && dir_len == 0 ? _CUR_DIR : "";
+    char*       path   = wi_sprintf("%s%.*s%.*s%s", prefix, dir_len, base, name.count, name.start, ext);
 
     if (!path) {
         wi_parser_oom(compiler->parser, "failed to allocate the import path (_import_script_path)");
@@ -1487,7 +1492,7 @@ _compiler_import_expr(struct wi_compiler* compiler, bool can_assign) {
         ./file.wi
         lib/file.wi
     */
-    if (_compiler_import_script(compiler, _import_script_path(compiler, name, ".wi"), &atts) ||
+    if (_compiler_import_script(compiler, _import_script_path(compiler, name, ".wi", false), &atts) ||
         _compiler_import_script(compiler, _import_lib_path(compiler, name, ".wi"), &atts)) {
         free(atts);
         return;
@@ -1498,7 +1503,7 @@ _compiler_import_expr(struct wi_compiler* compiler, bool can_assign) {
         lib/lib.so
     */
 #if defined(_WIN32) || defined(__linux__)
-    if (_compiler_import_foreign(compiler, _import_script_path(compiler, name, _LIB_EXT), &atts) ||
+    if (_compiler_import_foreign(compiler, _import_script_path(compiler, name, _LIB_EXT, true), &atts) ||
         _compiler_import_foreign(compiler, _import_lib_path(compiler, name, _LIB_EXT), &atts)) {
         free(atts);
         return;
