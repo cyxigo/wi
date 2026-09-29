@@ -1385,7 +1385,7 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
                 wi_value value = item_start[i * 2 + 1];
 
                 if (WI_UNLIKELY(wi_value_is_nan(key))) {
-                    wi_state_error(state, "cannot use NaN as a map key");
+                    _ERROR("cannot use NaN as a map key");
                 }
 
                 wi_table_set(&map->items, key, value);
