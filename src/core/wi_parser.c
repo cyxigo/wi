@@ -117,7 +117,7 @@ _parser_error_va(struct wi_parser* parser, struct wi_token token, const char* fo
         state->was_eof_error = true;
 
         if (wi_conf_is_set(state->conf, WI_CONF_REPL)) {
-            goto end; /* skip printing */
+            return; /* skip printing */
         }
     }
 
@@ -132,9 +132,6 @@ _parser_error_va(struct wi_parser* parser, struct wi_token token, const char* fo
 
     _parser_print_token_line(parser, state->error, token.kind == WI_TOKEN_EOF ? parser->last : token);
     wi_printf(state, state->error, "   --> %s:%i:%i\n", parser->lexer->file_path, token.line, token.col);
-
-end:
-    wi_gc_reset_roots(parser->gc);
 }
 
 WI_NORETURN void
@@ -168,7 +165,6 @@ WI_NORETURN void
 wi_parser_oom(struct wi_parser* parser, const char* what) {
     struct wi_state* state = parser->gc->state;
     wi_printf(state, state->error, "out of memory: %s\n", what);
-    wi_gc_reset_roots(parser->gc);
     longjmp(parser->error_jmp, 1);
 }
 

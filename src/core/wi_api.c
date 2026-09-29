@@ -25,7 +25,8 @@ wi_load(struct wi_state* state, const char* file_path, const char* src) {
     struct wi_prototype* prototype = wi_compile(state, file_path, src, module);
 
     if (!prototype) {
-        return false; /* no popping here since a compile error resets gc->temp_root_count */
+        wi_gc_pop_root(state->gc); /* module */
+        return false;
     }
 
     WI_GC_PUSH_ROOT(state->gc, prototype);

@@ -2025,7 +2025,8 @@ wi_compile(struct wi_state* state, const char* file_path, const char* src, struc
         a different "script" (mostly because it compiles and runs over and over, a more correct term would
         be something like a "compilation unit"), so it's pretty useful there or in any similar situation!
     */
-    struct wi_lib_node* libs = state->libs;
+    struct wi_lib_node* libs  = state->libs;
+    int                 roots = state->gc->temp_root_count;
 
     if (setjmp(parser->error_jmp) == WI_RUN_OK) {
         struct wi_compiler* compiler = wi_new_compiler(NULL, state, parser, module);
@@ -2062,7 +2063,7 @@ wi_compile(struct wi_state* state, const char* file_path, const char* src, struc
     }
 
     wi_delete_parser(parser);
-    state->gc->compiler = NULL;
-
+    state->gc->compiler        = NULL;
+    state->gc->temp_root_count = roots;
     return NULL;
 }
