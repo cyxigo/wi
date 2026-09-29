@@ -767,6 +767,7 @@ _compiler_add_esc_char(struct wi_compiler* compiler, struct wi_char_buf* buf, ch
             wi_char_buf_add(buf, '$');
             break;
         default:
+            wi_char_buf_free(buf);
             wi_parser_error_at_prev(compiler->parser, "invalid escape sequence \\%c", c);
             break;
     }
@@ -1457,6 +1458,7 @@ _compiler_import_foreign(struct wi_compiler* compiler, char* lib_path, char** at
 
     if (!init) {
         wi_lib_close(lib);
+        free(*atts);
         wi_parser_error_at_prev(compiler->parser, "library %s did not export wi_module_init", path->buf);
     }
 
