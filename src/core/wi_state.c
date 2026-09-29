@@ -730,15 +730,35 @@ _state_correct_stack(struct wi_state* state, wi_value* old_stack, wi_value* new_
     }
 }
 
+static void
+_state_capture_overflow_ctx(struct wi_state* state) {
+    if (state->recoveries) {
+        return;
+    }
+
+    /*
+        this is useful considering that without this call stack overflow will show you
+        exactly WI_STACK_MAX amount of functions in the backtrace
+        now that's NOT very useful isn't it?
+    */
+    if (state->frame_count > 0) {
+        state->frames[0]   = state->frames[state->frame_count - 1];
+        state->frame_count = 1;
+    } else {
+        state->frame_count = 0;
+    }
+}
+
 /*
     ensures [needed] more slots fit past stack top, growing (and correcting) the stack
 */
-static bool
+static void
 _state_grow_stack(struct wi_state* state, int needed) {
     int required = (int)(state->stack_top - state->stack) + needed;
 
     if (required > WI_STACK_MAX) {
-        return false;
+        _state_capture_overflow_ctx(state);
+        wi_state_error(state, "stack overflow (limit is %i)", WI_STACK_MAX);
     }
 
     int capacity = state->stack_capacity;
@@ -761,45 +781,18 @@ _state_grow_stack(struct wi_state* state, int needed) {
     state->stack_capacity = capacity;
     /* reallocating memory usually means breaking many many things... */
     _state_correct_stack(state, old_stack, new_stack);
-
-    return true;
 }
 
-WI_INLINE bool
+WI_INLINE void
 _state_reserve_stack(struct wi_state* state, int needed) {
     if (WI_UNLIKELY(state->stack_top + needed > state->stack_end)) {
-        return _state_grow_stack(state, needed);
-    }
-
-    return true;
-}
-
-static void
-_state_capture_overflow_ctx(struct wi_state* state) {
-    if (state->recoveries) {
-        return;
-    }
-
-    /*
-        this is useful considering that without this call stack overflow will show you
-        exactly WI_STACK_MAX amount of functions in the backtrace
-        now that's NOT very useful isn't it?
-    */
-    if (state->frame_count > 0) {
-        state->frames[0]   = state->frames[state->frame_count - 1];
-        state->frame_count = 1;
-    } else {
-        state->frame_count = 0;
+        _state_grow_stack(state, needed);
     }
 }
 
 void
 wi_state_ppush(struct wi_state* state, wi_value value) {
-    if (WI_UNLIKELY(!_state_reserve_stack(state, 1))) {
-        _state_capture_overflow_ctx(state);
-        wi_state_error(state, "stack overflow (limit is %i)", WI_STACK_MAX);
-    }
-
+    _state_reserve_stack(state, 1);
     wi_state_push(state, value);
 }
 
@@ -822,11 +815,7 @@ _state_call(struct wi_state* state, struct wi_closure* closure, uint8_t arg_coun
     }
 
     /* calculate and, if needed, grow the slots starting from the stack top */
-    if (WI_UNLIKELY(!_state_reserve_stack(state, prototype->max_slot_count))) {
-        _state_capture_overflow_ctx(state);
-        wi_state_error(state, "stack overflow (limit is %i)", WI_STACK_MAX);
-    }
-
+    _state_reserve_stack(state, prototype->max_slot_count + prototype->is_variadic);
     struct wi_call_frame* frame = &state->frames[state->frame_count++];
     frame->closure              = closure;
     frame->ip                   = prototype->code.bytes.data;
@@ -855,13 +844,8 @@ _state_tail_call(struct wi_state* state, struct wi_call_frame* frame, struct wi_
                  uint8_t arg_count) {
     struct wi_prototype* prototype = closure->prototype;
     wi_state_check_arity(state, prototype->arity, arg_count, prototype->is_variadic);
-
     /* calculate and, if needed, grow the slots starting from the reused frame slots */
-    if (WI_UNLIKELY(!_state_reserve_stack(state, prototype->max_slot_count))) {
-        _state_capture_overflow_ctx(state);
-        wi_state_error(state, "stack overflow (limit is %i)", WI_STACK_MAX);
-    }
-
+    _state_reserve_stack(state, prototype->max_slot_count);
     _state_close_upvalues(state, frame->slots);
 
     /*
