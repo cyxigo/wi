@@ -1,7 +1,6 @@
 CompileFlags:
   Compiler: gcc
-  Add:
-    - -std=c99
-    - -xc
-    - -Isrc
-    - -Iinclude
+  Add: [-xc, -std=c99, -Isrc, -Iinclude]
+
+Completion:
+  HeaderInsertion: Never
