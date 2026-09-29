@@ -6,6 +6,7 @@
 
 #include "wi_box.h"
 #include "wi_gc.h" /* IWYU pragma: keep */
+#include "wi_lexer.h"
 #include "wi_state.h"
 #include "wi_table.h"
 #include "wi_util.h"
@@ -246,7 +247,7 @@ wi_value_to_string(wi_value value) {
 
 wi_real
 wi_string_to_real(const char* string, int len, char** end_ptr) {
-    if (len > 2 && string[0] == '0') {
+    if (len > 2 && string[0] == '0' && wi_is_alnum(string[2])) {
         char c = string[1];
 
         if (c == 'x' || c == 'X') {
