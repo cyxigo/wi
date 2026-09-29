@@ -243,11 +243,32 @@ wi_read_stream(FILE* stream, int* count) {
     return buf;
 }
 
+#if defined(_WIN32) || !defined(WI_USE_READLINE)
+static bool
+_read_line_fgets(char** line) {
+    char buf[2048];
+
+    if (!fgets(buf, sizeof(buf), stdin)) {
+        *line = NULL;
+        return false;
+    }
+
+    *line = wi_strdup(buf);
+
+    if (!*line) {
+        return false;
+    }
+
+    (*line)[strcspn(*line, "\r\n")] = '\0';
+    return true;
+}
+#endif
+
 /*
     this function is split into three versions depending on the platform and definitions:
     on windows: use ReadConsoleW and convert input in utf-16 to utf-8
     on linux: if WI_USE_READLINE is defined, we use the readline library and its features
-              else - fallback to fgets
+              else - fallback to fgets (_read_line_fgets)
 */
 bool
 wi_read_line(char** line, const char* prompt) {
@@ -256,7 +277,14 @@ wi_read_line(char** line, const char* prompt) {
     printf("%s", prompt);
 
     /* this mess wouldn't exist if windows api wasn't so complicated for NO reason!!! */
-    HANDLE  hstdin = GetStdHandle(STD_INPUT_HANDLE);
+    HANDLE hstdin = GetStdHandle(STD_INPUT_HANDLE);
+    DWORD  mode;
+
+    /* piped/redirected stdin is not a console, ReadConsoleW will fail, use fgets! */
+    if (!GetConsoleMode(hstdin, &mode)) {
+        return _read_line_fgets(line);
+    }
+
     wchar_t wbuf[2048];
     DWORD   wbuf_len = sizeof(wbuf) / sizeof(wbuf[0]) - 1;
     DWORD   read     = 0;
@@ -300,20 +328,6 @@ wi_read_line(char** line, const char* prompt) {
     return true;
 #else
     printf("%s", prompt);
-    char buf[2048];
-
-    if (!fgets(buf, sizeof(buf), stdin)) {
-        *line = NULL;
-        return false;
-    }
-
-    *line = wi_strdup(buf);
-
-    if (!*line) {
-        return false;
-    }
-
-    (*line)[strcspn(*line, "\r\n")] = '\0';
-    return true;
+    return _read_line_fgets(line);
 #endif
 }
