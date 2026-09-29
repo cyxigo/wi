@@ -520,8 +520,8 @@ _lexer_skip_whitespace(struct wi_lexer* lexer) {
                 _lexer_advance(lexer);
                 break;
             case '#':
-                /* skip shebang */
-                if (lexer->line == 1 && _lexer_check_next(lexer, '!')) {
+                /* skip shebang (check if we EXACTLY at the start of the file) */
+                if (lexer->curr == lexer->src && _lexer_check_next(lexer, '!')) {
                     _lexer_skip_line(lexer);
                     break;
                 }
