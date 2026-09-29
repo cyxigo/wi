@@ -1907,8 +1907,10 @@ _compiler_export_stmt(struct wi_compiler* compiler) {
 
     if (!wi_parser_check(compiler->parser, WI_TOKEN_CLOSE_BRACE)) {
         do {
-            struct wi_token name       = wi_parser_expect(compiler->parser, WI_TOKEN_NAME);
-            wi_value        name_value = WI_MAKE_BOX_VALUE(wi_copy_cstring(compiler->gc, name.start, name.count));
+            struct wi_token   name     = wi_parser_expect(compiler->parser, WI_TOKEN_NAME);
+            struct wi_string* name_box = wi_copy_cstring(compiler->gc, name.start, name.count);
+            WI_GC_PUSH_ROOT(compiler->gc, name_box);
+            wi_value name_value = WI_MAKE_BOX_VALUE(name_box);
 
             if (!wi_table_get(&compiler->module->compile_vars, name_value, NULL)) {
                 wi_parser_error_at(compiler->parser, name, "variable %.*s is used but not defined", name.count,
@@ -1916,6 +1918,7 @@ _compiler_export_stmt(struct wi_compiler* compiler) {
             }
 
             wi_table_set(&compiler->module->exports, name_value, wi_make_true_value());
+            wi_gc_pop_root(compiler->gc);
         } while (wi_parser_match(compiler->parser, WI_TOKEN_COMMA) &&
                  !wi_parser_check(compiler->parser, WI_TOKEN_CLOSE_BRACE));
     }
