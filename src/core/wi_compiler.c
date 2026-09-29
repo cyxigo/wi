@@ -1492,10 +1492,14 @@ _compiler_import_expr(struct wi_compiler* compiler, bool can_assign) {
 
     /*
         ./file.wi
+        ./file/init.wi
         lib/file.wi
+        lib/file/init.wi
     */
     if (_compiler_import_script(compiler, _import_script_path(compiler, name, ".wi", false), &atts) ||
-        _compiler_import_script(compiler, _import_lib_path(compiler, name, ".wi"), &atts)) {
+        _compiler_import_script(compiler, _import_script_path(compiler, name, "/init.wi", false), &atts) ||
+        _compiler_import_script(compiler, _import_lib_path(compiler, name, ".wi"), &atts) ||
+        _compiler_import_script(compiler, _import_lib_path(compiler, name, "/init.wi"), &atts)) {
         free(atts);
         return;
     }
@@ -1514,7 +1518,7 @@ _compiler_import_expr(struct wi_compiler* compiler, bool can_assign) {
     _import_note_attempt(compiler, &atts, "foreign libraries are not supported on this platform");
 #endif
 
-    char* error = wi_sprintf("failed to import %.*s%s", name.count, name.start, atts);
+    char* error = wi_sprintf("failed to import module %.*s%s", name.count, name.start, atts);
     free(atts);
 
     if (!error) {
