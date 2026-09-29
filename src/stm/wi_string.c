@@ -390,6 +390,7 @@ _string_each(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     int   count;
     char* string = wi_arg_string(state, 1, &count, NULL);
+    wi_arg_check_function(state, 2, 1);
 
     for (size_t i = 0; i < (size_t)count;) {
         size_t cp_len    = wi_utf8_cp_len(string[i]);
@@ -412,6 +413,7 @@ _string_select(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     int   count;
     char* string = wi_arg_string(state, 1, &count, NULL);
+    wi_arg_check_function(state, 2, 1);
 
     struct wi_char_buf buf;
     wi_char_buf_init(&buf, state->gc);
@@ -462,6 +464,7 @@ _string_where(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     int   count;
     char* string = wi_arg_string(state, 1, &count, NULL);
+    wi_arg_check_function(state, 2, 1);
 
     struct wi_char_buf buf;
     wi_char_buf_init(&buf, state->gc);
