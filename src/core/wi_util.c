@@ -213,13 +213,16 @@ wi_utf8_validate(const char* buf, int count) {
 
 char*
 wi_read_stream(FILE* stream, int* count) {
+    long start = ftell(stream);
     fseek(stream, 0L, SEEK_END);
-    long file_size = ftell(stream);
-    rewind(stream);
+    long end = ftell(stream);
 
-    if (file_size < 0 || file_size > INT_MAX) {
+    if (start < 0 || end < 0 || end - start > INT_MAX) {
         return NULL;
     }
+
+    fseek(stream, start, SEEK_SET);
+    long file_size = end - start;
 
     char* buf = (char*)malloc((size_t)file_size + 1);
 
