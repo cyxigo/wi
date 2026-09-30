@@ -79,4 +79,4 @@ This programming language was created by me, and only me – a single person. It
 
 Some parts may still need polish, and I'm very open to suggestions – if you have one, [open an issue](https://github.com/cyxigo/wi/issues)!
 
-No AI was used in the development of Wi – only me, my horrendous laptop, my favorite book (Crafting Interpreters), and tons of Googling.
+No AI was used in the development of Wi – I'm all by myself.
