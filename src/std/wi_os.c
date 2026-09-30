@@ -334,6 +334,5 @@ wi_state_def_std_os(struct wi_state* state) {
         {"listdir",   _os_listdir,   1, false},
         {"sleep",     _os_sleep,     1, false},
     };
-
     WI_MODULE_EXPORT_FOREIGN_ALL(state, module, functions);
 }

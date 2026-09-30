@@ -312,7 +312,6 @@ wi_state_def_std_io(struct wi_state* state) {
         {"readbytes",  _io_readbytes,  1, false},
         {"seek",       _io_seek,       3, false},
     };
-
     WI_MODULE_EXPORT_FOREIGN_ALL(state, module, functions);
 
     wi_push_real(state, SEEK_SET);

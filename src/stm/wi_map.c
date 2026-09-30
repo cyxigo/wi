@@ -223,17 +223,19 @@ _map_where(struct wi_state* state, uint8_t arg_count) {
 
 void
 wi_state_def_stm_map(struct wi_state* state) {
-    struct wi_table* table = &state->stm_map;
-    wi_table_set_foreign(table, "copy", _map_copy, 1, false);
-    wi_table_set_foreign(table, "clear", _map_clear, 1, false);
-    wi_table_set_foreign(table, "capacity", _map_capacity, 1, false);
-    wi_table_set_foreign(table, "count", _map_count, 1, false);
-    wi_table_set_foreign(table, "keys", _map_keys, 1, false);
-    wi_table_set_foreign(table, "values", _map_values, 1, false);
-    wi_table_set_foreign(table, "has", _map_has, 2, false);
-    wi_table_set_foreign(table, "getordefault", _map_getordefault, 3, false);
-    wi_table_set_foreign(table, "remove", _map_remove, 2, false);
-    wi_table_set_foreign(table, "each", _map_each, 2, false);
-    wi_table_set_foreign(table, "select", _map_select, 3, false);
-    wi_table_set_foreign(table, "where", _map_where, 2, false);
+    wi_foreign_entry functions[] = {
+        {"copy",         _map_copy,         1, false},
+        {"clear",        _map_clear,        1, false},
+        {"capacity",     _map_capacity,     1, false},
+        {"count",        _map_count,        1, false},
+        {"keys",         _map_keys,         1, false},
+        {"values",       _map_values,       1, false},
+        {"has",          _map_has,          2, false},
+        {"getordefault", _map_getordefault, 3, false},
+        {"remove",       _map_remove,       2, false},
+        {"each",         _map_each,         2, false},
+        {"select",       _map_select,       3, false},
+        {"where",        _map_where,        2, false},
+    };
+    WI_TABLE_SET_FOREIGN_ALL(&state->stm_map, functions);
 }

@@ -438,25 +438,27 @@ _array_sort(struct wi_state* state, uint8_t arg_count) {
 
 void
 wi_state_def_stm_array(struct wi_state* state) {
-    struct wi_table* table = &state->stm_array;
-    wi_table_set_foreign(table, "copy", _array_copy, 1, false);
-    wi_table_set_foreign(table, "clear", _array_clear, 1, false);
-    wi_table_set_foreign(table, "capacity", _array_capacity, 1, false);
-    wi_table_set_foreign(table, "count", _array_count, 1, false);
-    wi_table_set_foreign(table, "reverse", _array_reverse, 1, false);
-    wi_table_set_foreign(table, "reversed", _array_reversed, 1, false);
-    wi_table_set_foreign(table, "add", _array_add, 2, false);
-    wi_table_set_foreign(table, "has", _array_has, 2, false);
-    wi_table_set_foreign(table, "indexof", _array_indexof, 2, false);
-    wi_table_set_foreign(table, "remove", _array_remove, 2, false);
-    wi_table_set_foreign(table, "removeat", _array_removeat, 2, false);
-    wi_table_set_foreign(table, "insertat", _array_insertat, 3, false);
-    wi_table_set_foreign(table, "pop", _array_pop, 1, false);
-    wi_table_set_foreign(table, "concat", _array_concat, 0, true);
-    wi_table_set_foreign(table, "slice", _array_slice, 3, false);
-    wi_table_set_foreign(table, "join", _array_join, 2, false);
-    wi_table_set_foreign(table, "each", _array_each, 2, false);
-    wi_table_set_foreign(table, "select", _array_select, 2, false);
-    wi_table_set_foreign(table, "where", _array_where, 2, false);
-    wi_table_set_foreign(table, "sort", _array_sort, 2, false);
+    wi_foreign_entry functions[] = {
+        {"copy",     _array_copy,     1, false},
+        {"clear",    _array_clear,    1, false},
+        {"capacity", _array_capacity, 1, false},
+        {"count",    _array_count,    1, false},
+        {"reverse",  _array_reverse,  1, false},
+        {"reversed", _array_reversed, 1, false},
+        {"add",      _array_add,      2, false},
+        {"has",      _array_has,      2, false},
+        {"indexof",  _array_indexof,  2, false},
+        {"remove",   _array_remove,   2, false},
+        {"removeat", _array_removeat, 2, false},
+        {"insertat", _array_insertat, 3, false},
+        {"pop",      _array_pop,      1, false},
+        {"concat",   _array_concat,   0, true },
+        {"slice",    _array_slice,    3, false},
+        {"join",     _array_join,     2, false},
+        {"each",     _array_each,     2, false},
+        {"select",   _array_select,   2, false},
+        {"where",    _array_where,    2, false},
+        {"sort",     _array_sort,     2, false},
+    };
+    WI_TABLE_SET_FOREIGN_ALL(&state->stm_array, functions);
 }

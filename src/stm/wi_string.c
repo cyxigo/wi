@@ -504,25 +504,27 @@ _string_where(struct wi_state* state, uint8_t arg_count) {
 
 void
 wi_state_def_stm_string(struct wi_state* state) {
-    struct wi_table* table = &state->stm_string;
-    wi_table_set_foreign(table, "bytes", _string_bytes, 1, false);
-    wi_table_set_foreign(table, "sub", _string_sub, 3, false);
-    wi_table_set_foreign(table, "upper", _string_upper, 1, false);
-    wi_table_set_foreign(table, "lower", _string_lower, 1, false);
-    wi_table_set_foreign(table, "trim", _string_trim, 1, false);
-    wi_table_set_foreign(table, "has", _string_has, 2, false);
-    wi_table_set_foreign(table, "indexof", _string_indexof, 2, false);
-    wi_table_set_foreign(table, "startswith", _string_startswith, 2, false);
-    wi_table_set_foreign(table, "endswith", _string_endswith, 2, false);
-    wi_table_set_foreign(table, "isdigit", _string_isdigit, 1, false);
-    wi_table_set_foreign(table, "isalpha", _string_isalpha, 1, false);
-    wi_table_set_foreign(table, "isalnum", _string_isalnum, 1, false);
-    wi_table_set_foreign(table, "compare", _string_compare, 2, false);
-    wi_table_set_foreign(table, "replace", _string_replace, 3, false);
-    wi_table_set_foreign(table, "split", _string_split, 2, false);
-    wi_table_set_foreign(table, "reverse", _string_reverse, 1, false);
-    wi_table_set_foreign(table, "repeat", _string_repeat, 2, false);
-    wi_table_set_foreign(table, "each", _string_each, 2, false);
-    wi_table_set_foreign(table, "select", _string_select, 2, false);
-    wi_table_set_foreign(table, "where", _string_where, 2, false);
+    wi_foreign_entry functions[] = {
+        {"bytes",      _string_bytes,      1, false},
+        {"sub",        _string_sub,        3, false},
+        {"upper",      _string_upper,      1, false},
+        {"lower",      _string_lower,      1, false},
+        {"trim",       _string_trim,       1, false},
+        {"has",        _string_has,        2, false},
+        {"indexof",    _string_indexof,    2, false},
+        {"startswith", _string_startswith, 2, false},
+        {"endswith",   _string_endswith,   2, false},
+        {"isdigit",    _string_isdigit,    1, false},
+        {"isalpha",    _string_isalpha,    1, false},
+        {"isalnum",    _string_isalnum,    1, false},
+        {"compare",    _string_compare,    2, false},
+        {"replace",    _string_replace,    3, false},
+        {"split",      _string_split,      2, false},
+        {"reverse",    _string_reverse,    1, false},
+        {"repeat",     _string_repeat,     2, false},
+        {"each",       _string_each,       2, false},
+        {"select",     _string_select,     2, false},
+        {"where",      _string_where,      2, false},
+    };
+    WI_TABLE_SET_FOREIGN_ALL(&state->stm_string, functions);
 }

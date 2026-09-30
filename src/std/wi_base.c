@@ -455,6 +455,5 @@ wi_state_def_std_base(struct wi_state* state) {
 
         {"equals",     _base_equals,     2, false},
     };
-
     WI_MODULE_EXPORT_FOREIGN_ALL(state, module, functions);
 }

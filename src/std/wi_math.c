@@ -279,7 +279,6 @@ wi_state_def_std_math(struct wi_state* state) {
         {"sqrt",   _math_sqrt,   1, false},
         {"tan",    _math_tan,    1, false},
     };
-
     WI_MODULE_EXPORT_FOREIGN_ALL(state, module, functions);
 
     wi_push_real(state, M_E);
