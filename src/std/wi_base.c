@@ -66,6 +66,11 @@ _base_input(struct wi_state* state, uint8_t arg_count) {
 static void
 _base_ismain(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
+
+    if (state->frame_count == 0) {
+        wi_state_error(state, "cannot call std::ismain outside of a running script");
+    }
+
     struct wi_call_frame* frame = wi_state_frame(state);
     wi_push_bool(state, frame->closure->module->is_main);
 }
