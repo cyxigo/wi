@@ -433,6 +433,7 @@ _array_sort(struct wi_state* state, uint8_t arg_count) {
         _aqsort(state, array, 0, array->items.count - 1, array->items.mod_count);
     }
 
+    array->items.mod_count++;
     wi_state_ppush(state, state->ffi_stack[1]);
 }
 
