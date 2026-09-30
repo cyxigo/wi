@@ -40,6 +40,18 @@ pre {
     min-height: 2vh;
 }
 
+table,
+th,
+td {
+    border: 1px solid black;
+    border-collapse: collapse;
+}
+
+th,
+td {
+    padding: 5px;
+}
+
 footer {
     padding: clamp(0.5rem, 2vw, 0.5rem);
     color: #868686;

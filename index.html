@@ -80,6 +80,39 @@
 
             Want to try it? <a class="button" href="https://wi-lang.pages.dev/try">Try it here!</a>
 
+            <h2>Supported platforms</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Platform</th>
+                        <th>Toolchain</th>
+                        <th>Support</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Linux</td>
+                        <td>GCC, Clang, MinGW</td>
+                        <td>Full</td>
+                    </tr>
+                    <tr>
+                        <td>Windows</td>
+                        <td>MSVC, MinGW</td>
+                        <td>Full</td>
+                    </tr>
+                    <tr>
+                        <td>WASM</td>
+                        <td>Emscripten</td>
+                        <td>
+                            Partial, only
+                            <a class="button" href="https://github.com/cyxigo/wi/blob/main/src/wasm/wi_wasm.c"
+                                >wi_wasm_init/wi_wasm_run</a
+                            >, no foreign libraries
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
             <h2>Notes</h2>
             This programming language was created by me, and only me – a single person. It's in beta, because I'm
             still designing it and <b>breaking syntax changes can happen</b>, though right now – very unlikely; the
@@ -88,8 +121,7 @@
             parts may still need polish, and I'm very open to suggestions – if you have one,
             <a class="button" href="https://github.com/cyxigo/wi/issues">open an issue</a>!
             <br />
-            No AI was used in the development of Wi – only me, my horrendous laptop, my favorite book (Crafting
-            Interpreters), and tons of Googling.
+            No AI was used in the development of Wi – I'm all by myself.
         </div>
 
         <footer>
