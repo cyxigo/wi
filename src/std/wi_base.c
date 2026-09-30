@@ -108,13 +108,12 @@ _base_error(struct wi_state* state, uint8_t arg_count) {
 static void
 _base_assert(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
-    bool is_falsy = wi_value_is_falsy(state->ffi_stack[1]);
 
-    if (is_falsy) {
+    if (wi_value_is_falsy(state->ffi_stack[1])) {
         wi_state_error(state, "%s", wi_arg_string(state, 2, NULL, NULL));
     }
 
-    wi_push_bool(state, !is_falsy);
+    wi_push_arg(state, 1);
 }
 
 static void
