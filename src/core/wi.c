@@ -168,7 +168,7 @@ _help(void) {
     printf("    --                        treat all remaining arguments as script arguments\n");
 }
 
-static void
+static WI_NORETURN void
 _flag_parse_error(const char* format, ...) {
     va_list args;
     va_start(args, format);
