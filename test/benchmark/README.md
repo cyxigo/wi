@@ -4,8 +4,8 @@ I don't have many interpreted languages installed: Wi, Lua (5.5.1), Python (3.13
 
 # Binary trees
 
-- Ruby: 0.159
-- Wi: 0.165
+- Wi: 0.151
+- Ruby: 0.158
 - Python3: 0.171
 - Lua: 0.189
 
@@ -13,22 +13,22 @@ I don't have many interpreted languages installed: Wi, Lua (5.5.1), Python (3.13
 
 - Wi: 0.118
 - Lua: 0.122
-- Ruby: 0.132
-- Python3: 0.203
+- Ruby: 0.131
+- Python3: 0.202
 
 # For
 
-- Lua: 0.052
-- Wi: 0.055
-- Ruby: 0.105
+- Lua: 0.053
+- Wi: 0.053
+- Ruby: 0.106
 - Python3: 0.107
 
 # Method call
 
-- Wi: 0.144
-- Python3: 0.147
-- Ruby: 0.148
-- Lua: 0.175
+- Wi: 0.143
+- Python3: 0.146
+- Ruby: 0.146
+- Lua: 0.169
 
 As you can see, Wi **is** fast – not the **fastest**, but **fast**. Around Lua performance.  
 There a lot of things to optimize and work on, Wi is still in beta you know.
