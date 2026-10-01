@@ -18,7 +18,7 @@ _map_clear(struct wi_state* state, uint8_t arg_count) {
     int            mod_count = map->items.mod_count;
     wi_table_free(&map->items);
     map->items.mod_count = mod_count + 1;
-    wi_push_null(state);
+    wi_push_arg(state, 1);
 }
 
 static void
