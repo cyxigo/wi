@@ -383,11 +383,8 @@ _compiler_def_var(struct wi_compiler* compiler, struct wi_token name, wi_vardata
     WI_GC_PUSH_ROOT(compiler->gc, name_box);
     wi_value name_value = WI_MAKE_BOX_VALUE(name_box);
 
-    if (wi_table_get(&compiler->state->foreign, name_value, NULL)) {
-        wi_parser_error_at(compiler->parser, name, "cannot redefine a foreign variable %s", name_box->buf);
-    }
-
-    if (wi_table_get(&compiler->module->vars, name_value, NULL)) {
+    if (wi_table_get(&compiler->state->foreign, name_value, NULL) ||
+        wi_table_get(&compiler->module->vars, name_value, NULL)) {
         wi_parser_error_at(compiler->parser, name, "variable %s is already defined", name_box->buf);
     }
 
@@ -585,8 +582,7 @@ _compiler_var(struct wi_compiler* compiler, struct wi_token name, bool can_assig
 
         if (!wi_value_is_empty(foreign)) {
             if (can_assign && wi_parser_check(compiler->parser, WI_TOKEN_EQUAL)) {
-                wi_parser_error_at(compiler->parser, name, "cannot reassign a foreign variable %s",
-                                   global_name->buf);
+                wi_parser_error_at(compiler->parser, name, "cannot reassign variable %s", global_name->buf);
             }
 
             _compiler_emit_push(compiler, foreign);
