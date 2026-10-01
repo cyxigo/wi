@@ -51,13 +51,9 @@ wi_grow_capacity(int capacity) {
         }                                                                                                    \
                                                                                                              \
         int old_capacity = buf->capacity;                                                                    \
-                                                                                                             \
-        while (buf->capacity < needed) {                                                                     \
-            buf->capacity = wi_grow_capacity(buf->capacity);                                                 \
-        }                                                                                                    \
-                                                                                                             \
-        buf->data = (type*)wi_gc_realloc(buf->gc, buf->data, sizeof(type) * (size_t)old_capacity,            \
-                                         sizeof(type) * (size_t)buf->capacity);                              \
+        buf->capacity    = needed;                                                                           \
+        buf->data        = (type*)wi_gc_realloc(buf->gc, buf->data, sizeof(type) * (size_t)old_capacity,     \
+                                                sizeof(type) * (size_t)buf->capacity);                       \
     }                                                                                                        \
                                                                                                              \
     WI_INLINE int wi_##name##_buf_add(struct wi_##name##_buf* buf, type item) {                              \
