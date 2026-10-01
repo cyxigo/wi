@@ -88,11 +88,11 @@ wi_prototype_disasm_instr(struct wi_state* state, struct wi_prototype* prototype
         case WI_OP_DUP:
             return _simple_instr(state, offset, "dup");
         case WI_OP_DEF_GLOBAL:
-            return _constant_instr(state, "def_global", "global name", prototype, offset);
+            return _short_instr(state, "def_global", "global slot", prototype, offset);
         case WI_OP_SET_GLOBAL:
-            return _constant_instr(state, "set_global", "global name", prototype, offset);
+            return _short_instr(state, "set_global", "global slot", prototype, offset);
         case WI_OP_GET_GLOBAL:
-            return _constant_instr(state, "get_global", "global name", prototype, offset);
+            return _short_instr(state, "get_global", "global slot", prototype, offset);
         case WI_OP_STORE_LOCAL:
             return _byte_instr(state, "store_local", "local slot", prototype, offset);
         case WI_OP_STORE_LOCAL_0:

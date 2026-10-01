@@ -110,11 +110,11 @@ _find_in_table(struct wi_state* state, struct wi_table* table, const char* name)
 
 bool
 wi_find(struct wi_state* state, const char* name) {
-    if (!_find_in_table(state, &state->foreign, name)) {
-        return _find_in_table(state, &state->main_module->vars, name);
+    if (_find_in_table(state, &state->foreign, name)) {
+        return true;
     }
 
-    return true;
+    return wi_module_get(state, state->main_module, name);
 }
 
 void
@@ -729,8 +729,24 @@ wi_module_set(struct wi_state* state, struct wi_module* module, const char* name
     wi_value          name_value = WI_MAKE_BOX_VALUE(name_box);
     WI_GC_PUSH_ROOT(state->gc, name_box);
 
-    if (wi_table_set(&module->vars, name_value, value)) {
+    wi_value existing;
+
+    if (wi_table_get(&module->vars, name_value, &existing)) {
+        int index                   = wi_vardata_index(wi_value_as_vardata(existing));
+        module->globals.data[index] = value;
+    } else {
+        int index = module->globals.count;
+
+        if (index > WI_GLOBAL_MAX) {
+            wi_state_error(state, "too many globals in a module (limit is %i)", WI_GLOBAL_MAX);
+        }
+
+        wi_vardata vardata = WI_DEFAULT_VARDATA;
+        wi_vardata_set_index(&vardata, (uint16_t)index);
+
+        wi_table_set(&module->vars, name_value, wi_make_real_value(vardata));
         WI_GC_WRITE_BARRIER(state->gc, module, name_value);
+        wi_value_buf_add(&module->globals, value);
     }
 
     WI_GC_WRITE_BARRIER(state->gc, module, value);
@@ -742,10 +758,38 @@ wi_module_set(struct wi_state* state, struct wi_module* module, const char* name
 
 bool
 wi_module_get(struct wi_state* state, struct wi_module* module, const char* name) {
-    return _find_in_table(state, &module->vars, name);
+    struct wi_string* name_box = wi_make_string(state->gc, name);
+    WI_GC_PUSH_ROOT(state->gc, name_box);
+
+    wi_value vardata_value;
+    bool     found = wi_table_get(&module->vars, WI_MAKE_BOX_VALUE(name_box), &vardata_value);
+    wi_gc_pop_root(state->gc);
+
+    if (!found) {
+        return false;
+    }
+
+    int index = wi_vardata_index(wi_value_as_vardata(vardata_value));
+    wi_state_ppush(state, module->globals.data[index]);
+    return true;
 }
 
 bool
 wi_module_next(struct wi_state* state, struct wi_module* module, int* iter) {
-    return _table_next(state, &module->vars, iter);
+    struct wi_table* table = &module->vars;
+
+    while (*iter < table->capacity) {
+        struct wi_entry* entry = &table->entries[(*iter)++];
+
+        if (wi_value_is_empty(entry->key)) {
+            continue;
+        }
+
+        int index = wi_vardata_index(wi_value_as_vardata(entry->value));
+        wi_state_ppush(state, entry->key);
+        wi_state_ppush(state, module->globals.data[index]);
+        return true;
+    }
+
+    return false;
 }

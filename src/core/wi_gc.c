@@ -119,7 +119,7 @@ _gc_free_box(struct wi_gc* gc, struct wi_box* box) {
             struct wi_module* module = (struct wi_module*)box;
             wi_table_free(&module->vars);
             wi_table_free(&module->exports);
-            wi_table_free(&module->compile_vars);
+            wi_value_buf_free(&module->globals);
             WI_GC_FREE(gc, struct wi_module, box);
             break;
         }
@@ -357,7 +357,7 @@ _gc_blacken_box(struct wi_gc* gc, struct wi_box* box) {
             struct wi_module* module = (struct wi_module*)box;
             _gc_mark_table(gc, &module->vars);
             _gc_mark_table(gc, &module->exports);
-            _gc_mark_table(gc, &module->compile_vars);
+            _gc_mark_value_buf(gc, &module->globals);
             break;
         }
     }

@@ -6,30 +6,43 @@
 #include "wi_buf.h"
 #include "wi_code.h"
 #include "wi_parser.h"
+#include "wi_value.h"
 
-/*
-    a whole variables attributes system just for one silly shallow @const?
-    NO! there are 3!! @unused and @deprecated too!
-*/
 enum wi_attr {
     WI_ATTR_CONST,
     WI_ATTR_UNUSED,
     WI_ATTR_DEPRECATED,
 };
 
-typedef uint8_t wi_attrs;
+/* attrs are in the low 16 bits, a global's slot index (if any) in the high 16 */
+typedef uint32_t wi_vardata;
 
-/* basically copy-pasted code from wi_conf.h */
-#define WI_DEFAULT_ATTRS 0
+#define WI_DEFAULT_VARDATA 0
+#define WI_VARDATA_INDEX_SHIFT 16
 
 WI_INLINE void
-wi_attr_set(wi_attrs* attrs, enum wi_attr attr) {
-    *attrs |= (wi_attrs)1 << attr;
+wi_attr_set(wi_vardata* vardata, enum wi_attr attr) {
+    *vardata |= (wi_vardata)1 << attr;
 }
 
 WI_INLINE bool
-wi_attr_is_set(wi_attrs attrs, enum wi_attr attr) {
-    return attrs & ((wi_attrs)1 << attr);
+wi_attr_is_set(wi_vardata vardata, enum wi_attr attr) {
+    return vardata & ((wi_vardata)1 << attr);
+}
+
+WI_INLINE void
+wi_vardata_set_index(wi_vardata* vardata, uint16_t index) {
+    *vardata = (*vardata & 0xffff) | ((wi_vardata)index << WI_VARDATA_INDEX_SHIFT);
+}
+
+WI_INLINE uint16_t
+wi_vardata_index(wi_vardata vardata) {
+    return (uint16_t)(vardata >> WI_VARDATA_INDEX_SHIFT);
+}
+
+WI_INLINE wi_vardata
+wi_value_as_vardata(wi_value value) {
+    return (wi_vardata)wi_value_as_real(value);
 }
 
 struct wi_local {
@@ -37,7 +50,7 @@ struct wi_local {
     int             depth; /* -1 = uninitialized */
     bool            is_captured;
     bool            used;
-    wi_attrs        attrs;
+    wi_vardata      vardata;
 };
 
 /*

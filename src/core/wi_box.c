@@ -205,7 +205,7 @@ wi_new_module(struct wi_gc* gc, const char* path) {
     module->is_main = false;
     wi_table_init(&module->vars, gc);
     wi_table_init(&module->exports, gc);
-    wi_table_init(&module->compile_vars, gc);
+    wi_value_buf_init(&module->globals, gc);
 
     return module;
 }

@@ -256,12 +256,12 @@ struct wi_userdata*
 wi_new_userdata(struct wi_gc* gc, struct wi_string* name, void* data, wi_userdata_finalizer_fn finalizer);
 
 struct wi_module {
-    struct wi_box   box;
-    bool            is_main;
-    const char*     path;
-    struct wi_table vars;         /* globals table used at the runtime */
-    struct wi_table exports;      /* exported globals, used by :: */
-    struct wi_table compile_vars; /* globals table used at compile time */
+    struct wi_box       box;
+    bool                is_main;
+    const char*         path;
+    struct wi_table     vars;    /* global name -> wi_vardata (attrs + slot index into globals) */
+    struct wi_table     exports; /* exported globals, used by :: */
+    struct wi_value_buf globals; /* global slot values */
 };
 
 WI_INLINE bool

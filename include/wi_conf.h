@@ -26,6 +26,7 @@ enum {
      * Compiler limits
      */
     WI_CONSTANT_MAX  = 65535, /* Maximum number of constants in a function */
+    WI_GLOBAL_MAX    = 65535, /* Maximum number of globals in a module */
     WI_JUMP_MAX      = 65535, /* Maximum jump offset */
     WI_LOOP_MAX      = 65535, /* Maximum loop offset */
     WI_LOCAL_MAX     = 255,   /* Maximum number of local variables in a function */

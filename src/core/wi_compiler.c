@@ -33,7 +33,7 @@
 #include "wi_value.h"
 
 static struct wi_local*
-_compiler_add_local(struct wi_compiler* compiler, struct wi_token name, wi_attrs attrs, bool init) {
+_compiler_add_local(struct wi_compiler* compiler, struct wi_token name, wi_vardata attrs, bool init) {
     if (compiler->local_count >= WI_LOCAL_MAX) {
         wi_parser_error_at(compiler->parser, name, "too many local variables (limit is %i)", WI_LOCAL_MAX);
     }
@@ -59,7 +59,7 @@ _compiler_add_local(struct wi_compiler* compiler, struct wi_token name, wi_attrs
     local->depth           = init ? compiler->scope_depth : -1;
     local->is_captured     = false;
     local->used            = init;
-    local->attrs           = attrs;
+    local->vardata         = attrs;
 
     return local;
 }
@@ -101,7 +101,7 @@ wi_new_compiler(struct wi_compiler* outer, struct wi_state* state, struct wi_par
 
     compiler->last_call = -1;
 
-    _compiler_add_local(compiler, WI_BLANK_TOKEN, WI_DEFAULT_ATTRS, true);
+    _compiler_add_local(compiler, WI_BLANK_TOKEN, WI_DEFAULT_VARDATA, true);
     return compiler;
 }
 
@@ -342,7 +342,7 @@ _compiler_end(struct wi_compiler* compiler) {
 }
 
 static void
-_compiler_decl_var(struct wi_compiler* compiler, struct wi_token name, wi_attrs attrs) {
+_compiler_decl_var(struct wi_compiler* compiler, struct wi_token name, wi_vardata vardata) {
     if (compiler->scope_depth == 0) {
         return;
     }
@@ -360,7 +360,7 @@ _compiler_decl_var(struct wi_compiler* compiler, struct wi_token name, wi_attrs 
         }
     }
 
-    _compiler_add_local(compiler, name, attrs, false);
+    _compiler_add_local(compiler, name, vardata, false);
 }
 
 static void
@@ -373,7 +373,7 @@ _compiler_init_local(struct wi_compiler* compiler) {
 }
 
 static void
-_compiler_def_var(struct wi_compiler* compiler, struct wi_token name, wi_attrs attrs) {
+_compiler_def_var(struct wi_compiler* compiler, struct wi_token name, wi_vardata vardata) {
     if (compiler->scope_depth > 0) {
         _compiler_init_local(compiler);
         return;
@@ -387,21 +387,27 @@ _compiler_def_var(struct wi_compiler* compiler, struct wi_token name, wi_attrs a
         wi_parser_error_at(compiler->parser, name, "cannot redefine a foreign variable %s", name_box->buf);
     }
 
-    if (!wi_table_set(&compiler->module->compile_vars, name_value, wi_make_real_value(attrs))) {
+    if (wi_table_get(&compiler->module->vars, name_value, NULL)) {
         wi_parser_error_at(compiler->parser, name, "variable %s is already defined", name_box->buf);
     }
 
+    int index = compiler->module->globals.count;
+
+    if (index > WI_GLOBAL_MAX) {
+        wi_parser_error_at(compiler->parser, name, "too many globals in a module (limit is %i)", WI_GLOBAL_MAX);
+    }
+
+    wi_vardata_set_index(&vardata, (uint16_t)index);
+    wi_table_set(&compiler->module->vars, name_value, wi_make_real_value(vardata));
     /*
         real global value gets written by DEF_GLOBAL, but there can be rare cases (e.g REPL) where
         it just doesn't execute and compiler will think "yeah this is defined" while it's actually not
         and if we try to check the value of that variable we will, obviously, get garbage
         so instead we explicitly set value to null here, and instead of garbage we get expected null!
     */
-    wi_table_set(&compiler->module->vars, name_value, wi_make_null_value());
-
+    wi_value_buf_add(&compiler->module->globals, wi_make_null_value());
     wi_gc_pop_root(compiler->gc);
-    uint16_t constant = _compiler_make_constant(compiler, name_value);
-    _compiler_emit_opcode_short(compiler, WI_OP_DEF_GLOBAL, constant);
+    _compiler_emit_opcode_short(compiler, WI_OP_DEF_GLOBAL, (uint16_t)index);
 }
 
 static void
@@ -411,7 +417,7 @@ _compiler_begin_scope(struct wi_compiler* compiler) {
 
 static void
 _compiler_warn_unused(struct wi_compiler* compiler, struct wi_local* local) {
-    if (!local->used && !wi_attr_is_set(local->attrs, WI_ATTR_UNUSED)) {
+    if (!local->used && !wi_attr_is_set(local->vardata, WI_ATTR_UNUSED)) {
         wi_parser_warning_at(compiler->parser, local->name, "local variable %.*s was defined but not used",
                              local->name.count, local->name.start);
     }
@@ -460,7 +466,7 @@ _compiler_block(struct wi_compiler* compiler) {
 }
 
 static int
-_compiler_resolve_local(struct wi_compiler* compiler, struct wi_token name, wi_attrs* attrs) {
+_compiler_resolve_local(struct wi_compiler* compiler, struct wi_token name, wi_vardata* vardata) {
     for (int i = compiler->local_count - 1; i >= 0; i--) {
         struct wi_local* local = &compiler->locals[i];
 
@@ -472,8 +478,8 @@ _compiler_resolve_local(struct wi_compiler* compiler, struct wi_token name, wi_a
 
             local->used = true;
 
-            if (attrs) {
-                *attrs = local->attrs;
+            if (vardata) {
+                *vardata = local->vardata;
             }
 
             return i;
@@ -524,19 +530,19 @@ _compiler_add_upvalue(struct wi_compiler* compiler, uint8_t index, bool is_local
 }
 
 static int
-_compiler_resolve_upvalue(struct wi_compiler* compiler, struct wi_token name, wi_attrs* attrs) {
+_compiler_resolve_upvalue(struct wi_compiler* compiler, struct wi_token name, wi_vardata* vardata) {
     if (!compiler->outer) {
         return -1;
     }
 
-    int local = _compiler_resolve_local(compiler->outer, name, attrs);
+    int local = _compiler_resolve_local(compiler->outer, name, vardata);
 
     if (local != -1) {
         compiler->outer->locals[local].is_captured = true;
         return _compiler_add_upvalue(compiler, (uint8_t)local, true);
     }
 
-    int upvalue = _compiler_resolve_upvalue(compiler->outer, name, attrs);
+    int upvalue = _compiler_resolve_upvalue(compiler->outer, name, vardata);
 
     if (upvalue != -1) {
         return _compiler_add_upvalue(compiler, (uint8_t)upvalue, false);
@@ -547,11 +553,10 @@ _compiler_resolve_upvalue(struct wi_compiler* compiler, struct wi_token name, wi
 
 static void
 _compiler_var(struct wi_compiler* compiler, struct wi_token name, bool can_assign) {
-    wi_attrs          attrs       = WI_DEFAULT_ATTRS;
-    int               arg         = _compiler_resolve_local(compiler, name, &attrs);
-    struct wi_string* global_name = NULL;
-    uint8_t           set_op;
-    uint8_t           get_op;
+    wi_vardata vardata = WI_DEFAULT_VARDATA;
+    int        arg     = _compiler_resolve_local(compiler, name, &vardata);
+    uint8_t    set_op;
+    uint8_t    get_op;
 
     if (arg != -1) {
         if (arg <= 8) {
@@ -561,22 +566,19 @@ _compiler_var(struct wi_compiler* compiler, struct wi_token name, bool can_assig
             set_op = WI_OP_STORE_LOCAL;
             get_op = WI_OP_LOAD_LOCAL;
         }
-    } else if ((arg = _compiler_resolve_upvalue(compiler, name, &attrs)) != -1) {
+    } else if ((arg = _compiler_resolve_upvalue(compiler, name, &vardata)) != -1) {
         set_op = WI_OP_STORE_UPVALUE;
         get_op = WI_OP_LOAD_UPVALUE;
     } else {
-        set_op      = WI_OP_SET_GLOBAL;
-        get_op      = WI_OP_GET_GLOBAL;
-        global_name = wi_copy_cstring(compiler->gc, name.start, name.count);
-        arg         = (int)_compiler_make_constant(compiler, WI_MAKE_BOX_VALUE(global_name));
-    }
+        set_op = WI_OP_SET_GLOBAL;
+        get_op = WI_OP_GET_GLOBAL;
 
-    if (global_name) {
-        wi_value name_value = WI_MAKE_BOX_VALUE(global_name);
-        wi_value attrs_value;
-        wi_value foreign = wi_make_empty_value();
+        struct wi_string* global_name = wi_copy_cstring(compiler->gc, name.start, name.count);
+        wi_value          name_value  = WI_MAKE_BOX_VALUE(global_name);
+        wi_value          vardata_value;
+        wi_value          foreign = wi_make_empty_value();
 
-        if (!wi_table_get(&compiler->module->compile_vars, name_value, &attrs_value) &&
+        if (!wi_table_get(&compiler->module->vars, name_value, &vardata_value) &&
             !wi_table_get(&compiler->state->foreign, name_value, &foreign)) {
             wi_parser_error_at(compiler->parser, name, "variable %s is used but not defined", global_name->buf);
         }
@@ -591,15 +593,16 @@ _compiler_var(struct wi_compiler* compiler, struct wi_token name, bool can_assig
             return;
         }
 
-        attrs = (wi_attrs)wi_value_as_real(attrs_value);
+        vardata = wi_value_as_vardata(vardata_value);
+        arg     = wi_vardata_index(vardata);
     }
 
-    if (wi_attr_is_set(attrs, WI_ATTR_DEPRECATED)) {
+    if (wi_attr_is_set(vardata, WI_ATTR_DEPRECATED)) {
         wi_parser_warning_at(compiler->parser, name, "use of deprecated variable %.*s", name.count, name.start);
     }
 
     if (can_assign && wi_parser_match(compiler->parser, WI_TOKEN_EQUAL)) {
-        if (wi_attr_is_set(attrs, WI_ATTR_CONST)) {
+        if (wi_attr_is_set(vardata, WI_ATTR_CONST)) {
             wi_parser_error_at_prev(compiler->parser, "cannot reassign variable %.*s", name.count, name.start);
         }
 
@@ -609,12 +612,10 @@ _compiler_var(struct wi_compiler* compiler, struct wi_token name, bool can_assig
 
         _compiler_emit_opcode(compiler, set_op);
 
-        if (!global_name) {
-            if (set_op == WI_OP_STORE_LOCAL || set_op == WI_OP_STORE_UPVALUE) {
-                _compiler_emit_byte(compiler, (uint8_t)arg);
-            }
-        } else {
+        if (set_op == WI_OP_SET_GLOBAL) {
             _compiler_emit_short(compiler, (uint16_t)arg);
+        } else if (set_op == WI_OP_STORE_LOCAL || set_op == WI_OP_STORE_UPVALUE) {
+            _compiler_emit_byte(compiler, (uint8_t)arg);
         }
 
         return;
@@ -622,12 +623,10 @@ _compiler_var(struct wi_compiler* compiler, struct wi_token name, bool can_assig
 
     _compiler_emit_opcode(compiler, get_op);
 
-    if (!global_name) {
-        if (get_op == WI_OP_LOAD_LOCAL || get_op == WI_OP_LOAD_UPVALUE) {
-            _compiler_emit_byte(compiler, (uint8_t)arg);
-        }
-    } else {
+    if (get_op == WI_OP_GET_GLOBAL) {
         _compiler_emit_short(compiler, (uint16_t)arg);
+    } else if (get_op == WI_OP_LOAD_LOCAL || get_op == WI_OP_LOAD_UPVALUE) {
+        _compiler_emit_byte(compiler, (uint8_t)arg);
     }
 }
 
@@ -637,25 +636,25 @@ _check_attr(struct wi_token token, const char* attr) {
     return token.count == (int)len && memcmp(token.start, attr, len) == 0;
 }
 
-static wi_attrs
+static wi_vardata
 _compiler_parse_attrs(struct wi_compiler* compiler) {
-    wi_attrs attrs = WI_DEFAULT_ATTRS;
+    wi_vardata vardata = WI_DEFAULT_VARDATA;
 
     while (wi_parser_match(compiler->parser, WI_TOKEN_AT)) {
         struct wi_token token = wi_parser_expect(compiler->parser, WI_TOKEN_NAME);
 
         if (_check_attr(token, "const")) {
-            wi_attr_set(&attrs, WI_ATTR_CONST);
+            wi_attr_set(&vardata, WI_ATTR_CONST);
         } else if (_check_attr(token, "unused")) {
-            wi_attr_set(&attrs, WI_ATTR_UNUSED);
+            wi_attr_set(&vardata, WI_ATTR_UNUSED);
         } else if (_check_attr(token, "deprecated")) {
-            wi_attr_set(&attrs, WI_ATTR_DEPRECATED);
+            wi_attr_set(&vardata, WI_ATTR_DEPRECATED);
         } else {
             wi_parser_error_at(compiler->parser, token, "unknown attribute %.*s", token.count, token.start);
         }
     }
 
-    return attrs;
+    return vardata;
 }
 
 enum _prec {
@@ -1126,11 +1125,11 @@ _compiler_function_expr(struct wi_compiler* outer, bool can_assign) {
 
     if (has_params && !wi_parser_check(compiler->parser, WI_TOKEN_PIPE)) {
         do {
-#define _PARAMETER()                                                           \
-    struct wi_token name  = wi_parser_expect(compiler->parser, WI_TOKEN_NAME); \
-    wi_attrs        attrs = _compiler_parse_attrs(compiler);                   \
-    _compiler_decl_var(compiler, name, attrs);                                 \
-    _compiler_def_var(compiler, name, attrs)
+#define _PARAMETER()                                                             \
+    struct wi_token name    = wi_parser_expect(compiler->parser, WI_TOKEN_NAME); \
+    wi_vardata      vardata = _compiler_parse_attrs(compiler);                   \
+    _compiler_decl_var(compiler, name, vardata);                                 \
+    _compiler_def_var(compiler, name, vardata)
 
             if (wi_parser_match(compiler->parser, WI_TOKEN_DOT_DOT_DOT)) {
                 compiler->prototype->is_variadic = true;
@@ -1799,7 +1798,7 @@ _compiler_switch_stmt(struct wi_compiler* compiler) {
         so this local is a small trick - we leave the job of popping the switch value to the compiler
         (normally - via _compiler_end_scope, in a situation like this, via - _compiler_pop_loop_locals)
     */
-    _compiler_add_local(compiler, WI_BLANK_TOKEN, WI_DEFAULT_ATTRS, true);
+    _compiler_add_local(compiler, WI_BLANK_TOKEN, WI_DEFAULT_VARDATA, true);
     struct wi_switch* switch_ = (struct wi_switch*)malloc(sizeof(struct wi_switch));
 
     if (!switch_) {
@@ -1912,7 +1911,7 @@ _compiler_export_stmt(struct wi_compiler* compiler) {
             WI_GC_PUSH_ROOT(compiler->gc, name_box);
             wi_value name_value = WI_MAKE_BOX_VALUE(name_box);
 
-            if (!wi_table_get(&compiler->module->compile_vars, name_value, NULL)) {
+            if (!wi_table_get(&compiler->module->vars, name_value, NULL)) {
                 wi_parser_error_at(compiler->parser, name, "variable %.*s is used but not defined", name.count,
                                    name.start);
             }
@@ -1978,16 +1977,16 @@ _compiler_stmt(struct wi_compiler* compiler) {
 
 static void
 _compiler_name_decl(struct wi_compiler* compiler) {
-    struct wi_token name  = wi_parser_expect(compiler->parser, WI_TOKEN_NAME);
-    wi_attrs        attrs = _compiler_parse_attrs(compiler);
-    compiler->var_name    = name;
-    _compiler_decl_var(compiler, name, attrs);
+    struct wi_token name    = wi_parser_expect(compiler->parser, WI_TOKEN_NAME);
+    wi_vardata      vardata = _compiler_parse_attrs(compiler);
+    compiler->var_name      = name;
+    _compiler_decl_var(compiler, name, vardata);
 
     wi_parser_expect(compiler->parser, WI_TOKEN_COLON_EQUAL);
     _compiler_expr(compiler);
     wi_parser_expect(compiler->parser, WI_TOKEN_SEMICOLON);
 
-    _compiler_def_var(compiler, name, attrs);
+    _compiler_def_var(compiler, name, vardata);
     compiler->var_name = WI_BLANK_TOKEN;
 }
 

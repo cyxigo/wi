@@ -1087,30 +1087,25 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
             _DISPATCH();
         }
         _OPCODE_LABEL(DEF_GLOBAL) : {
-            wi_value          name   = _READ_CONSTANT();
-            struct wi_module* module = frame->closure->module;
-
-            wi_table_set(&module->vars, name, wi_state_top(state));
-            WI_GC_WRITE_BARRIER(state->gc, module, name);
-            WI_GC_WRITE_BARRIER(state->gc, module, wi_state_top(state));
+            uint16_t          index     = _READ_SHORT();
+            struct wi_module* module    = frame->closure->module;
+            wi_value          value     = wi_state_top(state);
+            module->globals.data[index] = value;
+            WI_GC_WRITE_BARRIER(state->gc, module, value);
             wi_state_drop(state);
-
             _DISPATCH();
         }
         _OPCODE_LABEL(SET_GLOBAL) : {
-            wi_value          name   = _READ_CONSTANT();
-            struct wi_module* module = frame->closure->module;
-
-            wi_table_set(&module->vars, name, wi_state_top(state));
-            WI_GC_WRITE_BARRIER(state->gc, module, wi_state_top(state));
-
+            uint16_t          index     = _READ_SHORT();
+            struct wi_module* module    = frame->closure->module;
+            wi_value          value     = wi_state_top(state);
+            module->globals.data[index] = value;
+            WI_GC_WRITE_BARRIER(state->gc, module, value);
             _DISPATCH();
         }
         _OPCODE_LABEL(GET_GLOBAL) : {
-            wi_value name = _READ_CONSTANT();
-            wi_value value;
-            wi_table_get(&frame->closure->module->vars, name, &value);
-            wi_state_push(state, value);
+            uint16_t index = _READ_SHORT();
+            wi_state_push(state, frame->closure->module->globals.data[index]);
             _DISPATCH();
         }
         _OPCODE_LABEL(STORE_LOCAL) : {
@@ -1654,14 +1649,16 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
                 _ERROR("variable %s was not exported from module %s", wi_value_as_cstring(name), module->path);
             }
 
-            wi_value value;
+            wi_value vardata_value;
 
-            if (WI_UNLIKELY(!wi_table_get(&module->vars, name, &value))) {
+            if (WI_UNLIKELY(!wi_table_get(&module->vars, name, &vardata_value))) {
                 _ERROR("variable %s is used but not defined", wi_value_as_cstring(name));
             }
 
+            int index = wi_vardata_index(wi_value_as_vardata(vardata_value));
+
             wi_state_drop(state);
-            wi_state_push(state, value);
+            wi_state_push(state, module->globals.data[index]);
 
             _DISPATCH();
         }
