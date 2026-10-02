@@ -124,7 +124,7 @@ _base_try(struct wi_state* state, uint8_t arg_count) {
         wi_arg_function(state, 1, f_arg_count);
 
         for (uint8_t i = 0; i < f_arg_count; i++) {
-            wi_state_ppush(state, state->ffi_stack[i + 2]);
+            wi_push_arg(state, i + 2);
         }
 
         wi_call(state, f_arg_count, false);
@@ -271,7 +271,7 @@ _base_string(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
 
     if (wi_arg_is_string(state, 1)) {
-        wi_state_ppush(state, state->ffi_stack[1]);
+        wi_push_arg(state, 1);
         return;
     }
 
