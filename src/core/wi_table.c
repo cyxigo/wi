@@ -98,8 +98,21 @@ _table_adjust_capacity(struct wi_table* table, int capacity) {
 
 bool
 wi_table_set(struct wi_table* table, wi_value key, wi_value value) {
+    /*
+        table->count is "slots ever used" (live entries + tombstones)
+        that's what actually decides when to resize
+        once we are resizing, we will discard tombstones anyway
+        just doubling the current capacity will make room for what essentially gets thrown away
+        so we pick the actual capacity based on table->live_count instead
+        this allows us to shrink tables like the string intern table, which tend to accumulate TONS of tombstones
+    */
     if (WI_UNLIKELY(table->count + 1 > table->capacity * WI_TABLE_MAX_LOAD)) {
-        int capacity = wi_table_grow_capacity(table->capacity);
+        int capacity = WI_TABLE_MIN_CAPACITY;
+
+        while (table->live_count + 1 > capacity * WI_TABLE_MAX_LOAD) {
+            capacity = wi_table_grow_capacity(capacity);
+        }
+
         _table_adjust_capacity(table, capacity);
     }
 
