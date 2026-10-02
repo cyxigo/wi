@@ -118,6 +118,11 @@ a.button {
     text-decoration: none;
 }
 
+.table-scroll {
+    overflow-x: auto;
+    max-width: 100%;
+}
+
 @media (hover: hover) {
     button:hover {
         background-color: #2a5091;
