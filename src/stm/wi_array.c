@@ -78,7 +78,7 @@ _array_add(struct wi_state* state, uint8_t arg_count) {
     struct wi_array* array = wi_arg_array(state, 1);
     wi_value_buf_add(&array->items, state->ffi_stack[2]);
     WI_GC_WRITE_BARRIER(state->gc, array, state->ffi_stack[2]);
-    wi_state_ppush(state, state->ffi_stack[2]);
+    wi_push_arg(state, 1);
 }
 
 static void
@@ -179,7 +179,7 @@ _array_insertat(struct wi_state* state, uint8_t arg_count) {
     array->items.count++;
     array->items.mod_count++;
     WI_GC_WRITE_BARRIER(state->gc, array, value);
-    wi_state_ppush(state, value);
+    wi_push_arg(state, 1);
 }
 
 static void
