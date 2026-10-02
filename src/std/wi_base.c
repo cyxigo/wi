@@ -41,9 +41,7 @@ _base_input(struct wi_state* state, uint8_t arg_count) {
 
     if (arg_count == 1) {
         prompt = wi_arg_string(state, 1, NULL, NULL);
-    } else if (arg_count == 0) {
-        /* do nothing */
-    } else {
+    } else if (arg_count != 0) {
         wi_state_error(state, "expected 0 or 1 arguments but got %hhu", arg_count);
     }
 
