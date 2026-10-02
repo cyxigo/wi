@@ -225,7 +225,7 @@ _string_replace(struct wi_state* state, uint8_t arg_count) {
     char* new = wi_arg_string(state, 3, &new_count, NULL);
 
     if (old_count == 0) {
-        wi_state_ppush(state, state->ffi_stack[1]);
+        wi_push_arg(state, 1);
         return;
     }
 

@@ -45,7 +45,6 @@ static void
 _array_reverse(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     struct wi_array* array = wi_arg_array(state, 1);
-    wi_state_ppush(state, state->ffi_stack[1]);
 
     for (int i = 0, j = array->items.count - 1; i < j; i++, j--) {
         wi_value temp        = array->items.data[i];
@@ -54,6 +53,7 @@ _array_reverse(struct wi_state* state, uint8_t arg_count) {
     }
 
     array->items.mod_count++;
+    wi_push_arg(state, 1);
 }
 
 static void
@@ -290,7 +290,6 @@ _array_each(struct wi_state* state, uint8_t arg_count) {
     struct wi_array* array     = wi_arg_array(state, 1);
     int              mod_count = array->items.mod_count;
     wi_arg_check_function(state, 2, 1);
-    wi_state_ppush(state, WI_MAKE_BOX_VALUE(array));
 
     for (int i = 0; i < array->items.count; i++) {
         wi_arg_function(state, 2, 1);
@@ -301,6 +300,8 @@ _array_each(struct wi_state* state, uint8_t arg_count) {
             wi_state_error(state, "array modified during iteration");
         }
     }
+
+    wi_push_arg(state, 1);
 }
 
 static void
@@ -434,7 +435,7 @@ _array_sort(struct wi_state* state, uint8_t arg_count) {
     }
 
     array->items.mod_count++;
-    wi_state_ppush(state, state->ffi_stack[1]);
+    wi_push_arg(state, 1);
 }
 
 void

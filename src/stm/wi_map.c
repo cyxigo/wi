@@ -88,7 +88,7 @@ _map_getordefault(struct wi_state* state, uint8_t arg_count) {
         return;
     }
 
-    wi_state_ppush(state, state->ffi_stack[3]);
+    wi_push_arg(state, 3);
 }
 
 static void
@@ -104,7 +104,6 @@ _map_each(struct wi_state* state, uint8_t arg_count) {
     struct wi_map* map       = wi_arg_map(state, 1);
     int            mod_count = map->items.mod_count;
     wi_arg_check_function(state, 2, 2);
-    wi_state_ppush(state, WI_MAKE_BOX_VALUE(map));
 
     for (int i = 0; i < map->items.capacity; i++) {
         struct wi_entry* entry = &map->items.entries[i];
@@ -122,6 +121,8 @@ _map_each(struct wi_state* state, uint8_t arg_count) {
             wi_state_error(state, "map modified during iteration");
         }
     }
+
+    wi_push_arg(state, 1);
 }
 
 static void
