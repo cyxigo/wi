@@ -1831,7 +1831,7 @@ _compiler_switch_stmt(struct wi_compiler* compiler) {
         }
 
         if (switch_->has_default) {
-            wi_parser_error_at_prev(compiler->parser, "cannot have another case or default after default");
+            wi_parser_error_at_prev(compiler->parser, "cannot have another 'case' or 'default' after 'default'");
         }
 
         enum wi_token_kind kind = compiler->parser->prev.kind;
@@ -1886,7 +1886,7 @@ _compiler_switch_stmt(struct wi_compiler* compiler) {
 static void
 _compiler_return_stmt(struct wi_compiler* compiler) {
     if (!compiler->outer) {
-        wi_parser_error_at_prev(compiler->parser, "cannot return from top-level code");
+        wi_parser_error_at_prev(compiler->parser, "cannot use 'return' outside of a function");
     }
 
     if (wi_parser_match(compiler->parser, WI_TOKEN_SEMICOLON)) {
