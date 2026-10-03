@@ -116,10 +116,7 @@ _map_each(struct wi_state* state, uint8_t arg_count) {
         wi_state_ppush(state, entry->key);
         wi_state_ppush(state, entry->value);
         wi_call(state, 2, true);
-
-        if (WI_UNLIKELY(map->items.mod_count != mod_count)) {
-            wi_state_error(state, "map modified during iteration");
-        }
+        wi_state_check_mod_count(state, "map", map->items.mod_count, mod_count);
     }
 
     wi_push_arg(state, 1);
@@ -163,10 +160,7 @@ _map_select(struct wi_state* state, uint8_t arg_count) {
             wi_gc_pop_root(state->gc);
         }
 
-        if (WI_UNLIKELY(map->items.mod_count != mod_count)) {
-            wi_state_error(state, "map modified during iteration");
-        }
-
+        wi_state_check_mod_count(state, "map", map->items.mod_count, mod_count);
         wi_value new_value = wi_state_pop(state);
         wi_value new_key   = wi_state_pop(state);
 
@@ -205,10 +199,7 @@ _map_where(struct wi_state* state, uint8_t arg_count) {
         wi_state_ppush(state, key);
         wi_state_ppush(state, value);
         wi_call(state, 2, false);
-
-        if (WI_UNLIKELY(map->items.mod_count != mod_count)) {
-            wi_state_error(state, "map modified during iteration");
-        }
+        wi_state_check_mod_count(state, "map", map->items.mod_count, mod_count);
 
         if (wi_value_is_falsy(wi_state_pop(state))) {
             continue;

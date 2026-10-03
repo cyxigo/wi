@@ -295,10 +295,7 @@ _array_each(struct wi_state* state, uint8_t arg_count) {
         wi_arg_function(state, 2, 1);
         wi_state_ppush(state, array->items.data[i]);
         wi_call(state, 1, true);
-
-        if (WI_UNLIKELY(array->items.mod_count != mod_count)) {
-            wi_state_error(state, "array modified during iteration");
-        }
+        wi_state_check_mod_count(state, "array", array->items.mod_count, mod_count);
     }
 
     wi_push_arg(state, 1);
@@ -317,10 +314,7 @@ _array_select(struct wi_state* state, uint8_t arg_count) {
         wi_arg_function(state, 2, 1);
         wi_state_ppush(state, array->items.data[i]);
         wi_call(state, 1, false);
-
-        if (WI_UNLIKELY(array->items.mod_count != mod_count)) {
-            wi_state_error(state, "array modified during iteration");
-        }
+        wi_state_check_mod_count(state, "array", array->items.mod_count, mod_count);
 
         wi_value value = wi_state_pop(state);
         wi_value_buf_add(&result->items, value);
@@ -343,10 +337,7 @@ _array_where(struct wi_state* state, uint8_t arg_count) {
         wi_arg_function(state, 2, 1);
         wi_state_ppush(state, item);
         wi_call(state, 1, false);
-
-        if (WI_UNLIKELY(array->items.mod_count != mod_count)) {
-            wi_state_error(state, "array modified during iteration");
-        }
+        wi_state_check_mod_count(state, "array", array->items.mod_count, mod_count);
 
         if (!wi_value_is_falsy(wi_state_pop(state))) {
             wi_value_buf_add(&result->items, item);
@@ -390,10 +381,7 @@ _aqsort_partition(struct wi_state* state, struct wi_array* array, int lo, int hi
         wi_state_ppush(state, array->items.data[j]);
         wi_state_ppush(state, pi);
         wi_call(state, 2, false);
-
-        if (WI_UNLIKELY(array->items.mod_count != mod_count)) {
-            wi_state_error(state, "array modified during iteration");
-        }
+        wi_state_check_mod_count(state, "array", array->items.mod_count, mod_count);
 
         if (!wi_value_is_falsy(wi_state_pop(state))) {
             i++;

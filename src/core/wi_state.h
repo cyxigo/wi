@@ -241,6 +241,13 @@ wi_state_check_arity(struct wi_state* state, uint8_t arity, uint8_t arg_count, b
     }
 }
 
+WI_INLINE void
+wi_state_check_mod_count(struct wi_state* state, const char* type, int actual, int expected) {
+    if (WI_UNLIKELY(actual != expected)) {
+        wi_state_error(state, "%s modified during iteration", type);
+    }
+}
+
 void
 wi_state_call_foreign(struct wi_state* state, struct wi_foreign* foreign, uint8_t arg_count);
 enum wi_run_result
