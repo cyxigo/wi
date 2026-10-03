@@ -1,5 +1,6 @@
 #include "wi_base.h"
 
+#include <ctype.h>
 #include <limits.h>
 #include <setjmp.h>
 #include <stdbool.h>
@@ -247,6 +248,11 @@ _base_real(struct wi_state* state, uint8_t arg_count) {
 
         char*   end  = NULL;
         wi_real real = wi_string_to_real(string->buf, string->count, &end);
+
+        /* skip trailing spaces */
+        while (isspace((unsigned char)*end)) {
+            end++;
+        }
 
         if (end != string->buf + string->count) {
             wi_state_error(state, "invalid real format %s", string->buf);
