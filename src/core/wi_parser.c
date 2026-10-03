@@ -162,6 +162,11 @@ wi_parser_error_at_curr(struct wi_parser* parser, const char* format, ...) {
 }
 
 WI_NORETURN void
+wi_parser_error_limit(struct wi_parser* parser, const char* what, int limit) {
+    wi_parser_error_at_curr(parser, "too many %s (limit is %i)", what, limit);
+}
+
+WI_NORETURN void
 wi_parser_oom(struct wi_parser* parser, const char* what) {
     struct wi_state* state = parser->gc->state;
     wi_printf(state, state->error, "out of memory: %s\n", what);

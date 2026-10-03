@@ -886,8 +886,7 @@ _compiler_arg_list(struct wi_compiler* compiler, uint8_t start) {
             _compiler_expr(compiler);
 
             if (arg_count == WI_PARAMETER_MAX) {
-                wi_parser_error_at_curr(compiler->parser, "cannot have more than %i arguments in a call",
-                                        WI_PARAMETER_MAX);
+                wi_parser_error_limit(compiler->parser, "arguments in a call", WI_PARAMETER_MAX);
             }
 
             arg_count++;
@@ -917,8 +916,7 @@ _compiler_array_expr(struct wi_compiler* compiler, bool can_assign) {
             _compiler_expr(compiler);
 
             if (count == UINT16_MAX) {
-                wi_parser_error_at_curr(compiler->parser, "cannot have more than %i items in an array expression",
-                                        UINT16_MAX);
+                wi_parser_error_limit(compiler->parser, "items in an array expression", UINT16_MAX);
             }
 
             count++;
@@ -957,8 +955,7 @@ _compiler_map_expr(struct wi_compiler* compiler, bool can_assign) {
             _compiler_expr(compiler);
 
             if (count == UINT16_MAX) {
-                wi_parser_error_at_curr(compiler->parser, "cannot have more than %i entries in a map expression",
-                                        UINT16_MAX);
+                wi_parser_error_limit(compiler->parser, "entries in a map expression", UINT16_MAX);
             }
 
             count++;
@@ -1156,7 +1153,7 @@ _compiler_function_expr(struct wi_compiler* outer, bool can_assign) {
             }
 
             if (compiler->prototype->arity == WI_PARAMETER_MAX) {
-                wi_parser_error_at_curr(compiler->parser, "cannot have more than %i parameters", WI_PARAMETER_MAX);
+                wi_parser_error_limit(compiler->parser, "parameters", WI_PARAMETER_MAX);
             }
 
             compiler->prototype->arity++;
@@ -1212,7 +1209,7 @@ _compiler_object_expr(struct wi_compiler* compiler, bool can_assign) {
 
     while (!wi_parser_check(compiler->parser, WI_TOKEN_CLOSE_BRACE) && !wi_parser_is_at_end(compiler->parser)) {
         if (field_count == UINT16_MAX) {
-            wi_parser_error_at_curr(compiler->parser, "cannot have more than %i fields in an object", UINT16_MAX);
+            wi_parser_error_limit(compiler->parser, "fields in an object", UINT16_MAX);
         }
 
         struct wi_token field_name = wi_parser_expect(compiler->parser, WI_TOKEN_NAME);
@@ -1244,8 +1241,7 @@ _compiler_new_expr(struct wi_compiler* compiler, bool can_assign) {
         _compiler_parse_prec(compiler, _PREC_UNARY);
 
         if (count == UINT16_MAX) {
-            wi_parser_error_at_curr(compiler->parser, "cannot merge more than %i objects in a 'new' expression",
-                                    UINT16_MAX);
+            wi_parser_error_limit(compiler->parser, "objects merged in a 'new' expression", UINT16_MAX);
         }
 
         count++;
