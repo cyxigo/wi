@@ -234,10 +234,10 @@ WI_INLINE void
 wi_state_check_arity(struct wi_state* state, uint8_t arity, uint8_t arg_count, bool is_variadic) {
     if (WI_UNLIKELY(is_variadic)) {
         if (WI_UNLIKELY(arg_count < arity)) {
-            wi_state_error(state, "expected at least %i arguments but got %hhu", arity, arg_count);
+            wi_state_error(state, "expected at least %hhu arguments but got %hhu", arity, arg_count);
         }
     } else if (WI_UNLIKELY(arg_count != arity)) {
-        wi_state_error(state, "expected %i arguments but got %hhu", arity, arg_count);
+        wi_state_error(state, "expected %hhu arguments but got %hhu", arity, arg_count);
     }
 }
 
