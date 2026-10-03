@@ -1,4 +1,4 @@
-compile error: cannot redefine a foreign variable math
+compile error: variable math is already defined
    | 
  3 | math := "bug";
    | ^^^^
