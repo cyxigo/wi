@@ -706,6 +706,27 @@ _compiler_parse_prec(struct wi_compiler* compiler, enum _prec min_prec) {
     }
 
     bool can_assign = min_prec <= _PREC_ASSIGNMENT;
+    /*
+        what does var_name clearing have to do with pratt parsing why is it here?
+        why not in _compiler_expr?
+        because if we did it in _compiler_expr (naively), something like
+        f := (|| => {})
+        would lose its name, it will be "anonymous" even though it's clearly isn't
+        the solution would be to insert the check for |, ||, and ( so we can confidently
+        say "yeah that has a function in it", exact same as below but... how?
+        yeah that's the reason it's HERE and not in _compiler_expr
+
+        _compiler_parse_prec is the only spot that gets called for literally EVERY
+        piece of an expression, so it's the only place we CAN ask
+        "hey is that a |, a ||, or a (" before parsing and parsing and so on
+    */
+    struct wi_token    var_name  = compiler->var_name;
+    enum wi_token_kind pref_kind = compiler->parser->prev.kind;
+
+    if (pref_kind != WI_TOKEN_PIPE && pref_kind != WI_TOKEN_PIPE_PIPE && pref_kind != WI_TOKEN_OPEN_PAREN) {
+        compiler->var_name = WI_BLANK_TOKEN;
+    }
+
     pref(compiler, can_assign);
 
     while (_compiler_get_rule(compiler->parser->curr.kind)->prec >= min_prec) {
@@ -713,6 +734,7 @@ _compiler_parse_prec(struct wi_compiler* compiler, enum _prec min_prec) {
         _compiler_get_rule(compiler->parser->prev.kind)->inf(compiler, can_assign);
     }
 
+    compiler->var_name = var_name;
     wi_parser_leave(compiler->parser);
 
     if (can_assign && wi_parser_match(compiler->parser, WI_TOKEN_EQUAL)) {
