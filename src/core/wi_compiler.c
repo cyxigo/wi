@@ -302,8 +302,7 @@ _compiler_make_constant(struct wi_compiler* compiler, wi_value value) {
         int index = compiler->prototype->constants.count - 1;
 
         if (index > WI_CONSTANT_MAX) {
-            wi_parser_error_at_curr(compiler->parser, "too many constants in a prototype (limit is %i)",
-                                    WI_CONSTANT_MAX);
+            wi_parser_error_limit(compiler->parser, "constants in a prototype", WI_CONSTANT_MAX);
         }
 
         wi_table_set(&compiler->constants->items, value, wi_make_real_value(index));
@@ -499,7 +498,7 @@ _compiler_add_upvalue(struct wi_compiler* compiler, uint8_t index, bool is_local
     }
 
     if (upvalue_count >= WI_UPVALUE_MAX) {
-        wi_parser_error_at_curr(compiler->parser, "too many upvalues in a closure (limit is %i)", WI_UPVALUE_MAX);
+        wi_parser_error_limit(compiler->parser, "upvalues in a closure", WI_UPVALUE_MAX);
     }
 
     if (WI_UNLIKELY(compiler->prototype->upvalue_count + 1 > compiler->upvalue_capacity)) {
