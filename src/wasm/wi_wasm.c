@@ -6,13 +6,12 @@
 #endif
 
 #include <stddef.h>
-#include <stdlib.h>
 
 #include "../../include/wi.h"
 #include "../../include/wi_conf.h"
 #include "../core/wi_util.h"
 
-/* while yes this API is dead simple, it's used only in "Try Wi online!" thingy */
+/* while yes this "API" is dead simple, it's used only by that little Wi playground */
 static wi_state* _g_state = NULL;
 static wi_conf   _g_conf  = WI_DEFAULT_CONF;
 
