@@ -151,6 +151,24 @@ _base_try(struct wi_state* state, uint8_t arg_count) {
 }
 
 static void
+_base_call(struct wi_state* state, uint8_t arg_count) {
+    WI_UNUSED(arg_count);
+    struct wi_array* args = wi_arg_array(state, 2);
+
+    if (args->items.count > WI_PARAMETER_MAX) {
+        wi_state_error(state, "too many arguments to call (limit is %i)", WI_PARAMETER_MAX);
+    }
+
+    wi_arg_function(state, 1, (uint8_t)args->items.count);
+
+    for (int i = 0; i < args->items.count; i++) {
+        wi_state_ppush(state, args->items.data[i]);
+    }
+
+    wi_call(state, (uint8_t)args->items.count, false);
+}
+
+static void
 _base_type(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     wi_push_string(state, wi_value_type(state->ffi_stack[1]));
@@ -435,6 +453,7 @@ wi_state_def_std_base(struct wi_state* state) {
         {"error",      _base_error,      1, false},
         {"assert",     _base_assert,     2, false},
         {"try",        _base_try,        1, true },
+        {"call",       _base_call,       2, false},
 
         {"type",       _base_type,       1, false},
         {"isreal",     _base_isreal,     1, false},
