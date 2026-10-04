@@ -565,14 +565,12 @@ wi_arg_map(struct wi_state* state, uint8_t arg) {
 
 struct wi_object*
 wi_arg_object(struct wi_state* state, uint8_t arg) {
-    wi_value value = state->ffi_stack[arg];
-
-    if (WI_UNLIKELY(!wi_value_is_object(value))) {
+    if (WI_UNLIKELY(!wi_arg_is_object(state, arg))) {
         wi_state_error(state, "bad argument %hhu - expected a value of type object but got %s", arg,
-                       wi_value_type(value));
+                       wi_value_type(state->ffi_stack[arg]));
     }
 
-    return wi_value_as_object(value);
+    return wi_value_as_object(state->ffi_stack[arg]);
 }
 
 void*
