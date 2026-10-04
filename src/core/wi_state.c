@@ -994,11 +994,6 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
         frame->ip = ip;                     \
         wi_state_error(state, __VA_ARGS__); \
     } while (false)
-#define _INT_ERROR(real)                 \
-    do {                                 \
-        frame->ip = ip;                  \
-        wi_state_int_error(state, real); \
-    } while (false)
 
 #if defined(__GNUC__) || defined(__clang__)
     static void* dispatch_table[] = {
@@ -1667,7 +1662,6 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
 #undef _UPDATE_FRAME
 
 #undef _ERROR
-#undef _INT_ERROR
 
 #undef _INTERPRET
 #undef _DISPATCH
