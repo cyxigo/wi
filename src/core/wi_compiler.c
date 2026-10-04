@@ -681,16 +681,6 @@ struct _parse_rule {
 static struct _parse_rule*
 _compiler_get_rule(enum wi_token_kind kind);
 
-/*
-    pratt parser!
-    a very elegant and simple parsing thingy for expressions
-
-    every token can act as a prefix
-    (starts an expression - variables, any sorts of literals, unary, grouping, etc.)
-    and/or an infix
-    (continues expression - binary, [], ->, etc.)
-    each infix also carries a precedence (binding power)
-*/
 static void
 _compiler_parse_prec(struct wi_compiler* compiler, enum _prec min_prec) {
     wi_parser_enter(compiler->parser);
@@ -710,7 +700,7 @@ _compiler_parse_prec(struct wi_compiler* compiler, enum _prec min_prec) {
         why not in _compiler_expr?
         because if we did it in _compiler_expr (naively), something like
         f := (|| => {})
-        would lose its name, it will be "anonymous" even though it's clearly isn't
+        would lose its name, it will be "anonymous" even though it's clearly not
         the solution would be to insert the check for |, ||, and ( so we can confidently
         say "yeah that has a function in it", exact same as below but... how?
         yeah that's the reason it's HERE and not in _compiler_expr
@@ -1724,9 +1714,8 @@ _compiler_for_incr(struct wi_compiler* compiler) {
     /*
         reset/capture tco while we compile increment expression
         if increment expression does a call, our compiler, after swapped back to original buffer,
-        will think "ohhh last call where is it" but offset is COMPLELETY wrong for the original buffer
-        this is mostly unreachable, like, really really really really hard to even trigger
-        buuuutttttt it costs nothing to be correct!
+        will think "ohhh last call where is it" but offset can be wrong for the original buffer
+        this is incredibly hard to trigger, but it costs us nothing to be correct
     */
     int last_call       = compiler->last_call;
     compiler->last_call = -1;
@@ -2072,7 +2061,7 @@ wi_compile(struct wi_state* state, const char* file_path, const char* src, struc
 
     /*
         we walk from the innermost compiler to the outermost, because not all compilers are always freed
-        _compiler_function_expr is another place were we allocate a compiler - and it can leak if we do not
+        _compiler_function_expr is another place where we allocate a compiler, and it can leak if we do not
         reach the end of _compiler_function_expr where we delete it
     */
     struct wi_compiler* curr = state->gc->compiler;
