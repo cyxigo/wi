@@ -1,11 +1,11 @@
 #include "wi_value.h"
 
+#include <errno.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
 
 #include "wi_box.h"
-#include "wi_gc.h" /* IWYU pragma: keep */
 #include "wi_lexer.h"
 #include "wi_state.h"
 #include "wi_table.h"
@@ -246,20 +246,24 @@ wi_value_to_string(wi_value value) {
 }
 
 wi_real
-wi_string_to_real(const char* string, int len, char** end_ptr) {
+wi_string_to_real(const char* string, int len, char** end_ptr, bool* overflow) {
+    if (overflow) {
+        *overflow = false;
+    }
+
     if (len > 2 && string[0] == '0' && wi_is_alnum(string[2])) {
-        char c = string[1];
+        char c    = string[1];
+        int  base = c == 'x' || c == 'X' ? 16 : c == 'o' || c == 'O' ? 8 : c == 'b' || c == 'B' ? 2 : 0;
 
-        if (c == 'x' || c == 'X') {
-            return (wi_real)strtoull(string + 2, end_ptr, 16);
-        }
+        if (base) {
+            errno          = 0;
+            uint64_t value = strtoull(string + 2, end_ptr, base);
 
-        if (c == 'o' || c == 'O') {
-            return (wi_real)strtoull(string + 2, end_ptr, 8);
-        }
+            if (overflow && errno == ERANGE) {
+                *overflow = true;
+            }
 
-        if (c == 'b' || c == 'B') {
-            return (wi_real)strtoull(string + 2, end_ptr, 2);
+            return (wi_real)value;
         }
     }
 

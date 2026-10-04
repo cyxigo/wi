@@ -246,15 +246,16 @@ _base_real(struct wi_state* state, uint8_t arg_count) {
             wi_state_error(state, "invalid real format");
         }
 
-        char*   end  = NULL;
-        wi_real real = wi_string_to_real(string->buf, string->count, &end);
+        char*   end = NULL;
+        bool    overflow;
+        wi_real real = wi_string_to_real(string->buf, string->count, &end, &overflow);
 
         /* skip trailing spaces */
         while (isspace((unsigned char)*end)) {
             end++;
         }
 
-        if (end != string->buf + string->count) {
+        if (end != string->buf + string->count || overflow) {
             wi_state_error(state, "invalid real format %s", string->buf);
         }
 

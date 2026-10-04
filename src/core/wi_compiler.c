@@ -805,7 +805,13 @@ _compiler_lit_expr(struct wi_compiler* compiler, bool can_assign) {
 
     switch (literal.kind) {
         case WI_TOKEN_REAL: {
-            wi_real real = wi_string_to_real(literal.start, literal.count, NULL);
+            bool    overflow;
+            wi_real real = wi_string_to_real(literal.start, literal.count, NULL, &overflow);
+
+            if (overflow) {
+                wi_parser_error_at_prev(compiler->parser, "real literal too large");
+            }
+
             _compiler_emit_push(compiler, wi_make_real_value(real));
             break;
         }

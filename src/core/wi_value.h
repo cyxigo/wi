@@ -272,6 +272,6 @@ wi_value_to_string(wi_value value);
 WI_DECL_BUF(wi_value, value)
 
 wi_real
-wi_string_to_real(const char* string, int len, char** end_ptr);
+wi_string_to_real(const char* string, int len, char** end_ptr, bool* overflow);
 
 #endif
