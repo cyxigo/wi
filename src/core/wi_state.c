@@ -1701,7 +1701,9 @@ wi_state_call(struct wi_state* state, wi_value callable, uint8_t arg_count, bool
     }
 
     if (wi_value_is_foreign(callable)) {
+        state->c_depth++;
         wi_state_call_foreign(state, wi_value_as_foreign(callable), arg_count);
+        state->c_depth--;
 
         if (drop_result) {
             wi_state_drop(state);
