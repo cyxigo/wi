@@ -1475,8 +1475,18 @@ _compiler_import_foreign(struct wi_compiler* compiler, char* lib_path, char** at
     bool                is_new = !node->module;
 
     if (is_new) {
-        node->module = init(state);
-        node->path   = path_value;
+        wi_value* stack_top = state->stack_top;
+        node->module        = init(state);
+
+        if (!node->module) {
+            state->stack_top = stack_top;
+            wi_gc_pop_root(compiler->gc);
+            free(*atts);
+            wi_parser_error_at_prev(compiler->parser,
+                                    "library %s did not return a valid module from wi_module_init", path->buf);
+        }
+
+        node->path = path_value;
     }
 
     wi_value module = WI_MAKE_BOX_VALUE(node->module);
