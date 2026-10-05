@@ -395,8 +395,10 @@ _compiler_def_var(struct wi_compiler* compiler, struct wi_token name, wi_vardata
 
     wi_vardata_set_index(&vardata, (uint16_t)index);
     wi_table_set(&compiler->module->vars, name_value, wi_make_real_value(vardata));
+    /* the module can already be old (e.g. REPL) while name_box is young */
+    WI_GC_WRITE_BARRIER(compiler->gc, compiler->module, name_value);
     /*
-        real global value gets written by DEF_GLOBAL, but there can be rare cases (e.g REPL) where
+        real global value gets written by DEF_GLOBAL, but there can be rare cases (e.g. again REPL) where
         it just doesn't execute and compiler will think "yeah this is defined" while it's actually not
         and if we try to check the value of that variable we will, obviously, get garbage
         so instead we explicitly set value to null here, and instead of garbage we get expected null!
