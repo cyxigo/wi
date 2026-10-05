@@ -405,7 +405,7 @@ _string_each(struct wi_state* state, uint8_t arg_count) {
         i += cp_len;
     }
 
-    wi_push_null(state);
+    wi_push_arg(state, 1);
 }
 
 static void
