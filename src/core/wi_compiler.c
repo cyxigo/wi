@@ -1119,11 +1119,26 @@ _compiler_function_expr(struct wi_compiler* outer, bool can_assign) {
     bool            has_params = compiler->parser->prev.kind == WI_TOKEN_PIPE;
     struct wi_token var_name   = outer->var_name;
 
-    if (var_name.kind == WI_TOKEN_NAME) {
+    if (var_name.kind != WI_TOKEN_BLANK) {
         compiler->prototype->name = wi_copy_cstring(compiler->gc, var_name.start, var_name.count);
     }
 
-    if (compiler->prototype->name) {
+    /*
+        check if our var_name is actually a variable name, and not a field (WI_TOKEN_DOT)
+        but why?
+        take this code for example:
+        ```
+            f := || => null;
+            obj := object {
+                f: || => f();
+            };
+            obj.f();
+        ```
+        fields are not visible to function/method bodies, unless via self
+        but here, field "f" WILL be able to find itself because of this local trick
+        that must not happen!!! so we politely reject fields from our cool local trickery.
+    */
+    if (var_name.kind == WI_TOKEN_NAME) {
         compiler->locals[0].name = (struct wi_token){
             .kind  = WI_TOKEN_NAME,
             .start = compiler->prototype->name->buf,
@@ -1212,6 +1227,7 @@ _compiler_object_expr(struct wi_compiler* compiler, bool can_assign) {
         struct wi_token field_name = wi_parser_expect(compiler->parser, WI_TOKEN_NAME);
         struct wi_token var_name   = compiler->var_name;
         compiler->var_name         = field_name;
+        compiler->var_name.kind    = WI_TOKEN_DOT; /* "this is a FIELD name, not a variable name" */
 
         wi_parser_expect(compiler->parser, WI_TOKEN_COLON);
 
@@ -1256,6 +1272,7 @@ _compiler_new_expr(struct wi_compiler* compiler, bool can_assign) {
         uint16_t        name_constant = _compiler_name_constant(compiler, name);
         struct wi_token var_name      = compiler->var_name;
         compiler->var_name            = name;
+        compiler->var_name.kind       = WI_TOKEN_DOT; /* "this is a FIELD name, not a variable name" */
 
         wi_parser_expect(compiler->parser, WI_TOKEN_COLON);
         _compiler_expr(compiler);

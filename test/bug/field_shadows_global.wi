@@ -1,0 +1,8 @@
+%% $ok
+%% Bug in v9.7.1-beta, this should actually work (field f should find global f, and not recurse onto itself)
+f := || => "hello!!!";
+obj := object {
+    a: 0;
+    f: || => f();
+};
+std::puts(obj.f());
