@@ -33,49 +33,22 @@ _print_bytes(struct wi_state* state, char* buf, int count) {
     }
 }
 
-static void
-_print_function(struct wi_state* state, struct wi_prototype* prototype) {
-    if (prototype->is_main) {
-        wi_printf(state, state->out, "<main function %p (%s)>", (void*)prototype, prototype->file_path);
-    } else {
-        wi_printf(state, state->out, "<function %p>", (void*)prototype);
-    }
-}
-
 void
 wi_value_print(struct wi_state* state, wi_value value) {
-    if (wi_value_is_real(value)) {
-        wi_printf(state, state->out, WI_REAL_FORMAT, wi_value_as_real(value));
-    } else if (wi_value_is_null(value)) {
-        state->out(state, "null");
-    } else if (wi_value_is_bool(value)) {
-        wi_printf(state, state->out, wi_value_as_bool(value) ? "true" : "false");
-    } else if (wi_value_is_string(value)) {
+    if (wi_value_is_string(value)) {
         struct wi_string* string = wi_value_as_string(value);
         _print_bytes(state, string->buf, string->count);
-    } else if (wi_value_is_array(value)) {
-        wi_printf(state, state->out, "<array %p>", (void*)wi_value_as_array(value));
-    } else if (wi_value_is_map(value)) {
-        wi_printf(state, state->out, "<map %p>", (void*)wi_value_as_map(value));
-    } else if (wi_value_is_prototype(value)) {
-        _print_function(state, wi_value_as_prototype(value));
-    } else if (wi_value_is_foreign(value)) {
-        wi_printf(state, state->out, "<foreign %p>", (void*)wi_value_as_foreign(value));
-    } else if (wi_value_is_closure(value)) {
-        _print_function(state, wi_value_as_closure(value)->prototype);
-    } else if (wi_value_is_upvalue(value)) {
-        wi_printf(state, state->out, "<upvalue %p>", (void*)wi_value_as_upvalue(value));
-    } else if (wi_value_is_object(value)) {
-        wi_printf(state, state->out, "<object %p>", (void*)wi_value_as_object(value));
-    } else if (wi_value_is_userdata(value)) {
-        struct wi_userdata* userdata = wi_value_as_userdata(value);
-        wi_printf(state, state->out, "<%s %p>", userdata->name->buf, (void*)userdata);
-    } else if (wi_value_is_module(value)) {
-        struct wi_module* module = wi_value_as_module(value);
-        wi_printf(state, state->out, "<module %p (%s)>", (void*)module, module->path);
-    } else {
-        state->out(state, "<unknown>");
+        return;
     }
+
+    char* text = wi_value_to_string(value);
+
+    if (!text) {
+        return;
+    }
+
+    state->out(state, text);
+    free(text);
 }
 
 static uint32_t
