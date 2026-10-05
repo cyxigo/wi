@@ -197,6 +197,11 @@ wi_value_as_closure(wi_value value) {
 struct wi_closure*
 wi_new_closure(struct wi_gc* gc, struct wi_prototype* prototype, struct wi_module* module);
 
+WI_INLINE bool
+wi_value_is_callable(wi_value value) {
+    return wi_value_is_foreign(value) || wi_value_is_closure(value);
+}
+
 struct wi_upvalue {
     struct wi_box      box;
     struct wi_upvalue* next;

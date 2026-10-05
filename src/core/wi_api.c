@@ -213,8 +213,7 @@ wi_is_string(struct wi_state* state) {
 
 bool
 wi_is_function(struct wi_state* state) {
-    wi_value value = wi_state_top(state);
-    return wi_value_is_foreign(value) || wi_value_is_closure(value);
+    return wi_value_is_callable(wi_state_top(state));
 }
 
 bool
@@ -456,8 +455,7 @@ wi_arg_is_string(struct wi_state* state, uint8_t arg) {
 
 bool
 wi_arg_is_function(struct wi_state* state, uint8_t arg) {
-    wi_value value = state->ffi_stack[arg];
-    return wi_value_is_foreign(value) || wi_value_is_closure(value);
+    return wi_value_is_callable(state->ffi_stack[arg]);
 }
 
 bool
@@ -538,8 +536,8 @@ wi_arg_string(struct wi_state* state, uint8_t arg, int* count, int* len) {
     return string->buf;
 }
 
-static void
-_check_function(struct wi_state* state, uint8_t arg, uint8_t arity) {
+void
+wi_arg_check_function(struct wi_state* state, uint8_t arg, uint8_t arity) {
     wi_value value = state->ffi_stack[arg];
 
     if (!wi_value_is_foreign(value) && !wi_value_is_closure(value)) {
@@ -557,13 +555,8 @@ _check_function(struct wi_state* state, uint8_t arg, uint8_t arity) {
 }
 
 void
-wi_arg_check_function(struct wi_state* state, uint8_t arg, uint8_t arity) {
-    _check_function(state, arg, arity);
-}
-
-void
 wi_arg_function(struct wi_state* state, uint8_t arg, uint8_t arity) {
-    _check_function(state, arg, arity);
+    wi_arg_check_function(state, arg, arity);
     wi_state_ppush(state, state->ffi_stack[arg]);
 }
 
