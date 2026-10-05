@@ -17,6 +17,28 @@
 #include "wi_util.h"
 #include "wi_value.h"
 
+int
+wi_abi_version(void) {
+    return WI_VERSION_MAJOR;
+}
+
+void
+wi_check_version(struct wi_state* state, int version) {
+    int wi = wi_abi_version();
+
+    if (WI_LIKELY(version == wi)) {
+        return;
+    }
+
+    struct wi_compiler* compiler = state->gc->compiler;
+
+    if (!compiler) {
+        wi_state_error(state, "foreign code needs Wi version %i but running Wi %i", version, wi);
+    }
+
+    wi_parser_error_at_prev(compiler->parser, "foreign code needs Wi version %i but running Wi %i", version, wi);
+}
+
 bool
 wi_load(struct wi_state* state, const char* file_path, const char* src) {
     struct wi_module* module = wi_new_module(state->gc, file_path);

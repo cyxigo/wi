@@ -156,6 +156,31 @@ typedef struct wi_foreign_entry {
 } wi_foreign_entry;
 
 /**
+ * Get the MAJOR version of the Wi library used
+ *
+ * @return `WI_VERSION_MAJOR` of the Wi library used
+ */
+WI_API int
+wi_abi_version(void);
+
+/**
+ * Check whether the Wi library used and the code making the call match MAJOR versions.
+ * Will raise a compile or a runtime error depending on the call context
+ *
+ * @param state Wi state instance
+ * @param version `WI_VERSION_MAJOR` of the code making the call
+ */
+WI_API void
+wi_check_version(wi_state* state, int version);
+
+/**
+ * Call `wi_check_version` with `WI_VERSION_MAJOR` provided by included `wi_conf.h`
+ *
+ * @param state Wi state instance
+ */
+#define WI_CHECK_VERSION(state) wi_check_version(state, WI_VERSION_MAJOR)
+
+/**
  * Create a new Wi state instance
  *
  * @param conf Wi configuration, see `wi_conf.h` for more
