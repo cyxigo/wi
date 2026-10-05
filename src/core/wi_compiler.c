@@ -301,7 +301,7 @@ _compiler_make_constant(struct wi_compiler* compiler, wi_value value) {
         wi_value_buf_add(&compiler->prototype->constants, value);
         int index = compiler->prototype->constants.count - 1;
 
-        if (index > WI_CONSTANT_MAX) {
+        if (index >= WI_CONSTANT_MAX) {
             wi_parser_error_limit(compiler->parser, "constants in a prototype", WI_CONSTANT_MAX);
         }
 
@@ -389,7 +389,7 @@ _compiler_def_var(struct wi_compiler* compiler, struct wi_token name, wi_vardata
 
     int index = compiler->module->globals.count;
 
-    if (index > WI_GLOBAL_MAX) {
+    if (index >= WI_GLOBAL_MAX) {
         wi_parser_error_at(compiler->parser, name, "too many globals in a module (limit is %i)", WI_GLOBAL_MAX);
     }
 

@@ -759,7 +759,7 @@ wi_module_set(struct wi_state* state, struct wi_module* module, const char* name
     } else {
         int index = module->globals.count;
 
-        if (index > WI_GLOBAL_MAX) {
+        if (index >= WI_GLOBAL_MAX) {
             wi_state_error(state, "too many globals in a module (limit is %i)", WI_GLOBAL_MAX);
         }
 
