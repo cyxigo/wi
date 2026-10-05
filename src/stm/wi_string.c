@@ -263,8 +263,8 @@ _string_split(struct wi_state* state, uint8_t arg_count) {
     struct wi_array* result = wi_push_array(state);
 
     if (sep_count == 0) {
-        wi_value_buf_add(&result->items, state->ffi_stack[1]);
-        WI_GC_WRITE_BARRIER(state->gc, result, state->ffi_stack[1]);
+        wi_push_arg(state, 1);
+        wi_array_add(state, result);
         return;
     }
 
@@ -273,13 +273,8 @@ _string_split(struct wi_state* state, uint8_t arg_count) {
 
     while (i + sep_count <= count) {
         if (memcmp(string + i, sep, (size_t)sep_count) == 0) {
-            struct wi_string* part       = wi_copy_cstring(state->gc, string + start, i - start);
-            wi_value          part_value = WI_MAKE_BOX_VALUE(part);
-
-            WI_GC_PUSH_ROOT(state->gc, part);
-            wi_value_buf_add(&result->items, part_value);
-            WI_GC_WRITE_BARRIER(state->gc, result, part_value);
-            wi_gc_pop_root(state->gc);
+            wi_push_lstring(state, string + start, i - start);
+            wi_array_add(state, result);
 
             i += sep_count;
             start = i;
@@ -288,13 +283,8 @@ _string_split(struct wi_state* state, uint8_t arg_count) {
         }
     }
 
-    struct wi_string* last       = wi_copy_cstring(state->gc, string + start, count - start);
-    wi_value          last_value = WI_MAKE_BOX_VALUE(last);
-
-    WI_GC_PUSH_ROOT(state->gc, last);
-    wi_value_buf_add(&result->items, last_value);
-    WI_GC_WRITE_BARRIER(state->gc, result, last_value);
-    wi_gc_pop_root(state->gc);
+    wi_push_lstring(state, string + start, count - start);
+    wi_array_add(state, result);
 }
 
 static void
