@@ -279,6 +279,13 @@ _compiler_pop_loop_locals(struct wi_compiler* compiler) {
 }
 
 static void
+_compiler_emit_call(struct wi_compiler* compiler, uint8_t arg_count) {
+    _compiler_emit_opcode_byte(compiler, WI_OP_CALL, arg_count);
+    compiler->last_call = compiler->code->bytes.count - 2;
+    compiler->slot_count -= arg_count;
+}
+
+static void
 _compiler_emit_return(struct wi_compiler* compiler) {
     _compiler_emit_opcode(compiler, WI_OP_PUSH_NULL);
     _compiler_emit_opcode(compiler, WI_OP_RETURN);
@@ -898,9 +905,7 @@ static void
 _compiler_call_expr(struct wi_compiler* compiler, bool can_assign) {
     WI_UNUSED(can_assign);
     uint8_t arg_count = _compiler_arg_list(compiler, 0);
-    _compiler_emit_opcode_byte(compiler, WI_OP_CALL, arg_count);
-    compiler->last_call = compiler->code->bytes.count - 2;
-    compiler->slot_count -= arg_count;
+    _compiler_emit_call(compiler, arg_count);
 }
 
 static void
@@ -988,10 +993,7 @@ _compiler_invoke_expr(struct wi_compiler* compiler, bool can_assign) {
 
     wi_parser_expect(compiler->parser, WI_TOKEN_OPEN_PAREN);
     uint8_t arg_count = _compiler_arg_list(compiler, 1);
-
-    _compiler_emit_opcode_byte(compiler, WI_OP_CALL, arg_count);
-    compiler->last_call = compiler->code->bytes.count - 2;
-    compiler->slot_count -= arg_count;
+    _compiler_emit_call(compiler, arg_count);
 }
 
 static void
