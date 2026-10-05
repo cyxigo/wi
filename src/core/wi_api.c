@@ -409,11 +409,13 @@ wi_pop_object(struct wi_state* state) {
 
 void*
 wi_pop_userdata(struct wi_state* state, const char* name) {
-    if (WI_UNLIKELY(!wi_is_userdata(state, name))) {
-        wi_state_error(state, "expected a value of type %s but got %s", name, wi_value_type(wi_state_pop(state)));
+    wi_value value = wi_state_pop(state);
+
+    if (WI_UNLIKELY(!_is_userdata(value, name))) {
+        wi_state_error(state, "expected a value of type %s but got %s", name, wi_value_type(value));
     }
 
-    return wi_value_as_userdata(wi_state_pop(state))->data;
+    return wi_value_as_userdata(value)->data;
 }
 
 struct wi_module*
