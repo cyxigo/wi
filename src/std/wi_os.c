@@ -126,10 +126,28 @@ _os_getenv(struct wi_state* state, uint8_t arg_count) {
 }
 
 static void
+_array_push_string(struct wi_state* state, struct wi_array* array, const char* string) {
+    struct wi_string* box = wi_make_string(state->gc, string);
+    WI_GC_PUSH_ROOT(state->gc, box);
+    wi_value_buf_add(&array->items, WI_MAKE_BOX_VALUE(box));
+    WI_GC_WRITE_BARRIER(state->gc, array, WI_MAKE_BOX_VALUE(box));
+    wi_gc_pop_root(state->gc);
+}
+
+static void
 _os_args(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     struct wi_array* result = wi_push_array(state);
-    wi_value_buf_reserve(&result->items, state->script_argc);
+    /* +1 since we also need to insert the main script path */
+    wi_value_buf_reserve(&result->items, state->script_argc + 1);
+
+    const char* path = state->main_module->path;
+
+    if (!wi_utf8_validate(path, (int)strlen(path))) {
+        wi_state_error(state, "invalid utf-8 sequence in script path");
+    }
+
+    _array_push_string(state, result, path);
 
     for (int i = 0; i < state->script_argc; i++) {
         const char* arg = state->script_argv[i];
@@ -138,12 +156,7 @@ _os_args(struct wi_state* state, uint8_t arg_count) {
             wi_state_error(state, "invalid utf-8 sequence in script argument %i", i);
         }
 
-        struct wi_string* arg_box = wi_make_string(state->gc, arg);
-
-        WI_GC_PUSH_ROOT(state->gc, arg_box);
-        wi_value_buf_add(&result->items, WI_MAKE_BOX_VALUE(arg_box));
-        WI_GC_WRITE_BARRIER(state->gc, result, WI_MAKE_BOX_VALUE(arg_box));
-        wi_gc_pop_root(state->gc);
+        _array_push_string(state, result, arg);
     }
 }
 
