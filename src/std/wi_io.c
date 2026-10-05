@@ -219,13 +219,7 @@ _io_writebytes(struct wi_state* state, uint8_t arg_count) {
 
     for (int i = 0; i < bytes->items.count; i++) {
         wi_value value = bytes->items.data[i];
-
-        if (!wi_value_is_real(value)) {
-            free(buf);
-            wi_state_error(state, "real %i has no byte representation", i);
-        }
-
-        wi_real real = wi_value_as_real(value);
+        wi_real  real  = wi_value_is_real(value) ? wi_value_as_real(value) : -1;
 
         if (real != trunc(real) || real < 0 || real > 255) {
             free(buf);
