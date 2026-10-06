@@ -1861,10 +1861,10 @@ _compiler_switch_stmt(struct wi_compiler* compiler) {
 
     compiler->switch_ = switch_;
 
-    while (!wi_parser_match(compiler->parser, WI_TOKEN_CLOSE_BRACE) && !wi_parser_is_at_end(compiler->parser)) {
+    while (!wi_parser_check(compiler->parser, WI_TOKEN_CLOSE_BRACE) && !wi_parser_is_at_end(compiler->parser)) {
         if (!wi_parser_match(compiler->parser, WI_TOKEN_CASE) &&
             !wi_parser_match(compiler->parser, WI_TOKEN_DEFAULT)) {
-            wi_parser_error_at_prev(compiler->parser, "unexpected symbol");
+            wi_parser_error_at_curr(compiler->parser, "unexpected symbol");
         }
 
         if (switch_->has_default) {
@@ -1910,6 +1910,8 @@ _compiler_switch_stmt(struct wi_compiler* compiler) {
             _compiler_stmt(compiler);
         }
     }
+
+    wi_parser_expect(compiler->parser, WI_TOKEN_CLOSE_BRACE);
 
     for (int i = 0; i < switch_->end_jumps.count; i++) {
         _compiler_patch_jump(compiler, switch_->end_jumps.data[i]);
