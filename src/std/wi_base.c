@@ -259,21 +259,20 @@ _base_real(struct wi_state* state, uint8_t arg_count) {
         result = wi_make_real_value(wi_value_as_bool(value) ? 1 : 0);
     } else if (wi_value_is_string(value)) {
         struct wi_string* string = wi_value_as_string(state->ffi_stack[1]);
+        char*             end    = NULL;
+        bool              overflow;
+        wi_real           real     = wi_string_to_real(string->buf, string->count, &end, &overflow);
+        char*             conv_end = end; /* end before we skip trailing spaces */
 
-        if (string->count == 0) {
-            wi_state_error(state, "invalid real format");
-        }
-
-        char*   end = NULL;
-        bool    overflow;
-        wi_real real = wi_string_to_real(string->buf, string->count, &end, &overflow);
-
-        /* skip trailing spaces */
+        /* skip trailing spaces ("1  " is a valid string) */
         while (isspace((unsigned char)*end)) {
             end++;
         }
 
-        if (end != string->buf + string->count || overflow) {
+        if (conv_end == string->buf ||            /* blank? */
+            end != string->buf + string->count || /* trailing stuff? */
+            overflow                              /* overflow? */
+        ) {
             wi_state_error(state, "invalid real format %s", string->buf);
         }
 
