@@ -1450,6 +1450,10 @@ _compiler_import_script(struct wi_compiler* compiler, char* path, char** atts) {
 #if defined(_WIN32) || defined(__linux__)
 static bool
 _compiler_import_foreign(struct wi_compiler* compiler, char* lib_path, char** atts) {
+    if (!lib_path) {
+        return false;
+    }
+
     struct wi_state*  state      = compiler->state;
     struct wi_string* path       = wi_take_calloc_string(compiler->gc, lib_path, (int)strlen(lib_path));
     wi_value          path_value = WI_MAKE_BOX_VALUE(path);
