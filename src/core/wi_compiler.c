@@ -1360,7 +1360,7 @@ _import_script_path(struct wi_compiler* compiler, struct wi_token name, const ch
     return path;
 }
 
-/* path in the "lib" directory next to the wi executable, or NULL if that can't be located on this platform */
+/* path in the "lib" directory next to the wi executable, or NULL if that can't be located */
 static char*
 _import_lib_path(struct wi_compiler* compiler, struct wi_token name, const char* ext) {
 #if !defined(_WIN32) && !defined(__linux__)
@@ -1375,7 +1375,7 @@ _import_lib_path(struct wi_compiler* compiler, struct wi_token name, const char*
     DWORD len = GetModuleFileName(NULL, exe, (DWORD)sizeof(exe));
 
     if (len < 1 || len >= sizeof(exe)) {
-        wi_parser_error_at_prev(compiler->parser, "call to GetModuleFileName failed or path truncated");
+        return NULL;
     }
 
     char* slash = strrchr(exe, '\\');
@@ -1383,7 +1383,7 @@ _import_lib_path(struct wi_compiler* compiler, struct wi_token name, const char*
     ssize_t len = readlink("/proc/self/exe", exe, sizeof(exe) - 1);
 
     if (len == -1) {
-        wi_parser_error_at_prev(compiler->parser, "call to readlink failed");
+        return NULL;
     }
 
     exe[len]    = '\0';
