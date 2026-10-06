@@ -1809,24 +1809,13 @@ _compiler_for_stmt(struct wi_compiler* compiler) {
 }
 
 static void
-_compiler_break_stmt(struct wi_compiler* compiler) {
+_compiler_loop_jump_stmt(struct wi_compiler* compiler, uint8_t opcode, const char* kw) {
     if (!compiler->loop) {
-        wi_parser_error_at_prev(compiler->parser, "cannot use 'break' outside of a loop");
+        wi_parser_error_at_prev(compiler->parser, "cannot use '%s' outside of a loop", kw);
     }
 
     _compiler_pop_loop_locals(compiler);
-    _compiler_emit_jump(compiler, WI_OP_BREAK);
-    wi_parser_expect(compiler->parser, WI_TOKEN_SEMICOLON);
-}
-
-static void
-_compiler_continue_stmt(struct wi_compiler* compiler) {
-    if (!compiler->loop) {
-        wi_parser_error_at_prev(compiler->parser, "cannot use 'continue' outside of a loop");
-    }
-
-    _compiler_pop_loop_locals(compiler);
-    _compiler_emit_jump(compiler, WI_OP_CONTINUE);
+    _compiler_emit_jump(compiler, opcode);
     wi_parser_expect(compiler->parser, WI_TOKEN_SEMICOLON);
 }
 
@@ -1995,11 +1984,11 @@ _compiler_stmt(struct wi_compiler* compiler) {
             break;
         case WI_TOKEN_BREAK:
             wi_parser_advance(compiler->parser);
-            _compiler_break_stmt(compiler);
+            _compiler_loop_jump_stmt(compiler, WI_OP_BREAK, "break");
             break;
         case WI_TOKEN_CONTINUE:
             wi_parser_advance(compiler->parser);
-            _compiler_continue_stmt(compiler);
+            _compiler_loop_jump_stmt(compiler, WI_OP_CONTINUE, "continue");
             break;
         case WI_TOKEN_SWITCH:
             wi_parser_advance(compiler->parser);
