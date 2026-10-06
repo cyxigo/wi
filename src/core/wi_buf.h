@@ -46,7 +46,7 @@ wi_grow_capacity(int capacity) {
     WI_INLINE void wi_##name##_buf_reserve(struct wi_##name##_buf* buf, int count) {                         \
         int needed = buf->count + count;                                                                     \
                                                                                                              \
-        if (WI_UNLIKELY(needed <= buf->capacity)) {                                                          \
+        if (WI_LIKELY(needed <= buf->capacity)) {                                                            \
             return;                                                                                          \
         }                                                                                                    \
                                                                                                              \
