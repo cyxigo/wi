@@ -1511,11 +1511,11 @@ _compiler_import_foreign(struct wi_compiler* compiler, char* lib_path, char** at
     bool                is_new = !node->module;
 
     if (is_new) {
-        wi_value* stack_top = state->stack_top;
-        node->module        = init(state);
+        ptrdiff_t top = state->stack_top - state->stack;
+        node->module  = init(state);
 
         if (!node->module) {
-            state->stack_top = stack_top;
+            state->stack_top = state->stack + top;
             wi_gc_pop_root(compiler->gc);
             free(*atts);
             wi_parser_error_at_prev(compiler->parser,
