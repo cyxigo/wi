@@ -1210,8 +1210,8 @@ _compiler_function_expr(struct wi_compiler* outer, bool can_assign) {
         _compiler_warn_unused(compiler, &compiler->locals[i]);
     }
 
+    uint16_t             constant  = _compiler_make_constant(outer, WI_MAKE_BOX_VALUE(compiler->prototype));
     struct wi_prototype* prototype = _compiler_end(compiler);
-    uint16_t             constant  = _compiler_make_constant(outer, WI_MAKE_BOX_VALUE(prototype));
     _compiler_emit_opcode_short(outer, WI_OP_PUSH_CLOSURE, constant);
 
     for (int i = 0; i < prototype->upvalue_count; i++) {
