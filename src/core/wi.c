@@ -86,13 +86,14 @@ _repl_append_line(char* buf, size_t* buf_len, char* line) {
     return new_buf;
 }
 
-static void
+static int
 _repl(void) {
     _version();
 
     /* buffer for the whole repl input, multiline and not */
-    char*  buf     = NULL;
-    size_t buf_len = 0;
+    char*  buf       = NULL;
+    size_t buf_len   = 0;
+    int    exit_code = EXIT_SUCCESS;
 
     for (;;) {
         char* line;
@@ -116,11 +117,13 @@ _repl(void) {
         buf_len = 0;
 
         if (result == WI_RUN_ABORT) {
+            exit_code = wi_state_exit_code(_g_state);
             break;
         }
     }
 
     _delete_g_state();
+    return exit_code;
 }
 
 static void
@@ -286,8 +289,7 @@ main(int argc, const char** argv) {
 
     if (!file_path) {
         wi_conf_set(&conf, WI_CONF_REPL);
-        _repl();
-        return EXIT_SUCCESS;
+        return _repl();
     }
 
     char*         src       = _read_file(file_path);
