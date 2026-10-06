@@ -152,20 +152,16 @@ wi_call(struct wi_state* state, uint8_t arg_count, bool drop) {
 
 bool
 wi_pcall(struct wi_state* state, uint8_t arg_count, bool drop, char** error) {
-    /* an offset in case stack reallocates (very scary) */
-    ptrdiff_t           start    = state->stack_top - state->stack - arg_count - 1;
     struct wi_recovery* recovery = wi_state_push_recovery(state);
-    bool                failed;
+    /* the callee and its arguments belong to the call, so an error has to close their upvalues too */
+    recovery->stack_top -= arg_count + 1;
+    bool failed;
 
     if (setjmp(recovery->jmp) == WI_RUN_OK) {
         wi_call(state, arg_count, drop);
         failed = false;
     } else {
         failed = true;
-    }
-
-    if (failed) {
-        state->stack_top = state->stack + start;
     }
 
     if (error) {
