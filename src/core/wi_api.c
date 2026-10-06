@@ -143,7 +143,7 @@ void
 wi_call(struct wi_state* state, uint8_t arg_count, bool drop) {
     wi_value value = wi_state_peek(state, arg_count);
 
-    if (WI_UNLIKELY(!wi_value_is_foreign(value) && !wi_value_is_closure(value))) {
+    if (WI_UNLIKELY(!wi_value_is_callable(value))) {
         wi_state_error(state, "cannot call a value of type %s", wi_value_type(value));
     }
 
@@ -158,13 +158,7 @@ wi_pcall(struct wi_state* state, uint8_t arg_count, bool drop, char** error) {
     bool                failed;
 
     if (setjmp(recovery->jmp) == WI_RUN_OK) {
-        wi_value value = wi_state_peek(state, arg_count);
-
-        if (WI_UNLIKELY(!wi_value_is_foreign(value) && !wi_value_is_closure(value))) {
-            wi_state_error(state, "cannot call a value of type %s", wi_value_type(value));
-        }
-
-        wi_state_call(state, value, arg_count, drop);
+        wi_call(state, arg_count, drop);
         failed = false;
     } else {
         failed = true;
@@ -540,7 +534,7 @@ void
 wi_arg_check_function(struct wi_state* state, uint8_t arg, uint8_t arity) {
     wi_value value = state->ffi_stack[arg];
 
-    if (!wi_value_is_foreign(value) && !wi_value_is_closure(value)) {
+    if (!wi_value_is_callable(value)) {
         wi_state_error(state, "bad argument %hhu - expected a value of type function but got %s", arg,
                        wi_value_type(value));
     }
