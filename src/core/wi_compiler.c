@@ -1232,6 +1232,18 @@ _compiler_get_module_var_expr(struct wi_compiler* compiler, bool can_assign) {
 }
 
 static void
+_compiler_field_value(struct wi_compiler* compiler, struct wi_token name) {
+    struct wi_token var_name = compiler->var_name;
+    compiler->var_name       = name;
+    compiler->var_name.kind  = WI_TOKEN_DOT; /* "this is a FIELD name, not a variable name" */
+
+    wi_parser_expect(compiler->parser, WI_TOKEN_COLON);
+    _compiler_expr(compiler);
+    wi_parser_expect(compiler->parser, WI_TOKEN_SEMICOLON);
+    compiler->var_name = var_name;
+}
+
+static void
 _compiler_object_expr(struct wi_compiler* compiler, bool can_assign) {
     WI_UNUSED(can_assign);
     uint16_t field_count = 0;
@@ -1242,20 +1254,11 @@ _compiler_object_expr(struct wi_compiler* compiler, bool can_assign) {
             wi_parser_error_limit(compiler->parser, "fields in an object", UINT16_MAX);
         }
 
-        struct wi_token field_name = wi_parser_expect(compiler->parser, WI_TOKEN_NAME);
-        struct wi_token var_name   = compiler->var_name;
-        compiler->var_name         = field_name;
-        compiler->var_name.kind    = WI_TOKEN_DOT; /* "this is a FIELD name, not a variable name" */
-
-        wi_parser_expect(compiler->parser, WI_TOKEN_COLON);
-
-        uint16_t constant = _compiler_name_constant(compiler, field_name);
+        struct wi_token name     = wi_parser_expect(compiler->parser, WI_TOKEN_NAME);
+        uint16_t        constant = _compiler_name_constant(compiler, name);
         _compiler_emit_opcode_short(compiler, WI_OP_PUSH, constant);
-        _compiler_expr(compiler);
-
-        wi_parser_expect(compiler->parser, WI_TOKEN_SEMICOLON);
+        _compiler_field_value(compiler, name);
         field_count++;
-        compiler->var_name = var_name;
     }
 
     wi_parser_expect(compiler->parser, WI_TOKEN_CLOSE_BRACE);
@@ -1286,18 +1289,10 @@ _compiler_new_expr(struct wi_compiler* compiler, bool can_assign) {
     }
 
     while (!wi_parser_check(compiler->parser, WI_TOKEN_CLOSE_BRACE) && !wi_parser_is_at_end(compiler->parser)) {
-        struct wi_token name          = wi_parser_expect(compiler->parser, WI_TOKEN_NAME);
-        uint16_t        name_constant = _compiler_name_constant(compiler, name);
-        struct wi_token var_name      = compiler->var_name;
-        compiler->var_name            = name;
-        compiler->var_name.kind       = WI_TOKEN_DOT; /* "this is a FIELD name, not a variable name" */
-
-        wi_parser_expect(compiler->parser, WI_TOKEN_COLON);
-        _compiler_expr(compiler);
-        wi_parser_expect(compiler->parser, WI_TOKEN_SEMICOLON);
-
-        _compiler_emit_opcode_short(compiler, WI_OP_INIT_FIELD, name_constant);
-        compiler->var_name = var_name;
+        struct wi_token name     = wi_parser_expect(compiler->parser, WI_TOKEN_NAME);
+        uint16_t        constant = _compiler_name_constant(compiler, name);
+        _compiler_field_value(compiler, name);
+        _compiler_emit_opcode_short(compiler, WI_OP_INIT_FIELD, constant);
     }
 
     wi_parser_expect(compiler->parser, WI_TOKEN_CLOSE_BRACE);
