@@ -182,6 +182,11 @@ _flag_parse_error(const char* format, ...) {
     exit(EXIT_FAILURE);
 }
 
+static bool
+_is_flag(const char* arg, const char* short_name, const char* long_name) {
+    return strcmp(arg, short_name) == 0 || strcmp(arg, long_name) == 0;
+}
+
 static void
 _parse_flags(int argc, const char** argv, wi_conf* conf, const char** file_path, int* script_argc,
              const char*** script_argv) {
@@ -210,32 +215,32 @@ _parse_flags(int argc, const char** argv, wi_conf* conf, const char** file_path,
             continue;
         }
 
-        if (strcmp(arg, "-h") == 0 || strcmp(arg, "--help") == 0) {
+        if (_is_flag(arg, "-h", "--help")) {
             _help();
             exit(EXIT_SUCCESS);
         }
 
-        if (strcmp(arg, "-v") == 0 || strcmp(arg, "--version") == 0) {
+        if (_is_flag(arg, "-v", "--version")) {
             _version();
             exit(EXIT_SUCCESS);
         }
 
-        if (strcmp(arg, "-pc") == 0 || strcmp(arg, "--print-code") == 0) {
+        if (_is_flag(arg, "-pc", "--print-code")) {
             wi_conf_set(conf, WI_CONF_PRINT_CODE);
             continue;
         }
 
-        if (strcmp(arg, "-sgc") == 0 || strcmp(arg, "--stress-gc") == 0) {
+        if (_is_flag(arg, "-sgc", "--stress-gc")) {
             wi_conf_set(conf, WI_CONF_STRESS_GC);
             continue;
         }
 
-        if (strcmp(arg, "-lgc") == 0 || strcmp(arg, "--log-gc") == 0) {
+        if (_is_flag(arg, "-lgc", "--log-gc")) {
             wi_conf_set(conf, WI_CONF_LOG_GC);
             continue;
         }
 
-        if (strcmp(arg, "-nw") == 0 || strcmp(arg, "--no-warnings") == 0) {
+        if (_is_flag(arg, "-nw", "--no-warnings")) {
             wi_conf_set(conf, WI_CONF_NO_WARNINGS);
             continue;
         }
