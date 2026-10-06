@@ -291,6 +291,22 @@ _compiler_emit_return(struct wi_compiler* compiler) {
     _compiler_emit_opcode(compiler, WI_OP_RETURN);
 }
 
+static void
+_compiler_return_value(struct wi_compiler* compiler) {
+    int      end    = compiler->code->bytes.count;
+    uint8_t* bytes  = compiler->code->bytes.data;
+    int      offset = compiler->last_call;
+
+    compiler->slot_count--;
+
+    if (offset != -1 && offset == end - 2 && bytes[offset] == WI_OP_CALL) {
+        bytes[offset] = WI_OP_TAIL_CALL;
+        return;
+    }
+
+    _compiler_emit_opcode(compiler, WI_OP_RETURN);
+}
+
 static uint16_t
 _compiler_make_constant(struct wi_compiler* compiler, wi_value value) {
     bool is_box = wi_value_is_box(value);
@@ -1187,7 +1203,7 @@ _compiler_function_expr(struct wi_compiler* outer, bool can_assign) {
         _compiler_block(compiler);
     } else {
         _compiler_expr(compiler);
-        _compiler_emit_opcode(compiler, WI_OP_RETURN);
+        _compiler_return_value(compiler);
     }
 
     for (int i = 1; i < compiler->local_count; i++) {
@@ -1922,17 +1938,7 @@ _compiler_return_stmt(struct wi_compiler* compiler) {
 
     _compiler_expr(compiler);
     wi_parser_expect(compiler->parser, WI_TOKEN_SEMICOLON);
-
-    int      end    = compiler->code->bytes.count;
-    uint8_t* bytes  = compiler->code->bytes.data;
-    int      offset = compiler->last_call;
-
-    if (offset != -1 && offset == end - 2 && bytes[offset] == WI_OP_CALL) {
-        bytes[offset] = WI_OP_TAIL_CALL;
-        return;
-    }
-
-    _compiler_emit_opcode(compiler, WI_OP_RETURN);
+    _compiler_return_value(compiler);
 }
 
 static void
