@@ -221,7 +221,13 @@ _io_writebytes(struct wi_state* state, uint8_t arg_count) {
 
     for (int i = 0; i < bytes->items.count; i++) {
         wi_value value = bytes->items.data[i];
-        wi_real  real  = wi_value_is_real(value) ? wi_value_as_real(value) : -1;
+
+        if (WI_UNLIKELY(!wi_value_is_real(value))) {
+            free(buf);
+            wi_state_error(state, "cannot write a value of type %s as a byte", wi_value_type(value));
+        }
+
+        wi_real real = wi_value_as_real(value);
 
         if (real != trunc(real) || real < 0 || real > 255) {
             free(buf);
