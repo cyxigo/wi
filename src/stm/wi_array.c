@@ -228,6 +228,10 @@ _array_slice(struct wi_state* state, uint8_t arg_count) {
     struct wi_array* result = wi_push_array(state);
     int64_t          count  = end - start;
 
+    if (count <= 0) {
+        return;
+    }
+
     wi_value_buf_reserve(&result->items, (int)count);
     memcpy(result->items.data, array->items.data + start, sizeof(wi_value) * (size_t)count);
     result->items.count = (int)count;
