@@ -36,8 +36,7 @@ _map_count(struct wi_state* state, uint8_t arg_count) {
 }
 
 static void
-_map_keys(struct wi_state* state, uint8_t arg_count) {
-    WI_UNUSED(arg_count);
+_map_collect(struct wi_state* state, bool keys) {
     struct wi_map*   map    = wi_arg_map(state, 1);
     struct wi_array* result = wi_push_array(state);
     wi_value_buf_reserve(&result->items, map->items.live_count);
@@ -45,28 +44,26 @@ _map_keys(struct wi_state* state, uint8_t arg_count) {
     for (int i = 0; i < map->items.capacity; i++) {
         struct wi_entry* entry = &map->items.entries[i];
 
-        if (!wi_value_is_empty(entry->key)) {
-            wi_value_buf_add(&result->items, entry->key);
-            WI_GC_WRITE_BARRIER(state->gc, result, entry->key);
+        if (wi_value_is_empty(entry->key)) {
+            continue;
         }
+
+        wi_value value = keys ? entry->key : entry->value;
+        wi_value_buf_add(&result->items, value);
+        WI_GC_WRITE_BARRIER(state->gc, result, value);
     }
+}
+
+static void
+_map_keys(struct wi_state* state, uint8_t arg_count) {
+    WI_UNUSED(arg_count);
+    _map_collect(state, true);
 }
 
 static void
 _map_values(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
-    struct wi_map*   map    = wi_arg_map(state, 1);
-    struct wi_array* result = wi_push_array(state);
-    wi_value_buf_reserve(&result->items, map->items.live_count);
-
-    for (int i = 0; i < map->items.capacity; i++) {
-        struct wi_entry* entry = &map->items.entries[i];
-
-        if (!wi_value_is_empty(entry->key)) {
-            wi_value_buf_add(&result->items, entry->value);
-            WI_GC_WRITE_BARRIER(state->gc, result, entry->value);
-        }
-    }
+    _map_collect(state, false);
 }
 
 static void
