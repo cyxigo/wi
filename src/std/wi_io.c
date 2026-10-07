@@ -225,7 +225,7 @@ _io_writebytes(struct wi_state* state, uint8_t arg_count) {
 
         if (real != trunc(real) || real < 0 || real > 255) {
             free(buf);
-            wi_state_error(state, "real %i has no byte representation", i);
+            wi_state_error(state, "real " WI_REAL_FORMAT " has no byte representation", real);
         }
 
         buf[i] = (uint8_t)real;
