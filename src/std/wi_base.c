@@ -419,11 +419,11 @@ _equals(struct wi_state* state, wi_value a, wi_value b, int c_depth) {
     }
 
     if (wi_value_is_map(a) && wi_value_is_map(b)) {
-        return _tables_equal(state, &wi_value_as_map(a)->items, &wi_value_as_map(b)->items, c_depth + 1);
+        return _tables_equal(state, &wi_value_as_map(a)->items, &wi_value_as_map(b)->items, c_depth);
     }
 
     if (wi_value_is_object(a) && wi_value_is_object(b)) {
-        return _tables_equal(state, &wi_value_as_object(a)->fields, &wi_value_as_object(b)->fields, c_depth + 1);
+        return _tables_equal(state, &wi_value_as_object(a)->fields, &wi_value_as_object(b)->fields, c_depth);
     }
 
     return false;

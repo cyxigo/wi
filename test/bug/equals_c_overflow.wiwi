@@ -1,0 +1,2 @@
+runtime error: C stack overflow (limit is 200)
+   --> test/bug/equals_c_overflow.wi:9 in main function

@@ -1,0 +1,9 @@
+%% $fail
+%% Bug in v9.7.1-beta, should overflow C stack but not cause a segfault
+%% did cause a segfault because of a slight off-by-one in std::equals implementation
+m := {};
+m["x"] = m;
+n := {};
+n["x"] = n;
+
+std::puts(std::equals([m], [n]));
