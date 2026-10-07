@@ -1210,6 +1210,14 @@ _compiler_function_expr(struct wi_compiler* outer, bool can_assign) {
         _compiler_warn_unused(compiler, &compiler->locals[i]);
     }
 
+    /*
+        we make the constant of the prototype first because _compiler_make_constant can fail too!
+        if we called _compiler_end before it, we would unlink that compiler from the compiler chain, and if
+        _compiler_make_constant failed after that, we would get a memory leak because the compiler is freed only
+        in two places: at the end of this amazing function, and in the error recovery path of wi_compile
+        we won't reach the former because of the longjmp (wi_parser_error_X)
+        and we won't find this compiler in the latter because it has been removed by _compiler_end
+    */
     uint16_t             constant  = _compiler_make_constant(outer, WI_MAKE_BOX_VALUE(compiler->prototype));
     struct wi_prototype* prototype = _compiler_end(compiler);
     _compiler_emit_opcode_short(outer, WI_OP_PUSH_CLOSURE, constant);
