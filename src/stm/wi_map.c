@@ -210,6 +210,38 @@ _map_where(struct wi_state* state, uint8_t arg_count) {
     }
 }
 
+static void
+_map_find(struct wi_state* state, uint8_t arg_count) {
+    WI_UNUSED(arg_count);
+    struct wi_map* map       = wi_arg_map(state, 1);
+    int            mod_count = map->items.mod_count;
+    wi_arg_check_function(state, 2, 2);
+
+    for (int i = 0; i < map->items.capacity; i++) {
+        struct wi_entry* entry = &map->items.entries[i];
+
+        wi_value key   = entry->key;
+        wi_value value = entry->value;
+
+        if (wi_value_is_empty(key)) {
+            continue;
+        }
+
+        wi_arg_function(state, 2, 2);
+        wi_state_ppush(state, key);
+        wi_state_ppush(state, value);
+        wi_call(state, 2, false);
+        wi_state_check_mod_count(state, "map", map->items.mod_count, mod_count);
+
+        if (!wi_value_is_falsy(wi_state_pop(state))) {
+            wi_state_ppush(state, key);
+            return;
+        }
+    }
+
+    wi_push_null(state);
+}
+
 void
 wi_state_def_stm_map(struct wi_state* state) {
     wi_foreign_entry functions[] = {
@@ -225,6 +257,7 @@ wi_state_def_stm_map(struct wi_state* state) {
         {"each",         _map_each,         2, false},
         {"select",       _map_select,       3, false},
         {"where",        _map_where,        2, false},
+        {"find",         _map_find,         2, false},
     };
     WI_TABLE_SET_FOREIGN_ALL(&state->stm_map, functions);
 }

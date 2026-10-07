@@ -279,9 +279,8 @@ _array_join(struct wi_state* state, uint8_t arg_count) {
         }
     }
 
-    struct wi_string* result = wi_copy_cstring(state->gc, buf.data, buf.count);
+    wi_push_lstring(state, buf.data, buf.count);
     wi_char_buf_free(&buf);
-    wi_state_ppush(state, WI_MAKE_BOX_VALUE(result));
 }
 
 static void
@@ -426,6 +425,30 @@ _array_sort(struct wi_state* state, uint8_t arg_count) {
     wi_push_arg(state, 1);
 }
 
+static void
+_array_find(struct wi_state* state, uint8_t arg_count) {
+    WI_UNUSED(arg_count);
+    struct wi_array* array     = wi_arg_array(state, 1);
+    int              mod_count = array->items.mod_count;
+    wi_arg_check_function(state, 2, 1);
+
+    for (int i = 0; i < array->items.count; i++) {
+        wi_value item = array->items.data[i];
+
+        wi_arg_function(state, 2, 1);
+        wi_state_ppush(state, item);
+        wi_call(state, 1, false);
+        wi_state_check_mod_count(state, "array", array->items.mod_count, mod_count);
+
+        if (!wi_value_is_falsy(wi_state_pop(state))) {
+            wi_state_ppush(state, item);
+            return;
+        }
+    }
+
+    wi_push_null(state);
+}
+
 void
 wi_state_def_stm_array(struct wi_state* state) {
     wi_foreign_entry functions[] = {
@@ -449,6 +472,7 @@ wi_state_def_stm_array(struct wi_state* state) {
         {"select",   _array_select,   2, false},
         {"where",    _array_where,    2, false},
         {"sort",     _array_sort,     2, false},
+        {"find",     _array_find,     2, false},
     };
     WI_TABLE_SET_FOREIGN_ALL(&state->stm_array, functions);
 }

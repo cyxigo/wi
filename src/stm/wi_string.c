@@ -37,9 +37,7 @@ _string_sub(struct wi_state* state, uint8_t arg_count) {
 
     int byte_start = wi_utf8_cp_offset(string, count, (int)start);
     int byte_end   = wi_utf8_cp_offset(string, count, (int)end);
-
-    struct wi_string* result = wi_copy_cstring(state->gc, string + byte_start, byte_end - byte_start);
-    wi_state_ppush(state, WI_MAKE_BOX_VALUE(result));
+    wi_push_lstring(state, string + byte_start, byte_end - byte_start);
 }
 
 static void
@@ -87,8 +85,7 @@ _string_trim(struct wi_state* state, uint8_t arg_count) {
         end--;
     }
 
-    struct wi_string* box = wi_copy_cstring(state->gc, string + start, end - start);
-    wi_state_ppush(state, WI_MAKE_BOX_VALUE(box));
+    wi_push_lstring(state, string + start, end - start);
 }
 
 static void
@@ -229,27 +226,26 @@ _string_replace(struct wi_state* state, uint8_t arg_count) {
         return;
     }
 
-    struct wi_char_buf result;
-    wi_char_buf_init(&result, state->gc);
+    struct wi_char_buf buf;
+    wi_char_buf_init(&buf, state->gc);
 
     int i = 0;
 
     while (i < count) {
         if (i + old_count <= count && memcmp(string + i, old, (size_t)old_count) == 0) {
             for (int j = 0; j < new_count; j++) {
-                wi_char_buf_add(&result, new[j]);
+                wi_char_buf_add(&buf, new[j]);
             }
 
             i += old_count;
         } else {
-            wi_char_buf_add(&result, string[i]);
+            wi_char_buf_add(&buf, string[i]);
             i++;
         }
     }
 
-    struct wi_string* replaced = wi_copy_cstring(state->gc, result.data, result.count);
-    wi_char_buf_free(&result);
-    wi_state_ppush(state, WI_MAKE_BOX_VALUE(replaced));
+    wi_push_lstring(state, buf.data, buf.count);
+    wi_char_buf_free(&buf);
 }
 
 static void
@@ -388,8 +384,7 @@ _string_each(struct wi_state* state, uint8_t arg_count) {
         memcpy(cp_buf, string + i, cp_len);
 
         wi_arg_function(state, 2, 1);
-        struct wi_string* cp_box = wi_copy_cstring(state->gc, cp_buf, (int)cp_len);
-        wi_state_ppush(state, WI_MAKE_BOX_VALUE(cp_box));
+        wi_push_lstring(state, cp_buf, (int)cp_len);
         wi_call(state, 1, true);
 
         i += cp_len;
@@ -422,8 +417,7 @@ _string_select(struct wi_state* state, uint8_t arg_count) {
         memcpy(cp_buf, string + i, cp_len);
 
         wi_arg_function(state, 2, 1);
-        struct wi_string* cp_box = wi_copy_cstring(state->gc, cp_buf, (int)cp_len);
-        wi_state_ppush(state, WI_MAKE_BOX_VALUE(cp_box));
+        wi_push_lstring(state, cp_buf, (int)cp_len);
         wi_call(state, 1, false);
 
         /* s prefix here is for "selected" */
@@ -444,9 +438,8 @@ _string_select(struct wi_state* state, uint8_t arg_count) {
     }
 
     wi_state_pop_recovery(state);
-    struct wi_string* box = wi_copy_cstring(state->gc, buf.data, buf.count);
+    wi_push_lstring(state, buf.data, buf.count);
     wi_char_buf_free(&buf);
-    wi_state_ppush(state, WI_MAKE_BOX_VALUE(box));
 }
 
 static void
@@ -473,8 +466,7 @@ _string_where(struct wi_state* state, uint8_t arg_count) {
         memcpy(cp_buf, string + i, cp_len);
 
         wi_arg_function(state, 2, 1);
-        struct wi_string* cp_box = wi_copy_cstring(state->gc, cp_buf, (int)cp_len);
-        wi_state_ppush(state, WI_MAKE_BOX_VALUE(cp_box));
+        wi_push_lstring(state, cp_buf, (int)cp_len);
         wi_call(state, 1, false);
 
         if (!wi_value_is_falsy(wi_state_pop(state))) {
@@ -487,9 +479,35 @@ _string_where(struct wi_state* state, uint8_t arg_count) {
     }
 
     wi_state_pop_recovery(state);
-    struct wi_string* box = wi_copy_cstring(state->gc, buf.data, buf.count);
+    wi_push_lstring(state, buf.data, buf.count);
     wi_char_buf_free(&buf);
-    wi_state_ppush(state, WI_MAKE_BOX_VALUE(box));
+}
+
+static void
+_string_find(struct wi_state* state, uint8_t arg_count) {
+    WI_UNUSED(arg_count);
+    int   count;
+    char* string = wi_arg_string(state, 1, &count, NULL);
+    wi_arg_check_function(state, 2, 1);
+
+    for (size_t i = 0; i < (size_t)count;) {
+        size_t cp_len    = wi_utf8_cp_len(string[i]);
+        char   cp_buf[5] = {0};
+        memcpy(cp_buf, string + i, cp_len);
+
+        wi_arg_function(state, 2, 1);
+        wi_push_lstring(state, cp_buf, (int)cp_len);
+        wi_call(state, 1, false);
+
+        if (!wi_value_is_falsy(wi_state_pop(state))) {
+            wi_push_lstring(state, cp_buf, (int)cp_len);
+            return;
+        }
+
+        i += cp_len;
+    }
+
+    wi_push_null(state);
 }
 
 void
@@ -515,6 +533,7 @@ wi_state_def_stm_string(struct wi_state* state) {
         {"each",       _string_each,       2, false},
         {"select",     _string_select,     2, false},
         {"where",      _string_where,      2, false},
+        {"find",       _string_find,       2, false},
     };
     WI_TABLE_SET_FOREIGN_ALL(&state->stm_string, functions);
 }
