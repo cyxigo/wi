@@ -144,7 +144,7 @@ wi_call(struct wi_state* state, uint8_t arg_count, bool drop) {
     wi_value value = wi_state_peek(state, arg_count);
 
     if (WI_UNLIKELY(!wi_value_is_callable(value))) {
-        wi_state_error(state, "cannot call a value of type %s", wi_value_type(value));
+        wi_state_error(state, "cannot use operator '()' on a value of type %s", wi_value_type(value));
     }
 
     wi_state_call(state, value, arg_count, drop);
