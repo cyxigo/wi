@@ -211,36 +211,59 @@ wi_utf8_validate(const char* buf, int count) {
     return true;
 }
 
+/* read a FILE* stream in chunks, supports pipes too! */
 char*
 wi_read_stream(FILE* stream, int* count) {
-    long start = ftell(stream);
-    fseek(stream, 0L, SEEK_END);
-    long end = ftell(stream);
-
-    if (start < 0 || end < 0 || end - start > INT_MAX) {
-        return NULL;
-    }
-
-    fseek(stream, start, SEEK_SET);
-    long file_size = end - start;
-
-    char* buf = (char*)malloc((size_t)file_size + 1);
+    int   capacity = 1024;
+    int   size     = 0;
+    char* buf      = (char*)malloc((size_t)capacity);
 
     if (!buf) {
         return NULL;
     }
 
-    size_t bytes_read = fread(buf, sizeof(char), (size_t)file_size, stream);
+    for (;;) {
+        /* we only read capacity - 1 bytes, the last one is reserved for the NUL */
+        size += (int)fread(buf + size, sizeof(char), (size_t)(capacity - size - 1), stream);
 
-    if (bytes_read < (size_t)file_size) {
+        /* did we read short? then it means either we hit the EOF or an error */
+        if (size < capacity - 1) {
+            break;
+        }
+
+        /* we double the capacity later, so we need to check half of INT_MAX here */
+        if (capacity > INT_MAX / 2) {
+            free(buf);
+            return NULL;
+        }
+
+        capacity *= 2;
+        char* new_buf = (char*)realloc(buf, (size_t)capacity);
+
+        if (!new_buf) {
+            free(buf);
+            return NULL;
+        }
+
+        buf = new_buf;
+    }
+
+    if (ferror(stream)) {
         free(buf);
         return NULL;
     }
 
-    buf[bytes_read] = '\0';
+    /* try to reallocate to the exact size so we don't waste memory */
+    char* actual_buf = (char*)realloc(buf, (size_t)size + 1);
+
+    if (actual_buf) {
+        buf = actual_buf;
+    }
+
+    buf[size] = '\0';
 
     if (count) {
-        *count = (int)bytes_read;
+        *count = size;
     }
 
     return buf;
