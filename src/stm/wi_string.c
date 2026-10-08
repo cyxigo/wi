@@ -369,10 +369,15 @@ _string_repeat(struct wi_state* state, uint8_t arg_count) {
 }
 
 static size_t
-_string_cp(const char* string, size_t i, char* cp_buf) {
+_string_call(struct wi_state* state, const char* string, size_t i, char* cp_buf, bool drop) {
     size_t cp_len = wi_utf8_cp_len(string[i]);
     memcpy(cp_buf, string + i, cp_len);
     cp_buf[cp_len] = '\0';
+
+    wi_arg_function(state, 2, 1);
+    wi_push_lstring(state, cp_buf, (int)cp_len);
+    wi_call(state, 1, drop);
+
     return cp_len;
 }
 
@@ -384,22 +389,15 @@ _string_each(struct wi_state* state, uint8_t arg_count) {
     wi_arg_check_function(state, 2, 1);
 
     for (size_t i = 0; i < (size_t)count;) {
-        char   cp_buf[5];
-        size_t cp_len = _string_cp(string, i, cp_buf);
-
-        wi_arg_function(state, 2, 1);
-        wi_push_lstring(state, cp_buf, (int)cp_len);
-        wi_call(state, 1, true);
-
-        i += cp_len;
+        char cp_buf[5];
+        i += _string_call(state, string, i, cp_buf, true);
     }
 
     wi_push_arg(state, 1);
 }
 
 static void
-_string_select(struct wi_state* state, uint8_t arg_count) {
-    WI_UNUSED(arg_count);
+_string_collect(struct wi_state* state, bool select) {
     int   count;
     char* string = wi_arg_string(state, 1, &count, NULL);
     wi_arg_check_function(state, 2, 1);
@@ -408,6 +406,7 @@ _string_select(struct wi_state* state, uint8_t arg_count) {
     wi_char_buf_init(&buf, state->gc);
     struct wi_recovery* recovery = wi_state_push_recovery(state);
 
+    /* char_buf clean up */
     if (setjmp(recovery->jmp) != WI_RUN_OK) {
         char* error = recovery->error->buf;
         wi_char_buf_free(&buf);
@@ -416,22 +415,21 @@ _string_select(struct wi_state* state, uint8_t arg_count) {
     }
 
     for (size_t i = 0; i < (size_t)count;) {
-        char   cp_buf[5];
-        size_t cp_len = _string_cp(string, i, cp_buf);
+        char     cp_buf[5];
+        size_t   cp_len = _string_call(state, string, i, cp_buf, false);
+        wi_value result = wi_state_top(state);
 
-        wi_arg_function(state, 2, 1);
-        wi_push_lstring(state, cp_buf, (int)cp_len);
-        wi_call(state, 1, false);
-
-        /* s prefix here is for "selected" */
-        wi_value s_value = wi_state_top(state);
-
-        if (!wi_value_is_string(s_value)) {
-            wi_state_error(state, "callback must return a string but got %s", wi_value_type(s_value));
+        if (!select) {
+            if (!wi_value_is_falsy(result)) {
+                wi_char_buf_append(&buf, cp_buf, (int)cp_len);
+            }
+        } else if (wi_value_is_string(result)) {
+            struct wi_string* box = wi_value_as_string(result);
+            wi_char_buf_append(&buf, box->buf, box->count);
+        } else {
+            wi_state_error(state, "callback must return a string but got %s", wi_value_type(result));
         }
 
-        struct wi_string* s_box = wi_value_as_string(s_value);
-        wi_char_buf_append(&buf, s_box->buf, s_box->count);
         wi_drop(state);
         i += cp_len;
     }
@@ -442,41 +440,15 @@ _string_select(struct wi_state* state, uint8_t arg_count) {
 }
 
 static void
+_string_select(struct wi_state* state, uint8_t arg_count) {
+    WI_UNUSED(arg_count);
+    _string_collect(state, true);
+}
+
+static void
 _string_where(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
-    int   count;
-    char* string = wi_arg_string(state, 1, &count, NULL);
-    wi_arg_check_function(state, 2, 1);
-
-    struct wi_char_buf buf;
-    wi_char_buf_init(&buf, state->gc);
-    struct wi_recovery* recovery = wi_state_push_recovery(state);
-
-    if (setjmp(recovery->jmp) != WI_RUN_OK) {
-        char* error = recovery->error->buf;
-        wi_char_buf_free(&buf);
-        wi_state_pop_recovery(state);
-        wi_state_error(state, "%s", error);
-    }
-
-    for (size_t i = 0; i < (size_t)count;) {
-        char   cp_buf[5];
-        size_t cp_len = _string_cp(string, i, cp_buf);
-
-        wi_arg_function(state, 2, 1);
-        wi_push_lstring(state, cp_buf, (int)cp_len);
-        wi_call(state, 1, false);
-
-        if (!wi_value_is_falsy(wi_state_pop(state))) {
-            wi_char_buf_append(&buf, cp_buf, (int)cp_len);
-        }
-
-        i += cp_len;
-    }
-
-    wi_state_pop_recovery(state);
-    wi_push_lstring(state, buf.data, buf.count);
-    wi_char_buf_free(&buf);
+    _string_collect(state, false);
 }
 
 static void
@@ -488,11 +460,7 @@ _string_find(struct wi_state* state, uint8_t arg_count) {
 
     for (size_t i = 0; i < (size_t)count;) {
         char   cp_buf[5];
-        size_t cp_len = _string_cp(string, i, cp_buf);
-
-        wi_arg_function(state, 2, 1);
-        wi_push_lstring(state, cp_buf, (int)cp_len);
-        wi_call(state, 1, false);
+        size_t cp_len = _string_call(state, string, i, cp_buf, false);
 
         if (!wi_value_is_falsy(wi_state_pop(state))) {
             wi_push_lstring(state, cp_buf, (int)cp_len);
