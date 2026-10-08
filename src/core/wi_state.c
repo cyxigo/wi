@@ -1120,7 +1120,7 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
             wi_value b = wi_state_pop(state);
             wi_value a = wi_state_pop(state);
 
-            if (!wi_value_is_real(a) || !wi_value_is_real(b)) {
+            if (WI_UNLIKELY(!wi_value_is_real(a) || !wi_value_is_real(b))) {
                 _ERROR("cannot use operator '//' on values of type %s and %s", wi_value_type(a), wi_value_type(b));
             }
 
@@ -1130,7 +1130,7 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
         _OPCODE_LABEL(NEGATE) : {
             wi_value a = wi_state_pop(state);
 
-            if (!wi_value_is_real(a)) {
+            if (WI_UNLIKELY(!wi_value_is_real(a))) {
                 _ERROR("cannot use operator '-' on a value of type %s", wi_value_type(a));
             }
 
@@ -1141,7 +1141,7 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
             wi_value b = wi_state_pop(state);
             wi_value a = wi_state_pop(state);
 
-            if (!wi_value_is_real(a) || !wi_value_is_real(b)) {
+            if (WI_UNLIKELY(!wi_value_is_real(a) || !wi_value_is_real(b))) {
                 _ERROR("cannot use operator '**' on values of type %s and %s", wi_value_type(a), wi_value_type(b));
             }
 
@@ -1152,7 +1152,7 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
             wi_value b = wi_state_pop(state);
             wi_value a = wi_state_pop(state);
 
-            if (!wi_value_is_real(a) || !wi_value_is_real(b)) {
+            if (WI_UNLIKELY(!wi_value_is_real(a) || !wi_value_is_real(b))) {
                 _ERROR("cannot use operator '%%' on values of type %s and %s", wi_value_type(a), wi_value_type(b));
             }
 
@@ -1207,7 +1207,7 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
         _OPCODE_LABEL(BIT_NOT) : {
             wi_value a = wi_state_pop(state);
 
-            if (!wi_value_is_real(a)) {
+            if (WI_UNLIKELY(!wi_value_is_real(a))) {
                 _ERROR("cannot use operator '~' on a value of type %s", wi_value_type(a));
             }
 
