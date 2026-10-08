@@ -155,15 +155,10 @@ _array_insertat(struct wi_state* state, uint8_t arg_count) {
     }
 
     wi_value value = state->ffi_stack[3];
-    wi_value_buf_reserve(&array->items, 1);
-
-    for (int64_t i = array->items.count; i > index; i--) {
-        array->items.data[i] = array->items.data[i - 1];
-    }
-
+    wi_value_buf_add(&array->items, value);
+    memmove(array->items.data + index + 1, array->items.data + index,
+            sizeof(wi_value) * (size_t)(array->items.count - index - 1));
     array->items.data[index] = value;
-    array->items.count++;
-    array->items.mod_count++;
     WI_GC_WRITE_BARRIER(state->gc, array, value);
     wi_push_arg(state, 1);
 }
