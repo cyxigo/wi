@@ -742,6 +742,7 @@ _compiler_parse_prec(struct wi_compiler* compiler, enum _prec min_prec) {
     }
 
     pref(compiler, can_assign);
+    compiler->var_name = WI_BLANK_TOKEN; /* the name belongs to the prefix only, infix shall not see it!!! */
 
     while (_compiler_get_rule(compiler->parser->curr.kind)->prec >= min_prec) {
         wi_parser_advance(compiler->parser);
