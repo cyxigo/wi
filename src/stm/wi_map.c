@@ -160,10 +160,7 @@ _map_select(struct wi_state* state, uint8_t arg_count) {
         wi_state_check_mod_count(state, "map", map->items.mod_count, mod_count);
         wi_value new_value = wi_state_pop(state);
         wi_value new_key   = wi_state_pop(state);
-
-        if (WI_UNLIKELY(wi_value_is_nan(new_key))) {
-            wi_state_error(state, "cannot use NaN as a map key");
-        }
+        wi_state_check_map_key(state, new_key);
 
         if (wi_table_set(&result->items, new_key, new_value)) {
             WI_GC_WRITE_BARRIER(state->gc, result, new_key);

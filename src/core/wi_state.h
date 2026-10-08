@@ -255,6 +255,13 @@ wi_state_check_mod_count(struct wi_state* state, const char* type, int actual, i
     }
 }
 
+WI_INLINE void
+wi_state_check_map_key(struct wi_state* state, wi_value key) {
+    if (WI_UNLIKELY(wi_value_is_nan(key))) {
+        wi_state_error(state, "cannot use NaN as a map key");
+    }
+}
+
 void
 wi_state_call_foreign(struct wi_state* state, struct wi_foreign* foreign, uint8_t arg_count);
 enum wi_run_result

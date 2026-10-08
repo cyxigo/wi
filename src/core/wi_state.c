@@ -552,10 +552,7 @@ _state_subscript_set(struct wi_state* state, wi_value target, wi_value index, wi
 
     if (wi_value_is_map(target)) {
         struct wi_map* map = wi_value_as_map(target);
-
-        if (WI_UNLIKELY(wi_value_is_nan(index))) {
-            wi_state_error(state, "cannot use NaN as a map key");
-        }
+        wi_state_check_map_key(state, index);
 
         if (wi_table_set(&map->items, index, value)) {
             WI_GC_WRITE_BARRIER(state->gc, map, index);
@@ -1320,11 +1317,7 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
             for (int i = 0; i < count; i++) {
                 wi_value key   = item_start[i * 2];
                 wi_value value = item_start[i * 2 + 1];
-
-                if (WI_UNLIKELY(wi_value_is_nan(key))) {
-                    _ERROR("cannot use NaN as a map key");
-                }
-
+                wi_state_check_map_key(state, key);
                 wi_table_set(&map->items, key, value);
             }
 
