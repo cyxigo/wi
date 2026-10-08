@@ -1509,9 +1509,12 @@ _compiler_import_foreign(struct wi_compiler* compiler, char* lib_path, char** at
     _module_init_fn init = sym_conv.fn;
 #endif /* _WIN32 */
 
+    /* library loaded and we do not need attempts anymore */
+    free(*atts);
+    *atts = NULL;
+
     if (!init) {
         wi_lib_close(lib);
-        free(*atts);
         wi_parser_error_at_prev(compiler->parser, "library %s did not export wi_module_init", path->buf);
     }
 
