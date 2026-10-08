@@ -297,10 +297,9 @@ _compiler_return_value(struct wi_compiler* compiler) {
     uint8_t* bytes  = compiler->code->bytes.data;
     int      offset = compiler->last_call;
 
-    compiler->slot_count--;
-
     if (offset != -1 && offset == end - 2 && bytes[offset] == WI_OP_CALL) {
         bytes[offset] = WI_OP_TAIL_CALL;
+        compiler->slot_count--;
         return;
     }
 
