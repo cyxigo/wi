@@ -371,6 +371,14 @@ _string_repeat(struct wi_state* state, uint8_t arg_count) {
     wi_state_ppush(state, WI_MAKE_BOX_VALUE(box));
 }
 
+static size_t
+_string_cp(const char* string, size_t i, char* cp_buf) {
+    size_t cp_len = wi_utf8_cp_len(string[i]);
+    memcpy(cp_buf, string + i, cp_len);
+    cp_buf[cp_len] = '\0';
+    return cp_len;
+}
+
 static void
 _string_each(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
@@ -379,9 +387,8 @@ _string_each(struct wi_state* state, uint8_t arg_count) {
     wi_arg_check_function(state, 2, 1);
 
     for (size_t i = 0; i < (size_t)count;) {
-        size_t cp_len    = wi_utf8_cp_len(string[i]);
-        char   cp_buf[5] = {0};
-        memcpy(cp_buf, string + i, cp_len);
+        char   cp_buf[5];
+        size_t cp_len = _string_cp(string, i, cp_buf);
 
         wi_arg_function(state, 2, 1);
         wi_push_lstring(state, cp_buf, (int)cp_len);
@@ -412,9 +419,8 @@ _string_select(struct wi_state* state, uint8_t arg_count) {
     }
 
     for (size_t i = 0; i < (size_t)count;) {
-        size_t cp_len    = wi_utf8_cp_len(string[i]);
-        char   cp_buf[5] = {0};
-        memcpy(cp_buf, string + i, cp_len);
+        char   cp_buf[5];
+        size_t cp_len = _string_cp(string, i, cp_buf);
 
         wi_arg_function(state, 2, 1);
         wi_push_lstring(state, cp_buf, (int)cp_len);
@@ -461,9 +467,8 @@ _string_where(struct wi_state* state, uint8_t arg_count) {
     }
 
     for (size_t i = 0; i < (size_t)count;) {
-        size_t cp_len    = wi_utf8_cp_len(string[i]);
-        char   cp_buf[5] = {0};
-        memcpy(cp_buf, string + i, cp_len);
+        char   cp_buf[5];
+        size_t cp_len = _string_cp(string, i, cp_buf);
 
         wi_arg_function(state, 2, 1);
         wi_push_lstring(state, cp_buf, (int)cp_len);
@@ -491,9 +496,8 @@ _string_find(struct wi_state* state, uint8_t arg_count) {
     wi_arg_check_function(state, 2, 1);
 
     for (size_t i = 0; i < (size_t)count;) {
-        size_t cp_len    = wi_utf8_cp_len(string[i]);
-        char   cp_buf[5] = {0};
-        memcpy(cp_buf, string + i, cp_len);
+        char   cp_buf[5];
+        size_t cp_len = _string_cp(string, i, cp_buf);
 
         wi_arg_function(state, 2, 1);
         wi_push_lstring(state, cp_buf, (int)cp_len);
