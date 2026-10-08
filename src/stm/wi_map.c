@@ -127,7 +127,7 @@ _map_select(struct wi_state* state, uint8_t arg_count) {
     wi_arg_check_function(state, 2, 1);
     wi_arg_check_function(state, 3, 1);
     struct wi_map* result = wi_push_map(state);
-    wi_table_reserve(&result->items, map->items.count);
+    wi_table_reserve(&result->items, map->items.live_count);
 
     for (int i = 0; i < map->items.capacity; i++) {
         struct wi_entry* entry = &map->items.entries[i];
@@ -180,7 +180,7 @@ _map_where(struct wi_state* state, uint8_t arg_count) {
     int            mod_count = map->items.mod_count;
     wi_arg_check_function(state, 2, 2);
     struct wi_map* result = wi_push_map(state);
-    wi_table_reserve(&result->items, map->items.count);
+    wi_table_reserve(&result->items, map->items.live_count);
 
     for (int i = 0; i < map->items.capacity; i++) {
         struct wi_entry* entry = &map->items.entries[i];

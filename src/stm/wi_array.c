@@ -81,60 +81,54 @@ _array_add(struct wi_state* state, uint8_t arg_count) {
     wi_push_arg(state, 1);
 }
 
+/* find the index of [value], -1 = not found */
+static int
+_array_index(struct wi_array* array, wi_value value) {
+    for (int i = 0; i < array->items.count; i++) {
+        if (wi_values_equal(array->items.data[i], value)) {
+            return i;
+        }
+    }
+
+    return -1;
+}
+
+/* delete a value at [index] from an array */
+static wi_value
+_array_delete(struct wi_array* array, int index) {
+    wi_value removed = array->items.data[index];
+    memmove(array->items.data + index, array->items.data + index + 1,
+            sizeof(wi_value) * (size_t)(array->items.count - index - 1));
+    array->items.count--;
+    array->items.mod_count++;
+    return removed;
+}
+
 static void
 _array_has(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     struct wi_array* array = wi_arg_array(state, 1);
-    bool             found = false;
-
-    for (int i = 0; i < array->items.count; i++) {
-        if (wi_values_equal(array->items.data[i], state->ffi_stack[2])) {
-            found = true;
-            break;
-        }
-    }
-
-    wi_push_bool(state, found);
+    wi_push_bool(state, _array_index(array, state->ffi_stack[2]) != -1);
 }
 
 static void
 _array_indexof(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     struct wi_array* array = wi_arg_array(state, 1);
-    int              index = -1;
-
-    for (int i = 0; i < array->items.count; i++) {
-        if (wi_values_equal(array->items.data[i], state->ffi_stack[2])) {
-            index = i;
-            break;
-        }
-    }
-
-    wi_push_real(state, index);
+    wi_push_real(state, _array_index(array, state->ffi_stack[2]));
 }
 
 static void
 _array_remove(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     struct wi_array* array = wi_arg_array(state, 1);
-    bool             found = false;
+    int              index = _array_index(array, state->ffi_stack[2]);
 
-    for (int i = 0; i < array->items.count; i++) {
-        if (!wi_values_equal(array->items.data[i], state->ffi_stack[2])) {
-            continue;
-        }
-
-        for (int j = i; j < array->items.count - 1; j++) {
-            array->items.data[j] = array->items.data[j + 1];
-        }
-
-        array->items.count--;
-        array->items.mod_count++;
-        found = true;
-        break;
+    if (index != -1) {
+        _array_delete(array, index);
     }
 
-    wi_push_bool(state, found);
+    wi_push_bool(state, index != -1);
 }
 
 static void
@@ -147,15 +141,7 @@ _array_removeat(struct wi_state* state, uint8_t arg_count) {
         wi_state_error(state, "array index out of range: %lld", index);
     }
 
-    wi_value removed = array->items.data[index];
-
-    for (int64_t i = index; i < array->items.count - 1; i++) {
-        array->items.data[i] = array->items.data[i + 1];
-    }
-
-    array->items.count--;
-    array->items.mod_count++;
-    wi_state_ppush(state, removed);
+    wi_state_ppush(state, _array_delete(array, (int)index));
 }
 
 static void
@@ -249,34 +235,20 @@ _array_join(struct wi_state* state, uint8_t arg_count) {
 
     for (int i = 0; i < array->items.count; i++) {
         if (i > 0) {
-            for (int j = 0; j < sep_count; j++) {
-                wi_char_buf_add(&buf, sep[j]);
-            }
+            wi_char_buf_append(&buf, sep, sep_count);
         }
 
         wi_value item = array->items.data[i];
-        char*    item_buf;
         int      item_count;
-        bool     owned = false;
+        bool     owned;
+        char*    item_buf = wi_value_to_buf(item, &item_count, &owned);
 
-        if (wi_value_is_string(item)) {
-            item_buf   = wi_value_as_cstring(item);
-            item_count = wi_value_as_string(item)->count;
-        } else {
-            item_buf = wi_value_to_string(item);
-
-            if (!item_buf) {
-                wi_char_buf_free(&buf);
-                wi_state_oom(state, "failed to allocate a string for join (_array_join)");
-            }
-
-            item_count = (int)strlen(item_buf);
-            owned      = true;
+        if (!item_buf) {
+            wi_char_buf_free(&buf);
+            wi_state_oom(state, "failed to allocate a string for join (_array_join)");
         }
 
-        for (int j = 0; j < item_count; j++) {
-            wi_char_buf_add(&buf, item_buf[j]);
-        }
+        wi_char_buf_append(&buf, item_buf, item_count);
 
         if (owned) {
             free(item_buf);

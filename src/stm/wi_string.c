@@ -233,10 +233,7 @@ _string_replace(struct wi_state* state, uint8_t arg_count) {
 
     while (i < count) {
         if (i + old_count <= count && memcmp(string + i, old, (size_t)old_count) == 0) {
-            for (int j = 0; j < new_count; j++) {
-                wi_char_buf_add(&buf, new[j]);
-            }
-
+            wi_char_buf_append(&buf, new, new_count);
             i += old_count;
         } else {
             wi_char_buf_add(&buf, string[i]);
@@ -434,11 +431,7 @@ _string_select(struct wi_state* state, uint8_t arg_count) {
         }
 
         struct wi_string* s_box = wi_value_as_string(s_value);
-
-        for (int j = 0; j < s_box->count; j++) {
-            wi_char_buf_add(&buf, s_box->buf[j]);
-        }
-
+        wi_char_buf_append(&buf, s_box->buf, s_box->count);
         wi_drop(state);
         i += cp_len;
     }
@@ -475,9 +468,7 @@ _string_where(struct wi_state* state, uint8_t arg_count) {
         wi_call(state, 1, false);
 
         if (!wi_value_is_falsy(wi_state_pop(state))) {
-            for (size_t j = 0; j < cp_len; j++) {
-                wi_char_buf_add(&buf, cp_buf[j]);
-            }
+            wi_char_buf_append(&buf, cp_buf, (int)cp_len);
         }
 
         i += cp_len;

@@ -224,7 +224,7 @@ _base_isforeign(struct wi_state* state, uint8_t arg_count) {
 static void
 _base_isfunction(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
-    _istype(state, wi_value_is_closure);
+    _istype(state, wi_value_is_callable);
 }
 
 static void
@@ -258,7 +258,7 @@ _base_real(struct wi_state* state, uint8_t arg_count) {
     } else if (wi_value_is_bool(value)) {
         result = wi_make_real_value(wi_value_as_bool(value) ? 1 : 0);
     } else if (wi_value_is_string(value)) {
-        struct wi_string* string = wi_value_as_string(state->ffi_stack[1]);
+        struct wi_string* string = wi_value_as_string(value);
         char*             end    = NULL;
         bool              overflow;
         wi_real           real     = wi_string_to_real(string->buf, string->count, &end, &overflow);
@@ -345,8 +345,7 @@ _base_char(struct wi_state* state, uint8_t arg_count) {
         wi_state_error(state, "invalid codepoint: %lld", cp);
     }
 
-    struct wi_string* box = wi_copy_cstring(state->gc, cp_buf, cp_len);
-    wi_state_ppush(state, WI_MAKE_BOX_VALUE(box));
+    wi_push_lstring(state, cp_buf, cp_len);
 }
 
 static void

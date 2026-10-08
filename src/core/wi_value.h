@@ -268,6 +268,8 @@ const char*
 wi_value_type(wi_value value);
 char*
 wi_value_to_string(wi_value value);
+char*
+wi_value_to_buf(wi_value value, int* count, bool* owned);
 
 WI_DECL_BUF(wi_value, value)
 

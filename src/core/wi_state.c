@@ -466,53 +466,13 @@ _bit_shift(struct wi_state* state, bool right) {
 
 static void
 _state_concat(struct wi_state* state) {
-    wi_value a = wi_state_peek(state, 1);
-    wi_value b = wi_state_top(state);
-
-    char* a_buf;
-    char* b_buf;
     int   a_count;
-    int   b_count;
-    bool  a_owned = false;
+    int   b_count = 0;
+    bool  a_owned;
     bool  b_owned = false;
-
-    if (wi_value_is_string(a)) {
-        struct wi_string* string = wi_value_as_string(a);
-        a_buf                    = string->buf;
-        a_count                  = string->count;
-    } else {
-        a_buf = wi_value_to_string(a);
-
-        if (!a_buf) {
-            wi_state_oom(state, "failed to allocate a string for concatenation (_state_concat)");
-        }
-
-        a_count = (int)strlen(a_buf);
-        a_owned = true;
-    }
-
-    if (wi_value_is_string(b)) {
-        struct wi_string* string = wi_value_as_string(b);
-
-        b_buf   = string->buf;
-        b_count = string->count;
-    } else {
-        b_buf = wi_value_to_string(b);
-
-        if (!b_buf) {
-            if (a_owned) {
-                free(a_buf);
-            }
-
-            wi_state_oom(state, "failed to allocate a string for concatenation (_state_concat)");
-        }
-
-        b_count = (int)strlen(b_buf);
-        b_owned = true;
-    }
-
-    int   len = a_count + b_count;
-    char* buf = (char*)malloc((size_t)len + 1);
+    char* a_buf   = wi_value_to_buf(wi_state_peek(state, 1), &a_count, &a_owned);
+    char* b_buf   = a_buf ? wi_value_to_buf(wi_state_top(state), &b_count, &b_owned) : NULL;
+    char* buf     = b_buf ? (char*)malloc((size_t)(a_count + b_count) + 1) : NULL;
 
     if (!buf) {
         if (a_owned) {
@@ -526,6 +486,7 @@ _state_concat(struct wi_state* state) {
         wi_state_oom(state, "failed to allocate a string for concatenation (_state_concat)");
     }
 
+    int len = a_count + b_count;
     memcpy(buf, a_buf, (size_t)a_count);
     memcpy(buf + a_count, b_buf, (size_t)b_count);
     buf[len] = '\0';

@@ -2,7 +2,8 @@
 #define WI_BUF_H
 
 #include <stdint.h>
-#include <stdlib.h> /* IWYU pragma: export */
+#include <stdlib.h>
+#include <string.h>
 
 #include "wi_util.h"
 
@@ -72,5 +73,23 @@ wi_grow_capacity(int capacity) {
 WI_DECL_BUF(int, int)
 WI_DECL_BUF(char, char)
 WI_DECL_BUF(uint8_t, byte)
+
+WI_INLINE void
+wi_char_buf_append(struct wi_char_buf* buf, const char* chars, int count) {
+    if (count == 0) {
+        return;
+    }
+
+    int needed = buf->count + count;
+
+    if (WI_UNLIKELY(needed > buf->capacity)) {
+        int capacity = wi_grow_capacity(buf->capacity);
+        wi_char_buf_reserve(buf, (needed > capacity ? needed : capacity) - buf->count);
+    }
+
+    memcpy(buf->data + buf->count, chars, (size_t)count);
+    buf->count += count;
+    buf->mod_count++;
+}
 
 #endif

@@ -311,12 +311,23 @@ wi_drop(struct wi_state* state) {
     wi_state_drop(state);
 }
 
+static WI_NORETURN void
+_pop_error(struct wi_state* state, const char* expected, wi_value value) {
+    wi_state_error(state, "expected a value of type %s but got %s", expected, wi_value_type(value));
+}
+
+static WI_NORETURN void
+_arg_error(struct wi_state* state, const char* expected, uint8_t arg) {
+    wi_state_error(state, "bad argument %hhu - expected a value of type %s but got %s", arg, expected,
+                   wi_value_type(state->ffi_stack[arg]));
+}
+
 wi_real
 wi_pop_real(struct wi_state* state) {
     wi_value value = wi_state_pop(state);
 
     if (WI_UNLIKELY(!wi_value_is_real(value))) {
-        wi_state_error(state, "expected a value of type real but got %s", wi_value_type(value));
+        _pop_error(state, "real", value);
     }
 
     return wi_value_as_real(value);
@@ -327,7 +338,7 @@ wi_pop_null(struct wi_state* state) {
     wi_value value = wi_state_pop(state);
 
     if (WI_UNLIKELY(!wi_value_is_null(value))) {
-        wi_state_error(state, "expected a value of type null but got %s", wi_value_type(value));
+        _pop_error(state, "null", value);
     }
 }
 
@@ -336,7 +347,7 @@ wi_pop_bool(struct wi_state* state) {
     wi_value value = wi_state_pop(state);
 
     if (WI_UNLIKELY(!wi_value_is_bool(value))) {
-        wi_state_error(state, "expected a value of type bool but got %s", wi_value_type(value));
+        _pop_error(state, "bool", value);
     }
 
     return wi_value_as_bool(value);
@@ -347,7 +358,7 @@ wi_pop_string(struct wi_state* state, int* count, int* len) {
     wi_value value = wi_state_pop(state);
 
     if (WI_UNLIKELY(!wi_value_is_string(value))) {
-        wi_state_error(state, "expected a value of type string but got %s", wi_value_type(value));
+        _pop_error(state, "string", value);
     }
 
     struct wi_string* string = wi_value_as_string(value);
@@ -368,7 +379,7 @@ wi_pop_array(struct wi_state* state) {
     wi_value value = wi_state_pop(state);
 
     if (WI_UNLIKELY(!wi_value_is_array(value))) {
-        wi_state_error(state, "expected a value of type array but got %s", wi_value_type(value));
+        _pop_error(state, "array", value);
     }
 
     return wi_value_as_array(value);
@@ -379,7 +390,7 @@ wi_pop_map(struct wi_state* state) {
     wi_value value = wi_state_pop(state);
 
     if (WI_UNLIKELY(!wi_value_is_map(value))) {
-        wi_state_error(state, "expected a value of type map but got %s", wi_value_type(value));
+        _pop_error(state, "map", value);
     }
 
     return wi_value_as_map(value);
@@ -390,7 +401,7 @@ wi_pop_object(struct wi_state* state) {
     wi_value value = wi_state_pop(state);
 
     if (WI_UNLIKELY(!wi_value_is_object(value))) {
-        wi_state_error(state, "expected a value of type object but got %s", wi_value_type(value));
+        _pop_error(state, "object", value);
     }
 
     return wi_value_as_object(value);
@@ -401,7 +412,7 @@ wi_pop_userdata(struct wi_state* state, const char* name) {
     wi_value value = wi_state_pop(state);
 
     if (WI_UNLIKELY(!_is_userdata(value, name))) {
-        wi_state_error(state, "expected a value of type %s but got %s", name, wi_value_type(value));
+        _pop_error(state, name, value);
     }
 
     return wi_value_as_userdata(value)->data;
@@ -412,7 +423,7 @@ wi_pop_module(struct wi_state* state) {
     wi_value value = wi_state_pop(state);
 
     if (WI_UNLIKELY(!wi_value_is_module(value))) {
-        wi_state_error(state, "expected a value of type module but got %s", wi_value_type(value));
+        _pop_error(state, "module", value);
     }
 
     return wi_value_as_module(value);
@@ -481,8 +492,7 @@ wi_push_arg(struct wi_state* state, uint8_t arg) {
 wi_real
 wi_arg_real(struct wi_state* state, uint8_t arg) {
     if (WI_UNLIKELY(!wi_arg_is_real(state, arg))) {
-        wi_state_error(state, "bad argument %hhu - expected a value of type real but got %s", arg,
-                       wi_value_type(state->ffi_stack[arg]));
+        _arg_error(state, "real", arg);
     }
 
     return wi_value_as_real(state->ffi_stack[arg]);
@@ -491,16 +501,14 @@ wi_arg_real(struct wi_state* state, uint8_t arg) {
 void
 wi_arg_null(struct wi_state* state, uint8_t arg) {
     if (WI_UNLIKELY(!wi_arg_is_null(state, arg))) {
-        wi_state_error(state, "bad argument %hhu - expected a value of type null but got %s", arg,
-                       wi_value_type(state->ffi_stack[arg]));
+        _arg_error(state, "null", arg);
     }
 }
 
 bool
 wi_arg_bool(struct wi_state* state, uint8_t arg) {
     if (WI_UNLIKELY(!wi_arg_is_bool(state, arg))) {
-        wi_state_error(state, "bad argument %hhu - expected a value of type bool but got %s", arg,
-                       wi_value_type(state->ffi_stack[arg]));
+        _arg_error(state, "bool", arg);
     }
 
     return wi_value_as_bool(state->ffi_stack[arg]);
@@ -509,8 +517,7 @@ wi_arg_bool(struct wi_state* state, uint8_t arg) {
 char*
 wi_arg_string(struct wi_state* state, uint8_t arg, int* count, int* len) {
     if (WI_UNLIKELY(!wi_arg_is_string(state, arg))) {
-        wi_state_error(state, "bad argument %hhu - expected a value of type string but got %s", arg,
-                       wi_value_type(state->ffi_stack[arg]));
+        _arg_error(state, "string", arg);
     }
 
     struct wi_string* string = wi_value_as_string(state->ffi_stack[arg]);
@@ -531,8 +538,7 @@ wi_arg_check_function(struct wi_state* state, uint8_t arg, uint8_t arity) {
     wi_value value = state->ffi_stack[arg];
 
     if (!wi_value_is_callable(value)) {
-        wi_state_error(state, "bad argument %hhu - expected a value of type function but got %s", arg,
-                       wi_value_type(value));
+        _arg_error(state, "function", arg);
     }
 
     if (wi_value_is_closure(value)) {
@@ -553,8 +559,7 @@ wi_arg_function(struct wi_state* state, uint8_t arg, uint8_t arity) {
 struct wi_array*
 wi_arg_array(struct wi_state* state, uint8_t arg) {
     if (WI_UNLIKELY(!wi_arg_is_array(state, arg))) {
-        wi_state_error(state, "bad argument %hhu - expected a value of type array but got %s", arg,
-                       wi_value_type(state->ffi_stack[arg]));
+        _arg_error(state, "array", arg);
     }
 
     return wi_value_as_array(state->ffi_stack[arg]);
@@ -563,8 +568,7 @@ wi_arg_array(struct wi_state* state, uint8_t arg) {
 struct wi_map*
 wi_arg_map(struct wi_state* state, uint8_t arg) {
     if (WI_UNLIKELY(!wi_arg_is_map(state, arg))) {
-        wi_state_error(state, "bad argument %hhu - expected a value of type map but got %s", arg,
-                       wi_value_type(state->ffi_stack[arg]));
+        _arg_error(state, "map", arg);
     }
 
     return wi_value_as_map(state->ffi_stack[arg]);
@@ -573,8 +577,7 @@ wi_arg_map(struct wi_state* state, uint8_t arg) {
 struct wi_object*
 wi_arg_object(struct wi_state* state, uint8_t arg) {
     if (WI_UNLIKELY(!wi_arg_is_object(state, arg))) {
-        wi_state_error(state, "bad argument %hhu - expected a value of type object but got %s", arg,
-                       wi_value_type(state->ffi_stack[arg]));
+        _arg_error(state, "object", arg);
     }
 
     return wi_value_as_object(state->ffi_stack[arg]);
@@ -582,26 +585,20 @@ wi_arg_object(struct wi_state* state, uint8_t arg) {
 
 void*
 wi_arg_userdata(struct wi_state* state, uint8_t arg, const char* name) {
-    wi_value value = state->ffi_stack[arg];
-
     if (WI_UNLIKELY(!wi_arg_is_userdata(state, arg, name))) {
-        wi_state_error(state, "bad argument %hhu - expected a value of type %s but got %s", arg, name,
-                       wi_value_type(value));
+        _arg_error(state, name, arg);
     }
 
-    return wi_value_as_userdata(value)->data;
+    return wi_value_as_userdata(state->ffi_stack[arg])->data;
 }
 
 struct wi_module*
 wi_arg_module(struct wi_state* state, uint8_t arg) {
-    wi_value value = state->ffi_stack[arg];
-
     if (WI_UNLIKELY(!wi_arg_is_module(state, arg))) {
-        wi_state_error(state, "bad argument %hhu - expected a value of type module but got %s", arg,
-                       wi_value_type(value));
+        _arg_error(state, "module", arg);
     }
 
-    return wi_value_as_module(value);
+    return wi_value_as_module(state->ffi_stack[arg]);
 }
 
 int

@@ -186,23 +186,12 @@ _io_write(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     struct _file* file = wi_arg_userdata(state, 1, "file");
     _file_check_write(state, file);
+    int   count;
+    bool  owned;
+    char* content = wi_value_to_buf(state->ffi_stack[2], &count, &owned);
 
-    wi_value arg2 = state->ffi_stack[2];
-    char*    content;
-    int      count;
-    bool     owned = false;
-
-    if (wi_value_is_string(arg2)) {
-        content = wi_arg_string(state, 2, &count, NULL);
-    } else {
-        content = wi_value_to_string(arg2);
-
-        if (!content) {
-            wi_state_oom(state, "failed to allocate file contents (_io_write)");
-        }
-
-        count = (int)strlen(content);
-        owned = true;
+    if (!content) {
+        wi_state_oom(state, "failed to allocate file contents (_io_write)");
     }
 
     size_t written = (size_t)count;
@@ -272,7 +261,8 @@ _io_writebytes(struct wi_state* state, uint8_t arg_count) {
         buf[i] = (uint8_t)real;
     }
 
-    size_t written = (size_t)bytes->items.count;
+    buf[bytes->items.count] = '\0';
+    size_t written          = (size_t)bytes->items.count;
 
     if (file->is_std) {
         (file->ptr == stderr ? state->error : state->out)(state, (const char*)buf);

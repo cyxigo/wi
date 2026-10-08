@@ -218,6 +218,26 @@ wi_value_to_string(wi_value value) {
     return wi_strdup("<unknown>");
 }
 
+/*
+    convert a value into a char* buffer
+    different from wi_value_to_string because this one borrows wi strings (owned = false)
+    everything else still goes through wi_value_to_string (owned = true)
+*/
+char*
+wi_value_to_buf(wi_value value, int* count, bool* owned) {
+    if (wi_value_is_string(value)) {
+        struct wi_string* string = wi_value_as_string(value);
+        *count                   = string->count;
+        *owned                   = false;
+        return string->buf;
+    }
+
+    char* buf = wi_value_to_string(value);
+    *count    = buf ? (int)strlen(buf) : 0;
+    *owned    = buf != NULL;
+    return buf;
+}
+
 wi_real
 wi_string_to_real(const char* string, int len, char** end_ptr, bool* overflow) {
     if (overflow) {
