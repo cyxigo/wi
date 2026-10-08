@@ -186,13 +186,11 @@ _rand_real(struct wi_state* state) {
 
 static void
 _math_random(struct wi_state* state, uint8_t arg_count) {
+    wi_state_check_arity_either(state, 0, 2, arg_count);
+
     if (arg_count == 0) {
         wi_push_real(state, _rand_real(state));
         return;
-    }
-
-    if (arg_count != 2) {
-        wi_state_error(state, "expected 0 or 2 arguments but got %hhu", arg_count);
     }
 
     int64_t min = wi_state_real_to_int(state, wi_arg_real(state, 1));
@@ -212,15 +210,12 @@ _math_random(struct wi_state* state, uint8_t arg_count) {
 
 static void
 _math_round(struct wi_state* state, uint8_t arg_count) {
+    wi_state_check_arity_either(state, 1, 2, arg_count);
     wi_real real = wi_arg_real(state, 1);
 
     if (arg_count == 1) {
         wi_push_real(state, round(real));
         return;
-    }
-
-    if (arg_count != 2) {
-        wi_state_error(state, "expected 1 or 2 arguments but got %hhu", arg_count);
     }
 
     double scale = pow(10.0, wi_arg_real(state, 2));

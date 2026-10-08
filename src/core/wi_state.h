@@ -242,6 +242,13 @@ wi_state_check_arity(struct wi_state* state, uint8_t arity, uint8_t arg_count, b
 }
 
 WI_INLINE void
+wi_state_check_arity_either(struct wi_state* state, uint8_t a, uint8_t b, uint8_t arg_count) {
+    if (WI_UNLIKELY(arg_count != a && arg_count != b)) {
+        wi_state_error(state, "expected %hhu or %hhu arguments but got %hhu", a, b, arg_count);
+    }
+}
+
+WI_INLINE void
 wi_state_check_mod_count(struct wi_state* state, const char* type, int actual, int expected) {
     if (WI_UNLIKELY(actual != expected)) {
         wi_state_error(state, "%s modified during iteration", type);

@@ -38,15 +38,9 @@ _base_puts(struct wi_state* state, uint8_t arg_count) {
 
 static void
 _base_input(struct wi_state* state, uint8_t arg_count) {
-    const char* prompt = "";
-
-    if (arg_count == 1) {
-        prompt = wi_arg_string(state, 1, NULL, NULL);
-    } else if (arg_count != 0) {
-        wi_state_error(state, "expected 0 or 1 arguments but got %hhu", arg_count);
-    }
-
-    char* line;
+    wi_state_check_arity_either(state, 0, 1, arg_count);
+    const char* prompt = arg_count == 1 ? wi_arg_string(state, 1, NULL, NULL) : "";
+    char*       line;
 
     if (!wi_read_line(&line, prompt)) {
         wi_push_null(state);
@@ -76,10 +70,10 @@ _base_ismain(struct wi_state* state, uint8_t arg_count) {
 
 static void
 _base_exit(struct wi_state* state, uint8_t arg_count) {
+    wi_state_check_arity_either(state, 0, 1, arg_count);
+
     if (arg_count == 1) {
         state->exit_code = (int)wi_state_real_to_int(state, wi_arg_real(state, 1));
-    } else if (arg_count != 0) {
-        wi_state_error(state, "expected 0 or 1 arguments but got %hhu", arg_count);
     }
 
     wi_state_abort(state);
