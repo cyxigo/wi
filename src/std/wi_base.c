@@ -107,9 +107,10 @@ _base_error(struct wi_state* state, uint8_t arg_count) {
 static void
 _base_assert(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
+    char* message = wi_arg_string(state, 2, NULL, NULL);
 
     if (wi_value_is_falsy(state->ffi_stack[1])) {
-        wi_state_error(state, "%s", wi_arg_string(state, 2, NULL, NULL));
+        wi_state_error(state, "%s", message);
     }
 
     wi_push_arg(state, 1);
