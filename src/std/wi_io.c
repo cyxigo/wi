@@ -23,14 +23,49 @@ struct _file {
     char* path;
     char* mode;
     bool  updating;
+    bool  is_std;
 };
+
+static struct _file*
+_file_new(FILE* ptr, const char* path, const char* mode, bool updating, bool is_std) {
+    struct _file* file = (struct _file*)malloc(sizeof(struct _file));
+
+    if (!file) {
+        return NULL;
+    }
+
+    file->path = wi_strdup(path);
+    file->mode = wi_strdup(mode);
+
+    if (!file->path || !file->mode) {
+        free(file->path);
+        free(file->mode);
+        free(file);
+        return NULL;
+    }
+
+    file->ptr      = ptr;
+    file->updating = updating;
+    file->is_std   = is_std;
+    return file;
+}
 
 static void
 _file_close(struct _file* file) {
-    if (file->ptr) {
-        fclose(file->ptr);
-        file->ptr = NULL;
+    if (!file->ptr) {
+        return;
     }
+
+    if (file->is_std) {
+        if (file->mode[0] != 'r') {
+            fflush(file->ptr);
+        }
+
+        return;
+    }
+
+    fclose(file->ptr);
+    file->ptr = NULL;
 }
 
 static void
@@ -65,6 +100,18 @@ _file_check_write(struct wi_state* state, struct _file* file) {
     if (file->mode[0] != 'w' && file->mode[0] != 'a' && !file->updating) {
         wi_state_error(state, "file %s was not opened for writing (mode %s)", file->path, file->mode);
     }
+}
+
+static char*
+_file_read_all(struct wi_state* state, struct _file* file, int* count) {
+    _file_check_read(state, file);
+    char* content = wi_read_stream(file->ptr, count);
+
+    if (!content) {
+        wi_state_error(state, "failed to read file %s", file->path);
+    }
+
+    return content;
 }
 
 static void
@@ -107,26 +154,13 @@ _io_open(struct wi_state* state, uint8_t arg_count) {
         wi_state_error(state, "failed to open file %s: %s", file_path, strerror(errno));
     }
 
-    struct _file* file = (struct _file*)malloc(sizeof(struct _file));
+    struct _file* file = _file_new(ptr, file_path, mode, updating, false);
 
     if (!file) {
         fclose(ptr);
         wi_state_oom(state, "failed to allocate a file handle (_io_open)");
     }
 
-    file->path = wi_strdup(file_path);
-    file->mode = wi_strdup(mode);
-
-    if (!file->path || !file->mode) {
-        fclose(ptr);
-        free(file->path);
-        free(file->mode);
-        free(file);
-        wi_state_oom(state, "failed to allocate a file handle (_io_open)");
-    }
-
-    file->ptr      = ptr;
-    file->updating = updating;
     wi_push_userdata(state, "file", file, _file_finalizer);
 }
 
@@ -171,7 +205,13 @@ _io_write(struct wi_state* state, uint8_t arg_count) {
         owned = true;
     }
 
-    size_t written = fwrite(content, sizeof(char), (size_t)count, file->ptr);
+    size_t written = (size_t)count;
+
+    if (file->is_std) {
+        (file->ptr == stderr ? state->error : state->out)(state, content);
+    } else {
+        written = fwrite(content, sizeof(char), (size_t)count, file->ptr);
+    }
 
     if (owned) {
         free(content);
@@ -188,14 +228,9 @@ static void
 _io_read(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     struct _file* file = wi_arg_userdata(state, 1, "file");
-    _file_check_read(state, file);
 
     int   count;
-    char* content = wi_read_stream(file->ptr, &count);
-
-    if (!content) {
-        wi_state_error(state, "failed to read file %s", file->path);
-    }
+    char* content = _file_read_all(state, file, &count);
 
     if (!wi_utf8_validate(content, count)) {
         free(content);
@@ -237,7 +272,14 @@ _io_writebytes(struct wi_state* state, uint8_t arg_count) {
         buf[i] = (uint8_t)real;
     }
 
-    size_t written = fwrite(buf, sizeof(uint8_t), (size_t)bytes->items.count, file->ptr);
+    size_t written = (size_t)bytes->items.count;
+
+    if (file->is_std) {
+        (file->ptr == stderr ? state->error : state->out)(state, (const char*)buf);
+    } else {
+        written = fwrite(buf, sizeof(uint8_t), (size_t)bytes->items.count, file->ptr);
+    }
+
     free(buf);
 
     if (written < (size_t)bytes->items.count) {
@@ -251,14 +293,8 @@ static void
 _io_readbytes(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     struct _file* file = wi_arg_userdata(state, 1, "file");
-    _file_check_read(state, file);
-
-    int   count;
-    char* content = wi_read_stream(file->ptr, &count);
-
-    if (!content) {
-        wi_state_error(state, "failed to read file %s", file->path);
-    }
+    int           count;
+    char*         content = _file_read_all(state, file, &count);
 
     struct wi_array* result = wi_push_array(state);
     wi_value_buf_reserve(&result->items, count);
@@ -299,6 +335,18 @@ _io_seek(struct wi_state* state, uint8_t arg_count) {
 #endif
 }
 
+static void
+_io_set_std(struct wi_state* state, struct wi_module* module, const char* name, FILE* ptr, const char* mode) {
+    struct _file* file = _file_new(ptr, name, mode, false, true);
+
+    if (!file) {
+        wi_state_oom(state, "failed to allocate a standard stream handle (_io_set_std)");
+    }
+
+    wi_push_userdata(state, "file", file, _file_finalizer);
+    wi_module_set(state, module, name);
+}
+
 void
 wi_state_def_std_io(struct wi_state* state) {
     struct wi_module* module = wi_push_module(state);
@@ -315,6 +363,10 @@ wi_state_def_std_io(struct wi_state* state) {
         {"seek",       _io_seek,       3, false},
     };
     WI_MODULE_EXPORT_FOREIGN_ALL(state, module, functions);
+
+    _io_set_std(state, module, "stdin", stdin, "r");
+    _io_set_std(state, module, "stdout", stdout, "w");
+    _io_set_std(state, module, "stderr", stderr, "w");
 
     wi_push_real(state, SEEK_SET);
     wi_module_set(state, module, "SEEK_SET");
