@@ -96,6 +96,15 @@ _map_remove(struct wi_state* state, uint8_t arg_count) {
 }
 
 static void
+_map_call(struct wi_state* state, struct wi_map* map, int mod_count, wi_value key, wi_value value, bool drop) {
+    wi_arg_function(state, 2, 2);
+    wi_state_ppush(state, key);
+    wi_state_ppush(state, value);
+    wi_call(state, 2, drop);
+    wi_state_check_mod_count(state, "map", map->items.mod_count, mod_count);
+}
+
+static void
 _map_each(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     struct wi_map* map       = wi_arg_map(state, 1);
@@ -109,11 +118,7 @@ _map_each(struct wi_state* state, uint8_t arg_count) {
             continue;
         }
 
-        wi_arg_function(state, 2, 2);
-        wi_state_ppush(state, entry->key);
-        wi_state_ppush(state, entry->value);
-        wi_call(state, 2, true);
-        wi_state_check_mod_count(state, "map", map->items.mod_count, mod_count);
+        _map_call(state, map, mod_count, entry->key, entry->value, true);
     }
 
     wi_push_arg(state, 1);
@@ -189,11 +194,7 @@ _map_where(struct wi_state* state, uint8_t arg_count) {
             continue;
         }
 
-        wi_arg_function(state, 2, 2);
-        wi_state_ppush(state, key);
-        wi_state_ppush(state, value);
-        wi_call(state, 2, false);
-        wi_state_check_mod_count(state, "map", map->items.mod_count, mod_count);
+        _map_call(state, map, mod_count, key, value, false);
 
         if (wi_value_is_falsy(wi_state_pop(state))) {
             continue;
@@ -224,11 +225,7 @@ _map_find(struct wi_state* state, uint8_t arg_count) {
             continue;
         }
 
-        wi_arg_function(state, 2, 2);
-        wi_state_ppush(state, key);
-        wi_state_ppush(state, value);
-        wi_call(state, 2, false);
-        wi_state_check_mod_count(state, "map", map->items.mod_count, mod_count);
+        _map_call(state, map, mod_count, key, value, false);
 
         if (!wi_value_is_falsy(wi_state_pop(state))) {
             wi_state_ppush(state, key);

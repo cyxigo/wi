@@ -255,6 +255,14 @@ _array_join(struct wi_state* state, uint8_t arg_count) {
 }
 
 static void
+_array_call(struct wi_state* state, struct wi_array* array, int mod_count, wi_value item, bool drop) {
+    wi_arg_function(state, 2, 1);
+    wi_state_ppush(state, item);
+    wi_call(state, 1, drop);
+    wi_state_check_mod_count(state, "array", array->items.mod_count, mod_count);
+}
+
+static void
 _array_each(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     struct wi_array* array     = wi_arg_array(state, 1);
@@ -262,10 +270,7 @@ _array_each(struct wi_state* state, uint8_t arg_count) {
     wi_arg_check_function(state, 2, 1);
 
     for (int i = 0; i < array->items.count; i++) {
-        wi_arg_function(state, 2, 1);
-        wi_state_ppush(state, array->items.data[i]);
-        wi_call(state, 1, true);
-        wi_state_check_mod_count(state, "array", array->items.mod_count, mod_count);
+        _array_call(state, array, mod_count, array->items.data[i], true);
     }
 
     wi_push_arg(state, 1);
@@ -281,11 +286,7 @@ _array_select(struct wi_state* state, uint8_t arg_count) {
     wi_value_buf_reserve(&result->items, array->items.count);
 
     for (int i = 0; i < array->items.count; i++) {
-        wi_arg_function(state, 2, 1);
-        wi_state_ppush(state, array->items.data[i]);
-        wi_call(state, 1, false);
-        wi_state_check_mod_count(state, "array", array->items.mod_count, mod_count);
-
+        _array_call(state, array, mod_count, array->items.data[i], false);
         wi_value value = wi_state_pop(state);
         wi_value_buf_add(&result->items, value);
         WI_GC_WRITE_BARRIER(state->gc, result, value);
@@ -303,11 +304,7 @@ _array_where(struct wi_state* state, uint8_t arg_count) {
 
     for (int i = 0; i < array->items.count; i++) {
         wi_value item = array->items.data[i];
-
-        wi_arg_function(state, 2, 1);
-        wi_state_ppush(state, item);
-        wi_call(state, 1, false);
-        wi_state_check_mod_count(state, "array", array->items.mod_count, mod_count);
+        _array_call(state, array, mod_count, item, false);
 
         if (!wi_value_is_falsy(wi_state_pop(state))) {
             wi_value_buf_add(&result->items, item);
@@ -405,11 +402,7 @@ _array_find(struct wi_state* state, uint8_t arg_count) {
 
     for (int i = 0; i < array->items.count; i++) {
         wi_value item = array->items.data[i];
-
-        wi_arg_function(state, 2, 1);
-        wi_state_ppush(state, item);
-        wi_call(state, 1, false);
-        wi_state_check_mod_count(state, "array", array->items.mod_count, mod_count);
+        _array_call(state, array, mod_count, item, false);
 
         if (!wi_value_is_falsy(wi_state_pop(state))) {
             wi_state_ppush(state, item);
