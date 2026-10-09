@@ -132,17 +132,10 @@ _io_open(struct wi_state* state, uint8_t arg_count) {
     char* file_path = wi_arg_string(state, 1, NULL, NULL);
     int   mode_count;
     char* mode     = wi_arg_string(state, 2, &mode_count, NULL);
-    bool  updating = false;
+    bool  updating = mode_count == 2 && mode[1] == '+';
 
-    /* r w a */
-    if (mode_count == 0 || (mode[0] != 'r' && mode[0] != 'w' && mode[0] != 'a')) {
-        wi_state_error(state, "invalid file mode %s", mode);
-    }
-
-    /* r+ w+ a+ */
-    if (mode_count == 2 && mode[1] == '+') {
-        updating = true;
-    } else if (mode_count != 1) {
+    /* r w a r+ w+ a+ */
+    if (!(mode_count == 1 || updating) || (mode[0] != 'r' && mode[0] != 'w' && mode[0] != 'a')) {
         wi_state_error(state, "invalid file mode %s", mode);
     }
 
