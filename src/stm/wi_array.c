@@ -314,25 +314,16 @@ _array_where(struct wi_state* state, uint8_t arg_count) {
 }
 
 static void
-_aqsort_swap(struct wi_state* state, struct wi_array* array, int i, int j) {
-    wi_value* buf = array->items.data;
-
-    if (!buf) {
-        return;
-    }
-
-    wi_value temp = buf[i];
-    buf[i]        = buf[j];
-    buf[j]        = temp;
-
-    WI_GC_WRITE_BARRIER(state->gc, array, buf[i]);
-    WI_GC_WRITE_BARRIER(state->gc, array, buf[j]);
+_aqsort_swap(struct wi_array* array, int i, int j) {
+    wi_value temp        = array->items.data[i];
+    array->items.data[i] = array->items.data[j];
+    array->items.data[j] = temp;
 }
 
 static int
 _aqsort_partition(struct wi_state* state, struct wi_array* array, int lo, int hi, int mod_count) {
     int pii = lo + (int)(wi_state_rand_next(state) % (uint64_t)(hi - lo + 1));
-    _aqsort_swap(state, array, pii, hi);
+    _aqsort_swap(array, pii, hi);
 
     wi_value pi        = array->items.data[hi];
     bool     pi_is_box = wi_value_is_box(pi);
@@ -352,7 +343,7 @@ _aqsort_partition(struct wi_state* state, struct wi_array* array, int lo, int hi
 
         if (!wi_value_is_falsy(wi_state_pop(state))) {
             i++;
-            _aqsort_swap(state, array, i, j);
+            _aqsort_swap(array, i, j);
         }
     }
 
@@ -360,7 +351,7 @@ _aqsort_partition(struct wi_state* state, struct wi_array* array, int lo, int hi
         wi_gc_pop_root(state->gc);
     }
 
-    _aqsort_swap(state, array, i + 1, hi);
+    _aqsort_swap(array, i + 1, hi);
     return i + 1;
 }
 
