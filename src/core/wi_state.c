@@ -1309,6 +1309,7 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
         _OPCODE_LABEL(PUSH_MAP) : {
             uint16_t       count = _READ_SHORT();
             struct wi_map* map   = wi_new_map(state->gc);
+            frame->ip            = ip;
             WI_GC_PUSH_ROOT(state->gc, map);
             wi_table_reserve(&map->items, count);
 
