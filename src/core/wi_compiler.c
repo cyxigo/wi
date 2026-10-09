@@ -1012,6 +1012,27 @@ _compiler_invoke_expr(struct wi_compiler* compiler, bool can_assign) {
     _compiler_emit_call(compiler, arg_count);
 }
 
+static const uint8_t _binary_opcodes[] = {
+    [WI_TOKEN_PERCENT]         = WI_OP_MODULO,
+    [WI_TOKEN_PLUS]            = WI_OP_ADD,
+    [WI_TOKEN_MINUS]           = WI_OP_SUBTRACT,
+    [WI_TOKEN_STAR]            = WI_OP_MULTIPLY,
+    [WI_TOKEN_STAR_STAR]       = WI_OP_POWER,
+    [WI_TOKEN_SLASH]           = WI_OP_DIVIDE,
+    [WI_TOKEN_SLASH_SLASH]     = WI_OP_INT_DIVIDE,
+    [WI_TOKEN_AMPER]           = WI_OP_BIT_AND,
+    [WI_TOKEN_PIPE]            = WI_OP_BIT_OR,
+    [WI_TOKEN_CARET]           = WI_OP_BIT_XOR,
+    [WI_TOKEN_EQUAL_EQUAL]     = WI_OP_EQUAL,
+    [WI_TOKEN_BANG_EQUAL]      = WI_OP_NOT_EQUAL,
+    [WI_TOKEN_GREATER]         = WI_OP_GREATER,
+    [WI_TOKEN_GREATER_GREATER] = WI_OP_BIT_SHR,
+    [WI_TOKEN_GREATER_EQUAL]   = WI_OP_GREATER_EQUAL,
+    [WI_TOKEN_LESS]            = WI_OP_LESS,
+    [WI_TOKEN_LESS_LESS]       = WI_OP_BIT_SHL,
+    [WI_TOKEN_LESS_EQUAL]      = WI_OP_LESS_EQUAL,
+};
+
 static void
 _compiler_binary_expr(struct wi_compiler* compiler, bool can_assign) {
     WI_UNUSED(can_assign);
@@ -1019,66 +1040,7 @@ _compiler_binary_expr(struct wi_compiler* compiler, bool can_assign) {
     struct _parse_rule* rule = _compiler_get_rule(op);
     /* ** is right associative, every other binary operator isn't */
     _compiler_parse_prec(compiler, rule->prec + (rule->prec != _PREC_POWER));
-
-    switch (op) {
-        case WI_TOKEN_PERCENT:
-            _compiler_emit_opcode(compiler, WI_OP_MODULO);
-            break;
-        case WI_TOKEN_PLUS:
-            _compiler_emit_opcode(compiler, WI_OP_ADD);
-            break;
-        case WI_TOKEN_MINUS:
-            _compiler_emit_opcode(compiler, WI_OP_SUBTRACT);
-            break;
-        case WI_TOKEN_STAR:
-            _compiler_emit_opcode(compiler, WI_OP_MULTIPLY);
-            break;
-        case WI_TOKEN_STAR_STAR:
-            _compiler_emit_opcode(compiler, WI_OP_POWER);
-            break;
-        case WI_TOKEN_SLASH:
-            _compiler_emit_opcode(compiler, WI_OP_DIVIDE);
-            break;
-        case WI_TOKEN_SLASH_SLASH:
-            _compiler_emit_opcode(compiler, WI_OP_INT_DIVIDE);
-            break;
-        case WI_TOKEN_AMPER:
-            _compiler_emit_opcode(compiler, WI_OP_BIT_AND);
-            break;
-        case WI_TOKEN_PIPE:
-            _compiler_emit_opcode(compiler, WI_OP_BIT_OR);
-            break;
-        case WI_TOKEN_CARET:
-            _compiler_emit_opcode(compiler, WI_OP_BIT_XOR);
-            break;
-        case WI_TOKEN_EQUAL_EQUAL:
-            _compiler_emit_opcode(compiler, WI_OP_EQUAL);
-            break;
-        case WI_TOKEN_BANG_EQUAL:
-            _compiler_emit_opcode(compiler, WI_OP_NOT_EQUAL);
-            break;
-        case WI_TOKEN_GREATER:
-            _compiler_emit_opcode(compiler, WI_OP_GREATER);
-            break;
-        case WI_TOKEN_GREATER_GREATER:
-            _compiler_emit_opcode(compiler, WI_OP_BIT_SHR);
-            break;
-        case WI_TOKEN_GREATER_EQUAL:
-            _compiler_emit_opcode(compiler, WI_OP_GREATER_EQUAL);
-            break;
-        case WI_TOKEN_LESS:
-            _compiler_emit_opcode(compiler, WI_OP_LESS);
-            break;
-        case WI_TOKEN_LESS_LESS:
-            _compiler_emit_opcode(compiler, WI_OP_BIT_SHL);
-            break;
-        case WI_TOKEN_LESS_EQUAL:
-            _compiler_emit_opcode(compiler, WI_OP_LESS_EQUAL);
-            break;
-        default:
-            WI_UNREACHABLE();
-            break;
-    }
+    _compiler_emit_opcode(compiler, _binary_opcodes[op]);
 }
 
 static void
