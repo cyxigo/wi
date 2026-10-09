@@ -127,14 +127,17 @@ _repl(void) {
 }
 
 static void
-_read_error(const char* format, ...) {
-    va_list args;
-    va_start(args, format);
-
+_error_va(const char* format, va_list args) {
     fprintf(stderr, "%s: ", _g_exec);
     vfprintf(stderr, format, args);
     fprintf(stderr, "\n");
+}
 
+static void
+_read_error(const char* format, ...) {
+    va_list args;
+    va_start(args, format);
+    _error_va(format, args);
     va_end(args);
 }
 
@@ -175,13 +178,10 @@ static WI_NORETURN void
 _flag_parse_error(const char* format, ...) {
     va_list args;
     va_start(args, format);
-
-    fprintf(stderr, "%s: ", _g_exec);
-    vfprintf(stderr, format, args);
-    fprintf(stderr, "\n");
-    fprintf(stderr, "try '%s --help' for more info\n", _g_exec);
-
+    _error_va(format, args);
     va_end(args);
+
+    fprintf(stderr, "try '%s --help' for more info\n", _g_exec);
     exit(EXIT_FAILURE);
 }
 
