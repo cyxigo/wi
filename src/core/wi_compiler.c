@@ -1907,7 +1907,7 @@ _compiler_return_stmt(struct wi_compiler* compiler) {
 static void
 _compiler_export_stmt(struct wi_compiler* compiler) {
     if (!_compiler_is_top_level(compiler)) {
-        wi_parser_error_at_prev(compiler->parser, "can only use 'export' from top-level code");
+        wi_parser_error_at_prev(compiler->parser, "cannot use 'export' outside of top-level code");
     }
 
     wi_parser_expect(compiler->parser, WI_TOKEN_OPEN_BRACE);
