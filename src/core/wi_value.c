@@ -244,19 +244,27 @@ wi_string_to_real(const char* string, int len, char** end_ptr, bool* overflow) {
         *overflow = false;
     }
 
-    if (len > 2 && string[0] == '0' && wi_is_alnum(string[2])) {
-        char c    = string[1];
+    /*
+        we need to check for the sign explicitly because otherwise
+        -0b101 or -0x101 or -0o101 would fall to strtod, which does not support that
+    */
+    int         sign   = len > 0 && (string[0] == '-' || string[0] == '+');
+    const char* digits = string + sign;
+
+    if (len - sign > 2 && digits[0] == '0' && wi_is_alnum(digits[2])) {
+        char c    = digits[1];
         int  base = c == 'x' || c == 'X' ? 16 : c == 'o' || c == 'O' ? 8 : c == 'b' || c == 'B' ? 2 : 0;
 
         if (base) {
             errno          = 0;
-            uint64_t value = strtoull(string + 2, end_ptr, base);
+            uint64_t value = strtoull(digits + 2, end_ptr, base);
 
             if (overflow && errno == ERANGE) {
                 *overflow = true;
             }
 
-            return (wi_real)value;
+            /* apply the sign manually here, strtoull does not do that for us, sadly */
+            return string[0] == '-' ? -(wi_real)value : (wi_real)value;
         }
     }
 
