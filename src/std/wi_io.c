@@ -102,6 +102,16 @@ _file_check_write(struct wi_state* state, struct _file* file) {
     }
 }
 
+static bool
+_file_write(struct wi_state* state, struct _file* file, const char* buf, size_t count) {
+    if (!file->is_std) {
+        return fwrite(buf, sizeof(char), count, file->ptr) == count;
+    }
+
+    (file->ptr == stderr ? state->error : state->out)(state, buf);
+    return true;
+}
+
 static char*
 _file_read_all(struct wi_state* state, struct _file* file, int* count) {
     _file_check_read(state, file);
@@ -187,19 +197,13 @@ _io_write(struct wi_state* state, uint8_t arg_count) {
         wi_state_oom(state, "failed to allocate file contents (_io_write)");
     }
 
-    size_t written = (size_t)count;
-
-    if (file->is_std) {
-        (file->ptr == stderr ? state->error : state->out)(state, content);
-    } else {
-        written = fwrite(content, sizeof(char), (size_t)count, file->ptr);
-    }
+    bool written = _file_write(state, file, content, (size_t)count);
 
     if (owned) {
         free(content);
     }
 
-    if (written < (size_t)count) {
+    if (!written) {
         wi_state_error(state, "failed to write file %s", file->path);
     }
 
@@ -255,17 +259,10 @@ _io_writebytes(struct wi_state* state, uint8_t arg_count) {
     }
 
     buf[bytes->items.count] = '\0';
-    size_t written          = (size_t)bytes->items.count;
-
-    if (file->is_std) {
-        (file->ptr == stderr ? state->error : state->out)(state, (const char*)buf);
-    } else {
-        written = fwrite(buf, sizeof(uint8_t), (size_t)bytes->items.count, file->ptr);
-    }
-
+    bool written            = _file_write(state, file, (const char*)buf, (size_t)bytes->items.count);
     free(buf);
 
-    if (written < (size_t)bytes->items.count) {
+    if (!written) {
         wi_state_error(state, "failed to write file %s", file->path);
     }
 
