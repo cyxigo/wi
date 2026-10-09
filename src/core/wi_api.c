@@ -648,12 +648,7 @@ wi_map_set(struct wi_state* state, struct wi_map* map) {
     wi_value value = wi_state_top(state);
     wi_value key   = wi_state_peek(state, 1);
     wi_state_check_map_key(state, key);
-
-    if (wi_table_set(&map->items, key, value)) {
-        WI_GC_WRITE_BARRIER(state->gc, map, key);
-    }
-
-    WI_GC_WRITE_BARRIER(state->gc, map, value);
+    WI_GC_TABLE_SET(state->gc, map, &map->items, key, value);
     wi_state_drop(state);
     wi_state_drop(state);
 }
@@ -695,17 +690,11 @@ wi_map_next(struct wi_state* state, struct wi_map* map, int* iter) {
 
 void
 wi_object_set(struct wi_state* state, struct wi_object* object, const char* name) {
-    wi_value value = wi_state_top(state);
-
+    wi_value          value      = wi_state_top(state);
     struct wi_string* name_box   = wi_make_string(state->gc, name);
     wi_value          name_value = WI_MAKE_BOX_VALUE(name_box);
     WI_GC_PUSH_ROOT(state->gc, name_box);
-
-    if (wi_table_set(&object->fields, name_value, value)) {
-        WI_GC_WRITE_BARRIER(state->gc, object, name_value);
-    }
-
-    WI_GC_WRITE_BARRIER(state->gc, object, value);
+    WI_GC_TABLE_SET(state->gc, object, &object->fields, name_value, value);
     wi_gc_pop_root(state->gc);
     wi_state_drop(state);
 }

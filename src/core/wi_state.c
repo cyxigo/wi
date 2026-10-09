@@ -553,12 +553,7 @@ _state_subscript_set(struct wi_state* state, wi_value target, wi_value index, wi
     if (wi_value_is_map(target)) {
         struct wi_map* map = wi_value_as_map(target);
         wi_state_check_map_key(state, index);
-
-        if (wi_table_set(&map->items, index, value)) {
-            WI_GC_WRITE_BARRIER(state->gc, map, index);
-        }
-
-        WI_GC_WRITE_BARRIER(state->gc, map, value);
+        WI_GC_TABLE_SET(state->gc, map, &map->items, index, value);
         return;
     }
 

@@ -166,12 +166,7 @@ _map_select(struct wi_state* state, uint8_t arg_count) {
         wi_value new_value = wi_state_pop(state);
         wi_value new_key   = wi_state_pop(state);
         wi_state_check_map_key(state, new_key);
-
-        if (wi_table_set(&result->items, new_key, new_value)) {
-            WI_GC_WRITE_BARRIER(state->gc, result, new_key);
-        }
-
-        WI_GC_WRITE_BARRIER(state->gc, result, new_value);
+        WI_GC_TABLE_SET(state->gc, result, &result->items, new_key, new_value);
     }
 }
 
@@ -200,11 +195,7 @@ _map_where(struct wi_state* state, uint8_t arg_count) {
             continue;
         }
 
-        if (wi_table_set(&result->items, key, value)) {
-            WI_GC_WRITE_BARRIER(state->gc, result, key);
-        }
-
-        WI_GC_WRITE_BARRIER(state->gc, result, value);
+        WI_GC_TABLE_SET(state->gc, result, &result->items, key, value);
     }
 }
 
