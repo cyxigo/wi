@@ -1523,34 +1523,26 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
             struct wi_object* clone = wi_new_object(state->gc);
             WI_GC_PUSH_ROOT(state->gc, clone);
 
-            /*
-                most of the time we clone a single object rather than merge multiple ones
-                so a simple optimization here is to use wi_table_copy for simple cloning
-            */
-            if (WI_LIKELY(count == 1)) {
-                wi_value value = start[0];
+            for (uint16_t i = 0; i < count; i++) {
+                wi_value value = start[i];
 
                 if (WI_UNLIKELY(!wi_value_is_object(value))) {
                     _ERROR("cannot use operator 'new' on a value of type %s", wi_value_type(value));
                 }
 
-                wi_table_copy(&wi_value_as_object(value)->fields, &clone->fields);
-            } else {
-                for (uint16_t i = 0; i < count; i++) {
-                    wi_value value = start[i];
+                struct wi_table* fields = &wi_value_as_object(value)->fields;
 
-                    if (WI_UNLIKELY(!wi_value_is_object(value))) {
-                        _ERROR("cannot use operator 'new' on a value of type %s", wi_value_type(value));
-                    }
+                /* first object gets fast copying and the rest just lay on top of it */
+                if (i == 0) {
+                    wi_table_copy(fields, &clone->fields);
+                    continue;
+                }
 
-                    struct wi_table* fields = &wi_value_as_object(value)->fields;
+                for (int j = 0; j < fields->capacity; j++) {
+                    struct wi_entry* entry = &fields->entries[j];
 
-                    for (int j = 0; j < fields->capacity; j++) {
-                        struct wi_entry* entry = &fields->entries[j];
-
-                        if (!wi_value_is_empty(entry->key)) {
-                            wi_table_set(&clone->fields, entry->key, entry->value);
-                        }
+                    if (!wi_value_is_empty(entry->key)) {
+                        wi_table_set(&clone->fields, entry->key, entry->value);
                     }
                 }
             }
