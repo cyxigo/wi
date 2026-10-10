@@ -421,9 +421,7 @@ wi_state_error(struct wi_state* state, const char* format, ...) {
 WI_NORETURN void
 wi_state_oom(struct wi_state* state, const char* what) {
     wi_printf(state, state->error, "out of memory: %s\n", what);
-    _state_reset(state);
-    wi_gc_reset_roots(state->gc);
-    longjmp(state->jmp, WI_RUN_ABORT);
+    wi_state_abort(state);
 }
 
 WI_NORETURN void
