@@ -301,31 +301,23 @@ wi_state_add_lib(struct wi_state* state, wi_lib_handle handle) {
     new_lib->next   = state->libs;
     new_lib->handle = handle;
     new_lib->module = NULL;
-    new_lib->path   = wi_make_null_value();
     state->libs     = new_lib;
 
     return new_lib;
 }
 
 void
-wi_state_close_libs_from(struct wi_state* state, struct wi_lib_node* from) {
+wi_state_close_libs(struct wi_state* state) {
     struct wi_lib_node* lib = state->libs;
 
-    while (lib != from) {
+    while (lib) {
         struct wi_lib_node* next = lib->next;
-        wi_table_delete(&state->imported, lib->path);
         wi_lib_close(lib->handle);
         free(lib);
         lib = next;
     }
 
-    state->libs = from;
-}
-
-void
-wi_state_close_libs(struct wi_state* state) {
-    /* since wi_state_close_libs_from checks until lib == from we can use NULL here */
-    wi_state_close_libs_from(state, NULL);
+    state->libs = NULL;
 }
 
 struct wi_recovery*

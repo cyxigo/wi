@@ -1490,12 +1490,9 @@ _compiler_import_foreign(struct wi_compiler* compiler, char* lib_path, char** at
         if (!node->module) {
             state->stack_top = state->stack + top;
             wi_gc_pop_root(compiler->gc);
-            free(*atts);
             wi_parser_error_at_prev(compiler->parser,
                                     "library %s did not return a valid module from wi_module_init", path->buf);
         }
-
-        node->path = path_value;
     }
 
     wi_value module = WI_MAKE_BOX_VALUE(node->module);
@@ -2025,24 +2022,7 @@ wi_compile(struct wi_state* state, const char* file_path, const char* src, struc
         wi_state_oom(state, "failed to allocate the parser (wi_compile)");
     }
 
-    /*
-        we capture this because of the foreign importing
-        when a compilation of the script fails, we need to close any open lib handles that were opened
-        via import statement, but using wi_state_close_libs would close every single handle opened
-        even by a different script, so we do this:
-
-        script1: [lib1] [lib2]
-                 ^^^^^^^^^^^^^ these are captured by script1, script2 will have no idea these exist
-        script2: [lib3] [lib4] <--- BOOM! ERROR!
-                 ^^^^^^^^^^^^^ these are captured by script2, so only these will be closed in the case
-                               of a compile error
-
-        while this may not seem useful in general scripts, if you use REPL, technically every line is
-        a different "script" (mostly because it compiles and runs over and over, a more correct term would
-        be something like a "compilation unit"), so it's pretty useful there or in any similar situation!
-    */
-    struct wi_lib_node* libs  = state->libs;
-    int                 roots = state->gc->temp_root_count;
+    int roots = state->gc->temp_root_count;
 
     if (setjmp(parser->error_jmp) == WI_RUN_OK) {
         struct wi_compiler* compiler = wi_new_compiler(NULL, state, parser, module);
@@ -2062,8 +2042,6 @@ wi_compile(struct wi_state* state, const char* file_path, const char* src, struc
 
         return prototype;
     }
-
-    wi_state_close_libs_from(state, libs);
 
     /*
         we walk from the innermost compiler to the outermost, because not all compilers are always freed
