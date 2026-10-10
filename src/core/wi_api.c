@@ -537,7 +537,7 @@ void
 wi_arg_check_function(struct wi_state* state, uint8_t arg, uint8_t arity) {
     wi_value value = state->ffi_stack[arg];
 
-    if (!wi_value_is_callable(value)) {
+    if (WI_UNLIKELY(!wi_value_is_callable(value))) {
         _arg_error(state, "function", arg);
     }
 
