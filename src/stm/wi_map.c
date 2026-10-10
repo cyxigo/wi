@@ -1,3 +1,5 @@
+#include "wi_map.h"
+
 #include <stdbool.h>
 
 #include "../../include/wi.h"

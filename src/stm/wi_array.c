@@ -1,3 +1,5 @@
+#include "wi_array.h"
+
 #include <stdbool.h>
 #include <stdint.h>
 
