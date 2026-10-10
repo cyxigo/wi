@@ -247,10 +247,6 @@ _gc_mark_table(struct wi_gc* gc, struct wi_table* table) {
 
 static void
 _gc_mark_compiler(struct wi_gc* gc) {
-    if (!gc->compiler) {
-        return;
-    }
-
     struct wi_compiler* compiler = gc->compiler;
 
     while (compiler) {
