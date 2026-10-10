@@ -117,6 +117,19 @@ wi_gc_write_barrier(struct wi_gc* gc, struct wi_box* parent, wi_value value) {
 #define WI_GC_WRITE_BARRIER(gc, parent, value) wi_gc_write_barrier(gc, (struct wi_box*)(parent), value)
 
 WI_INLINE void
+wi_gc_array_set(struct wi_gc* gc, struct wi_array* array, int index, wi_value value) {
+    array->items.data[index] = value;
+    array->items.mod_count++;
+    wi_gc_write_barrier(gc, (struct wi_box*)array, value);
+}
+
+WI_INLINE void
+wi_gc_array_add(struct wi_gc* gc, struct wi_array* array, wi_value value) {
+    wi_value_buf_add(&array->items, value);
+    wi_gc_write_barrier(gc, (struct wi_box*)array, value);
+}
+
+WI_INLINE void
 wi_gc_table_set(struct wi_gc* gc, struct wi_box* parent, struct wi_table* table, wi_value key, wi_value value) {
     if (wi_table_set(table, key, value)) {
         wi_gc_write_barrier(gc, parent, key);

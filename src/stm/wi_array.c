@@ -78,8 +78,7 @@ static void
 _array_add(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     struct wi_array* array = wi_arg_array(state, 1);
-    wi_value_buf_add(&array->items, state->ffi_stack[2]);
-    WI_GC_WRITE_BARRIER(state->gc, array, state->ffi_stack[2]);
+    wi_gc_array_add(state->gc, array, state->ffi_stack[2]);
     wi_push_arg(state, 1);
 }
 
@@ -157,11 +156,10 @@ _array_insertat(struct wi_state* state, uint8_t arg_count) {
     }
 
     wi_value value = state->ffi_stack[3];
-    wi_value_buf_add(&array->items, value);
+    wi_gc_array_add(state->gc, array, value);
     memmove(array->items.data + index + 1, array->items.data + index,
             sizeof(wi_value) * (size_t)(array->items.count - index - 1));
     array->items.data[index] = value;
-    WI_GC_WRITE_BARRIER(state->gc, array, value);
     wi_push_arg(state, 1);
 }
 
@@ -289,9 +287,7 @@ _array_select(struct wi_state* state, uint8_t arg_count) {
 
     for (int i = 0; i < array->items.count; i++) {
         _array_call(state, array, mod_count, array->items.data[i], false);
-        wi_value value = wi_state_pop(state);
-        wi_value_buf_add(&result->items, value);
-        WI_GC_WRITE_BARRIER(state->gc, result, value);
+        wi_gc_array_add(state->gc, result, wi_state_pop(state));
     }
 }
 
@@ -309,8 +305,7 @@ _array_where(struct wi_state* state, uint8_t arg_count) {
         _array_call(state, array, mod_count, item, false);
 
         if (!wi_value_is_falsy(wi_state_pop(state))) {
-            wi_value_buf_add(&result->items, item);
-            WI_GC_WRITE_BARRIER(state->gc, result, item);
+            wi_gc_array_add(state->gc, result, item);
         }
     }
 }

@@ -608,9 +608,7 @@ wi_array_count(struct wi_array* array) {
 
 void
 wi_array_add(struct wi_state* state, struct wi_array* array) {
-    wi_value value = wi_state_top(state);
-    wi_value_buf_add(&array->items, value);
-    WI_GC_WRITE_BARRIER(state->gc, array, value);
+    wi_gc_array_add(state->gc, array, wi_state_top(state));
     wi_state_drop(state);
 }
 
@@ -622,9 +620,7 @@ wi_array_set(struct wi_state* state, struct wi_array* array, int index) {
         return false;
     }
 
-    array->items.data[index] = value;
-    array->items.mod_count++;
-    WI_GC_WRITE_BARRIER(state->gc, array, value);
+    wi_gc_array_set(state->gc, array, index, value);
     return true;
 }
 

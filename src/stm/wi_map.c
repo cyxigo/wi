@@ -46,13 +46,9 @@ _map_collect(struct wi_state* state, bool keys) {
     for (int i = 0; i < map->items.capacity; i++) {
         struct wi_entry* entry = &map->items.entries[i];
 
-        if (wi_value_is_empty(entry->key)) {
-            continue;
+        if (!wi_value_is_empty(entry->key)) {
+            wi_gc_array_add(state->gc, result, keys ? entry->key : entry->value);
         }
-
-        wi_value value = keys ? entry->key : entry->value;
-        wi_value_buf_add(&result->items, value);
-        WI_GC_WRITE_BARRIER(state->gc, result, value);
     }
 }
 
