@@ -279,7 +279,7 @@ main(int argc, const char** argv) {
     _g_state = wi_new_state(&conf);
 
     if (!_g_state) {
-        fprintf(stderr, "out of memory: failed to allocate a state\n");
+        fprintf(stderr, "%s: out of memory: failed to allocate a state\n", _g_exec);
         return EXIT_FAILURE;
     }
 
