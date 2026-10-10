@@ -7,16 +7,22 @@
 #include "../core/wi_state.h"
 
 static void
+_array_append(struct wi_array* dest, const wi_value* items, int count) {
+    if (count <= 0) {
+        return;
+    }
+
+    wi_value_buf_reserve(&dest->items, count);
+    memcpy(dest->items.data + dest->items.count, items, sizeof(wi_value) * (size_t)count);
+    dest->items.count += count;
+}
+
+static void
 _array_copy(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     struct wi_array* array     = wi_arg_array(state, 1);
     struct wi_array* new_array = wi_push_array(state);
-
-    if (array->items.count > 0) {
-        wi_value_buf_reserve(&new_array->items, array->items.count);
-        memcpy(new_array->items.data, array->items.data, sizeof(wi_value) * (size_t)array->items.count);
-        new_array->items.count = array->items.count;
-    }
+    _array_append(new_array, array->items.data, array->items.count);
 }
 
 static void
@@ -183,15 +189,7 @@ _array_concat(struct wi_state* state, uint8_t arg_count) {
 
     for (int i = 0; i < arg_count; i++) {
         struct wi_array* array = wi_arg_array(state, (uint8_t)(i + 1));
-        int              count = array->items.count;
-
-        if (count == 0) {
-            continue;
-        }
-
-        wi_value_buf_reserve(&result->items, count);
-        memcpy(result->items.data + result->items.count, array->items.data, sizeof(wi_value) * (size_t)count);
-        result->items.count += count;
+        _array_append(result, array->items.data, array->items.count);
     }
 }
 
@@ -207,15 +205,7 @@ _array_slice(struct wi_state* state, uint8_t arg_count) {
     }
 
     struct wi_array* result = wi_push_array(state);
-    int64_t          count  = end - start;
-
-    if (count <= 0) {
-        return;
-    }
-
-    wi_value_buf_reserve(&result->items, (int)count);
-    memcpy(result->items.data, array->items.data + start, sizeof(wi_value) * (size_t)count);
-    result->items.count = (int)count;
+    _array_append(result, array->items.data + start, (int)(end - start));
 }
 
 static void
