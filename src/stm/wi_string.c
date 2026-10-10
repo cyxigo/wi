@@ -88,6 +88,17 @@ _string_trim(struct wi_state* state, uint8_t arg_count) {
     wi_push_lstring(state, string + start, end - start);
 }
 
+static int
+_string_index(const char* string, int count, const char* target, int target_count) {
+    for (int i = 0; i + target_count <= count; i++) {
+        if (memcmp(string + i, target, (size_t)target_count) == 0) {
+            return i;
+        }
+    }
+
+    return -1;
+}
+
 static void
 _string_has(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
@@ -95,15 +106,7 @@ _string_has(struct wi_state* state, uint8_t arg_count) {
     char* string = wi_arg_string(state, 1, &count, NULL);
     int   target_count;
     char* target = wi_arg_string(state, 2, &target_count, NULL);
-    bool  found  = target_count == 0;
-
-    for (int i = 0; !found && i + target_count <= count; i++) {
-        if (memcmp(string + i, target, (size_t)target_count) == 0) {
-            found = true;
-        }
-    }
-
-    wi_push_bool(state, found);
+    wi_push_bool(state, _string_index(string, count, target, target_count) != -1);
 }
 
 static void
@@ -113,20 +116,8 @@ _string_indexof(struct wi_state* state, uint8_t arg_count) {
     char* string = wi_arg_string(state, 1, &count, NULL);
     int   target_count;
     char* target = wi_arg_string(state, 2, &target_count, NULL);
-
-    if (target_count == 0) {
-        wi_push_real(state, 0);
-        return;
-    }
-
-    for (int i = 0; i + target_count <= count; i++) {
-        if (memcmp(string + i, target, (size_t)target_count) == 0) {
-            wi_push_real(state, wi_utf8_len(string, i));
-            return;
-        }
-    }
-
-    wi_push_real(state, -1);
+    int   offset = _string_index(string, count, target, target_count);
+    wi_push_real(state, offset == -1 ? -1 : wi_utf8_len(string, offset));
 }
 
 static void
