@@ -183,10 +183,9 @@ wi_check_version(wi_state* state, int version);
 /**
  * Create a new Wi state instance
  *
- * @param conf Wi configuration, see `wi_conf.h` for more
- * @return Created Wi state instance
+ * @param conf Wi configuration, see `wi_conf.h` for more (**must** outlive the state, Wi keeps the pointer)
+ * @return The new Wi state instance, or `NULL` if out of memory
  * @note Must be freed via `wi_delete_state`
- * @return The new Wi state instance
  */
 WI_API wi_state*
 wi_new_state(wi_conf* conf);
@@ -265,7 +264,8 @@ wi_state_set_callbacks(wi_state* state, wi_print_fn out_fn, wi_print_fn error_fn
  *
  * @param state Wi state instance
  * @param argc Number of arguments
- * @param argv Array of argument strings (**must** be valid UTF-8, invalid - undefined behavior)
+ * @param argv Array of argument strings (**must** be valid UTF-8, invalid - undefined behavior, and **must**
+ * outlive the state, Wi keeps the pointer)
  */
 WI_API void
 wi_state_set_args(wi_state* state, int argc, const char** argv);
@@ -323,10 +323,11 @@ WI_API void
 wi_state_interrupt(wi_state* state);
 
 /**
- * Execute Wi code
+ * Execute Wi code.
+ * Must not be called from a foreign library's `wi_module_init` or from `import_exists_fn`
  *
  * @param state Wi state instance
- * @param file_path Path to the script, used for error messages
+ * @param file_path Path to the script, used for error messages (**must** outlive the state, Wi keeps the pointer)
  * @param src Code string
  * @return Run result
  */
@@ -337,10 +338,11 @@ wi_state_run(wi_state* state, const char* file_path, const char* src);
  * Compile Wi code into a function without running it, pushing it onto the stack.
  * Running this function will run the code and hand you back a module on the stack, so technically the same as
  * `import`ing a script.
- * `arg_count` for the said function will be `0`
+ * `arg_count` for the said function will be `0`.
+ * Must not be called from a foreign library's `wi_module_init` or from `import_exists_fn`
  *
  * @param state Wi state instance
- * @param file_path Path to the script, used for error messages
+ * @param file_path Path to the script, used for error messages (**must** outlive the state, Wi keeps the pointer)
  * @param src Code string
  * @return `true` and pushes the function on success, `false` and pushes nothing on a compile error
  */
