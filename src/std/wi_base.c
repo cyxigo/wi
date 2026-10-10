@@ -131,18 +131,27 @@ _base_try(struct wi_state* state, uint8_t arg_count) {
 
         wi_push_null(state);
         wi_object_set(state, result, "error");
-    } else {
-        wi_push_null(state);
-        wi_object_set(state, result, "value");
-
-        wi_push_bool(state, false);
-        wi_object_set(state, result, "ok");
-
-        wi_state_ppush(state, WI_MAKE_BOX_VALUE(recovery->error));
-        wi_object_set(state, result, "error");
+        wi_state_pop_recovery(state);
+        return;
     }
 
+    struct wi_string* error = recovery->error;
+    /*
+        if we are here, it means we got an error
+        POTENTIALLY a stack overflow, so we need to pop the recovery first
+        because if we don't do that immediately, any push will cause a stack overflow again, going back here
+        over and over
+    */
     wi_state_pop_recovery(state);
+
+    wi_state_ppush(state, WI_MAKE_BOX_VALUE(error));
+    wi_object_set(state, result, "error");
+
+    wi_push_null(state);
+    wi_object_set(state, result, "value");
+
+    wi_push_bool(state, false);
+    wi_object_set(state, result, "ok");
 }
 
 static void

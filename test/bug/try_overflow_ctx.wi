@@ -1,0 +1,6 @@
+%% $ok
+%% Bug in v9.6.0-beta, std::try will try to capture the stack overflow context when it really shouldn't
+f := |n| => f(n + 1) + 1;
+r := std::try(f, 0);
+std::puts(r.ok);
+std::puts("after");

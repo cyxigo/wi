@@ -1,6 +1,9 @@
-%% $ok
-%% Bug in v9.6.0-beta, std::try will try to capture the stack overflow context when it really shouldn't
-f := |n| => f(n + 1) + 1;
-r := std::try(f, 0);
-std::puts(r.ok);
-std::puts("after");
+%% $fail
+%% Bug in v9.7.1-beta, should cause stack overflow
+%% also should be able to be stopped via SIGINT
+f := || => {
+    std::try(|| => null);
+    f();
+};
+
+f();

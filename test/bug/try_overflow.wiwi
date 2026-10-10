@@ -1,2 +1,2 @@
-false
-after
+runtime error: stack overflow (limit is 1000000)
+   --> test/bug/try_overflow.wi:5 in f()
