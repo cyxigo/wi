@@ -160,7 +160,7 @@ _base_call(struct wi_state* state, uint8_t arg_count) {
     struct wi_array* args = wi_arg_array(state, 2);
 
     if (args->items.count > WI_PARAMETER_MAX) {
-        wi_state_error(state, "too many arguments to call (limit is %i)", WI_PARAMETER_MAX);
+        wi_state_error(state, "too many arguments in a call (limit is %i)", WI_PARAMETER_MAX);
     }
 
     wi_arg_function(state, 1, (uint8_t)args->items.count);
