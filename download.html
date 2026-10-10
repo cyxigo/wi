@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="description" content="Wi is a small, fast, embeddable, prototype-based scripting language" />
+        <meta
+            name="keywords"
+            content="Wi, programming language, scripting language, prototype-based, embeddable, fast, small, dynamic, interpreted"
+        />
+
+        <link rel="shortcut icon" href="res/wi-square.png" type="image/x-png" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@100..900&display=swap"
+            rel="stylesheet"
+        />
+        <link rel="stylesheet" href="style.css" />
+        <link rel="stylesheet" href="token.css" />
+        <title>Download – Wi</title>
+    </head>
+    <body>
+        <div id="content">
+            <div id="logo-container">
+                <a href="https://wi-lang.pages.dev"><img src="res/wi.png" id="logo" alt="Wi logo" /></a>
+                <h1>Wi Programming Language</h1>
+            </div>
+            <button onclick="location.href = 'https://wi-lang.pages.dev/try'">Try</button>
+            <button onclick="location.href = 'https://wi-lang.pages.dev/download'">Download</button>
+            <button onclick="location.href = 'https://github.com/cyxigo/wi/wiki'">Wiki</button>
+            <button onclick="location.href = 'https://github.com/cyxigo/wi/tree/main'">Source code</button>
+            <hr />
+
+            <img src="res/wi-9.8.0.png" style="max-width: 300px" />
+            <div class="table-scroll">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Platform</th>
+                            <th>Architecture</th>
+                            <th>Link</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Windows</td>
+                            <td>AMD64</td>
+                            <td><a class="button" href="https://github.com/cyxigo/wi/releases/download/v9.8.0-beta/wi-win64.zip">Download</a></td>
+                        </tr>
+                        <tr>
+                            <td>Linux</td>
+                            <td>AMD64</td>
+                            <td><a class="button" href="https://github.com/cyxigo/wi/releases/download/v9.8.0-beta/wi-linux64.zip">Download</a></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <a class="button" href="https://github.com/cyxigo/wi/releases">All versions</a>
+
+            <h3>New features</h3>
+            <ul>
+                <li>Add std::call</li></li>
+                <li>Add wi_abi_version and wi_check_version/WI_CHECK_VERSION</li>
+                <li>Include the main script path as the first item in os::args</li>
+                <li>Add find to array, map and string</li>
+                <li>Add io::stdin, io::stdout, and io::stderr</li>
+            </ul>
+
+            <h3>Changes</h3>
+            <ul>
+                <li>std::real now rejects blank strings and skips trailing spaces</li>
+                <li>std::isfunction now returns true for foreign (C) functions too</li>
+                <li>Overflowing hex/octal/binary literals are now an error</li>
+                <li>std::assert now validates the message before checking the condition</li>
+                <li>io::writebytes now appends a NUL byte</li>
+                <li>Libraries now live as long as the state does</li>
+                <li>Speed up new a, b merging and array->insertat</li>
+            </ul>
+
+            <h3>Bugs fixed</h3>
+            <ul>
+                <li>Fix import crashes with foreign libraries (NULL module, missing exe path)</li>
+                <li>Fix C stack overflow not being detected through foreign calls</li>
+                <li>Fix off-by-one in the global and constant limits</li>
+                <li>Fix missing write barriers in variable definition</li>
+                <li>Fix function fields recursing into themselves</li>
+                <li>Fix implicit returns not getting TCO</li>
+                <li>Fix switch not requiring its closing brace</li>
+                <li>Fix wi_pcall leaving the callee's upvalues open on failure</li>
+                <li>Fix the REPL returning EXIT_SUCCESS instead of the real exit code</li>
+                <li>Fix std::equals missing the C stack overflow check</li>
+                <li>Fix io::writebytes error messages</li>
+                <li>Fix wi_read_stream failing on pipes</li>
+                <li>Fix array->slice with an empty slice</li>
+                <li>Fix off-by-one in stack accounting in returns</li>
+                <li>Fix interrupts being ignored after foreign calls</li>
+                <li>Fix string->select/where leaking on error</li>
+                <li>Fix string->each not returning the string</li>
+                <li>Fix lexer errors pointing at the wrong character</li>
+                <li>Fix std::try hanging forever on stack overflow</li>
+                <li>Fix std::real ignoring the sign in hex/octal/binary strings</li>
+            </ul>
+        </div>
+
+        <footer>
+            Copyright © 2026 cyxigo |
+            <a href="https://github.com/cyxigo/wi/tree/pages">Source code</a>
+            | Made with ❤
+        </footer>
+    </body>
+</html>
