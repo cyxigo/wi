@@ -1382,11 +1382,7 @@ _import_note_attempt(struct wi_compiler* compiler, char** atts, const char* form
     char* att = wi_vasprintf(format, args);
     va_end(args);
 
-    if (!att) {
-        wi_parser_oom(compiler->parser, "failed to allocate an error message (_import_note_attempt)");
-    }
-
-    char* added = wi_sprintf("%s\n   %s", *atts ? *atts : "", att);
+    char* added = att ? wi_sprintf("%s\n   %s", *atts ? *atts : "", att) : NULL;
     free(att);
 
     if (!added) {
