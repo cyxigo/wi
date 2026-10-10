@@ -62,8 +62,8 @@ _state_out(struct wi_state* state, const char* text) {
 
 static void
 _state_error(struct wi_state* state, const char* text) {
-    fputs(text, stderr);
     WI_UNUSED(state);
+    fputs(text, stderr);
 }
 
 static void
@@ -1632,16 +1632,13 @@ wi_state_call(struct wi_state* state, wi_value callable, uint8_t arg_count, bool
 
     struct wi_closure* closure = wi_value_as_closure(callable);
 
-    /* storing where the ffi stack starts as an offset in case of stack reallocation (scary) */
-    ptrdiff_t ffi_stack_offset = state->ffi_stack ? state->ffi_stack - state->stack : -1;
-    int       base_frame_count = state->frame_count;
+    int base_frame_count = state->frame_count;
     _state_call(state, closure, arg_count);
 
     state->c_depth++;
     enum wi_run_result result = _state_interpreter_loop(state, base_frame_count, drop_result);
     state->c_depth--;
 
-    state->ffi_stack = ffi_stack_offset == -1 ? NULL : state->stack + ffi_stack_offset;
     return result;
 }
 
