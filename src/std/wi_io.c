@@ -12,12 +12,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#ifdef _WIN32
-#include <io.h>
-#else
-#include <unistd.h>
-#endif
-
 struct _file {
     FILE* ptr;
     char* path;
@@ -128,11 +122,7 @@ static void
 _io_exists(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     char* path = wi_arg_string(state, 1, NULL, NULL);
-#ifdef _WIN32
-    wi_push_bool(state, _access(path, 0) == 0);
-#else
-    wi_push_bool(state, access(path, F_OK) == 0);
-#endif
+    wi_push_bool(state, wi_file_exists(path));
 }
 
 static void

@@ -1,3 +1,7 @@
+#ifndef _WIN32
+#define _POSIX_C_SOURCE 200809L
+#endif
+
 #include "wi_util.h"
 
 #include <limits.h>
@@ -10,8 +14,13 @@
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
+#include <io.h>
 #include <windows.h>
-#elif defined(WI_USE_READLINE) /* wi is linked with -lreadline */
+#else
+#include <unistd.h>
+#endif
+
+#ifdef WI_USE_READLINE /* wi is linked with -lreadline */
 #include <readline/history.h>
 #include <readline/readline.h>
 #endif
@@ -101,6 +110,15 @@ wi_strdup(const char* src) {
     }
 
     return memcpy(new, src, len);
+}
+
+bool
+wi_file_exists(const char* path) {
+#ifdef _WIN32
+    return _access(path, 0) == 0;
+#else
+    return access(path, F_OK) == 0;
+#endif
 }
 
 /* returns a codepoint count from a byte count */

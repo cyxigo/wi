@@ -36,6 +36,8 @@ wi_printf(struct wi_state* state, wi_print_fn fn, const char* format, ...);
 
 char*
 wi_strdup(const char* src);
+bool
+wi_file_exists(const char* path);
 
 int
 wi_utf8_len(const char* buf, int count);

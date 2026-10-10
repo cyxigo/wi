@@ -1,7 +1,3 @@
-#ifndef _WIN32
-#define _POSIX_C_SOURCE 200809L
-#endif
-
 #include "wi_state.h"
 
 #include <errno.h>
@@ -15,12 +11,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-
-#ifdef _WIN32
-#include <io.h>
-#else
-#include <unistd.h>
-#endif
 
 #include "../../include/wi_conf.h"
 #include "wi_box.h"
@@ -103,11 +93,7 @@ _state_read_file(struct wi_state* state, const char* file_path) {
 static bool
 _state_import_exists(struct wi_state* state, const char* path) {
     WI_UNUSED(state);
-#ifdef _WIN32
-    return _access(path, 0) == 0;
-#else
-    return access(path, F_OK) == 0;
-#endif
+    return wi_file_exists(path);
 }
 
 struct wi_state*
