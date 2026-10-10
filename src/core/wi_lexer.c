@@ -572,7 +572,7 @@ wi_lexer_next(struct wi_lexer* lexer) {
         our dear user most likely tried to type a character that is meant to be a name or in a name
     */
     if ((c & 0x80) != 0) {
-        return wi_token_make_error("non-ascii character in a name", lexer->line, lexer->curr_col - 1);
+        return wi_token_make_error("non-ascii character in a name", lexer->line, lexer->start_col);
     }
 
     if (wi_is_alpha(c)) {
@@ -695,5 +695,5 @@ wi_lexer_next(struct wi_lexer* lexer) {
             break;
     }
 
-    return wi_token_make_error("unexpected character", lexer->line, lexer->curr_col);
+    return wi_token_make_error("unexpected character", lexer->line, lexer->start_col);
 }
