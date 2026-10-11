@@ -420,7 +420,7 @@ WI_API bool
 wi_find(wi_state* state, const char* name);
 
 /**
- * Call a Wi function that is *at the stack top*
+ * Call a Wi function followed by its `arg_count` arguments at the stack top
  * Must only be called while the state is running (i.e. from within a foreign function called by Wi code).
  * Calling it outside that context is undefined behavior
  *
@@ -432,7 +432,7 @@ WI_API void
 wi_call(wi_state* state, uint8_t arg_count, bool drop);
 
 /**
- * Call a Wi function that is *at the stack top*; is protected
+ * Call a Wi function followed by its `arg_count` arguments at the stack top; is protected
  *
  * @param state Wi state instance
  * @param arg_count Argument count
