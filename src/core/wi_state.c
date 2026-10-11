@@ -877,7 +877,7 @@ _state_import(struct wi_state* state, wi_value path_value) {
     if (!prototype) {
         wi_gc_pop_root(state->gc); /* src_box */
         wi_gc_pop_root(state->gc); /* module */
-        wi_state_error(state, "failed to compile script %s", path);
+        wi_state_error(state, "failed to compile module %s", path);
     }
 
     wi_gc_pop_root(state->gc); /* src_box */
