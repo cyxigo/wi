@@ -1,0 +1,33 @@
+name: "MinGW (Linux)"
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  build:
+    name: Build ${{ matrix.arch }} (union=${{ matrix.union }})
+    runs-on: ubuntu-26.04
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [x86_64, x86]
+        union: [n, y]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install mingw-w64
+        run: sudo apt-get update && sudo apt-get install -y mingw-w64
+
+      - name: Install Xmake
+        uses: xmake-io/github-action-setup-xmake@v1
+        with:
+          xmake-version: latest
+
+      - name: Build
+        run: |
+          xmake f -p windows -a ${{ matrix.arch }} --toolchain=mingw --union=${{ matrix.union }}
+          xmake

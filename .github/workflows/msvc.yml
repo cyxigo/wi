@@ -1,0 +1,30 @@
+name: "MSVC (Windows)"
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  build:
+    name: Build ${{ matrix.arch }} (union=${{ matrix.union }})
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [x64, x86]
+        union: [n, y]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Xmake
+        uses: xmake-io/github-action-setup-xmake@v1
+        with:
+          xmake-version: latest
+
+      - name: Build
+        run: |
+          xmake f -a ${{ matrix.arch }} --toolchain=msvc --union=${{ matrix.union }}
+          xmake -j1

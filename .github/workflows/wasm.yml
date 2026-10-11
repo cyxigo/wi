@@ -1,0 +1,32 @@
+name: "EMCC (Linux)"
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  build:
+    name: Build (union=${{ matrix.union }})
+    runs-on: ubuntu-26.04
+    strategy:
+      fail-fast: false
+      matrix:
+        union: [n, y]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Xmake
+        uses: xmake-io/github-action-setup-xmake@v1
+        with:
+          xmake-version: latest
+
+      - name: Install Emscripten
+        uses: mymindstorm/setup-emsdk@v14
+
+      - name: Build
+        run: |
+          xmake f -p wasm --union=${{ matrix.union }}
+          xmake
