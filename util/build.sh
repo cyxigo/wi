@@ -26,21 +26,20 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
+# configure from scratch and build
+# $@ - extra xmake config flags
+build() {
+    xmake f -c -m "$mode" "$@" > /dev/null
+    xmake
+}
+
 if $wasm; then
-    xmake f -c -m $mode -p wasm > /dev/null
-    xmake
+    build -p wasm
 else
-    xmake f -c -m $mode -p windows --toolchain=mingw > /dev/null
-    xmake
-
-    xmake f -c -m $mode -p linux > /dev/null
-    xmake
-
-    xmake f -c -m $mode -p windows -a x86 --toolchain=mingw > /dev/null
-    xmake
-
-    xmake f -c -m $mode -p linux -a arm64 --cross=aarch64-linux-gnu- > /dev/null
-    xmake
+    build -p windows --toolchain=mingw
+    build -p linux
+    build -p windows -a x86 --toolchain=mingw
+    build -p linux -a arm64 --cross=aarch64-linux-gnu-
 fi
 
 echo "done"
