@@ -174,7 +174,7 @@ WI_API void
 wi_check_version(wi_state* state, int version);
 
 /**
- * Call `wi_check_version` with `WI_VERSION_MAJOR` provided by included `wi_conf.h`
+ * Call `wi_check_version` with `WI_VERSION_MAJOR` provided by the included `wi_conf.h`
  *
  * @param state Wi state instance
  */
@@ -409,7 +409,8 @@ WI_API void
 wi_def(wi_state* state, const char* name);
 
 /**
- * Find a global variable and push it onto the stack
+ * Find a global variable (a foreign one defined via `wi_def`, or one from the main module) and push it onto the
+ * stack
  *
  * @param state Wi state instance
  * @param name Variable name
@@ -1087,7 +1088,7 @@ wi_object_next(wi_state* state, wi_object* object, int* iter);
  *
  * @param state Wi state instance
  * @param module Target module
- * @param name Export name
+ * @param name Variable name
  */
 WI_API void
 wi_module_set(wi_state* state, wi_module* module, const char* name);
@@ -1097,7 +1098,7 @@ wi_module_set(wi_state* state, wi_module* module, const char* name);
  *
  * @param state Wi state instance
  * @param module Target module
- * @param name Export name
+ * @param name Variable name
  * @return `true` and pushes the value if the variable exists, `false` and pushes nothing otherwise
  */
 WI_API bool
