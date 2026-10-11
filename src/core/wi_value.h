@@ -124,7 +124,7 @@ wi_value_as_bool(wi_value value) {
 
 WI_INLINE struct wi_box*
 wi_value_as_box(wi_value value) {
-    return (struct wi_box*)(value & ~(WI_SIGN_BIT | WI_QNAN));
+    return (struct wi_box*)(uintptr_t)(value & ~(WI_SIGN_BIT | WI_QNAN));
 }
 
 WI_INLINE bool

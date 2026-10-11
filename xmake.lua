@@ -45,7 +45,7 @@ else
 end
 
 -- wi uses horrid winapi on windows with ReadConsoleW and other winapi horror functions
-if not is_plat("windows") then
+if not is_plat("windows") and not get_config("cross") then
     add_requires("readline", { optional = true })
 end
 
@@ -74,7 +74,10 @@ function set_flags()
             add_cflags("-fno-stack-protector", "-fno-common")
         end
 
-        set_policy("build.optimization.lto", true)
+        if not is_arch("x86", "i386", "arm64") then
+            set_policy("build.optimization.lto", true)
+        end
+
         set_optimize("fastest")
         set_strip("all")
     end
@@ -100,7 +103,13 @@ end
 
 -- set target directory to bin and add every source/header file excluding wi.c and wi_wasm.c
 function set_src()
-    set_targetdir("bin")
+    -- x64 and wasm go to bin directly, any other architecture to bin/<arch>
+    if is_plat("wasm") or is_arch("x64", "x86_64") then
+        set_targetdir("bin")
+    else
+        set_targetdir("bin/$(arch)")
+    end
+
     add_headerfiles("src/core/*.h", "src/std/*.h", "src/stm/*.h", "include/*.h")
     add_files("src/core/*.c|wi.c", "src/std/*.c", "src/stm/*.c")
     add_includedirs("src/core", "src/std", "src/stm", "include")

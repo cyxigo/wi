@@ -35,6 +35,12 @@ else
 
     xmake f -c -m $mode -p linux > /dev/null
     xmake
+
+    xmake f -c -m $mode -p windows -a x86 --toolchain=mingw > /dev/null
+    xmake
+
+    xmake f -c -m $mode -p linux -a arm64 --cross=aarch64-linux-gnu- > /dev/null
+    xmake
 fi
 
 echo "done"

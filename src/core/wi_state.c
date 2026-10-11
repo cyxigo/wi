@@ -613,18 +613,9 @@ _state_capture_upvalue(struct wi_state* state, wi_value* local) {
     return new_upvalue;
 }
 
-/*
-    so! there are many things (a.k.a pointers) to correct after we obliterate the
-    old stack memory with realloc...
-*/
 static void
-_state_correct_stack(struct wi_state* state, wi_value* old_stack, wi_value* new_stack) {
-    /*
-        this is safe as long as we don't try, and, obliviously,
-        dereference the old stack... why would we need to anyway?
-    */
-    ptrdiff_t diff = new_stack - old_stack;
-    state->stack   = new_stack;
+_state_correct_stack(struct wi_state* state, ptrdiff_t diff, wi_value* new_stack) {
+    state->stack = new_stack;
 
     state->stack_top += diff;
     state->stack_end = new_stack + state->stack_capacity;
@@ -699,7 +690,7 @@ _state_grow_stack(struct wi_state* state, int needed) {
         capacity = WI_STACK_MAX;
     }
 
-    wi_value* old_stack = state->stack;
+    uintptr_t old_addr  = (uintptr_t)state->stack;
     wi_value* new_stack = realloc(state->stack, sizeof(wi_value) * (size_t)capacity);
 
     if (WI_UNLIKELY(!new_stack)) {
@@ -708,7 +699,8 @@ _state_grow_stack(struct wi_state* state, int needed) {
 
     state->stack_capacity = capacity;
     /* reallocating memory usually means breaking many many things... */
-    _state_correct_stack(state, old_stack, new_stack);
+    ptrdiff_t stack_diff = (ptrdiff_t)((uintptr_t)new_stack - old_addr) / (ptrdiff_t)sizeof(wi_value);
+    _state_correct_stack(state, stack_diff, new_stack);
 }
 
 WI_INLINE void
