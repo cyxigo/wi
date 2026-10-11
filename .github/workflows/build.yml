@@ -14,14 +14,37 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install xmake
+      - name: Install Xmake
         uses: xmake-io/github-action-setup-xmake@v1
         with:
           xmake-version: latest
 
       - name: Build with GCC
         run: |
-          xmake f --toolchain=gcc
+          xmake f --toolchain=gcc --werror=y
+          xmake
+
+      - name: Run tests
+        run: PATH="$PWD/bin:$PATH" python3 util/test.py
+
+  gcc-arm64:
+    name: GCC ARM64 (Linux)
+    runs-on: ubuntu-26.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install GCC ARM64
+        run: sudo apt-get update && sudo apt-get install -y gcc-aarch64-linux-gnu
+
+      - name: Install Xmake
+        uses: xmake-io/github-action-setup-xmake@v1
+        with:
+          xmake-version: latest
+
+      - name: Build for ARM64
+        run: |
+          xmake f -p linux -a arm64 --cross=aarch64-linux-gnu-
           xmake
 
   clang:
@@ -31,36 +54,45 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install xmake
+      - name: Install Xmake
         uses: xmake-io/github-action-setup-xmake@v1
         with:
           xmake-version: latest
 
       - name: Build with Clang
         run: |
-          xmake f --toolchain=clang
+          xmake f --toolchain=clang --werror=y
           xmake
 
+      - name: Run tests
+        run: PATH="$PWD/bin:$PATH" python3 util/test.py
+
   msvc:
-    name: MSVC (Windows)
+    name: MSVC ${{ matrix.arch }} (Windows)
     runs-on: windows-latest
+    strategy:
+      matrix:
+        arch: [x64, x86]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install xmake
+      - name: Install Xmake
         uses: xmake-io/github-action-setup-xmake@v1
         with:
           xmake-version: latest
 
       - name: Build with MSVC
         run: |
-          xmake f --toolchain=msvc
+          xmake f -a ${{ matrix.arch }} --toolchain=msvc
           xmake -j1
 
   mingw:
-    name: MinGW (Linux)
+    name: MinGW ${{ matrix.arch }} (Linux)
     runs-on: ubuntu-26.04
+    strategy:
+      matrix:
+        arch: [x86_64, x86]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -68,14 +100,14 @@ jobs:
       - name: Install mingw-w64
         run: sudo apt-get update && sudo apt-get install -y mingw-w64
 
-      - name: Install xmake
+      - name: Install Xmake
         uses: xmake-io/github-action-setup-xmake@v1
         with:
           xmake-version: latest
 
       - name: Build with MinGW
         run: |
-          xmake f -p windows --toolchain=mingw
+          xmake f -p windows -a ${{ matrix.arch }} --toolchain=mingw
           xmake
 
   wasm:
@@ -85,7 +117,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install xmake
+      - name: Install Xmake
         uses: xmake-io/github-action-setup-xmake@v1
         with:
           xmake-version: latest
