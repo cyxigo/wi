@@ -27,25 +27,41 @@ jobs:
       - name: Run tests
         run: PATH="$PWD/bin:$PATH" python3 util/test.py
 
+      - name: Build with GCC (union tagging)
+        run: |
+          xmake f --toolchain=gcc --union=y --werror=y
+          xmake
+
+      - name: Run tests (union tagging)
+        run: PATH="$PWD/bin:$PATH" python3 util/test.py
+
   gcc-arm64:
     name: GCC ARM64 (Linux)
-    runs-on: ubuntu-26.04
+    runs-on: ubuntu-26.04-arm
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Install GCC ARM64
-        run: sudo apt-get update && sudo apt-get install -y gcc-aarch64-linux-gnu
 
       - name: Install Xmake
         uses: xmake-io/github-action-setup-xmake@v1
         with:
           xmake-version: latest
 
-      - name: Build for ARM64
+      - name: Build with GCC
         run: |
-          xmake f -p linux -a arm64 --cross=aarch64-linux-gnu-
+          xmake f --toolchain=gcc --werror=y
           xmake
+
+      - name: Run tests
+        run: PATH="$PWD/bin/arm64:$PATH" python3 util/test.py
+
+      - name: Build with GCC (union tagging)
+        run: |
+          xmake f --toolchain=gcc --union=y --werror=y
+          xmake
+
+      - name: Run tests (union tagging)
+        run: PATH="$PWD/bin/arm64:$PATH" python3 util/test.py
 
   clang:
     name: Clang (Linux)
@@ -67,6 +83,14 @@ jobs:
       - name: Run tests
         run: PATH="$PWD/bin:$PATH" python3 util/test.py
 
+      - name: Build with Clang (union tagging)
+        run: |
+          xmake f --toolchain=clang --union=y --werror=y
+          xmake
+
+      - name: Run tests (union tagging)
+        run: PATH="$PWD/bin:$PATH" python3 util/test.py
+
   msvc:
     name: MSVC ${{ matrix.arch }} (Windows)
     runs-on: windows-latest
@@ -85,6 +109,11 @@ jobs:
       - name: Build with MSVC
         run: |
           xmake f -a ${{ matrix.arch }} --toolchain=msvc
+          xmake -j1
+
+      - name: Build with MSVC (union tagging)
+        run: |
+          xmake f -a ${{ matrix.arch }} --toolchain=msvc --union=y
           xmake -j1
 
   mingw:
@@ -110,6 +139,11 @@ jobs:
           xmake f -p windows -a ${{ matrix.arch }} --toolchain=mingw
           xmake
 
+      - name: Build with MinGW (union tagging)
+        run: |
+          xmake f -p windows -a ${{ matrix.arch }} --toolchain=mingw --union=y
+          xmake
+
   wasm:
     name: EMCC (Linux)
     runs-on: ubuntu-26.04
@@ -122,10 +156,15 @@ jobs:
         with:
           xmake-version: latest
 
-      - name: Install emscripten
+      - name: Install Emscripten
         uses: mymindstorm/setup-emsdk@v14
 
-      - name: Build with emcc
+      - name: Build with EMCC
         run: |
           xmake f -p wasm
+          xmake
+
+      - name: Build with EMCC (union tagging)
+        run: |
+          xmake f -p wasm --union=y
           xmake
