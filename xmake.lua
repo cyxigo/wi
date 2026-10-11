@@ -10,11 +10,7 @@ function is_msvc()
 end
 
 -- i hate msvc
-if is_msvc() then
-    set_languages("c11")
-else
-    set_languages("c99")
-end
+set_languages(is_msvc() and "c11" or "c99")
 
 -- NaN boxing is not nearly a portable thingy so Wi has an option to use union tagging
 -- of course, it makes Wi slower overall. so union tagging is opt-in
