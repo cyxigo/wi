@@ -41,6 +41,7 @@ wi_check_version(struct wi_state* state, int version) {
 
 bool
 wi_load(struct wi_state* state, const char* file_path, const char* src) {
+    state->was_eof_error     = false;
     struct wi_module* module = wi_new_module(state->gc, file_path);
     WI_GC_PUSH_ROOT(state->gc, module);
 
