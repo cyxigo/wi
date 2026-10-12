@@ -51,6 +51,10 @@ wi_new_string(struct wi_gc* gc, char* buf, int count, uint32_t hash) {
 
 struct wi_string*
 wi_copy_cstring(struct wi_gc* gc, const char* buf, int count) {
+    if (count == 0) { /* is buf NULL? ohno, undefined behavior™!!! */
+        buf = "";
+    }
+
     uint32_t          hash     = wi_string_hash(buf, count);
     struct wi_string* interned = wi_table_find_string(&gc->strings, buf, count, hash);
 
