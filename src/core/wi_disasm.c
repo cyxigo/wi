@@ -30,8 +30,7 @@ _byte_instr(struct wi_state* state, const char* name, const char* arg_name, stru
 static int
 _short_instr(struct wi_state* state, const char* name, const char* arg_name, struct wi_prototype* prototype,
              int offset) {
-    uint16_t arg =
-        (uint16_t)(prototype->code.bytes.data[offset + 1] << 8 | prototype->code.bytes.data[offset + 2]);
+    uint16_t arg = wi_code_short(&prototype->code, offset + 1);
     wi_printf(state, state->out, "%-16s %hu (%s)\n", name, arg, arg_name);
     return offset + 3;
 }
@@ -39,9 +38,8 @@ _short_instr(struct wi_state* state, const char* name, const char* arg_name, str
 static int
 _constant_instr(struct wi_state* state, const char* name, const char* arg_name, struct wi_prototype* prototype,
                 int offset) {
-    uint16_t constant =
-        (uint16_t)(prototype->code.bytes.data[offset + 1] << 8 | prototype->code.bytes.data[offset + 2]);
-    wi_value value = prototype->constants.data[constant];
+    uint16_t constant = wi_code_short(&prototype->code, offset + 1);
+    wi_value value    = prototype->constants.data[constant];
 
     wi_printf(state, state->out, "%-16s ", name);
     wi_printf(state, state->out, "C:%05hu ", constant);
@@ -53,8 +51,7 @@ _constant_instr(struct wi_state* state, const char* name, const char* arg_name, 
 
 static int
 _jump_instr(struct wi_state* state, const char* name, int sign, struct wi_prototype* prototype, int offset) {
-    uint16_t jump =
-        (uint16_t)(prototype->code.bytes.data[offset + 1] << 8 | prototype->code.bytes.data[offset + 2]);
+    uint16_t jump = wi_code_short(&prototype->code, offset + 1);
     wi_printf(state, state->out, "%-16s O:%03i -> O:%03i\n", name, offset, offset + 3 + sign * jump);
     return offset + 3;
 }
@@ -188,7 +185,7 @@ wi_prototype_disasm_instr(struct wi_state* state, struct wi_prototype* prototype
         case WI_OP_PUSH_CLOSURE: {
             offset++;
 
-            uint16_t constant        = (uint16_t)(bytes[offset] << 8 | bytes[offset + 1]);
+            uint16_t constant        = wi_code_short(&prototype->code, offset);
             wi_value prototype_value = prototype->constants.data[constant];
 
             wi_printf(state, state->out, "%-16s ", "push_closure");

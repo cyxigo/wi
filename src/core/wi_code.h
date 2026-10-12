@@ -44,4 +44,15 @@ wi_code_append(struct wi_code* src, struct wi_code* dest) {
     dest->lines.count += src->lines.count;
 }
 
+WI_INLINE uint16_t
+wi_code_short(struct wi_code* code, int offset) {
+    return (uint16_t)(code->bytes.data[offset] << 8 | code->bytes.data[offset + 1]);
+}
+
+WI_INLINE void
+wi_code_set_short(struct wi_code* code, int offset, uint16_t sh) {
+    code->bytes.data[offset]     = (uint8_t)(sh >> 8);
+    code->bytes.data[offset + 1] = (uint8_t)(sh & 0xff);
+}
+
 #endif
