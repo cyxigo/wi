@@ -255,10 +255,13 @@ wi_parser_expect(struct wi_parser* parser, enum wi_token_kind kind) {
         }
     }
 
+    /* string lexemes don't include their closing quote, so step over it too */
+    int quote = prev->kind == WI_TOKEN_STRING || prev->kind == WI_TOKEN_RAW_STRING;
     /* magic calculations that i really am uncertain about but they somehow work */
-    prev->col   = last_line == prev->start
-                      ? prev->col + wi_utf8_len(prev->start, prev->count)
-                      : wi_utf8_len(last_line, (int)(prev->start + prev->count - last_line)) + 1;
+    prev->col =
+        (last_line == prev->start ? prev->col + wi_utf8_len(prev->start, prev->count)
+                                  : wi_utf8_len(last_line, (int)(prev->start + prev->count - last_line)) + 1) +
+        quote;
     prev->count = 1;
     wi_parser_error_at_prev(parser, "expected %s", wi_token_kind_to_string(kind));
 
