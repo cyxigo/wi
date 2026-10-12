@@ -1005,7 +1005,7 @@ _compiler_invoke_expr(struct wi_compiler* compiler, bool can_assign) {
     _compiler_emit_call(compiler, arg_count);
 }
 
-static const uint8_t _binary_opcodes[] = {
+static const uint8_t _g_binary_opcodes[] = {
     [WI_TOKEN_PERCENT]         = WI_OP_MODULO,
     [WI_TOKEN_PLUS]            = WI_OP_ADD,
     [WI_TOKEN_MINUS]           = WI_OP_SUBTRACT,
@@ -1033,47 +1033,31 @@ _compiler_binary_expr(struct wi_compiler* compiler, bool can_assign) {
     struct _parse_rule* rule = _compiler_get_rule(op);
     /* ** is right associative, every other binary operator isn't */
     _compiler_parse_prec(compiler, rule->prec + (rule->prec != _PREC_POWER));
-    _compiler_emit_opcode(compiler, _binary_opcodes[op]);
+    _compiler_emit_opcode(compiler, _g_binary_opcodes[op]);
 }
+
+static const uint8_t _g_unary_opcodes[] = {
+    [WI_TOKEN_HASH]  = WI_OP_LEN,
+    [WI_TOKEN_MINUS] = WI_OP_NEGATE,
+    [WI_TOKEN_TILDE] = WI_OP_BIT_NOT,
+    [WI_TOKEN_BANG]  = WI_OP_LOG_NOT,
+};
 
 static void
 _compiler_unary_expr(struct wi_compiler* compiler, bool can_assign) {
     WI_UNUSED(can_assign);
-    struct wi_token op = compiler->parser->prev;
+    enum wi_token_kind op = compiler->parser->prev.kind;
     _compiler_parse_prec(compiler, _PREC_UNARY);
-
-    switch (op.kind) {
-        case WI_TOKEN_HASH:
-            _compiler_emit_opcode(compiler, WI_OP_LEN);
-            break;
-        case WI_TOKEN_MINUS:
-            _compiler_emit_opcode(compiler, WI_OP_NEGATE);
-            break;
-        case WI_TOKEN_TILDE:
-            _compiler_emit_opcode(compiler, WI_OP_BIT_NOT);
-            break;
-        case WI_TOKEN_BANG:
-            _compiler_emit_opcode(compiler, WI_OP_LOG_NOT);
-            break;
-        default:
-            WI_UNREACHABLE();
-            break;
-    }
+    _compiler_emit_opcode(compiler, _g_unary_opcodes[op]);
 }
 
 static void
-_compiler_and_expr(struct wi_compiler* compiler, bool can_assign) {
+_compiler_logic_expr(struct wi_compiler* compiler, bool can_assign) {
     WI_UNUSED(can_assign);
-    int jump = _compiler_emit_jump(compiler, WI_OP_AND);
-    _compiler_parse_prec(compiler, _PREC_AND + 1);
-    _compiler_patch_jump(compiler, jump);
-}
-
-static void
-_compiler_or_expr(struct wi_compiler* compiler, bool can_assign) {
-    WI_UNUSED(can_assign);
-    int jump = _compiler_emit_jump(compiler, WI_OP_OR);
-    _compiler_parse_prec(compiler, _PREC_OR + 1);
+    enum wi_token_kind  op   = compiler->parser->prev.kind;
+    struct _parse_rule* rule = _compiler_get_rule(op);
+    int                 jump = _compiler_emit_jump(compiler, op == WI_TOKEN_AMPER_AMPER ? WI_OP_AND : WI_OP_OR);
+    _compiler_parse_prec(compiler, rule->prec + 1);
     _compiler_patch_jump(compiler, jump);
 }
 
@@ -1572,9 +1556,9 @@ static struct _parse_rule _g_rules[] = {
     [WI_TOKEN_SLASH]           = {NULL,                    _compiler_binary_expr,         _PREC_FACTOR    },
     [WI_TOKEN_SLASH_SLASH]     = {NULL,                    _compiler_binary_expr,         _PREC_FACTOR    },
     [WI_TOKEN_AMPER]           = {NULL,                    _compiler_binary_expr,         _PREC_BIT_AND   },
-    [WI_TOKEN_AMPER_AMPER]     = {NULL,                    _compiler_and_expr,            _PREC_AND       },
+    [WI_TOKEN_AMPER_AMPER]     = {NULL,                    _compiler_logic_expr,          _PREC_AND       },
     [WI_TOKEN_PIPE]            = {_compiler_function_expr, _compiler_binary_expr,         _PREC_BIT_OR    },
-    [WI_TOKEN_PIPE_PIPE]       = {_compiler_function_expr, _compiler_or_expr,             _PREC_OR        },
+    [WI_TOKEN_PIPE_PIPE]       = {_compiler_function_expr, _compiler_logic_expr,          _PREC_OR        },
     [WI_TOKEN_CARET]           = {NULL,                    _compiler_binary_expr,         _PREC_BIT_XOR   },
     [WI_TOKEN_TILDE]           = {_compiler_unary_expr,    NULL,                          _PREC_NONE      },
     [WI_TOKEN_EQUAL]           = {NULL,                    NULL,                          _PREC_NONE      },
