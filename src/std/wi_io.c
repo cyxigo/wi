@@ -194,7 +194,7 @@ _io_write(struct wi_state* state, uint8_t arg_count) {
     }
 
     if (!written) {
-        wi_state_error(state, "failed to write file %s", file->path);
+        wi_state_error(state, "failed to write file %s: %s", file->path, strerror(errno));
     }
 
     wi_push_null(state);
@@ -253,7 +253,7 @@ _io_writebytes(struct wi_state* state, uint8_t arg_count) {
     free(buf);
 
     if (!written) {
-        wi_state_error(state, "failed to write file %s", file->path);
+        wi_state_error(state, "failed to write file %s: %s", file->path, strerror(errno));
     }
 
     wi_push_null(state);
@@ -292,13 +292,13 @@ _io_seek(struct wi_state* state, uint8_t arg_count) {
 
 #ifdef _WIN32
     if (_fseeki64(file->ptr, offset, (int)whence) != 0) {
-        wi_state_error(state, "failed to seek file %s", file->path);
+        wi_state_error(state, "failed to seek file %s: %s", file->path, strerror(errno));
     }
 
     wi_push_real(state, (wi_real)_ftelli64(file->ptr));
 #else
     if (fseeko(file->ptr, offset, (int)whence) != 0) {
-        wi_state_error(state, "failed to seek file %s", file->path);
+        wi_state_error(state, "failed to seek file %s: %s", file->path, strerror(errno));
     }
 
     wi_push_real(state, (wi_real)ftello(file->ptr));
