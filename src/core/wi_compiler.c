@@ -180,14 +180,17 @@ _compiler_emit_jump(struct wi_compiler* compiler, uint8_t opcode) {
 }
 
 static void
-_compiler_patch_jump(struct wi_compiler* compiler, int offset) {
-    int jump = compiler->code->bytes.count - offset - 2;
-
+_compiler_set_jump(struct wi_compiler* compiler, int offset, int jump) {
     if (jump > WI_JUMP_MAX) {
         wi_parser_error_at_curr(compiler->parser, "too much code to jump over (limit is %i)", WI_JUMP_MAX);
     }
 
     wi_code_set_short(compiler->code, offset, (uint16_t)jump);
+}
+
+static void
+_compiler_patch_jump(struct wi_compiler* compiler, int offset) {
+    _compiler_set_jump(compiler, offset, compiler->code->bytes.count - offset - 2);
     /*
         check if we just emitted CALL
         why? because things like x && f() should NOT be turned into TAIL_CALL
@@ -241,13 +244,7 @@ _compiler_end_loop(struct wi_compiler* compiler) {
             offset += 3;
         } else if (bytes[offset] == WI_OP_CONTINUE) {
             bytes[offset] = WI_OP_JUMP;
-            int jump      = loop->continue_start - (offset + 3);
-
-            if (jump > WI_JUMP_MAX) {
-                wi_parser_error_at_curr(compiler->parser, "too much code to jump over (limit is %i)", WI_JUMP_MAX);
-            }
-
-            wi_code_set_short(compiler->code, offset + 1, (uint16_t)jump);
+            _compiler_set_jump(compiler, offset + 1, loop->continue_start - (offset + 3));
             offset += 3;
         } else {
             offset += wi_prototype_instr_size(compiler->prototype, offset);
