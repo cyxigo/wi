@@ -15,11 +15,9 @@ _print(struct wi_state* state, uint8_t arg_count, bool newline) {
     for (int i = 0; i < arg_count; i++) {
         wi_value_print(state, state->ffi_stack[i + 1]);
 
-        if (!newline) {
-            continue;
+        if (newline) {
+            state->out(state, "\n");
         }
-
-        state->out(state, "\n");
     }
 
     wi_push_null(state);
