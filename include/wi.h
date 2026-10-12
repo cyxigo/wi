@@ -164,21 +164,23 @@ WI_API int
 wi_abi_version(void);
 
 /**
- * Check whether the Wi library used and the code making the call match MAJOR versions.
+ * Check whether the Wi library used is compatible with the code making the call:
+ * MAJOR versions must match and the library's MINOR must not be older than the code's.
  * Will raise a compile or a runtime error depending on the call context
  *
  * @param state Wi state instance
- * @param version `WI_VERSION_MAJOR` of the code making the call
+ * @param major `WI_VERSION_MAJOR` of the code making the call
+ * @param minor `WI_VERSION_MINOR` of the code making the call
  */
 WI_API void
-wi_check_version(wi_state* state, int version);
+wi_check_version(wi_state* state, int major, int minor);
 
 /**
- * Call `wi_check_version` with `WI_VERSION_MAJOR` provided by the included `wi_conf.h`
+ * Call `wi_check_version` with `WI_VERSION_MAJOR` and `WI_VERSION_MINOR` provided by the included `wi_conf.h`
  *
  * @param state Wi state instance
  */
-#define WI_CHECK_VERSION(state) wi_check_version(state, WI_VERSION_MAJOR)
+#define WI_CHECK_VERSION(state) wi_check_version(state, WI_VERSION_MAJOR, WI_VERSION_MINOR)
 
 /**
  * Create a new Wi state instance
