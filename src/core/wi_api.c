@@ -45,22 +45,14 @@ wi_load(struct wi_state* state, const char* file_path, const char* src) {
     struct wi_module* module = wi_new_module(state->gc, file_path);
     WI_GC_PUSH_ROOT(state->gc, module);
 
-    struct wi_prototype* prototype = wi_compile(state, file_path, src, module);
+    struct wi_closure* closure = wi_state_compile(state, file_path, src, module);
+    wi_gc_pop_root(state->gc);
 
-    if (!prototype) {
-        wi_gc_pop_root(state->gc); /* module */
+    if (!closure) {
         return false;
     }
 
-    WI_GC_PUSH_ROOT(state->gc, prototype);
-    state->on_compile(state);
-
-    struct wi_closure* closure = wi_new_closure(state->gc, prototype, module);
-
-    wi_gc_pop_root(state->gc); /* prototype */
-    wi_gc_pop_root(state->gc); /* module */
     wi_state_ppush(state, WI_MAKE_BOX_VALUE(closure));
-
     return true;
 }
 

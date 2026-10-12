@@ -872,22 +872,14 @@ _state_import(struct wi_state* state, wi_value path_value) {
     struct wi_string* src_box = wi_take_calloc_string(state->gc, src, (int)strlen(src));
     WI_GC_PUSH_ROOT(state->gc, src_box);
 
-    struct wi_prototype* prototype = wi_compile(state, path, src_box->buf, module);
-
-    if (!prototype) {
-        wi_gc_pop_root(state->gc); /* src_box */
-        wi_gc_pop_root(state->gc); /* module */
-        wi_state_error(state, "failed to compile module %s", path);
-    }
+    struct wi_closure* closure = wi_state_compile(state, path, src_box->buf, module);
 
     wi_gc_pop_root(state->gc); /* src_box */
-    WI_GC_PUSH_ROOT(state->gc, prototype);
-
-    state->on_compile(state);
-    struct wi_closure* closure = wi_new_closure(state->gc, prototype, module);
-
-    wi_gc_pop_root(state->gc); /* prototype */
     wi_gc_pop_root(state->gc); /* module */
+
+    if (!closure) {
+        wi_state_error(state, "failed to compile module %s", path);
+    }
 
     return closure;
 }
@@ -1634,6 +1626,23 @@ wi_state_call(struct wi_state* state, wi_value callable, uint8_t arg_count, bool
     return result;
 }
 
+struct wi_closure*
+wi_state_compile(struct wi_state* state, const char* file_path, const char* src, struct wi_module* module) {
+    struct wi_prototype* prototype = wi_compile(state, file_path, src, module);
+
+    if (!prototype) {
+        return NULL;
+    }
+
+    WI_GC_PUSH_ROOT(state->gc, prototype);
+    state->on_compile(state);
+
+    struct wi_closure* closure = wi_new_closure(state->gc, prototype, module);
+    wi_gc_pop_root(state->gc);
+
+    return closure;
+}
+
 enum wi_run_result
 wi_state_run(struct wi_state* state, const char* file_path, const char* src) {
     state->was_eof_error     = false;
@@ -1644,23 +1653,15 @@ wi_state_run(struct wi_state* state, const char* file_path, const char* src) {
 
     if (jmp_result == WI_RUN_ABORT) {
         return WI_RUN_ABORT;
-    }
-
-    if (jmp_result != WI_RUN_OK) {
+    } else if (jmp_result != WI_RUN_OK) {
         return WI_RUN_ERROR;
     }
 
-    struct wi_prototype* prototype = wi_compile(state, file_path, src, state->main_module);
+    struct wi_closure* closure = wi_state_compile(state, file_path, src, state->main_module);
 
-    if (!prototype) {
+    if (!closure) {
         return WI_RUN_ERROR;
     }
-
-    WI_GC_PUSH_ROOT(state->gc, prototype);
-    state->on_compile(state);
-
-    struct wi_closure* closure = wi_new_closure(state->gc, prototype, state->main_module);
-    wi_gc_pop_root(state->gc);
 
     wi_state_push(state, WI_MAKE_BOX_VALUE(closure));
     _state_call(state, closure, 0);
