@@ -440,7 +440,7 @@ _base_equals(struct wi_state* state, uint8_t arg_count) {
 
 void
 wi_state_def_std_base(struct wi_state* state) {
-    struct wi_module* module = wi_push_module(state);
+    struct wi_module* module = wi_push_module(state, "std");
     wi_def(state, "std");
     wi_foreign_entry functions[] = {
         {"print",      _base_print,      0, true },

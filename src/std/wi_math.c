@@ -249,7 +249,7 @@ _math_tan(struct wi_state* state, uint8_t arg_count) {
 
 void
 wi_state_def_std_math(struct wi_state* state) {
-    struct wi_module* module = wi_push_module(state);
+    struct wi_module* module = wi_push_module(state, "math");
     wi_def(state, "math");
     wi_foreign_entry functions[] = {
         {"abs",    _math_abs,    1, false},

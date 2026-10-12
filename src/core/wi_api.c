@@ -278,8 +278,8 @@ wi_push_map(struct wi_state* state) {
 }
 
 struct wi_module*
-wi_push_module(struct wi_state* state) {
-    struct wi_module* box = wi_new_module(state->gc, "foreign");
+wi_push_module(struct wi_state* state, const char* path) {
+    struct wi_module* box = wi_new_module(state->gc, path);
     wi_state_ppush(state, WI_MAKE_BOX_VALUE(box));
     return box;
 }

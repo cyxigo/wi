@@ -320,7 +320,7 @@ _os_sleep(struct wi_state* state, uint8_t arg_count) {
 
 void
 wi_state_def_std_os(struct wi_state* state) {
-    struct wi_module* module = wi_push_module(state);
+    struct wi_module* module = wi_push_module(state, "os");
     wi_def(state, "os");
     wi_foreign_entry functions[] = {
         {"clock",     _os_clock,     0, false},

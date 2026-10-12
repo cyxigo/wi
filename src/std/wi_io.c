@@ -319,7 +319,7 @@ _io_set_std(struct wi_state* state, struct wi_module* module, const char* name, 
 
 void
 wi_state_def_std_io(struct wi_state* state) {
-    struct wi_module* module = wi_push_module(state);
+    struct wi_module* module = wi_push_module(state, "io");
     wi_def(state, "io");
     wi_foreign_entry functions[] = {
         {"exists",     _io_exists,     1, false},

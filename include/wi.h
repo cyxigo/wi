@@ -639,13 +639,13 @@ wi_push_object(wi_state* state);
 
 /**
  * Push a new, empty module onto the stack.
- * `path` of said module will be just "foreign"
  *
  * @param state Wi state instance
+ * @param path Module path, shown in error messages (**must** outlive the module, Wi keeps the pointer)
  * @return Pointer to the created module
  */
 WI_API wi_module*
-wi_push_module(wi_state* state);
+wi_push_module(wi_state* state, const char* path);
 
 /**
  * Drop a value from the stack
