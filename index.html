@@ -104,19 +104,17 @@
                         <tr>
                             <td>WASM</td>
                             <td>Emscripten</td>
-                            <td>
-                                Partial, only
-                                <a class="button" href="https://github.com/cyxigo/wi/blob/main/src/wasm/wi_wasm.c"
-                                    >wi_wasm_init/wi_wasm_run</a
-                                >, no foreign libraries
-                            </td>
+                            <td>Partial</td>
                         </tr>
                     </tbody>
                 </table>
             </div>
             <br />
 
-            WASM support is, as you can see, pretty minimal. Since it's only used by that
+            WASM support is pretty minimal – only
+            <a class="button" href="https://github.com/cyxigo/wi/blob/main/src/wasm/wi_wasm.c"
+                >two basic functions</a
+            >, and no foreign libraries. Since it's only used by that
             <a class="button" href="https://wi-lang.pages.dev/try">little Wi playground</a>.
             <br />
             Other platforms (macOS, BSD, etc.) are not officially supported. Wi may build there, but it is not
