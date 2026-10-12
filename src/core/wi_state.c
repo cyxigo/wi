@@ -935,21 +935,22 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
 #define _READ_SHORT() (ip += 2, (uint16_t)(ip[-2] << 8 | ip[-1]))
 #define _READ_CONSTANT() constants[_READ_SHORT()]
 
-#define _BINARY_OP(op, maker)                                                                     \
-    do {                                                                                          \
-        wi_value b = wi_state_pop(state);                                                         \
-        wi_value a = wi_state_pop(state);                                                         \
-                                                                                                  \
-        if (WI_UNLIKELY(!wi_value_is_real(a) || !wi_value_is_real(b))) {                          \
-            _ERROR("cannot use operator '" #op "' on values of type %s and %s", wi_value_type(a), \
-                   wi_value_type(b));                                                             \
-        }                                                                                         \
-                                                                                                  \
-        wi_real a_real = wi_value_as_real(a);                                                     \
-        wi_real b_real = wi_value_as_real(b);                                                     \
-                                                                                                  \
-        wi_state_push(state, maker(a_real op b_real));                                            \
+#define _BINARY_EXPR(op, maker, expr)                                                            \
+    do {                                                                                         \
+        wi_value b = wi_state_pop(state);                                                        \
+        wi_value a = wi_state_pop(state);                                                        \
+                                                                                                 \
+        if (WI_UNLIKELY(!wi_value_is_real(a) || !wi_value_is_real(b))) {                         \
+            _ERROR("cannot use operator '" op "' on values of type %s and %s", wi_value_type(a), \
+                   wi_value_type(b));                                                            \
+        }                                                                                        \
+                                                                                                 \
+        wi_real a_real = wi_value_as_real(a);                                                    \
+        wi_real b_real = wi_value_as_real(b);                                                    \
+                                                                                                 \
+        wi_state_push(state, maker(expr));                                                       \
     } while (false)
+#define _BINARY_OP(op, maker) _BINARY_EXPR(#op, maker, a_real op b_real)
 #define _BIT_OP(op)                                                                                              \
     do {                                                                                                         \
         wi_value b = wi_state_pop(state);                                                                        \
@@ -1067,14 +1068,7 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
             _DISPATCH();
         }
         _OPCODE_LABEL(INT_DIVIDE) : {
-            wi_value b = wi_state_pop(state);
-            wi_value a = wi_state_pop(state);
-
-            if (WI_UNLIKELY(!wi_value_is_real(a) || !wi_value_is_real(b))) {
-                _ERROR("cannot use operator '//' on values of type %s and %s", wi_value_type(a), wi_value_type(b));
-            }
-
-            wi_state_push(state, _make_arith_value(trunc(wi_value_as_real(a) / wi_value_as_real(b))));
+            _BINARY_EXPR("//", _make_arith_value, trunc(a_real / b_real));
             _DISPATCH();
         }
         _OPCODE_LABEL(NEGATE) : {
@@ -1088,25 +1082,11 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
             _DISPATCH();
         }
         _OPCODE_LABEL(POWER) : {
-            wi_value b = wi_state_pop(state);
-            wi_value a = wi_state_pop(state);
-
-            if (WI_UNLIKELY(!wi_value_is_real(a) || !wi_value_is_real(b))) {
-                _ERROR("cannot use operator '**' on values of type %s and %s", wi_value_type(a), wi_value_type(b));
-            }
-
-            wi_state_push(state, _make_arith_value(pow(wi_value_as_real(a), wi_value_as_real(b))));
+            _BINARY_EXPR("**", _make_arith_value, pow(a_real, b_real));
             _DISPATCH();
         }
         _OPCODE_LABEL(MODULO) : {
-            wi_value b = wi_state_pop(state);
-            wi_value a = wi_state_pop(state);
-
-            if (WI_UNLIKELY(!wi_value_is_real(a) || !wi_value_is_real(b))) {
-                _ERROR("cannot use operator '%%' on values of type %s and %s", wi_value_type(a), wi_value_type(b));
-            }
-
-            wi_state_push(state, _make_arith_value(fmod(wi_value_as_real(a), wi_value_as_real(b))));
+            _BINARY_EXPR("%%", _make_arith_value, fmod(a_real, b_real));
             _DISPATCH();
         }
         _OPCODE_LABEL(GREATER) : {
@@ -1574,6 +1554,7 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
 #undef _READ_SHORT
 #undef _READ_CONSTANT
 
+#undef _BINARY_EXPR
 #undef _BINARY_OP
 #undef _BIT_OP
 
