@@ -213,7 +213,7 @@ _gc_mark_box(struct wi_gc* gc, struct wi_box* box) {
     gc->gray_stack[gc->gray_count++] = box;
 }
 
-#define _GC_MARK_BOX(gc, box) _gc_mark_box(gc, (struct wi_box*)box)
+#define _GC_MARK_BOX(gc, box) _gc_mark_box(gc, (struct wi_box*)(box))
 
 static void
 _gc_mark_value(struct wi_gc* gc, wi_value value) {

@@ -83,7 +83,7 @@ wi_make_box_value(struct wi_box* box) {
     return WI_SIGN_BIT | WI_QNAN | (uintptr_t)box;
 }
 
-#define WI_MAKE_BOX_VALUE(box) wi_make_box_value((struct wi_box*)box)
+#define WI_MAKE_BOX_VALUE(box) wi_make_box_value((struct wi_box*)(box))
 
 WI_INLINE bool
 wi_value_is_real(wi_value value) {
@@ -193,7 +193,7 @@ wi_make_box_value(struct wi_box* box) {
     return (wi_value){.tag = WI_TAG_BOX, .as.box = box};
 }
 
-#define WI_MAKE_BOX_VALUE(box) wi_make_box_value((struct wi_box*)box)
+#define WI_MAKE_BOX_VALUE(box) wi_make_box_value((struct wi_box*)(box))
 
 WI_INLINE bool
 wi_value_is_real(wi_value value) {
