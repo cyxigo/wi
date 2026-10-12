@@ -2027,6 +2027,9 @@ wi_compile(struct wi_state* state, const char* file_path, const char* src, struc
             wi_parser_oom(parser, "failed to allocate the compiler (wi_compile)");
         }
 
+        /* first token must go through advance too, or its lexer error never gets raised */
+        wi_parser_advance(parser);
+
         while (!wi_parser_is_at_end(compiler->parser)) {
             _compiler_decl(compiler);
         }

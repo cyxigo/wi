@@ -23,8 +23,8 @@ wi_new_parser(struct wi_lexer* lexer, struct wi_gc* gc) {
     parser->gc    = gc;
 
     parser->prev = WI_BLANK_TOKEN;
-    parser->curr = wi_lexer_next(parser->lexer);
-    parser->next = wi_lexer_next(parser->lexer);
+    parser->curr = WI_BLANK_TOKEN;
+    parser->next = wi_lexer_next(parser->lexer); /* first token, wi_compile advances onto it */
     parser->last = WI_BLANK_TOKEN;
 
     parser->c_depth = 0;
