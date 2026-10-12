@@ -1,6 +1,5 @@
 #include "wi_base.h"
 
-#include <ctype.h>
 #include <limits.h>
 #include <setjmp.h>
 #include <stdbool.h>
@@ -269,7 +268,7 @@ _base_real(struct wi_state* state, uint8_t arg_count) {
         char*             conv_end = end; /* end before we skip trailing spaces */
 
         /* skip trailing spaces ("1  " is a valid string) */
-        while (isspace((unsigned char)*end)) {
+        while (wi_is_space(*end)) {
             end++;
         }
 

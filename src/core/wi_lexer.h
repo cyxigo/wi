@@ -8,6 +8,11 @@
 #include "wi_util.h"
 
 WI_INLINE bool
+wi_is_space(char c) {
+    return c == ' ' || (c >= '\t' && c <= '\r');
+}
+
+WI_INLINE bool
 wi_is_digit(char c) {
     return c >= '0' && c <= '9';
 }

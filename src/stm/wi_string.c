@@ -1,6 +1,5 @@
 #include "wi_string.h"
 
-#include <ctype.h>
 #include <limits.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -41,15 +40,15 @@ _string_sub(struct wi_state* state, uint8_t arg_count) {
 }
 
 static void
-_string_case_mod(struct wi_state* state, int (*mod_fn)(int c)) {
+_string_case_mod(struct wi_state* state, char from, char to) {
     int   count;
     char* string = wi_arg_string(state, 1, &count, NULL);
     char* buf    = WI_GC_ALLOC(state->gc, char, count + 1);
 
     for (int i = 0; i < count; i++) {
-        unsigned char c = (unsigned char)string[i];
+        char c = string[i];
         /* skip utf-8 characters... for now at least */
-        buf[i] = c < 0x80 ? (char)mod_fn(c) : (char)c;
+        buf[i] = c >= from && c <= to ? (char)(c ^ 0x20) : c;
     }
 
     buf[count]            = '\0';
@@ -60,13 +59,13 @@ _string_case_mod(struct wi_state* state, int (*mod_fn)(int c)) {
 static void
 _string_upper(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
-    _string_case_mod(state, toupper);
+    _string_case_mod(state, 'a', 'z');
 }
 
 static void
 _string_lower(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
-    _string_case_mod(state, tolower);
+    _string_case_mod(state, 'A', 'Z');
 }
 
 static void
@@ -77,11 +76,11 @@ _string_trim(struct wi_state* state, uint8_t arg_count) {
     int   start  = 0;
     int   end    = count;
 
-    while (start < end && isspace((unsigned char)string[start])) {
+    while (start < end && wi_is_space(string[start])) {
         start++;
     }
 
-    while (end > start && isspace((unsigned char)string[end - 1])) {
+    while (end > start && wi_is_space(string[end - 1])) {
         end--;
     }
 
@@ -144,29 +143,25 @@ _string_endswith(struct wi_state* state, uint8_t arg_count) {
     wi_push_bool(state, result);
 }
 
+/* different than wi_is_alpha, wi_is_alpha counts '_' as a letter */
 static bool
-_is_digit(unsigned char c) {
-    return c >= '0' && c <= '9';
-}
-
-static bool
-_is_alpha(unsigned char c) {
+_is_alpha(char c) {
     return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
 }
 
 static bool
-_is_alnum(unsigned char c) {
-    return _is_digit(c) || _is_alpha(c);
+_is_alnum(char c) {
+    return wi_is_digit(c) || _is_alpha(c);
 }
 
 static void
-_string_class_check(struct wi_state* state, bool (*fn)(unsigned char c)) {
+_string_class_check(struct wi_state* state, bool (*fn)(char c)) {
     int   count;
     char* string = wi_arg_string(state, 1, &count, NULL);
     bool  result = count > 0;
 
     for (int i = 0; result && i < count; i++) {
-        result = fn((unsigned char)string[i]);
+        result = fn(string[i]);
     }
 
     wi_push_bool(state, result);
@@ -175,7 +170,7 @@ _string_class_check(struct wi_state* state, bool (*fn)(unsigned char c)) {
 static void
 _string_isdigit(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
-    _string_class_check(state, _is_digit);
+    _string_class_check(state, wi_is_digit);
 }
 
 static void
