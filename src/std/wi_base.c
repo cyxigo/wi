@@ -79,7 +79,7 @@ _base_exit(struct wi_state* state, uint8_t arg_count) {
 static void
 _base_gc(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
-    wi_gc_collect_major(state->gc);
+    wi_state_collect_garbage(state);
     wi_push_null(state);
 }
 
