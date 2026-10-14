@@ -1588,6 +1588,13 @@ _compiler_expr(struct wi_compiler* compiler) {
 }
 
 static void
+_compiler_paren_expr(struct wi_compiler* compiler) {
+    wi_parser_expect(compiler->parser, WI_TOKEN_OPEN_PAREN);
+    _compiler_expr(compiler);
+    wi_parser_expect(compiler->parser, WI_TOKEN_CLOSE_PAREN);
+}
+
+static void
 _compiler_expr_stmt(struct wi_compiler* compiler) {
     _compiler_expr(compiler);
     _compiler_emit_opcode(compiler, WI_OP_POP);
@@ -1603,10 +1610,7 @@ _compiler_block_stmt(struct wi_compiler* compiler) {
 
 static void
 _compiler_if_stmt(struct wi_compiler* compiler) {
-    wi_parser_expect(compiler->parser, WI_TOKEN_OPEN_PAREN);
-    _compiler_expr(compiler);
-    wi_parser_expect(compiler->parser, WI_TOKEN_CLOSE_PAREN);
-
+    _compiler_paren_expr(compiler);
     int then_jump = _compiler_emit_jump(compiler, WI_OP_JUMP_IF_FALSE);
     wi_parser_expect(compiler->parser, WI_TOKEN_OPEN_BRACE);
     _compiler_block_stmt(compiler);
@@ -1636,10 +1640,7 @@ _compiler_if_stmt(struct wi_compiler* compiler) {
 static void
 _compiler_while_stmt(struct wi_compiler* compiler) {
     _compiler_start_loop(compiler);
-
-    wi_parser_expect(compiler->parser, WI_TOKEN_OPEN_PAREN);
-    _compiler_expr(compiler);
-    wi_parser_expect(compiler->parser, WI_TOKEN_CLOSE_PAREN);
+    _compiler_paren_expr(compiler);
 
     int exit_jump = _compiler_emit_jump(compiler, WI_OP_JUMP_IF_FALSE);
     wi_parser_expect(compiler->parser, WI_TOKEN_OPEN_BRACE);
@@ -1747,9 +1748,7 @@ _compiler_loop_jump_stmt(struct wi_compiler* compiler, uint8_t opcode, const cha
 
 static void
 _compiler_switch_stmt(struct wi_compiler* compiler) {
-    wi_parser_expect(compiler->parser, WI_TOKEN_OPEN_PAREN);
-    _compiler_expr(compiler);
-    wi_parser_expect(compiler->parser, WI_TOKEN_CLOSE_PAREN);
+    _compiler_paren_expr(compiler);
     wi_parser_expect(compiler->parser, WI_TOKEN_OPEN_BRACE);
 
     _compiler_begin_scope(compiler);
