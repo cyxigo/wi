@@ -142,7 +142,7 @@ _io_open(struct wi_state* state, uint8_t arg_count) {
 
     char binary_mode[4];
     snprintf(binary_mode, sizeof(binary_mode), "%sb", mode);
-    FILE* ptr = fopen(file_path, binary_mode);
+    FILE* ptr = wi_fopen(file_path, binary_mode);
 
     if (!ptr) {
         wi_state_error(state, "failed to open file %s: %s", file_path, strerror(errno));

@@ -6,8 +6,6 @@
 
 #include <errno.h>
 #include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <time.h>
 
@@ -16,9 +14,7 @@
 #include <windows.h>
 #else
 #include <dirent.h>
-#include <sys/stat.h>
 #include <sys/wait.h>
-#include <unistd.h>
 #endif
 
 #include "../../include/wi.h"
@@ -92,36 +88,27 @@ _os_setenv(struct wi_state* state, uint8_t arg_count) {
     char* name      = wi_arg_string(state, 1, NULL, NULL);
     char* value     = wi_arg_string(state, 2, NULL, NULL);
     bool  overwrite = wi_arg_bool(state, 3);
-    bool  result;
-
-#ifdef _WIN32
-    if (!overwrite && GetEnvironmentVariableA(name, NULL, 0) > 0) {
-        result = true;
-    } else {
-        result = SetEnvironmentVariableA(name, value) != 0;
-    }
-#else
-    result = setenv(name, value, (int)overwrite) == 0;
-#endif
-
-    wi_push_bool(state, result);
+    wi_push_bool(state, wi_setenv(name, value, overwrite));
 }
 
 static void
 _os_getenv(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
-    char* value = getenv(wi_arg_string(state, 1, NULL, NULL));
+    char* value = wi_getenv(wi_arg_string(state, 1, NULL, NULL));
 
     if (!value) {
         wi_push_null(state);
         return;
     }
 
-    if (!wi_utf8_validate(value, (int)strlen(value))) {
+    /* boxed first so the error below doesn't leak it, gc will free it */
+    struct wi_string* box = wi_take_calloc_string(state->gc, value, (int)strlen(value));
+
+    if (!wi_utf8_validate(box->buf, box->count)) {
         wi_state_error(state, "invalid utf-8 sequence in environment variable");
     }
 
-    wi_push_string(state, value);
+    wi_state_ppush(state, WI_MAKE_BOX_VALUE(box));
 }
 
 static void
@@ -156,7 +143,7 @@ static void
 _os_system(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     char* command = wi_arg_string(state, 1, NULL, NULL);
-    int   status  = system(command);
+    int   status  = wi_system(command);
 
     /* on POSIX, system() returns a wait code instead of an exit code, we need the latter */
 #ifndef _WIN32
@@ -172,7 +159,7 @@ static void
 _os_remove(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     char* file_path = wi_arg_string(state, 1, NULL, NULL);
-    wi_push_bool(state, remove(file_path) == 0);
+    wi_push_bool(state, wi_remove(file_path) == 0);
 }
 
 static void
@@ -180,58 +167,40 @@ _os_rename(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     char* old = wi_arg_string(state, 1, NULL, NULL);
     char* new = wi_arg_string(state, 2, NULL, NULL);
-    wi_push_bool(state, rename(old, new) == 0);
+    wi_push_bool(state, wi_rename(old, new) == 0);
 }
 
 static void
 _os_isdir(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     char* path = wi_arg_string(state, 1, NULL, NULL);
-#ifdef _WIN32
-    DWORD attrs = GetFileAttributesA(path);
-    wi_push_bool(state, attrs != INVALID_FILE_ATTRIBUTES && (attrs & FILE_ATTRIBUTE_DIRECTORY) != 0);
-#else
-    struct stat st;
-    wi_push_bool(state, stat(path, &st) == 0 && S_ISDIR(st.st_mode));
-#endif
+    wi_push_bool(state, wi_is_dir(path));
 }
 
 static void
 _os_cwd(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
-    char buf[WI_PATH_MAX];
+    char* cwd = wi_getcwd();
 
-#ifdef _WIN32
-    DWORD count = GetCurrentDirectoryA(sizeof(buf), buf);
-
-    if (count == 0 || count >= sizeof(buf)) {
+    if (!cwd) {
         wi_state_error(state, "failed to get current working directory");
     }
-#else
-    if (!getcwd(buf, sizeof(buf))) {
-        wi_state_error(state, "failed to get current working directory: %s", strerror(errno));
-    }
 
-    size_t count = strlen(buf);
-#endif
+    /* boxed first so the error below doesn't leak it, gc will free it */
+    struct wi_string* box = wi_take_calloc_string(state->gc, cwd, (int)strlen(cwd));
 
-    if (!wi_utf8_validate(buf, (int)count)) {
+    if (!wi_utf8_validate(box->buf, box->count)) {
         wi_state_error(state, "invalid utf-8 sequence in current working directory");
     }
 
-    wi_push_string(state, buf);
+    wi_state_ppush(state, WI_MAKE_BOX_VALUE(box));
 }
 
 static void
 _os_mkdir(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     char* path = wi_arg_string(state, 1, NULL, NULL);
-
-#ifdef _WIN32
-    wi_push_bool(state, CreateDirectoryA(path, NULL) != 0);
-#else
-    wi_push_bool(state, mkdir(path, 0777) == 0);
-#endif
+    wi_push_bool(state, wi_mkdir(path));
 }
 
 static void
@@ -241,33 +210,38 @@ _os_listdir(struct wi_state* state, uint8_t arg_count) {
     struct wi_array* result = wi_push_array(state);
 
 #ifdef _WIN32
-    char* pattern = wi_sprintf("%s\\*", path);
+    char*    pattern  = wi_sprintf("%s\\*", path);
+    wchar_t* wpattern = pattern ? wi_utf8_to_wide(pattern) : NULL;
+    free(pattern);
 
-    if (!pattern) {
+    if (!wpattern) {
         wi_state_oom(state, "failed to allocate a directory pattern (_os_listdir)");
     }
 
-    WIN32_FIND_DATAA data;
-    HANDLE           hfind = FindFirstFileA(pattern, &data);
-    free(pattern);
+    WIN32_FIND_DATAW data;
+    HANDLE           hfind = FindFirstFileW(wpattern, &data);
+    free(wpattern);
 
     if (hfind == INVALID_HANDLE_VALUE) {
         wi_state_error(state, "failed to list directory %s (error %lu)", path, GetLastError());
     }
 
     do {
-        if (strcmp(data.cFileName, ".") == 0 || strcmp(data.cFileName, "..") == 0) {
+        if (wcscmp(data.cFileName, L".") == 0 || wcscmp(data.cFileName, L"..") == 0) {
             continue;
         }
 
-        if (!wi_utf8_validate(data.cFileName, (int)strlen(data.cFileName))) {
+        char* name = wi_wide_to_utf8(data.cFileName);
+
+        if (!name) {
             FindClose(hfind);
-            wi_state_error(state, "invalid utf-8 sequence in directory entry");
+            wi_state_oom(state, "failed to allocate a directory entry (_os_listdir)");
         }
 
-        wi_push_string(state, data.cFileName);
+        struct wi_string* box = wi_take_calloc_string(state->gc, name, (int)strlen(name));
+        wi_state_ppush(state, WI_MAKE_BOX_VALUE(box));
         wi_array_add(state, result);
-    } while (FindNextFileA(hfind, &data));
+    } while (FindNextFileW(hfind, &data));
 
     FindClose(hfind);
 #else

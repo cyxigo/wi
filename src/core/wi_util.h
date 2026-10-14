@@ -36,8 +36,38 @@ wi_printf(struct wi_state* state, wi_print_fn fn, const char* format, ...);
 
 char*
 wi_strdup(const char* src);
+
+/* windows only utf-8 <-> utf-16 shenanigans */
+#ifdef _WIN32
+wchar_t*
+wi_utf8_to_wide(const char* str);
+char*
+wi_wide_to_utf8(const wchar_t* wstr);
+#endif
+
+/* platform-specific implementations of useful io/os functions */
 bool
 wi_file_exists(const char* path);
+FILE*
+wi_fopen(const char* path, const char* mode);
+int
+wi_remove(const char* path);
+int
+wi_rename(const char* old, const char* new);
+bool
+wi_is_dir(const char* path);
+bool
+wi_mkdir(const char* path);
+int
+wi_system(const char* command);
+bool
+wi_setenv(const char* name, const char* value, bool overwrite);
+char*
+wi_getenv(const char* name);
+char*
+wi_getcwd(void);
+char*
+wi_exe_dir(void);
 
 int
 wi_utf8_len(const char* buf, int count);
@@ -50,6 +80,8 @@ wi_utf8_validate(const char* buf, int count);
 
 char*
 wi_read_stream(FILE* stream, int* count);
+char*
+wi_read_file(const char* path);
 bool
 wi_read_line(char** line, const char* prompt);
 

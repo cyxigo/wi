@@ -4,6 +4,7 @@
 
 #include "wi_util.h"
 
+#include <errno.h>
 #include <limits.h>
 #include <stdarg.h>
 #include <stddef.h>
@@ -17,12 +18,19 @@
 #include <io.h>
 #include <windows.h>
 #else
+#include <sys/stat.h>
 #include <unistd.h>
 #endif
 
 #ifdef WI_USE_READLINE /* wi is linked with -lreadline */
 #include <readline/history.h>
 #include <readline/readline.h>
+#endif
+
+#ifdef _WIN32
+#define _PATH_SEP '\\'
+#else
+#define _PATH_SEP '/'
 #endif
 
 /*
@@ -112,13 +120,235 @@ wi_strdup(const char* src) {
     return memcpy(new, src, len);
 }
 
+/*
+    welcome to windows and utf-8 hell
+    wi is utf-8 everywhere: strings, paths, env, argv, whatever the user hands us
+    linux and macos take bytes directly so we just don't care
+    windows has two sets of apis: "A" (fopen, getenv, CreateDirectoryA...) which read bytes in the current ANSI
+    codepage (almost never utf-8), and "W" which take utf-16. give an "A" function utf-8 and "héllo.txt" turns
+    into garbage, a different file, or nothing at all
+    so the rule is simple:
+    everything going TO windows (paths, names, commands) goes through wi_utf8_to_wide into a "W" function
+    everything coming BACK (argv, env, cwd, dir entries, console input) goes through wi_wide_to_utf8
+    the wrappers below hide these absolute horrors for the rest of wi
+*/
+
+#ifdef _WIN32
+wchar_t*
+wi_utf8_to_wide(const char* str) {
+    int      len  = MultiByteToWideChar(CP_UTF8, 0, str, -1, NULL, 0);
+    wchar_t* wstr = len > 0 ? (wchar_t*)malloc(sizeof(wchar_t) * (size_t)len) : NULL;
+
+    if (wstr) {
+        MultiByteToWideChar(CP_UTF8, 0, str, -1, wstr, len);
+    }
+
+    return wstr;
+}
+
+char*
+wi_wide_to_utf8(const wchar_t* wstr) {
+    int   len = WideCharToMultiByte(CP_UTF8, 0, wstr, -1, NULL, 0, NULL, NULL);
+    char* str = len > 0 ? (char*)malloc((size_t)len) : NULL;
+
+    if (str) {
+        WideCharToMultiByte(CP_UTF8, 0, wstr, -1, str, len, NULL, NULL);
+    }
+
+    return str;
+}
+#endif
+
 bool
 wi_file_exists(const char* path) {
 #ifdef _WIN32
-    return _access(path, 0) == 0;
+    wchar_t* wpath  = wi_utf8_to_wide(path);
+    bool     exists = wpath && _waccess(wpath, 0) == 0;
+    free(wpath);
+    return exists;
 #else
     return access(path, F_OK) == 0;
 #endif
+}
+
+FILE*
+wi_fopen(const char* path, const char* mode) {
+#ifdef _WIN32
+    wchar_t  wmode[8] = {0};
+    wchar_t* wpath    = wi_utf8_to_wide(path);
+    FILE*    file     = NULL;
+
+    /* modes are always ascii anyways, so we just convert them directly */
+    for (int i = 0; i < 7 && mode[i]; i++) {
+        wmode[i] = (wchar_t)mode[i];
+    }
+
+    if (wpath) {
+        file = _wfopen(wpath, wmode);
+    } else {
+        errno = ENOMEM;
+    }
+
+    free(wpath);
+    return file;
+#else
+    return fopen(path, mode);
+#endif
+}
+
+int
+wi_remove(const char* path) {
+#ifdef _WIN32
+    wchar_t* wpath  = wi_utf8_to_wide(path);
+    DWORD    attrs  = wpath ? GetFileAttributesW(wpath) : INVALID_FILE_ATTRIBUTES;
+    bool     is_dir = attrs != INVALID_FILE_ATTRIBUTES && (attrs & FILE_ATTRIBUTE_DIRECTORY) != 0;
+    int      result = -1;
+
+    /* unlike POSIX remove, _wremove can't delete directories, so we pick the right call ourselves */
+    if (wpath) {
+        result = (is_dir ? RemoveDirectoryW(wpath) : DeleteFileW(wpath)) ? 0 : -1;
+    }
+
+    free(wpath);
+    return result;
+#else
+    return remove(path);
+#endif
+}
+
+int
+wi_rename(const char* old, const char* new) {
+#ifdef _WIN32
+    wchar_t* wold = wi_utf8_to_wide(old);
+    wchar_t* wnew = wi_utf8_to_wide(new);
+    /* POSIX rename replaces the destination, _wrename refuses to, so we do some trickery again... */
+    int result = wold && wnew && MoveFileExW(wold, wnew, MOVEFILE_REPLACE_EXISTING) ? 0 : -1;
+    free(wold);
+    free(wnew);
+    return result;
+#else
+    return rename(old, new);
+#endif
+}
+
+bool
+wi_is_dir(const char* path) {
+#ifdef _WIN32
+    wchar_t* wpath = wi_utf8_to_wide(path);
+    DWORD    attrs = wpath ? GetFileAttributesW(wpath) : INVALID_FILE_ATTRIBUTES;
+    free(wpath);
+    return attrs != INVALID_FILE_ATTRIBUTES && (attrs & FILE_ATTRIBUTE_DIRECTORY) != 0;
+#else
+    struct stat st;
+    return stat(path, &st) == 0 && S_ISDIR(st.st_mode);
+#endif
+}
+
+bool
+wi_mkdir(const char* path) {
+#ifdef _WIN32
+    wchar_t* wpath   = wi_utf8_to_wide(path);
+    bool     created = wpath && CreateDirectoryW(wpath, NULL) != 0;
+    free(wpath);
+    return created;
+#else
+    return mkdir(path, 0777) == 0;
+#endif
+}
+
+int
+wi_system(const char* command) {
+#ifdef _WIN32
+    wchar_t* wcommand = wi_utf8_to_wide(command);
+    int      status   = wcommand ? _wsystem(wcommand) : -1;
+    free(wcommand);
+    return status;
+#else
+    return system(command);
+#endif
+}
+
+bool
+wi_setenv(const char* name, const char* value, bool overwrite) {
+#ifdef _WIN32
+    wchar_t* wname  = wi_utf8_to_wide(name);
+    wchar_t* wvalue = wi_utf8_to_wide(value);
+    bool     result = false;
+
+    if (wname && wvalue) {
+        result = (!overwrite && GetEnvironmentVariableW(wname, NULL, 0) > 0) ||
+                 SetEnvironmentVariableW(wname, wvalue) != 0;
+    }
+
+    free(wname);
+    free(wvalue);
+    return result;
+#else
+    return setenv(name, value, (int)overwrite) == 0;
+#endif
+}
+
+char*
+wi_getenv(const char* name) {
+#ifdef _WIN32
+    wchar_t* wname  = wi_utf8_to_wide(name);
+    DWORD    count  = wname ? GetEnvironmentVariableW(wname, NULL, 0) : 0;
+    wchar_t* wvalue = count ? (wchar_t*)malloc(sizeof(wchar_t) * count) : NULL;
+    char*    value  = NULL;
+
+    if (wvalue && GetEnvironmentVariableW(wname, wvalue, count) < count) {
+        value = wi_wide_to_utf8(wvalue);
+    }
+
+    free(wname);
+    free(wvalue);
+    return value;
+#else
+    const char* value = getenv(name);
+    return value ? wi_strdup(value) : NULL;
+#endif
+}
+
+char*
+wi_getcwd(void) {
+#ifdef _WIN32
+    wchar_t wbuf[WI_PATH_MAX];
+    DWORD   count = GetCurrentDirectoryW(WI_PATH_MAX, wbuf);
+    return count > 0 && count < WI_PATH_MAX ? wi_wide_to_utf8(wbuf) : NULL;
+#else
+    char buf[WI_PATH_MAX];
+    return getcwd(buf, sizeof(buf)) ? wi_strdup(buf) : NULL;
+#endif
+}
+
+char*
+wi_exe_dir(void) {
+    char* exe = NULL;
+#if defined(_WIN32)
+    wchar_t wexe[WI_PATH_MAX];
+    DWORD   count = GetModuleFileNameW(NULL, wexe, WI_PATH_MAX);
+
+    if (count > 0 && count < WI_PATH_MAX) {
+        exe = wi_wide_to_utf8(wexe);
+    }
+#elif defined(__linux__)
+    char    buf[WI_PATH_MAX];
+    ssize_t count = readlink("/proc/self/exe", buf, sizeof(buf) - 1);
+
+    if (count > 0) {
+        buf[count] = '\0';
+        exe        = wi_strdup(buf);
+    }
+#endif
+
+    /* cut the executable name off, we only need the directory */
+    char* slash = exe ? strrchr(exe, _PATH_SEP) : NULL;
+
+    if (slash) {
+        *slash = '\0';
+    }
+
+    return exe;
 }
 
 /* returns a codepoint count from a byte count */
@@ -252,6 +482,7 @@ wi_read_stream(FILE* stream, int* count) {
         /* we double the capacity later, so we need to check half of INT_MAX here */
         if (capacity > INT_MAX / 2) {
             free(buf);
+            errno = EFBIG;
             return NULL;
         }
 
@@ -284,6 +515,21 @@ wi_read_stream(FILE* stream, int* count) {
         *count = size;
     }
 
+    return buf;
+}
+
+char*
+wi_read_file(const char* path) {
+    FILE* file = wi_fopen(path, "rb");
+
+    if (!file) {
+        return NULL;
+    }
+
+    char* buf = wi_read_stream(file, NULL);
+    int   err = errno;
+    fclose(file);
+    errno = err;
     return buf;
 }
 
@@ -343,20 +589,8 @@ wi_read_line(char** line, const char* prompt) {
     }
 
     wbuf[read] = L'\0';
-
-    int   len = WideCharToMultiByte(CP_UTF8, 0, wbuf, (int)read, NULL, 0, NULL, NULL);
-    char* buf = (char*)malloc((size_t)(len + 1));
-
-    if (!buf) {
-        return false;
-    }
-
-    WideCharToMultiByte(CP_UTF8, 0, wbuf, (int)read, buf, len, NULL, NULL);
-
-    buf[len] = '\0';
-    *line    = buf;
-
-    return true;
+    *line      = wi_wide_to_utf8(wbuf);
+    return *line != NULL;
 #elif defined(WI_USE_READLINE)
     char* buf = readline(prompt);
 

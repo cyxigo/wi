@@ -9,7 +9,10 @@
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
+/* clang-format off */
 #include <windows.h>
+#include <shellapi.h> /* CommandLineToArgvW, **must** come after windows.h */
+/* clang-format on */
 #endif
 
 #include "../../include/wi.h"
@@ -143,18 +146,10 @@ _read_error(const char* format, ...) {
 
 static char*
 _read_file(const char* file_path) {
-    FILE* file = fopen(file_path, "rb");
-
-    if (!file) {
-        _read_error("failed to open file %s: %s", file_path, strerror(errno));
-        exit(EXIT_FAILURE);
-    }
-
-    char* buf = wi_read_stream(file, NULL);
-    fclose(file);
+    char* buf = wi_read_file(file_path);
 
     if (!buf) {
-        _read_error("failed to read file %s", file_path);
+        _read_error("failed to read file %s: %s", file_path, strerror(errno));
         exit(EXIT_FAILURE);
     }
 
@@ -260,14 +255,63 @@ _parse_flags(int argc, const char** argv, wi_conf* conf, const char** file_path,
     }
 }
 
+#ifdef _WIN32
+static char** _g_utf8_argv = NULL;
+
+static void
+_free_utf8_argv(void) {
+    for (char** arg = _g_utf8_argv; *arg; arg++) {
+        free(*arg);
+    }
+
+    free(_g_utf8_argv);
+}
+
+static const char**
+_utf8_argv(int* argc) {
+    wchar_t** wargv = CommandLineToArgvW(GetCommandLineW(), argc);
+    /* calloc so argv[*argc] is the NULL terminator for free */
+    char** argv = wargv ? (char**)calloc((size_t)*argc + 1, sizeof(char*)) : NULL;
+
+    for (int i = 0; argv && i < *argc; i++) {
+        argv[i] = wi_wide_to_utf8(wargv[i]);
+
+        if (!argv[i]) {
+            while (i-- > 0) {
+                free(argv[i]);
+            }
+
+            free(argv);
+            argv = NULL;
+        }
+    }
+
+    LocalFree(wargv);
+
+    if (argv) {
+        _g_utf8_argv = argv;
+        atexit(_free_utf8_argv);
+    }
+
+    return (const char**)argv;
+}
+#endif
+
 int
 main(int argc, const char** argv) {
-    _g_exec = argv[0];
-
 #ifdef _WIN32
     SetConsoleOutputCP(CP_UTF8);
     SetConsoleCP(CP_UTF8);
+    argv = _utf8_argv(&argc);
+
+    if (!argv) {
+        /* can't use _g_exec here since welp... it's argv[0] */
+        fprintf(stderr, "wi: out of memory: failed to convert arguments to utf-8\n");
+        return EXIT_FAILURE;
+    }
 #endif
+
+    _g_exec = argv[0];
 
     signal(SIGINT, _sigint_handler);
     wi_conf      conf        = WI_DEFAULT_CONF;

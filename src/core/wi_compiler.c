@@ -17,7 +17,6 @@
 #include <windows.h>
 #else
 #include <dlfcn.h>
-#include <unistd.h>
 #endif
 
 #include "../../include/wi_conf.h"
@@ -1311,45 +1310,20 @@ _import_script_path(struct wi_compiler* compiler, struct wi_token name, const ch
 /* path in the "lib" directory next to the wi executable, or NULL if that can't be located */
 static char*
 _import_lib_path(struct wi_compiler* compiler, struct wi_token name, const char* ext) {
-#if !defined(_WIN32) && !defined(__linux__)
-    WI_UNUSED(compiler);
-    WI_UNUSED(name);
-    WI_UNUSED(ext);
-    return NULL;
-#else
-    char exe[WI_PATH_MAX];
+    char* dir = wi_exe_dir();
 
-#ifdef _WIN32
-    DWORD len = GetModuleFileName(NULL, exe, (DWORD)sizeof(exe));
-
-    if (len < 1 || len >= sizeof(exe)) {
+    if (!dir) {
         return NULL;
     }
 
-    char* slash = strrchr(exe, '\\');
-#else
-    ssize_t len = readlink("/proc/self/exe", exe, sizeof(exe) - 1);
-
-    if (len == -1) {
-        return NULL;
-    }
-
-    exe[len]    = '\0';
-    char* slash = strrchr(exe, '/');
-#endif /* _WIN32 */
-
-    if (slash) {
-        *slash = '\0';
-    }
-
-    char* path = wi_sprintf("%s" _LIB_DIR "%.*s%s", exe, name.count, name.start, ext);
+    char* path = wi_sprintf("%s" _LIB_DIR "%.*s%s", dir, name.count, name.start, ext);
+    free(dir);
 
     if (!path) {
         wi_parser_oom(compiler->parser, "failed to allocate the import path (_import_lib_path)");
     }
 
     return path;
-#endif /* !defined(_WIN32) && !defined(__linux__) */
 }
 
 /* note one failed attempt at the given path, appending to [*atts] */
@@ -1411,10 +1385,13 @@ _compiler_import_foreign(struct wi_compiler* compiler, char* lib_path, char** at
     typedef struct wi_module* (*_module_init_fn)(struct wi_state* state);
     /* prepare for seeing horrifying things... platform-specific code!!! */
 #ifdef _WIN32
-    HMODULE lib = LoadLibraryA(path->buf);
+    wchar_t* wpath = wi_utf8_to_wide(path->buf);
+    HMODULE  lib   = wpath ? LoadLibraryW(wpath) : NULL;
+    DWORD    error = GetLastError();
+    free(wpath);
 
     if (!lib) {
-        _import_note_attempt(compiler, atts, "failed to load library %s (error %lu)", path->buf, GetLastError());
+        _import_note_attempt(compiler, atts, "failed to load library %s (error %lu)", path->buf, error);
         return false;
     }
 

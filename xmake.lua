@@ -126,6 +126,7 @@ target("wi")
 
     if is_plat("windows") then
         add_files("windows/wi.rc")
+        add_syslinks("shell32")
     end
 
     if is_msvc() then
