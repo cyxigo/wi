@@ -490,7 +490,9 @@ wi_read_stream(FILE* stream, int* count) {
         char* new_buf = (char*)realloc(buf, (size_t)capacity);
 
         if (!new_buf) {
+            int err = errno;
             free(buf);
+            errno = err;
             return NULL;
         }
 
@@ -498,7 +500,9 @@ wi_read_stream(FILE* stream, int* count) {
     }
 
     if (ferror(stream)) {
+        int err = errno;
         free(buf);
+        errno = err;
         return NULL;
     }
 

@@ -113,7 +113,7 @@ _file_read_all(struct wi_state* state, struct _file* file, int* count) {
     char* content = wi_read_stream(file->ptr, count);
 
     if (!content) {
-        wi_state_error(state, "failed to read file %s", file->path);
+        wi_state_error(state, "failed to read file %s: %s", file->path, strerror(errno));
     }
 
     return content;
