@@ -86,7 +86,7 @@ _base_gc(struct wi_state* state, uint8_t arg_count) {
 static void
 _base_memoryused(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
-    wi_push_real(state, (wi_real)state->gc->bytes_allocated);
+    wi_push_real(state, (wi_real)wi_state_memory_used(state));
 }
 
 static void
