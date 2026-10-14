@@ -315,6 +315,7 @@ _compiler_make_constant(struct wi_compiler* compiler, wi_value value) {
     } else {
         wi_value_buf_add(&compiler->prototype->constants, value);
         int index = compiler->prototype->constants.count - 1;
+        WI_GC_WRITE_BARRIER(compiler->gc, compiler->prototype, value);
 
         if (index >= WI_CONSTANT_MAX) {
             wi_parser_error_limit(compiler->parser, "constants in a prototype", WI_CONSTANT_MAX);
@@ -1078,6 +1079,7 @@ _compiler_function_expr(struct wi_compiler* outer, bool can_assign) {
 
     if (var_name.kind != WI_TOKEN_BLANK) {
         compiler->prototype->name = wi_copy_cstring(compiler->gc, var_name.start, var_name.count);
+        WI_GC_WRITE_BARRIER(compiler->gc, compiler->prototype, WI_MAKE_BOX_VALUE(compiler->prototype->name));
     }
 
     /*
