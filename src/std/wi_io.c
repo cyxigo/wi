@@ -137,7 +137,7 @@ _io_open(struct wi_state* state, uint8_t arg_count) {
 
     /* r w a r+ w+ a+ */
     if (!(mode_count == 1 || updating) || (mode[0] != 'r' && mode[0] != 'w' && mode[0] != 'a')) {
-        wi_state_error(state, "invalid file mode %s", mode);
+        wi_state_error(state, "invalid file mode: %s", mode);
     }
 
     char binary_mode[4];

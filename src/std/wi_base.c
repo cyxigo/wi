@@ -274,7 +274,7 @@ _base_real(struct wi_state* state, uint8_t arg_count) {
             end != string->buf + string->count || /* trailing stuff? */
             overflow                              /* overflow? */
         ) {
-            wi_state_error(state, "invalid real format %s", string->buf);
+            wi_state_error(state, "invalid real format: %s", string->buf);
         }
 
         result = wi_make_real_value(real);
