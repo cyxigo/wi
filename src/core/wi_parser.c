@@ -169,8 +169,13 @@ wi_parser_error_limit(struct wi_parser* parser, const char* what, int limit) {
 WI_NORETURN void
 wi_parser_oom(struct wi_parser* parser, const char* what) {
     struct wi_state* state = parser->gc->state;
-    wi_printf(state, state->error, "out of memory: %s\n", what);
-    longjmp(parser->error_jmp, 1);
+
+    /* directly because wi_printf allocates via wi_vprintf */
+    state->error(state, "out of memory: ");
+    state->error(state, what);
+    state->error(state, "\n");
+
+    longjmp(parser->error_jmp, WI_RUN_ERROR);
 }
 
 void
