@@ -35,26 +35,6 @@ _state_close_upvalues(struct wi_state* state, wi_value* last) {
 }
 
 static void
-_state_reset(struct wi_state* state) {
-    _state_close_upvalues(state, state->stack);
-    struct wi_recovery* recovery = state->recoveries;
-
-    while (recovery) {
-        struct wi_recovery* next = recovery->next;
-        free(recovery);
-        recovery = next;
-    }
-
-    state->recoveries     = NULL;
-    state->recovery_count = 0;
-    state->stack_end      = state->stack + state->stack_capacity;
-    state->stack_top      = state->stack;
-    state->ffi_stack      = NULL;
-    state->frame_count    = 0;
-    state->c_depth        = 0;
-}
-
-static void
 _state_out(struct wi_state* state, const char* text) {
     WI_UNUSED(state);
     fputs(text, stdout);
@@ -87,6 +67,14 @@ static bool
 _state_import_exists(struct wi_state* state, const char* path) {
     WI_UNUSED(state);
     return wi_file_exists(path);
+}
+
+static void
+_state_init(struct wi_state* state, void* data) {
+    WI_UNUSED(data);
+    state->main_module          = wi_new_module(state->gc, "<main>");
+    state->main_module->is_main = true;
+    wi_state_seed_rand(state, (uint64_t)time(NULL) ^ (uint64_t)(uintptr_t)state);
 }
 
 struct wi_state*
@@ -139,7 +127,11 @@ wi_new_state(wi_conf* conf) {
     }
 
     state->open_upvalues = NULL;
-    _state_reset(state);
+    state->stack_end     = state->stack + state->stack_capacity;
+    state->stack_top     = state->stack;
+    state->ffi_stack     = NULL;
+    state->frame_count   = 0;
+    state->c_depth       = 0;
 
     wi_table_init(&state->foreign, state->gc);
     wi_table_init(&state->imported, state->gc);
@@ -154,11 +146,14 @@ wi_new_state(wi_conf* conf) {
     state->ref_next = 0;
 
     /* last here so every table above is initialized before first allocation can trigger a gc */
-    state->main_module          = NULL;
-    state->main_module          = wi_new_module(state->gc, "<main>");
-    state->main_module->is_main = true;
+    state->main_module = NULL;
 
-    wi_state_seed_rand(state, (uint64_t)time(NULL) ^ (uint64_t)(uintptr_t)state);
+    /* allocations in _state_init can fail, catch them */
+    if (wi_state_pcall(state, _state_init, NULL) != WI_RUN_OK) {
+        wi_delete_state(state);
+        return NULL;
+    }
+
     return state;
 }
 
@@ -299,29 +294,36 @@ wi_state_close_libs(struct wi_state* state) {
     state->libs = NULL;
 }
 
-struct wi_recovery*
-wi_state_push_recovery(struct wi_state* state) {
-    if (state->recovery_count == WI_CSTACK_MAX) {
-        wi_state_error(state, "too many error buffers (limit is %i)", WI_CSTACK_MAX);
-    }
-
+static struct wi_recovery*
+_state_new_recovery(struct wi_state* state, bool root) {
     struct wi_recovery* recovery = (struct wi_recovery*)malloc(sizeof(struct wi_recovery));
 
     if (!recovery) {
-        wi_state_oom(state, "failed to allocate an error buffer (wi_state_push_recovery)");
+        return NULL;
     }
 
-    recovery->next    = state->recoveries;
-    state->recoveries = recovery;
-
+    recovery->next            = state->recoveries;
+    recovery->root            = root;
+    recovery->compiler        = state->gc->compiler;
     recovery->frame_count     = state->frame_count;
     recovery->c_call_depth    = state->c_depth;
     recovery->stack_top       = state->stack_top;
     recovery->ffi_stack       = state->ffi_stack;
     recovery->temp_root_count = state->gc->temp_root_count;
     recovery->error           = NULL;
+    state->recoveries         = recovery;
 
-    state->recovery_count++;
+    return recovery;
+}
+
+struct wi_recovery*
+wi_state_push_recovery(struct wi_state* state) {
+    struct wi_recovery* recovery = _state_new_recovery(state, false);
+
+    if (!recovery) {
+        wi_state_oom(state, "failed to allocate an error buffer (wi_state_push_recovery)");
+    }
+
     return recovery;
 }
 
@@ -335,32 +337,90 @@ wi_state_pop_recovery(struct wi_state* state) {
 
     state->recoveries = recovery->next;
     free(recovery);
-    state->recovery_count--;
+}
+
+static void
+_state_unwind(struct wi_state* state, struct wi_recovery* recovery) {
+    /*
+        a compile that started after this recovery was pushed is about to be skipped
+        (e.g. an error in a foreign library's wi_module_init), so whatever it was holding is ours to free
+        if the recovery was pushed during the compile, the compile survives and must stay intact
+    */
+    if (!recovery->compiler && state->gc->compiler) {
+        wi_delete_parser(state->gc->compiler->parser);
+        wi_delete_compilers(state->gc);
+    }
+
+    _state_close_upvalues(state, recovery->stack_top);
+
+    state->frame_count         = recovery->frame_count;
+    state->c_depth             = recovery->c_call_depth;
+    state->stack_top           = recovery->stack_top;
+    state->ffi_stack           = recovery->ffi_stack;
+    state->gc->temp_root_count = recovery->temp_root_count;
+}
+
+/* jump to the closest root recovery, popping every non-root above it */
+WI_NORETURN void
+wi_state_jmp_to_root(struct wi_state* state, enum wi_run_result result) {
+    struct wi_recovery* target = state->recoveries;
+
+    while (target && !target->root) {
+        target = target->next;
+    }
+
+    /*
+        an api function was used outside of wi_state_run, wi_state_pcall and foreign code, nowhere to jump to
+        sorry host
+    */
+    if (!target) {
+        abort();
+    }
+
+    while (state->recoveries != target) {
+        wi_state_pop_recovery(state);
+    }
+
+    _state_unwind(state, target);
+    longjmp(target->jmp, (int)result);
+}
+
+wi_run_result
+wi_state_pcall(struct wi_state* state, wi_pcall_fn fn, void* data) {
+    struct wi_recovery* recovery = _state_new_recovery(state, true);
+
+    if (!recovery) {
+        wi_state_report_oom(state, "failed to allocate an error buffer (wi_state_pcall)");
+        return WI_RUN_OOM;
+    }
+
+    int result = setjmp(recovery->jmp);
+
+    if (result == WI_RUN_OK) {
+        fn(state, data);
+    }
+
+    /* on failure wi_state_jmp_to_root already popped everything */
+    wi_state_pop_recovery(state);
+    return (wi_run_result)result;
 }
 
 WI_NORETURN void
 wi_state_error(struct wi_state* state, const char* format, ...) {
     va_list args;
     va_start(args, format);
+    struct wi_recovery* recovery = state->recoveries;
 
-    if (state->recoveries) {
-        struct wi_recovery* recovery = state->recoveries;
-        _state_close_upvalues(state, recovery->stack_top);
-
-        state->frame_count         = recovery->frame_count;
-        state->c_depth             = recovery->c_call_depth;
-        state->stack_top           = recovery->stack_top;
-        state->ffi_stack           = recovery->ffi_stack;
-        state->gc->temp_root_count = recovery->temp_root_count;
-
+    if (recovery && !recovery->root) {
+        _state_unwind(state, recovery);
         char* error = wi_vasprintf(format, args);
+        va_end(args);
 
         if (WI_UNLIKELY(!error)) {
             wi_state_oom(state, "failed to allocate an error message (wi_state_error)");
         }
 
         recovery->error = wi_take_calloc_string(state->gc, error, (int)strlen(error));
-        va_end(args);
         longjmp(recovery->jmp, WI_RUN_ERROR);
     }
 
@@ -384,22 +444,26 @@ wi_state_error(struct wi_state* state, const char* format, ...) {
         }
     }
 
-    _state_reset(state);
-    wi_gc_reset_roots(state->gc);
-    longjmp(state->jmp, WI_RUN_ERROR);
+    wi_state_jmp_to_root(state, WI_RUN_ERROR);
+}
+
+void
+wi_state_report_oom(struct wi_state* state, const char* what) {
+    /* directly because wi_printf allocates via wi_vprintf */
+    state->error(state, "out of memory: ");
+    state->error(state, what);
+    state->error(state, "\n");
 }
 
 WI_NORETURN void
 wi_state_oom(struct wi_state* state, const char* what) {
-    wi_printf(state, state->error, "out of memory: %s\n", what);
-    wi_state_abort(state);
+    wi_state_report_oom(state, what);
+    wi_state_jmp_to_root(state, WI_RUN_OOM);
 }
 
 WI_NORETURN void
 wi_state_abort(struct wi_state* state) {
-    _state_reset(state);
-    wi_gc_reset_roots(state->gc);
-    longjmp(state->jmp, WI_RUN_ABORT);
+    wi_state_jmp_to_root(state, WI_RUN_ABORT);
 }
 
 void
@@ -644,20 +708,16 @@ _state_correct_stack(struct wi_state* state, ptrdiff_t diff, wi_value* new_stack
 
 static void
 _state_capture_overflow_ctx(struct wi_state* state) {
-    if (state->recoveries) {
-        return;
-    }
+    struct wi_recovery* recovery = state->recoveries;
 
     /*
         this is useful considering that without this call stack overflow will show you
         exactly WI_STACK_MAX amount of functions in the backtrace
         now that's NOT very useful isn't it?
     */
-    if (state->frame_count > 0) {
+    if (recovery && recovery->root && recovery->frame_count == 0 && state->frame_count > 0) {
         state->frames[0]   = state->frames[state->frame_count - 1];
         state->frame_count = 1;
-    } else {
-        state->frame_count = 0;
     }
 }
 
@@ -1617,30 +1677,36 @@ wi_state_compile(struct wi_state* state, const char* file_path, const char* src,
     return closure;
 }
 
+struct _run_args {
+    const char*        file_path;
+    const char*        src;
+    enum wi_run_result result;
+};
+
+static void
+_state_run(struct wi_state* state, void* data) {
+    struct _run_args*  args    = data;
+    struct wi_closure* closure = wi_state_compile(state, args->file_path, args->src, state->main_module);
+
+    if (!closure) {
+        args->result = WI_RUN_ERROR;
+        return;
+    }
+
+    wi_state_ppush(state, WI_MAKE_BOX_VALUE(closure));
+    args->result = wi_state_call(state, WI_MAKE_BOX_VALUE(closure), 0, true);
+}
+
 enum wi_run_result
 wi_state_run(struct wi_state* state, const char* file_path, const char* src) {
+    struct _run_args args = {file_path, src, WI_RUN_OK};
+
     state->was_eof_error     = false;
     state->interrupted       = 0;
     state->main_module->path = file_path;
-    /* set early so we can catch compiler/parser oom, etc. */
-    int jmp_result = setjmp(state->jmp);
 
-    if (jmp_result == WI_RUN_ABORT) {
-        return WI_RUN_ABORT;
-    } else if (jmp_result != WI_RUN_OK) {
-        return WI_RUN_ERROR;
-    }
-
-    struct wi_closure* closure = wi_state_compile(state, file_path, src, state->main_module);
-
-    if (!closure) {
-        return WI_RUN_ERROR;
-    }
-
-    wi_state_push(state, WI_MAKE_BOX_VALUE(closure));
-    _state_call(state, closure, 0);
-
-    return _state_interpreter_loop(state, 0, true);
+    enum wi_run_result result = wi_state_pcall(state, _state_run, &args);
+    return result == WI_RUN_OK ? args.result : result;
 }
 
 /*

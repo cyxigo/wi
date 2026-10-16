@@ -108,8 +108,9 @@ typedef struct wi_state wi_state;
  */
 typedef enum wi_run_result {
     WI_RUN_OK,    /* No errors occurred */
-    WI_RUN_ERROR, /* A runtime error or a compile error occurred, also used when out of memory */
+    WI_RUN_ERROR, /* A runtime error or a compile error occurred */
     WI_RUN_ABORT, /* Execution was aborted early via `wi_state_abort` */
+    WI_RUN_OOM,   /* Ran out of memory, the state must only be deleted after this */
 } wi_run_result;
 
 /* Callback to print... something. Used by Wi for standard/error output printing */
@@ -143,6 +144,11 @@ typedef void (*wi_foreign_fn)(wi_state* state, uint8_t arg_count);
  * Userdata finalizer - function called when the userdata gets collected by GC
  */
 typedef void (*wi_userdata_finalizer_fn)(void* data);
+
+/**
+ * Function run by `wi_state_pcall`
+ */
+typedef void (*wi_pcall_fn)(wi_state* state, void* data);
 
 /**
  * A single { name, function, arity, is_variadic } row, used to register foreign (C) functions via
@@ -325,6 +331,20 @@ WI_API void
 wi_state_interrupt(wi_state* state);
 
 /**
+ * Run a C function, but in a protected mode. That means Wi can catch fatal errors like OOM there.
+ * **Always** use this function when dealing with Wi's API that simply does not return a `wi_run_result` - meaning,
+ * it allocates.
+ * Can be nested
+ *
+ * @param state Wi state instance
+ * @param fn Function to run
+ * @param data Passed to `fn` as is
+ * @return `WI_RUN_OK` if `fn` returned normally, otherwise what stopped it
+ */
+WI_API wi_run_result
+wi_state_pcall(wi_state* state, wi_pcall_fn fn, void* data);
+
+/**
  * Execute Wi code.
  * Must not be called from a foreign library's `wi_module_init` or from `import_exists_fn`
  *
@@ -346,9 +366,10 @@ wi_state_run(wi_state* state, const char* file_path, const char* src);
  * @param state Wi state instance
  * @param file_path Path to the script, used for error messages (**must** outlive the state, Wi keeps the pointer)
  * @param src Code string
- * @return `true` and pushes the function on success, `false` and pushes nothing on a compile error
+ * @return `WI_RUN_OK` and pushes the function on success, `WI_RUN_ERROR` and pushes nothing on a compile error,
+ * `WI_RUN_OOM` on OOM
  */
-WI_API bool
+WI_API wi_run_result
 wi_load(wi_state* state, const char* file_path, const char* src);
 
 /**
@@ -387,8 +408,9 @@ wi_ref_delete(wi_state* state, wi_ref ref);
  * Define the standard library (STD) in a state
  *
  * @param state Wi state instance
+ * @return `WI_RUN_OK` on success, `WI_RUN_OOM` on OOM (cannot return `WI_RUN_ERROR`)
  */
-WI_API void
+WI_API wi_run_result
 wi_def_std(wi_state* state);
 
 /**
@@ -396,8 +418,9 @@ wi_def_std(wi_state* state);
  * string, array, map. Only reachable via the `->` method-call operator
  *
  * @param state Wi state instance
+ * @return `WI_RUN_OK` on success, `WI_RUN_OOM` on OOM (cannot return `WI_RUN_ERROR`)
  */
-WI_API void
+WI_API wi_run_result
 wi_def_stm(wi_state* state);
 
 /**
@@ -422,9 +445,8 @@ WI_API bool
 wi_find(wi_state* state, const char* name);
 
 /**
- * Call a Wi function followed by its `arg_count` arguments at the stack top
- * Must only be called while the state is running (i.e. from within a foreign function called by Wi code).
- * Calling it outside that context is undefined behavior
+ * Call a Wi function followed by its `arg_count` arguments at the stack top.
+ * Must run inside `wi_state_run`, `wi_state_pcall`, or in a foreign function
  *
  * @param state Wi state instance
  * @param arg_count Argument count
@@ -434,7 +456,8 @@ WI_API void
 wi_call(wi_state* state, uint8_t arg_count, bool drop);
 
 /**
- * Call a Wi function followed by its `arg_count` arguments at the stack top; is protected
+ * Call a Wi function followed by its `arg_count` arguments at the stack top; is protected.
+ * Must run inside `wi_state_run`, `wi_state_pcall`, or in a foreign function
  *
  * @param state Wi state instance
  * @param arg_count Argument count

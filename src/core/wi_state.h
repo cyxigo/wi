@@ -54,6 +54,8 @@ struct wi_call_frame {
 struct wi_recovery {
     struct wi_recovery* next;
     jmp_buf             jmp;
+    bool                root;     /* is this wi_state_pcall's recovery? */
+    struct wi_compiler* compiler; /* compile in progress when this was pushed */
     int                 frame_count;
     uint8_t             c_call_depth;
     wi_value*           stack_top;
@@ -81,16 +83,13 @@ struct wi_state {
     int          script_argc;
     const char** script_argv;
 
-    jmp_buf               jmp;
     volatile sig_atomic_t interrupted;
 
     /*
         recoveries are implemented as a linked list because using a dynamic
         array with realloc on a structure with jmp_buf is undefined behavior™
     */
-    struct wi_recovery* recoveries;
-    uint8_t             recovery_count;
-
+    struct wi_recovery*   recoveries;
     struct wi_call_frame* frames;
     int                   frame_capacity;
     int                   frame_count;
@@ -200,6 +199,8 @@ void
 wi_state_pop_recovery(struct wi_state* state);
 
 WI_NORETURN void
+wi_state_jmp_to_root(struct wi_state* state, enum wi_run_result result);
+WI_NORETURN void
 wi_state_error(struct wi_state* state, const char* format, ...);
 
 /*
@@ -217,6 +218,8 @@ wi_state_real_to_int(struct wi_state* state, wi_real real) {
 
 WI_NORETURN void
 wi_state_oom(struct wi_state* state, const char* what);
+void
+wi_state_report_oom(struct wi_state* state, const char* what);
 
 WI_NORETURN void
 wi_state_abort(struct wi_state* state);

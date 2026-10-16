@@ -73,21 +73,16 @@ wi_new_compiler(struct wi_compiler* outer, struct wi_state* state, struct wi_par
         return NULL;
     }
 
-    compiler->outer        = outer;
-    compiler->state        = state;
-    compiler->gc           = state->gc;
-    compiler->gc->compiler = compiler;
-    compiler->parser       = parser;
-    compiler->var_name     = WI_BLANK_TOKEN;
+    compiler->outer    = outer;
+    compiler->state    = state;
+    compiler->gc       = state->gc;
+    compiler->parser   = parser;
+    compiler->var_name = WI_BLANK_TOKEN;
 
-    compiler->module             = module;
-    compiler->prototype          = NULL;
-    compiler->constants          = NULL;
-    compiler->prototype          = wi_new_prototype(compiler->gc, compiler->parser->lexer->file_path);
-    compiler->prototype->is_main = compiler->outer == NULL;
-    compiler->code               = &compiler->prototype->code;
-    compiler->slot_count         = 0;
-    compiler->constants          = wi_new_map(compiler->gc);
+    compiler->module     = module;
+    compiler->prototype  = NULL;
+    compiler->constants  = NULL;
+    compiler->slot_count = 0;
 
     compiler->locals           = NULL;
     compiler->local_count      = 0;
@@ -100,6 +95,13 @@ wi_new_compiler(struct wi_compiler* outer, struct wi_state* state, struct wi_par
     compiler->switch_ = NULL;
 
     compiler->last_call = -1;
+
+    /* everything is initialized by now, so an allocation failure below can safely delete this compiler */
+    compiler->gc->compiler       = compiler;
+    compiler->prototype          = wi_new_prototype(compiler->gc, compiler->parser->lexer->file_path);
+    compiler->prototype->is_main = compiler->outer == NULL;
+    compiler->code               = &compiler->prototype->code;
+    compiler->constants          = wi_new_map(compiler->gc);
 
     _compiler_add_local(compiler, WI_BLANK_TOKEN, WI_DEFAULT_VARDATA, true);
     return compiler;
@@ -126,6 +128,24 @@ wi_delete_compiler(struct wi_compiler* compiler) {
     free(compiler->locals);
     free(compiler->upvalues);
     free(compiler);
+}
+
+/*
+    we walk from the innermost compiler to the outermost, because not all compilers are always freed
+    _compiler_function_expr is another place where we allocate a compiler, and it can leak if we do not
+    reach the end of _compiler_function_expr where we delete it
+*/
+void
+wi_delete_compilers(struct wi_gc* gc) {
+    struct wi_compiler* curr = gc->compiler;
+
+    while (curr) {
+        struct wi_compiler* outer = curr->outer;
+        wi_delete_compiler(curr);
+        curr = outer;
+    }
+
+    gc->compiler = NULL;
 }
 
 static const int _opcode_effects[] = {
@@ -1977,9 +1997,10 @@ wi_compile(struct wi_state* state, const char* file_path, const char* src, struc
         wi_state_oom(state, "failed to allocate the parser (wi_compile)");
     }
 
-    int roots = state->gc->temp_root_count;
+    int roots      = state->gc->temp_root_count;
+    int jmp_result = setjmp(parser->error_jmp);
 
-    if (setjmp(parser->error_jmp) == WI_RUN_OK) {
+    if (jmp_result == WI_RUN_OK) {
         struct wi_compiler* compiler = wi_new_compiler(NULL, state, parser, module);
 
         if (!compiler) {
@@ -2001,21 +2022,13 @@ wi_compile(struct wi_state* state, const char* file_path, const char* src, struc
         return prototype;
     }
 
-    /*
-        we walk from the innermost compiler to the outermost, because not all compilers are always freed
-        _compiler_function_expr is another place where we allocate a compiler, and it can leak if we do not
-        reach the end of _compiler_function_expr where we delete it
-    */
-    struct wi_compiler* curr = state->gc->compiler;
+    wi_delete_compilers(state->gc);
+    wi_delete_parser(parser);
+    state->gc->temp_root_count = roots;
 
-    while (curr) {
-        struct wi_compiler* next = curr->outer;
-        wi_delete_compiler(curr);
-        curr = next;
+    if (jmp_result == WI_RUN_OOM) {
+        wi_state_jmp_to_root(state, WI_RUN_OOM);
     }
 
-    wi_delete_parser(parser);
-    state->gc->compiler        = NULL;
-    state->gc->temp_root_count = roots;
     return NULL;
 }

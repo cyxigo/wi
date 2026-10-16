@@ -131,6 +131,9 @@ wi_new_compiler(struct wi_compiler* outer, struct wi_state* state, struct wi_par
                 struct wi_module* module);
 void
 wi_delete_compiler(struct wi_compiler* compiler);
+void
+wi_delete_compilers(struct wi_gc* gc);
+
 struct wi_prototype*
 wi_compile(struct wi_state* state, const char* file_path, const char* src, struct wi_module* module);
 

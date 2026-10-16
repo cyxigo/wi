@@ -58,11 +58,6 @@ wi_new_gc(wi_conf* conf);
 void
 wi_delete_gc(struct wi_gc* gc);
 
-WI_INLINE void
-wi_gc_reset_roots(struct wi_gc* gc) {
-    gc->temp_root_count = 0;
-}
-
 WI_NORETURN void
 wi_state_oom(struct wi_state* state, const char* what);
 

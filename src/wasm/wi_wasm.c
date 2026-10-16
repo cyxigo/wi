@@ -48,13 +48,31 @@ wi_wasm_init(void) {
     }
 
     _g_state = wi_new_state(&_g_conf);
+
+    if (!_g_state) {
+        return;
+    }
+
     wi_state_set_callbacks(_g_state, _print_out, _print_err, NULL, NULL, NULL);
 
-    wi_def_stm(_g_state);
-    wi_def_std(_g_state);
+    if (wi_def_stm(_g_state) != WI_RUN_OK || wi_def_std(_g_state) != WI_RUN_OK) {
+        wi_delete_state(_g_state);
+        _g_state = NULL;
+    }
 }
 
 EMSCRIPTEN_KEEPALIVE int
 wi_wasm_run(const char* src) {
-    return (int)wi_state_run(_g_state, "<web>", src);
+    if (!_g_state) {
+        return WI_RUN_OOM;
+    }
+
+    int result = (int)wi_state_run(_g_state, "<web>", src);
+
+    if (result == WI_RUN_OOM) {
+        wi_delete_state(_g_state);
+        _g_state = NULL;
+    }
+
+    return result;
 }

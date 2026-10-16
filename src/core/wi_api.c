@@ -39,21 +39,35 @@ wi_check_version(struct wi_state* state, int major, int minor) {
                             minor, WI_VERSION_MAJOR, WI_VERSION_MINOR);
 }
 
-bool
-wi_load(struct wi_state* state, const char* file_path, const char* src) {
-    state->was_eof_error     = false;
-    struct wi_module* module = wi_new_module(state->gc, file_path);
+struct _load_args {
+    const char*        file_path;
+    const char*        src;
+    enum wi_run_result result;
+};
+
+static void
+_load(struct wi_state* state, void* data) {
+    struct _load_args* args   = data;
+    struct wi_module*  module = wi_new_module(state->gc, args->file_path);
     WI_GC_PUSH_ROOT(state->gc, module);
 
-    struct wi_closure* closure = wi_state_compile(state, file_path, src, module);
+    struct wi_closure* closure = wi_state_compile(state, args->file_path, args->src, module);
     wi_gc_pop_root(state->gc);
 
     if (!closure) {
-        return false;
+        args->result = WI_RUN_ERROR;
+        return;
     }
 
     wi_state_ppush(state, WI_MAKE_BOX_VALUE(closure));
-    return true;
+}
+
+enum wi_run_result
+wi_load(struct wi_state* state, const char* file_path, const char* src) {
+    struct _load_args args    = {file_path, src, WI_RUN_OK};
+    state->was_eof_error      = false;
+    enum wi_run_result result = wi_state_pcall(state, _load, &args);
+    return result == WI_RUN_OK ? args.result : result;
 }
 
 wi_ref
@@ -81,19 +95,31 @@ wi_ref_delete(struct wi_state* state, wi_ref ref) {
     wi_table_delete(&state->refs, wi_make_real_value(ref));
 }
 
-void
-wi_def_stm(struct wi_state* state) {
+static void
+_def_stm(struct wi_state* state, void* data) {
+    WI_UNUSED(data);
     wi_state_def_stm_string(state);
     wi_state_def_stm_array(state);
     wi_state_def_stm_map(state);
 }
 
-void
-wi_def_std(struct wi_state* state) {
+enum wi_run_result
+wi_def_stm(struct wi_state* state) {
+    return wi_state_pcall(state, _def_stm, NULL);
+}
+
+static void
+_def_std(struct wi_state* state, void* data) {
+    WI_UNUSED(data);
     wi_state_def_std_base(state);
     wi_state_def_std_os(state);
     wi_state_def_std_io(state);
     wi_state_def_std_math(state);
+}
+
+enum wi_run_result
+wi_def_std(struct wi_state* state) {
+    return wi_state_pcall(state, _def_std, NULL);
 }
 
 void

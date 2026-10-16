@@ -119,8 +119,8 @@ _repl(void) {
         buf     = NULL;
         buf_len = 0;
 
-        if (result == WI_RUN_ABORT) {
-            exit_code = wi_state_exit_code(_g_state);
+        if (result == WI_RUN_ABORT || result == WI_RUN_OOM) {
+            exit_code = result == WI_RUN_OOM ? EXIT_FAILURE : wi_state_exit_code(_g_state);
             break;
         }
     }
@@ -328,8 +328,11 @@ main(int argc, const char** argv) {
     }
 
     wi_state_set_args(_g_state, script_argc, script_argv);
-    wi_def_stm(_g_state);
-    wi_def_std(_g_state);
+
+    if (wi_def_stm(_g_state) != WI_RUN_OK || wi_def_std(_g_state) != WI_RUN_OK) {
+        _delete_g_state();
+        return EXIT_FAILURE;
+    }
 
     if (!file_path) {
         wi_conf_set(&conf, WI_CONF_REPL);
@@ -342,7 +345,7 @@ main(int argc, const char** argv) {
     free(src);
     _delete_g_state();
 
-    if (result == WI_RUN_ERROR) {
+    if (result == WI_RUN_ERROR || result == WI_RUN_OOM) {
         return EXIT_FAILURE;
     }
 
