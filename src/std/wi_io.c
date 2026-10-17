@@ -13,6 +13,14 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef _WIN32
+#define _FSEEK _fseeki64
+#define _FTELL _ftelli64
+#else
+#define _FSEEK fseeko
+#define _FTELL ftello
+#endif
+
 struct _file {
     FILE* ptr;
     char* path;
@@ -296,19 +304,11 @@ _io_seek(struct wi_state* state, uint8_t arg_count) {
         wi_state_error(state, "invalid seek origin: %lld", whence);
     }
 
-#ifdef _WIN32
-    if (_fseeki64(file->ptr, offset, (int)whence) != 0) {
+    if (_FSEEK(file->ptr, offset, (int)whence) != 0) {
         wi_state_error(state, "failed to seek file %s: %s", file->path, strerror(errno));
     }
 
-    wi_push_real(state, (wi_real)_ftelli64(file->ptr));
-#else
-    if (fseeko(file->ptr, offset, (int)whence) != 0) {
-        wi_state_error(state, "failed to seek file %s: %s", file->path, strerror(errno));
-    }
-
-    wi_push_real(state, (wi_real)ftello(file->ptr));
-#endif
+    wi_push_real(state, (wi_real)_FTELL(file->ptr));
 }
 
 static void
