@@ -3,7 +3,6 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <stdlib.h>
 #include <string.h>
 
 #include "../../include/wi.h"
@@ -43,13 +42,7 @@ _base_input(struct wi_state* state, uint8_t arg_count) {
         return;
     }
 
-    if (!wi_utf8_validate(line, (int)strlen(line))) {
-        free(line);
-        wi_state_error(state, "invalid utf-8 sequence in input");
-    }
-
-    struct wi_string* line_box = wi_make_calloc_string(state->gc, line);
-    wi_state_ppush(state, WI_MAKE_BOX_VALUE(line_box));
+    wi_state_ppush_utf8(state, line, "input");
 }
 
 static void

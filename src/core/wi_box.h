@@ -83,13 +83,14 @@ wi_copy_cstring(struct wi_gc* gc, const char* buf, int count);
 struct wi_string*
 wi_take_cstring(struct wi_gc* gc, char* buf, int count);
 struct wi_string*
-wi_take_calloc_string(struct wi_gc* gc, char* buf, int count);
+wi_take_calloc_string(struct wi_gc* gc, char* buf, int count); /* calloc here means "C allocated" */
 
 WI_INLINE struct wi_string*
 wi_make_string(struct wi_gc* gc, const char* string) {
     return wi_copy_cstring(gc, string, (int)strlen(string));
 }
 
+/* calloc here means "C allocated" */
 WI_INLINE struct wi_string*
 wi_make_calloc_string(struct wi_gc* gc, char* string) {
     return wi_take_calloc_string(gc, string, (int)strlen(string));

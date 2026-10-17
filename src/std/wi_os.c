@@ -101,14 +101,7 @@ _os_getenv(struct wi_state* state, uint8_t arg_count) {
         return;
     }
 
-    /* boxed first so the error below doesn't leak it, gc will free it */
-    struct wi_string* box = wi_make_calloc_string(state->gc, value);
-
-    if (!wi_utf8_validate(box->buf, box->count)) {
-        wi_state_error(state, "invalid utf-8 sequence in environment variable");
-    }
-
-    wi_state_ppush(state, WI_MAKE_BOX_VALUE(box));
+    wi_state_ppush_utf8(state, value, "environment variable");
 }
 
 static void
@@ -186,14 +179,7 @@ _os_cwd(struct wi_state* state, uint8_t arg_count) {
         wi_state_error(state, "failed to get current working directory");
     }
 
-    /* boxed first so the error below doesn't leak it, gc will free it */
-    struct wi_string* box = wi_make_calloc_string(state->gc, cwd);
-
-    if (!wi_utf8_validate(box->buf, box->count)) {
-        wi_state_error(state, "invalid utf-8 sequence in current working directory");
-    }
-
-    wi_state_ppush(state, WI_MAKE_BOX_VALUE(box));
+    wi_state_ppush_utf8(state, cwd, "current working directory");
 }
 
 static void
