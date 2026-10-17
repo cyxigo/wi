@@ -172,16 +172,16 @@ void
 wi_delete_state(struct wi_state* state);
 
 void
-wi_state_tune_gc(wi_state* state, size_t min_heap, size_t heap_grow_factor, size_t young_max);
+wi_state_tune_gc(struct wi_state* state, size_t min_heap, size_t heap_grow_factor, size_t young_max);
 size_t
 wi_state_memory_used(struct wi_state* state);
 void
 wi_state_collect_garbage(struct wi_state* state);
 
 bool
-wi_state_was_eof_error(wi_state* state);
+wi_state_was_eof_error(struct wi_state* state);
 int
-wi_state_exit_code(wi_state* state);
+wi_state_exit_code(struct wi_state* state);
 
 void
 wi_state_set_callbacks(struct wi_state* state, wi_print_fn out_fn, wi_print_fn error_fn,
@@ -206,7 +206,7 @@ void
 wi_state_pop_recovery(struct wi_state* state);
 
 WI_NORETURN void
-wi_state_jmp_to_catch_all(struct wi_state* state, enum wi_run_result result);
+wi_state_fatal_jmp(struct wi_state* state, enum wi_run_result result);
 WI_NORETURN void
 wi_state_error(struct wi_state* state, const char* format, ...);
 

@@ -253,7 +253,7 @@ wi_is_userdata(struct wi_state* state, const char* name) {
 }
 
 bool
-wi_is_module(wi_state* state) {
+wi_is_module(struct wi_state* state) {
     return wi_value_is_module(wi_state_top(state));
 }
 

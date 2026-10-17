@@ -196,7 +196,7 @@ wi_state_collect_garbage(struct wi_state* state) {
 }
 
 bool
-wi_state_was_eof_error(wi_state* state) {
+wi_state_was_eof_error(struct wi_state* state) {
     return state->was_eof_error;
 }
 
@@ -360,9 +360,12 @@ _state_jmp(struct wi_state* state, struct wi_recovery* recovery, enum wi_run_res
     longjmp(recovery->jmp, (int)result);
 }
 
-/* jump to the closest catch_all recovery, popping every other one above it */
+/*
+    jump to the closest catch_all recovery, popping every other one above it
+    so fatal here means "no local recovery can recover this"
+*/
 WI_NORETURN void
-wi_state_jmp_to_catch_all(struct wi_state* state, enum wi_run_result result) {
+wi_state_fatal_jmp(struct wi_state* state, enum wi_run_result result) {
     struct wi_recovery* target = state->recoveries;
 
     while (target && !target->catch_all) {
@@ -384,7 +387,7 @@ wi_state_jmp_to_catch_all(struct wi_state* state, enum wi_run_result result) {
     _state_jmp(state, target, result);
 }
 
-wi_run_result
+enum wi_run_result
 wi_state_pcall(struct wi_state* state, wi_pcall_fn fn, void* data) {
     struct wi_recovery* recovery = _state_new_recovery(state, true);
 
@@ -399,9 +402,9 @@ wi_state_pcall(struct wi_state* state, wi_pcall_fn fn, void* data) {
         fn(state, data);
     }
 
-    /* on failure wi_state_jmp_to_catch_all already popped everything below us */
+    /* on failure wi_state_fatal_jmp already popped everything below us */
     wi_state_pop_recovery(state);
-    return (wi_run_result)result;
+    return (enum wi_run_result)result;
 }
 
 WI_NORETURN void
@@ -442,7 +445,7 @@ wi_state_error(struct wi_state* state, const char* format, ...) {
         }
     }
 
-    wi_state_jmp_to_catch_all(state, WI_RUN_ERROR);
+    wi_state_fatal_jmp(state, WI_RUN_ERROR);
 }
 
 void
@@ -456,12 +459,12 @@ wi_state_report_oom(struct wi_state* state, const char* what) {
 WI_NORETURN void
 wi_state_oom(struct wi_state* state, const char* what) {
     wi_state_report_oom(state, what);
-    wi_state_jmp_to_catch_all(state, WI_RUN_OOM);
+    wi_state_fatal_jmp(state, WI_RUN_OOM);
 }
 
 WI_NORETURN void
 wi_state_abort(struct wi_state* state) {
-    wi_state_jmp_to_catch_all(state, WI_RUN_ABORT);
+    wi_state_fatal_jmp(state, WI_RUN_ABORT);
 }
 
 void
