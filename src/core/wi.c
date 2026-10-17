@@ -129,27 +129,12 @@ _repl(void) {
     return exit_code;
 }
 
-static void
-_error_va(const char* format, va_list args) {
-    fprintf(stderr, "%s: ", _g_exec);
-    vfprintf(stderr, format, args);
-    fprintf(stderr, "\n");
-}
-
-static void
-_read_error(const char* format, ...) {
-    va_list args;
-    va_start(args, format);
-    _error_va(format, args);
-    va_end(args);
-}
-
 static char*
 _read_file(const char* file_path) {
     char* buf = wi_read_file(file_path);
 
     if (!buf) {
-        _read_error("failed to read file %s: %s", file_path, strerror(errno));
+        fprintf(stderr, "%s: failed to read file %s: %s\n", _g_exec, file_path, strerror(errno));
         exit(EXIT_FAILURE);
     }
 
@@ -171,12 +156,14 @@ _help(void) {
 
 static WI_NORETURN void
 _flag_parse_error(const char* format, ...) {
+    fprintf(stderr, "%s: ", _g_exec);
+
     va_list args;
     va_start(args, format);
-    _error_va(format, args);
+    vfprintf(stderr, format, args);
     va_end(args);
 
-    fprintf(stderr, "try '%s --help' for more info\n", _g_exec);
+    fprintf(stderr, "\ntry '%s --help' for more info\n", _g_exec);
     exit(EXIT_FAILURE);
 }
 
