@@ -10,8 +10,8 @@
 /**
  * Platform-specific API export macros
  * WI_API: Used to mark all public API functions
- * WI_MODULE_EXPORT: Used to mark a foreign library's entry point (`wi_module_init`), which **must** return a Wi
- * module handle
+ * WI_MODULE_EXPORT: Used to mark a foreign library's entry point (`wi_module_init`), which **must** return the Wi
+ * module it created with `wi_push_module`, leaving it on the stack
  */
 #ifdef _WIN32
 #define WI_API __declspec(dllexport)
@@ -113,8 +113,10 @@ typedef enum wi_run_result {
     WI_RUN_OOM,   /* Ran out of memory, the state must only be deleted after this */
 } wi_run_result;
 
-/* Callback to print... something. Used by Wi for standard/error output printing */
-typedef void (*wi_print_fn)(struct wi_state* state, const char* text);
+/**
+ * Callback to print... something. Used by Wi for standard/error output printing
+ */
+typedef void (*wi_print_fn)(wi_state* state, const char* text);
 
 /**
  * Function called right after a successful compilation of a script.
@@ -122,15 +124,16 @@ typedef void (*wi_print_fn)(struct wi_state* state, const char* text);
 typedef void (*wi_on_compile_fn)(wi_state* state);
 
 /**
- * Function called in the `import` statement. Use this in a custom virtual filesystem (your app, for example).
+ * Function called at runtime to load the code of an `import`ed script (once per path). Use this in a custom
+ * virtual filesystem (your app, for example).
  * Must return Wi code as a NUL-terminated `malloc`ed string (Wi takes ownership and `free`s it) or `NULL` if the
  * file failed to load
  */
 typedef char* (*wi_import_load_fn)(wi_state* state, const char* path);
 
 /**
- * Function used to check whether a `import`ed file exists, called at compile time. If it returns `false`, `import`
- * falls back to treating the path as a foreign library.
+ * Function used to check whether an `import`ed file exists, called at compile time for each script path `import`
+ * tries. If it returns `false` for all of them, `import` falls back to treating the path as a foreign library.
  * Must return whether a file exists
  */
 typedef bool (*wi_import_exists_fn)(wi_state* state, const char* path);
@@ -300,7 +303,8 @@ WI_API void*
 wi_state_extra(wi_state* state);
 
 /**
- * Throw a runtime error in the state
+ * Throw a runtime error in the state, never returns.
+ * Must only be called inside `wi_state_run`, `wi_state_pcall`, or a foreign (C) function
  *
  * @param state Wi state instance
  * @param format Format string
@@ -310,9 +314,9 @@ WI_API void
 wi_state_error(wi_state* state, const char* format, ...);
 
 /**
- * Request the state to stop execution, returning `WI_RUN_ABORT` from `wi_state_run`.
- * Must only be called while a script is running (e.g., from a foreign (C) function).
- * Calling it outside `wi_state_run` is undefined behavior
+ * Request the state to stop execution, returning `WI_RUN_ABORT` from `wi_state_run` (or `wi_state_pcall`).
+ * Must only be called inside `wi_state_run`, `wi_state_pcall`, or a foreign (C) function.
+ * Calling it anywhere else is undefined behavior
  *
  * @param state Wi state instance
  */
@@ -450,19 +454,20 @@ wi_find(wi_state* state, const char* name);
  *
  * @param state Wi state instance
  * @param arg_count Argument count
- * @param drop Whether to leave the return value at the stack or not
+ * @param drop Whether to drop the return value instead of leaving it on the stack
  */
 WI_API void
 wi_call(wi_state* state, uint8_t arg_count, bool drop);
 
 /**
- * Call a Wi function followed by its `arg_count` arguments at the stack top; is protected.
- * Must run inside `wi_state_run`, `wi_state_pcall`, or in a foreign function
+ * Protected `wi_call`: a runtime error raised by the call is caught instead of propagating (OOM and abort are
+ * not). Must run inside `wi_state_run`, `wi_state_pcall`, or in a foreign (C) function. On failure the callee and
+ * its arguments are popped and nothing is pushed
  *
  * @param state Wi state instance
  * @param arg_count Argument count
- * @param drop Whether to leave the return value at the stack or not
- * @param error Optional pointer to store the error message (if any), can be `NULL`, must be freed manually
+ * @param drop Whether to drop the return value instead of leaving it on the stack
+ * @param error Optional pointer to store the error message (if any), can be `NULL`, must be `free`d manually
  * @return `true` if the call succeeded, `false` if it raised an error
  */
 WI_API bool
@@ -713,6 +718,8 @@ wi_pop_bool(wi_state* state);
  * @param count Optional pointer to store the string byte count, can be `NULL`
  * @param len Optional pointer to store the string length (codepoint count), can be `NULL`
  * @return The popped string
+ * @note The value is no longer on the stack, so the returned pointer stays valid only until the next call that can
+ * allocate
  */
 WI_API char*
 wi_pop_string(wi_state* state, int* count, int* len);
@@ -722,6 +729,8 @@ wi_pop_string(wi_state* state, int* count, int* len);
  *
  * @param state Wi state instance
  * @return The popped array
+ * @note The value is no longer on the stack, so the returned pointer stays valid only
+ * until the next call that can allocate
  */
 WI_API wi_array*
 wi_pop_array(wi_state* state);
@@ -731,6 +740,8 @@ wi_pop_array(wi_state* state);
  *
  * @param state Wi state instance
  * @return The popped map
+ * @note The value is no longer on the stack, so the returned pointer stays valid only
+ * until the next call that can allocate
  */
 WI_API wi_map*
 wi_pop_map(wi_state* state);
@@ -741,6 +752,8 @@ wi_pop_map(wi_state* state);
  * @param state Wi state instance
  * @param name Userdata name, used for type-checking
  * @return The popped userdata's data pointer
+ * @note The value is no longer on the stack, so the returned pointer stays valid only
+ * until the next call that can allocate
  */
 WI_API void*
 wi_pop_userdata(wi_state* state, const char* name);
@@ -750,6 +763,8 @@ wi_pop_userdata(wi_state* state, const char* name);
  *
  * @param state Wi state instance
  * @return The popped object
+ * @note The value is no longer on the stack, so the returned pointer stays valid only
+ * until the next call that can allocate
  */
 WI_API wi_object*
 wi_pop_object(wi_state* state);
@@ -759,6 +774,8 @@ wi_pop_object(wi_state* state);
  *
  * @param state Wi state instance
  * @return The popped module
+ * @note The value is no longer on the stack, so the returned pointer stays valid only
+ * until the next call that can allocate
  */
 WI_API wi_module*
 wi_pop_module(wi_state* state);
@@ -1014,7 +1031,7 @@ WI_API void
 wi_array_add(wi_state* state, wi_array* array);
 
 /**
- * Set the value at the stack top as an array item at index, popping it
+ * Set the value at the stack top as an array item at index, popping it (even if the index is out of range)
  *
  * @param state Wi state instance
  * @param array Target array
@@ -1045,7 +1062,7 @@ WI_API int
 wi_map_count(wi_map* map);
 
 /**
- * Set map key to a value, both need to be at the stack top pushed in order key -> value
+ * Set map key to a value, both need to be at the stack top pushed in order key -> value, popping both
  *
  * @param state Wi state instance
  * @param map Target map
@@ -1054,7 +1071,7 @@ WI_API void
 wi_map_set(wi_state* state, wi_map* map);
 
 /**
- * Look up map key which is at the stack top
+ * Look up map key which is at the stack top, popping it
  *
  * @param state Wi state instance
  * @param map Target map
