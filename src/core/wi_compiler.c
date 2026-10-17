@@ -1765,6 +1765,13 @@ _compiler_loop_jump_stmt(struct wi_compiler* compiler, uint8_t opcode, const cha
 }
 
 static void
+_compiler_case_value(struct wi_compiler* compiler) {
+    _compiler_emit_opcode(compiler, WI_OP_DUP);   /* [switch, switch] */
+    _compiler_expr(compiler);                     /* [switch, switch, case] */
+    _compiler_emit_opcode(compiler, WI_OP_EQUAL); /* [switch, is_equal] */
+}
+
+static void
 _compiler_switch_stmt(struct wi_compiler* compiler) {
     _compiler_paren_expr(compiler);
     wi_parser_expect(compiler->parser, WI_TOKEN_OPEN_BRACE);
@@ -1810,17 +1817,13 @@ _compiler_switch_stmt(struct wi_compiler* compiler) {
         enum wi_token_kind kind = compiler->parser->prev.kind;
 
         if (kind == WI_TOKEN_CASE) {
-            _compiler_emit_opcode(compiler, WI_OP_DUP);   /* [switch, switch] */
-            _compiler_expr(compiler);                     /* [switch, switch, case] */
-            _compiler_emit_opcode(compiler, WI_OP_EQUAL); /* [switch, is_equal] */
+            _compiler_case_value(compiler);
 
             /* parse multiple values, i.e. just emit OR for each is_equal */
             while (wi_parser_match(compiler->parser, WI_TOKEN_COMMA)) {
                 int or_jump = _compiler_emit_jump(compiler, WI_OP_OR);
-                _compiler_emit_opcode(compiler, WI_OP_DUP);   /* [switch, switch] */
-                _compiler_expr(compiler);                     /* [switch, switch, case] */
-                _compiler_emit_opcode(compiler, WI_OP_EQUAL); /* [switch, is_equal] */
-                _compiler_patch_jump(compiler, or_jump);      /* patch OR! */
+                _compiler_case_value(compiler);
+                _compiler_patch_jump(compiler, or_jump); /* patch OR */
                 /* stack is back to [switch, is_equal] */
             }
 
