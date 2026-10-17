@@ -34,15 +34,15 @@
 
 static struct wi_local*
 _compiler_add_local(struct wi_compiler* compiler, struct wi_token name, wi_vardata attrs, bool init) {
-    if (compiler->local_count >= WI_LOCAL_MAX) {
+    if (compiler->local_count > WI_LOCAL_MAX) {
         wi_parser_error_at(compiler->parser, name, "too many local variables (limit is %i)", WI_LOCAL_MAX);
     }
 
     if (WI_UNLIKELY(compiler->local_count + 1 > compiler->local_capacity)) {
         int capacity = wi_grow_capacity(compiler->local_capacity);
 
-        if (capacity > WI_LOCAL_MAX) {
-            capacity = WI_LOCAL_MAX;
+        if (capacity > WI_LOCAL_MAX + 1) {
+            capacity = WI_LOCAL_MAX + 1;
         }
 
         compiler->locals = (struct wi_local*)realloc(compiler->locals, sizeof(struct wi_local) * (size_t)capacity);
