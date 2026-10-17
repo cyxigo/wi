@@ -1998,6 +1998,7 @@ wi_compile(struct wi_state* state, const char* file_path, const char* src, struc
     }
 
     int roots      = state->gc->temp_root_count;
+    int globals    = module->globals.count;
     int jmp_result = setjmp(parser->error_jmp);
 
     if (jmp_result == WI_RUN_OK) {
@@ -2025,6 +2026,17 @@ wi_compile(struct wi_state* state, const char* file_path, const char* src, struc
     wi_delete_compilers(state->gc);
     wi_delete_parser(parser);
     state->gc->temp_root_count = roots;
+
+    for (int i = 0; i < module->vars.capacity; i++) {
+        struct wi_entry* entry = &module->vars.entries[i];
+
+        if (!wi_value_is_empty(entry->key) && wi_vardata_index(wi_value_as_vardata(entry->value)) >= globals) {
+            wi_table_delete(&module->exports, entry->key);
+            wi_table_delete(&module->vars, entry->key);
+        }
+    }
+
+    module->globals.count = globals;
 
     if (jmp_result == WI_RUN_OOM) {
         wi_state_fatal_jmp(state, WI_RUN_OOM);
