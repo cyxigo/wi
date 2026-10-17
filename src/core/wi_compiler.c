@@ -2027,7 +2027,7 @@ wi_compile(struct wi_state* state, const char* file_path, const char* src, struc
     state->gc->temp_root_count = roots;
 
     if (jmp_result == WI_RUN_OOM) {
-        wi_state_jmp_to_root(state, WI_RUN_OOM);
+        wi_state_jmp_to_catch_all(state, WI_RUN_OOM);
     }
 
     return NULL;

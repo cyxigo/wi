@@ -1,6 +1,5 @@
 #include "wi_base.h"
 
-#include <setjmp.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -109,46 +108,31 @@ _base_assert(struct wi_state* state, uint8_t arg_count) {
 
 static void
 _base_try(struct wi_state* state, uint8_t arg_count) {
-    struct wi_object*   result      = wi_push_object(state);
-    uint8_t             f_arg_count = (uint8_t)(arg_count - 1);
-    struct wi_recovery* recovery    = wi_state_push_recovery(state);
+    struct wi_object* result = wi_push_object(state);
+    char*             error;
 
-    if (setjmp(recovery->jmp) == WI_RUN_OK) {
-        wi_arg_function(state, 1, f_arg_count);
-
-        for (uint8_t i = 0; i < f_arg_count; i++) {
-            wi_push_arg(state, i + 2);
-        }
-
-        wi_call(state, f_arg_count, false);
-        wi_object_set(state, result, "value");
-
-        wi_push_bool(state, true);
-        wi_object_set(state, result, "ok");
-
-        wi_push_null(state);
-        wi_object_set(state, result, "error");
-        wi_state_pop_recovery(state);
-        return;
+    for (uint8_t i = 1; i <= arg_count; i++) {
+        wi_push_arg(state, i);
     }
 
-    struct wi_string* error = recovery->error;
-    /*
-        if we are here, it means we got an error
-        POTENTIALLY a stack overflow, so we need to pop the recovery first
-        because if we don't do that immediately, any push will cause a stack overflow again, going back here
-        over and over
-    */
-    wi_state_pop_recovery(state);
+    bool ok = wi_pcall(state, (uint8_t)(arg_count - 1), false, &error);
 
-    wi_state_ppush(state, WI_MAKE_BOX_VALUE(error));
-    wi_object_set(state, result, "error");
+    if (!ok) {
+        wi_push_null(state);
+    }
 
-    wi_push_null(state);
     wi_object_set(state, result, "value");
-
-    wi_push_bool(state, false);
+    wi_push_bool(state, ok);
     wi_object_set(state, result, "ok");
+
+    if (ok) {
+        wi_push_null(state);
+    } else {
+        struct wi_string* box = wi_take_calloc_string(state->gc, error, (int)strlen(error));
+        wi_state_ppush(state, WI_MAKE_BOX_VALUE(box));
+    }
+
+    wi_object_set(state, result, "error");
 }
 
 static void

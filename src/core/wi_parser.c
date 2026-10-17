@@ -140,7 +140,7 @@ wi_parser_error_at(struct wi_parser* parser, struct wi_token token, const char* 
     va_start(args, format);
     _parser_error_va(parser, token, format, args);
     va_end(args);
-    longjmp(parser->error_jmp, 1);
+    longjmp(parser->error_jmp, WI_RUN_ERROR);
 }
 
 WI_NORETURN void
@@ -149,7 +149,7 @@ wi_parser_error_at_prev(struct wi_parser* parser, const char* format, ...) {
     va_start(args, format);
     _parser_error_va(parser, parser->prev, format, args);
     va_end(args);
-    longjmp(parser->error_jmp, 1);
+    longjmp(parser->error_jmp, WI_RUN_ERROR);
 }
 
 WI_NORETURN void
@@ -158,7 +158,7 @@ wi_parser_error_at_curr(struct wi_parser* parser, const char* format, ...) {
     va_start(args, format);
     _parser_error_va(parser, parser->curr, format, args);
     va_end(args);
-    longjmp(parser->error_jmp, 1);
+    longjmp(parser->error_jmp, WI_RUN_ERROR);
 }
 
 WI_NORETURN void

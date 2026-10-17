@@ -12,7 +12,7 @@
 struct wi_parser {
     struct wi_lexer* lexer;
     struct wi_gc*    gc;
-    jmp_buf          error_jmp;
+    jmp_buf          error_jmp; /* wi_parser_error_X and wi_parser_oom jump here, wi_compile catches it */
 
     struct wi_token prev;
     struct wi_token curr;

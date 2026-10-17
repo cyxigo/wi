@@ -51,17 +51,24 @@ struct wi_call_frame {
     wi_value*          slots;
 };
 
+/*
+    a recovery is a place the state jumps back to after something went wrong
+    catch_all recoveries (wi_state_pcall) catch everything: runtime errors, OOM and abort
+    the host's wi_run_result comes from here
+    the other ones (wi_pcall, std::try) catch runtime errors only
+    OOM and abort jump over them to the closest catch_all recovery
+*/
 struct wi_recovery {
     struct wi_recovery* next;
     jmp_buf             jmp;
-    bool                root;     /* is this wi_state_pcall's recovery? */
-    struct wi_compiler* compiler; /* compile in progress when this was pushed */
+    bool                catch_all; /* is this wi_state_pcall's recovery? */
+    struct wi_compiler* compiler;  /* compile in progress when this was pushed */
     int                 frame_count;
-    uint8_t             c_call_depth;
+    uint8_t             c_depth;
     wi_value*           stack_top;
     wi_value*           ffi_stack;
     int                 temp_root_count;
-    struct wi_string*   error;
+    struct wi_string*   error; /* runtime error this recovery caught, never set on catch_all ones */
 };
 
 struct wi_state {
@@ -199,7 +206,7 @@ void
 wi_state_pop_recovery(struct wi_state* state);
 
 WI_NORETURN void
-wi_state_jmp_to_root(struct wi_state* state, enum wi_run_result result);
+wi_state_jmp_to_catch_all(struct wi_state* state, enum wi_run_result result);
 WI_NORETURN void
 wi_state_error(struct wi_state* state, const char* format, ...);
 

@@ -174,25 +174,27 @@ wi_pcall(struct wi_state* state, uint8_t arg_count, bool drop, char** error) {
     struct wi_recovery* recovery = wi_state_push_recovery(state);
     /* the callee and its arguments belong to the call, so an error has to close their upvalues too */
     recovery->stack_top -= arg_count + 1;
-    bool failed;
+    bool ok = setjmp(recovery->jmp) == WI_RUN_OK;
 
-    if (setjmp(recovery->jmp) == WI_RUN_OK) {
+    if (ok) {
         wi_call(state, arg_count, drop);
-        failed = false;
-    } else {
-        failed = true;
+    }
+
+    /* strdup because after we pop the recovery, GC will free its error */
+    char* message = (ok || !error) ? NULL : wi_strdup(recovery->error->buf);
+    wi_state_pop_recovery(state);
+
+    if (!ok && !message) {
+        wi_state_oom(state, "failed to allocate an error message (wi_pcall)");
     }
 
     if (error) {
-        /*
-            strdup because after we pop the recovery, GC will free its error
-            in _base_try we don't need to do that because it's immediately passed to a new object
-        */
-        *error = failed ? wi_strdup(recovery->error->buf) : NULL;
+        *error = message;
+    } else {
+        free(message);
     }
 
-    wi_state_pop_recovery(state);
-    return !failed;
+    return ok;
 }
 
 const char*
