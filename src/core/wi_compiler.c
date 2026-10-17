@@ -1091,8 +1091,6 @@ _compiler_function_expr(struct wi_compiler* outer, bool can_assign) {
         wi_parser_oom(outer->parser, "failed to allocate the compiler (_compiler_function_expr)");
     }
 
-    _compiler_init_local(compiler);
-
     /* check if previous token is truly a | and not || (pipe pipe, empty function) */
     bool            has_params = compiler->parser->prev.kind == WI_TOKEN_PIPE;
     struct wi_token var_name   = outer->var_name;
