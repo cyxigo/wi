@@ -119,7 +119,7 @@ typedef enum wi_run_result {
 typedef void (*wi_print_fn)(wi_state* state, const char* text);
 
 /**
- * Function called right after a successful compilation of a script.
+ * Function called right after a successful compilation of a script
  */
 typedef void (*wi_on_compile_fn)(wi_state* state);
 
@@ -215,7 +215,7 @@ wi_delete_state(wi_state* state);
  *
  * @param state Wi state instance
  * @param min_heap Total heap size before the first major collection
- * @param heap_grow_factor Heap growth factor per major collection
+ * @param heap_grow_factor Heap growth factor per major collection (anything below `1` is treated as `1`)
  * @param young_max Young generation size before a minor collection
  */
 WI_API void
@@ -304,7 +304,8 @@ wi_state_extra(wi_state* state);
 
 /**
  * Throw a runtime error in the state, never returns.
- * Must only be called inside `wi_state_run`, `wi_state_pcall`, or a foreign (C) function
+ * Must only be called inside `wi_state_run`, `wi_state_pcall`, or a foreign (C) function, anywhere else it aborts
+ * the process
  *
  * @param state Wi state instance
  * @param format Format string
@@ -315,8 +316,8 @@ wi_state_error(wi_state* state, const char* format, ...);
 
 /**
  * Request the state to stop execution, returning `WI_RUN_ABORT` from `wi_state_run` (or `wi_state_pcall`).
- * Must only be called inside `wi_state_run`, `wi_state_pcall`, or a foreign (C) function.
- * Calling it anywhere else is undefined behavior
+ * Must only be called inside `wi_state_run`, `wi_state_pcall`, or a foreign (C) function, anywhere else it aborts
+ * the process
  *
  * @param state Wi state instance
  */
@@ -450,7 +451,7 @@ wi_find(wi_state* state, const char* name);
 
 /**
  * Call a Wi function followed by its `arg_count` arguments at the stack top.
- * Must run inside `wi_state_run`, `wi_state_pcall`, or in a foreign function
+ * Must run inside `wi_state_run`, `wi_state_pcall`, or in a foreign (C) function
  *
  * @param state Wi state instance
  * @param arg_count Argument count
@@ -461,8 +462,8 @@ wi_call(wi_state* state, uint8_t arg_count, bool drop);
 
 /**
  * Protected `wi_call`: a runtime error raised by the call is caught instead of propagating (OOM and abort are
- * not). Must run inside `wi_state_run`, `wi_state_pcall`, or in a foreign (C) function. On failure the callee and
- * its arguments are popped and nothing is pushed
+ * not). Must run inside `wi_state_run`, `wi_state_pcall`, or in a foreign (C) function.
+ * On failure the callee and its arguments are popped and nothing is pushed
  *
  * @param state Wi state instance
  * @param arg_count Argument count
@@ -668,7 +669,7 @@ WI_API wi_object*
 wi_push_object(wi_state* state);
 
 /**
- * Push a new, empty module onto the stack.
+ * Push a new, empty module onto the stack
  *
  * @param state Wi state instance
  * @param path Module path, shown in error messages (**must** outlive the module, Wi keeps the pointer)
