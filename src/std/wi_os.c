@@ -102,7 +102,7 @@ _os_getenv(struct wi_state* state, uint8_t arg_count) {
     }
 
     /* boxed first so the error below doesn't leak it, gc will free it */
-    struct wi_string* box = wi_take_calloc_string(state->gc, value, (int)strlen(value));
+    struct wi_string* box = wi_make_calloc_string(state->gc, value);
 
     if (!wi_utf8_validate(box->buf, box->count)) {
         wi_state_error(state, "invalid utf-8 sequence in environment variable");
@@ -187,7 +187,7 @@ _os_cwd(struct wi_state* state, uint8_t arg_count) {
     }
 
     /* boxed first so the error below doesn't leak it, gc will free it */
-    struct wi_string* box = wi_take_calloc_string(state->gc, cwd, (int)strlen(cwd));
+    struct wi_string* box = wi_make_calloc_string(state->gc, cwd);
 
     if (!wi_utf8_validate(box->buf, box->count)) {
         wi_state_error(state, "invalid utf-8 sequence in current working directory");
@@ -238,7 +238,7 @@ _os_listdir(struct wi_state* state, uint8_t arg_count) {
             wi_state_oom(state, "failed to allocate a directory entry (_os_listdir)");
         }
 
-        struct wi_string* box = wi_take_calloc_string(state->gc, name, (int)strlen(name));
+        struct wi_string* box = wi_make_calloc_string(state->gc, name);
         wi_state_ppush(state, WI_MAKE_BOX_VALUE(box));
         wi_array_add(state, result);
     } while (FindNextFileW(hfind, &data));

@@ -90,6 +90,11 @@ wi_make_string(struct wi_gc* gc, const char* string) {
     return wi_copy_cstring(gc, string, (int)strlen(string));
 }
 
+WI_INLINE struct wi_string*
+wi_make_calloc_string(struct wi_gc* gc, char* string) {
+    return wi_take_calloc_string(gc, string, (int)strlen(string));
+}
+
 struct wi_array {
     struct wi_box       box;
     struct wi_value_buf items;
