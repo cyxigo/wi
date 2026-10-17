@@ -22,3 +22,4 @@
 - Windows mangling non-ASCII paths, environment variables and command-line arguments
 - Out of memory being indistinguishable from a regular runtime error (now returns WI_RUN_OOM)
 - Failed compilations leaving their globals defined (e.g. a multi-line REPL input reporting "already defined")
+- Scripts starting with a UTF-8 BOM failing to compile

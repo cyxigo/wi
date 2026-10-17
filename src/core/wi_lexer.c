@@ -147,6 +147,13 @@ wi_token_kind_to_string(enum wi_token_kind kind) {
     return "unknown";
 }
 
+static bool
+_lexer_check(struct wi_lexer* lexer, char c);
+static bool
+_lexer_check_next(struct wi_lexer* lexer, char c);
+static void
+_lexer_skip_line(struct wi_lexer* lexer);
+
 void
 wi_lexer_init(struct wi_lexer* lexer, const char* file_path, const char* src) {
     lexer->file_path    = file_path;
@@ -157,6 +164,16 @@ wi_lexer_init(struct wi_lexer* lexer, const char* file_path, const char* src) {
     lexer->start_col    = 1;
     lexer->curr_col     = 1;
     lexer->interp_depth = 0;
+
+    /* skip UTF-8 BOM, some editors may put it for no reason */
+    if (strncmp(lexer->curr, "\xef\xbb\xbf", 3) == 0) {
+        lexer->curr += 3;
+    }
+
+    /* skip shebang */
+    if (_lexer_check(lexer, '#') && _lexer_check_next(lexer, '!')) {
+        _lexer_skip_line(lexer);
+    }
 }
 
 static struct wi_token
@@ -519,14 +536,6 @@ _lexer_skip_whitespace(struct wi_lexer* lexer) {
             case '\n':
                 _lexer_advance(lexer);
                 break;
-            case '#':
-                /* skip shebang (check if we EXACTLY at the start of the file) */
-                if (lexer->curr == lexer->src && _lexer_check_next(lexer, '!')) {
-                    _lexer_skip_line(lexer);
-                    break;
-                }
-
-                return WI_BLANK_TOKEN;
             case '%':
                 if (_lexer_check_next(lexer, '%')) {
                     _lexer_skip_line(lexer);
