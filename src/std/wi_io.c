@@ -45,22 +45,19 @@ _file_new(FILE* ptr, const char* path, const char* mode, bool updating, bool is_
     return file;
 }
 
-static void
+static bool
 _file_close(struct _file* file) {
     if (!file->ptr) {
-        return;
+        return true;
     }
 
     if (file->is_std) {
-        if (file->mode[0] != 'r') {
-            fflush(file->ptr);
-        }
-
-        return;
+        return file->mode[0] == 'r' || fflush(file->ptr) == 0;
     }
 
-    fclose(file->ptr);
-    file->ptr = NULL;
+    bool closed = fclose(file->ptr) == 0;
+    file->ptr   = NULL;
+    return closed;
 }
 
 static void
@@ -162,7 +159,11 @@ static void
 _io_close(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     struct _file* file = wi_arg_userdata(state, 1, "file");
-    _file_close(file);
+
+    if (!_file_close(file)) {
+        wi_state_error(state, "failed to close file %s: %s", file->path, strerror(errno));
+    }
+
     wi_push_null(state);
 }
 
@@ -171,7 +172,11 @@ _io_flush(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     struct _file* file = wi_arg_userdata(state, 1, "file");
     _file_check_open(state, file);
-    fflush(file->ptr);
+
+    if (fflush(file->ptr) != 0) {
+        wi_state_error(state, "failed to flush file %s: %s", file->path, strerror(errno));
+    }
+
     wi_push_null(state);
 }
 
