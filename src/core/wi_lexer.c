@@ -44,10 +44,10 @@ wi_token_kind_to_string(enum wi_token_kind kind) {
             return ".";
         case WI_TOKEN_DOT_DOT_DOT:
             return "...";
-        case WI_TOKEN_AT:
-            return "@";
         case WI_TOKEN_HASH:
             return "#";
+        case WI_TOKEN_AT:
+            return "@";
         case WI_TOKEN_ARROW:
             return "->";
         case WI_TOKEN_FAT_ARROW:
@@ -665,11 +665,9 @@ wi_lexer_next(struct wi_lexer* lexer) {
                 return _lexer_make_token(lexer, WI_TOKEN_EQUAL_EQUAL);
             } else if (_lexer_match(lexer, '>')) {
                 return _lexer_make_token(lexer, WI_TOKEN_FAT_ARROW);
-            } else {
-                return _lexer_make_token(lexer, WI_TOKEN_EQUAL);
             }
 
-            break;
+            return _lexer_make_token(lexer, WI_TOKEN_EQUAL);
         case '!':
             return _lexer_make_token(lexer, _lexer_match(lexer, '=') ? WI_TOKEN_BANG_EQUAL : WI_TOKEN_BANG);
         case ':':
@@ -677,31 +675,25 @@ wi_lexer_next(struct wi_lexer* lexer) {
                 return _lexer_make_token(lexer, WI_TOKEN_COLON_COLON);
             } else if (_lexer_match(lexer, '=')) {
                 return _lexer_make_token(lexer, WI_TOKEN_COLON_EQUAL);
-            } else {
-                return _lexer_make_token(lexer, WI_TOKEN_COLON);
             }
 
-            break;
+            return _lexer_make_token(lexer, WI_TOKEN_COLON);
         case '>':
             if (_lexer_match(lexer, '>')) {
                 return _lexer_make_token(lexer, WI_TOKEN_GREATER_GREATER);
             } else if (_lexer_match(lexer, '=')) {
                 return _lexer_make_token(lexer, WI_TOKEN_GREATER_EQUAL);
-            } else {
-                return _lexer_make_token(lexer, WI_TOKEN_GREATER);
             }
 
-            break;
+            return _lexer_make_token(lexer, WI_TOKEN_GREATER);
         case '<':
             if (_lexer_match(lexer, '<')) {
                 return _lexer_make_token(lexer, WI_TOKEN_LESS_LESS);
             } else if (_lexer_match(lexer, '=')) {
                 return _lexer_make_token(lexer, WI_TOKEN_LESS_EQUAL);
-            } else {
-                return _lexer_make_token(lexer, WI_TOKEN_LESS);
             }
 
-            break;
+            return _lexer_make_token(lexer, WI_TOKEN_LESS);
     }
 
     return wi_token_make_error("unexpected character", lexer->line, lexer->start_col);
