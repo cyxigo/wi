@@ -178,17 +178,15 @@ wi_pcall(struct wi_state* state, uint8_t arg_count, bool drop, char** error) {
     }
 
     /* strdup because after we pop the recovery, GC will free its error */
-    char* message = (ok || !error) ? NULL : wi_strdup(recovery->error->buf);
+    char* message = !ok && error ? wi_strdup(recovery->error->buf) : NULL;
     wi_state_pop_recovery(state);
 
-    if (!ok && !message) {
-        wi_state_oom(state, "failed to allocate an error message (wi_pcall)");
-    }
-
     if (error) {
+        if (!ok && !message) {
+            wi_state_oom(state, "failed to allocate an error message (wi_pcall)");
+        }
+
         *error = message;
-    } else {
-        free(message);
     }
 
     return ok;
