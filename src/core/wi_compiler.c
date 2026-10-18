@@ -1086,6 +1086,14 @@ _compiler_logic_expr(struct wi_compiler* compiler, bool can_assign) {
 }
 
 static void
+_compiler_param(struct wi_compiler* compiler) {
+    struct wi_token name    = wi_parser_expect(compiler->parser, WI_TOKEN_NAME);
+    wi_vardata      vardata = _compiler_parse_attrs(compiler);
+    _compiler_decl_var(compiler, name, vardata);
+    _compiler_def_var(compiler, name, vardata);
+}
+
+static void
 _compiler_function_expr(struct wi_compiler* outer, bool can_assign) {
     WI_UNUSED(can_assign);
     struct wi_compiler* compiler = wi_new_compiler(outer, outer->state, outer->parser, outer->module);
@@ -1132,15 +1140,9 @@ _compiler_function_expr(struct wi_compiler* outer, bool can_assign) {
 
     if (has_params && !wi_parser_check(compiler->parser, WI_TOKEN_PIPE)) {
         do {
-#define _PARAMETER()                                                             \
-    struct wi_token name    = wi_parser_expect(compiler->parser, WI_TOKEN_NAME); \
-    wi_vardata      vardata = _compiler_parse_attrs(compiler);                   \
-    _compiler_decl_var(compiler, name, vardata);                                 \
-    _compiler_def_var(compiler, name, vardata)
-
             if (wi_parser_match(compiler->parser, WI_TOKEN_DOT_DOT_DOT)) {
                 compiler->prototype->is_variadic = true;
-                _PARAMETER();
+                _compiler_param(compiler);
                 break;
             }
 
@@ -1149,9 +1151,7 @@ _compiler_function_expr(struct wi_compiler* outer, bool can_assign) {
             }
 
             compiler->prototype->arity++;
-            _PARAMETER();
-
-#undef _PARAMETER
+            _compiler_param(compiler);
         } while (wi_parser_match(compiler->parser, WI_TOKEN_COMMA));
     }
 
