@@ -29,10 +29,10 @@
                 <a href="https://wi-lang.pages.dev"><img src="res/wi.png" id="logo" alt="Wi logo" /></a>
                 <h1>Wi Programming Language</h1>
             </div>
-            <button onclick="location.href = 'https://wi-lang.pages.dev/try'">Try</button>
-            <button onclick="location.href = 'https://wi-lang.pages.dev/download'">Download</button>
-            <button onclick="location.href = 'https://github.com/cyxigo/wi/wiki'">Wiki</button>
-            <button onclick="location.href = 'https://github.com/cyxigo/wi/tree/main'">Source code</button>
+            <a class="button" href="https://wi-lang.pages.dev/try">Try</a>
+            <a class="button" href="https://wi-lang.pages.dev/download">Download</a>
+            <a class="button" href="https://github.com/cyxigo/wi/wiki">Wiki</a>
+            <a class="button" href="https://github.com/cyxigo/wi/tree/main">Source code</a>
             <hr />
 
             <h2>Try Wi</h2>
@@ -41,13 +41,13 @@
 
             <div id="examples">
                 examples:
-                <a class="button" onclick="exampleHello()">hello</a>
-                <a class="button" onclick="exampleLoop()">loop</a>
-                <a class="button" onclick="exampleObject()">object</a>
-                <a class="button" onclick="exampleChaining()">chaining</a>
-                <a class="button" onclick="exampleMerging()">merging</a>
+                <a class="link" onclick="exampleHello()">hello</a>
+                <a class="link" onclick="exampleLoop()">loop</a>
+                <a class="link" onclick="exampleObject()">object</a>
+                <a class="link" onclick="exampleChaining()">chaining</a>
+                <a class="link" onclick="exampleMerging()">merging</a>
             </div>
-            <button id="run" disabled>Loading...</button>
+            <a class="button" id="run">Loading...</a>
             <p>Output:</p>
 
             <pre id="output"></pre>

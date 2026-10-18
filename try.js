@@ -14,7 +14,6 @@ var Module = {
     },
     onRuntimeInitialized: () => {
         var run = document.getElementById("run");
-        run.disabled = false;
         run.textContent = "Run";
     },
 };

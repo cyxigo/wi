@@ -17,7 +17,7 @@ hr {
     border-top: 1px solid #dddddd;
 }
 
-button {
+a.button {
     color: white;
     background-color: #3b6ec9;
     border: none;
@@ -31,6 +31,7 @@ button {
     padding-bottom: 4.5px;
     padding-left: 9px;
     padding-right: 9px;
+    text-decoration: none;
 }
 
 pre {
@@ -116,7 +117,7 @@ footer a {
     word-break: break-word;
 }
 
-a.button {
+a.link {
     color: #3b6ec9;
     cursor: pointer;
     text-decoration: none;
@@ -128,11 +129,11 @@ a.button {
 }
 
 @media (hover: hover) {
-    button:hover {
+    a.button:hover {
         background-color: #2a5091;
     }
 
-    a.button:hover {
+    a.link:hover {
         color: #3e3e3e;
     }
 }
