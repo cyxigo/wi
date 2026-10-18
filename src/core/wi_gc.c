@@ -201,13 +201,16 @@ _gc_mark_box(struct wi_gc* gc, struct wi_box* box) {
     }
 
     if (gc->gray_count + 1 > gc->gray_capacity) {
-        gc->gray_capacity = wi_grow_capacity(gc->gray_capacity);
-        gc->gray_stack =
-            (struct wi_box**)realloc(gc->gray_stack, sizeof(struct wi_box*) * (size_t)gc->gray_capacity);
+        int             capacity = wi_grow_capacity(gc->gray_capacity);
+        struct wi_box** stack =
+            (struct wi_box**)realloc(gc->gray_stack, sizeof(struct wi_box*) * (size_t)capacity);
 
-        if (WI_UNLIKELY(!gc->gray_stack)) {
+        if (WI_UNLIKELY(!stack)) {
             wi_state_oom(gc->state, "failed to allocate gray stack (_gc_mark_box)");
         }
+
+        gc->gray_stack    = stack;
+        gc->gray_capacity = capacity;
     }
 
     gc->gray_stack[gc->gray_count++] = box;
@@ -368,13 +371,16 @@ wi_gc_remember(struct wi_gc* gc, struct wi_box* parent) {
     parent->is_remembered = true;
 
     if (WI_UNLIKELY(gc->remembered_count + 1 > gc->remembered_capacity)) {
-        gc->remembered_capacity = wi_grow_capacity(gc->remembered_capacity);
-        gc->remembered =
-            (struct wi_box**)realloc(gc->remembered, sizeof(struct wi_box*) * (size_t)gc->remembered_capacity);
+        int             capacity = wi_grow_capacity(gc->remembered_capacity);
+        struct wi_box** remembered =
+            (struct wi_box**)realloc(gc->remembered, sizeof(struct wi_box*) * (size_t)capacity);
 
-        if (WI_UNLIKELY(!gc->remembered)) {
+        if (WI_UNLIKELY(!remembered)) {
             wi_state_oom(gc->state, "failed to allocate remembered stack (wi_gc_remember)");
         }
+
+        gc->remembered          = remembered;
+        gc->remembered_capacity = capacity;
     }
 
     gc->remembered[gc->remembered_count++] = parent;

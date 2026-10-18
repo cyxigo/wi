@@ -64,13 +64,16 @@ wi_state_oom(struct wi_state* state, const char* what);
 WI_INLINE void
 wi_gc_push_root(struct wi_gc* gc, struct wi_box* root) {
     if (WI_UNLIKELY(gc->temp_root_count + 1 > gc->temp_root_capacity)) {
-        gc->temp_root_capacity = wi_grow_capacity(gc->temp_root_capacity);
-        gc->temp_roots =
-            (struct wi_box**)realloc(gc->temp_roots, sizeof(struct wi_box*) * (size_t)gc->temp_root_capacity);
+        int             capacity = wi_grow_capacity(gc->temp_root_capacity);
+        struct wi_box** roots =
+            (struct wi_box**)realloc(gc->temp_roots, sizeof(struct wi_box*) * (size_t)capacity);
 
-        if (!gc->temp_roots) {
+        if (!roots) {
             wi_state_oom(gc->state, "failed to allocate temp roots (wi_gc_push_root)");
         }
+
+        gc->temp_roots         = roots;
+        gc->temp_root_capacity = capacity;
     }
 
     gc->temp_roots[gc->temp_root_count++] = root;

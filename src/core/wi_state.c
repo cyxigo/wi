@@ -777,14 +777,15 @@ _state_call(struct wi_state* state, struct wi_closure* closure, uint8_t arg_coun
 
     /* grow the frames if needed */
     if (WI_UNLIKELY(state->frame_count == state->frame_capacity)) {
-        int capacity = wi_grow_capacity(state->frame_capacity);
-        state->frames =
+        int                   capacity = wi_grow_capacity(state->frame_capacity);
+        struct wi_call_frame* frames =
             (struct wi_call_frame*)realloc(state->frames, sizeof(struct wi_call_frame) * (size_t)capacity);
 
-        if (WI_UNLIKELY(!state->frames)) {
+        if (WI_UNLIKELY(!frames)) {
             wi_state_oom(state, "failed to allocate call frames (_state_call)");
         }
 
+        state->frames         = frames;
         state->frame_capacity = capacity;
     }
 
