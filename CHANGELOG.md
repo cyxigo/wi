@@ -25,4 +25,4 @@
 - Failed compilations leaving their globals defined (e.g. a multi-line REPL input reporting "already defined")
 - Scripts starting with a UTF-8 BOM failing to compile
 - Local variable limit being 254 instead of the 255 reported in the error
-- Out of memory leaking internal buffers (call frames, GC stacks, compiler locals and upvalues)
+- Out of memory leaking internal buffers (call frames, GC stacks, compiler locals and upvalues, function expression compilers)
