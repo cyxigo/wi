@@ -155,8 +155,8 @@ static void
 _lexer_skip_line(struct wi_lexer* lexer);
 
 void
-wi_lexer_init(struct wi_lexer* lexer, const char* file_path, const char* src) {
-    lexer->file_path    = file_path;
+wi_lexer_init(struct wi_lexer* lexer, const char* path, const char* src) {
+    lexer->path         = path;
     lexer->src          = src;
     lexer->start        = src;
     lexer->curr         = src;

@@ -157,7 +157,7 @@ const char*
 wi_token_kind_to_string(enum wi_token_kind kind);
 
 struct wi_lexer {
-    const char* file_path;
+    const char* path;
     const char* src;
     const char* start;
     const char* curr;
@@ -175,7 +175,7 @@ struct wi_lexer {
 };
 
 void
-wi_lexer_init(struct wi_lexer* lexer, const char* file_path, const char* src);
+wi_lexer_init(struct wi_lexer* lexer, const char* path, const char* src);
 struct wi_token
 wi_lexer_next(struct wi_lexer* lexer);
 

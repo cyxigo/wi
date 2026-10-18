@@ -98,7 +98,7 @@ wi_new_compiler(struct wi_compiler* outer, struct wi_state* state, struct wi_par
 
     /* everything is initialized by now, so an allocation failure below can safely delete this compiler */
     compiler->gc->compiler       = compiler;
-    compiler->prototype          = wi_new_prototype(compiler->gc, compiler->parser->lexer->file_path);
+    compiler->prototype          = wi_new_prototype(compiler->gc, compiler->module->path);
     compiler->prototype->is_main = compiler->outer == NULL;
     compiler->code               = &compiler->prototype->code;
     compiler->constants          = wi_new_map(compiler->gc);
@@ -1313,7 +1313,7 @@ _import_dir_len(const char* path) {
 /* path relative to the current script, or [name] if it's absolute */
 static char*
 _import_script_path(struct wi_compiler* compiler, struct wi_token name, const char* ext, bool is_lib) {
-    const char* base     = compiler->module->path;
+    const char* base     = compiler->module->path->buf;
     bool        absolute = _import_is_absolute(name.start);
     int         dir_len  = absolute ? 0 : _import_dir_len(base);
     /* dlopen searches the system directories unless the path has a slash in it */
@@ -1981,16 +1981,16 @@ _compiler_decl(struct wi_compiler* compiler) {
 }
 
 struct wi_prototype*
-wi_compile(struct wi_state* state, const char* file_path, const char* src, struct wi_module* module) {
+wi_compile(struct wi_state* state, const char* src, struct wi_module* module) {
     if (!wi_utf8_validate(src, (int)strlen(src))) {
         /* we can't use amazing wi_parser_X functions so... we do it the barbaric way... */
         state->error(state, "compile error: invalid utf-8 sequence in script\n");
-        wi_printf(state, state->error, "   --> %s\n", file_path);
+        wi_printf(state, state->error, "   --> %s\n", module->path->buf);
         return NULL;
     }
 
     struct wi_lexer lexer;
-    wi_lexer_init(&lexer, file_path, src);
+    wi_lexer_init(&lexer, module->path->buf, src);
 
     struct wi_parser* parser = wi_new_parser(&lexer, state->gc);
 

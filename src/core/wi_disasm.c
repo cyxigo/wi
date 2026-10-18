@@ -240,11 +240,11 @@ wi_prototype_disasm_instr(struct wi_state* state, struct wi_prototype* prototype
 void
 wi_prototype_disasm(struct wi_state* state, struct wi_prototype* prototype) {
     if (prototype->is_main) {
-        wi_printf(state, state->out, "--- main function (%s) ---\n", prototype->file_path);
+        wi_printf(state, state->out, "--- main function (%s) ---\n", prototype->path->buf);
     } else if (prototype->name) {
-        wi_printf(state, state->out, "--- %s() (%s) ---\n", prototype->name->buf, prototype->file_path);
+        wi_printf(state, state->out, "--- %s() (%s) ---\n", prototype->name->buf, prototype->path->buf);
     } else {
-        wi_printf(state, state->out, "--- anonymous function (%s) ---\n", prototype->file_path);
+        wi_printf(state, state->out, "--- anonymous function (%s) ---\n", prototype->path->buf);
     }
 
     wi_printf(state, state->out, "bytes: %i\n", prototype->code.bytes.count);

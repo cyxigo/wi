@@ -49,9 +49,9 @@ _sigint_handler(int sig) {
 }
 
 static wi_run_result
-_run(const char* file_path, const char* src) {
+_run(const char* path, const char* src) {
     _g_script_running    = 1;
-    wi_run_result result = wi_state_run(_g_state, file_path, src);
+    wi_run_result result = wi_state_run(_g_state, path, src);
     _g_script_running    = 0;
     return result;
 }
@@ -130,11 +130,11 @@ _repl(void) {
 }
 
 static char*
-_read_file(const char* file_path) {
-    char* buf = wi_read_file(file_path);
+_read_file(const char* path) {
+    char* buf = wi_read_file(path);
 
     if (!buf) {
-        fprintf(stderr, "%s: failed to read file %s: %s\n", _g_exec, file_path, strerror(errno));
+        fprintf(stderr, "%s: failed to read file %s: %s\n", _g_exec, path, strerror(errno));
         exit(EXIT_FAILURE);
     }
 
@@ -173,7 +173,7 @@ _is_flag(const char* arg, const char* short_name, const char* long_name) {
 }
 
 static void
-_parse_flags(int argc, const char** argv, wi_conf* conf, const char** file_path, int* script_argc,
+_parse_flags(int argc, const char** argv, wi_conf* conf, const char** path, int* script_argc,
              const char*** script_argv) {
     bool script_args = false;
 
@@ -192,11 +192,11 @@ _parse_flags(int argc, const char** argv, wi_conf* conf, const char** file_path,
         }
 
         if (arg[0] != '-') {
-            if (*file_path) {
+            if (*path) {
                 _flag_parse_error("multiple script files specified");
             }
 
-            *file_path = arg;
+            *path = arg;
             continue;
         }
 
@@ -302,10 +302,10 @@ main(int argc, const char** argv) {
 
     signal(SIGINT, _sigint_handler);
     wi_conf      conf        = WI_DEFAULT_CONF;
-    const char*  file_path   = NULL;
+    const char*  path        = NULL;
     int          script_argc = 0;
     const char** script_argv = NULL;
-    _parse_flags(argc, argv, &conf, &file_path, &script_argc, &script_argv);
+    _parse_flags(argc, argv, &conf, &path, &script_argc, &script_argv);
 
     _g_state = wi_new_state(&conf);
 
@@ -321,13 +321,13 @@ main(int argc, const char** argv) {
         return EXIT_FAILURE;
     }
 
-    if (!file_path) {
+    if (!path) {
         wi_conf_set(&conf, WI_CONF_REPL);
         return _repl();
     }
 
-    char*         src       = _read_file(file_path);
-    wi_run_result result    = _run(file_path, src);
+    char*         src       = _read_file(path);
+    wi_run_result result    = _run(path, src);
     int           exit_code = wi_state_exit_code(_g_state);
     free(src);
     _delete_g_state();

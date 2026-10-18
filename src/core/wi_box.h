@@ -134,7 +134,7 @@ wi_new_map(struct wi_gc* gc);
 
 struct wi_prototype {
     struct wi_box       box;
-    const char*         file_path;
+    struct wi_string*   path;
     struct wi_string*   name;
     struct wi_code      code;
     struct wi_value_buf constants;
@@ -156,7 +156,7 @@ wi_value_as_prototype(wi_value value) {
 }
 
 struct wi_prototype*
-wi_new_prototype(struct wi_gc* gc, const char* fpath);
+wi_new_prototype(struct wi_gc* gc, struct wi_string* path);
 int
 wi_prototype_instr_size(struct wi_prototype* prototype, int offset);
 
@@ -269,7 +269,7 @@ wi_new_userdata(struct wi_gc* gc, struct wi_string* name, void* data, wi_userdat
 struct wi_module {
     struct wi_box       box;
     bool                is_main;
-    const char*         path;
+    struct wi_string*   path;
     struct wi_table     vars;    /* global name -> wi_vardata (attrs + slot index into globals) */
     struct wi_table     exports; /* exported globals, used by :: */
     struct wi_value_buf globals; /* global slot values */

@@ -288,9 +288,9 @@ enum wi_run_result
 wi_state_call(struct wi_state* state, wi_value callable, uint8_t arg_count, bool drop_result);
 
 struct wi_closure*
-wi_state_compile(struct wi_state* state, const char* file_path, const char* src, struct wi_module* module);
+wi_state_compile(struct wi_state* state, const char* src, struct wi_module* module);
 enum wi_run_result
-wi_state_run(struct wi_state* state, const char* file_path, const char* src);
+wi_state_run(struct wi_state* state, const char* path, const char* src);
 
 uint64_t
 wi_state_rand_next(struct wi_state* state);

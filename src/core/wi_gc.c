@@ -319,6 +319,7 @@ _gc_blacken_box(struct wi_gc* gc, struct wi_box* box) {
         }
         case WI_BOX_PROTOTYPE: {
             struct wi_prototype* prototype = (struct wi_prototype*)box;
+            _GC_MARK_BOX(gc, prototype->path);
             _GC_MARK_BOX(gc, prototype->name);
             _gc_mark_value_buf(gc, &prototype->constants);
             break;
@@ -351,6 +352,7 @@ _gc_blacken_box(struct wi_gc* gc, struct wi_box* box) {
         }
         case WI_BOX_MODULE: {
             struct wi_module* module = (struct wi_module*)box;
+            _GC_MARK_BOX(gc, module->path);
             _gc_mark_table(gc, &module->vars);
             _gc_mark_table(gc, &module->exports);
             _gc_mark_value_buf(gc, &module->globals);

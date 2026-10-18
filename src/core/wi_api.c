@@ -40,7 +40,7 @@ wi_check_version(struct wi_state* state, int major, int minor) {
 }
 
 struct _load_args {
-    const char*        file_path;
+    const char*        path;
     const char*        src;
     enum wi_run_result result;
 };
@@ -48,10 +48,10 @@ struct _load_args {
 static void
 _load(struct wi_state* state, void* data) {
     struct _load_args* args   = data;
-    struct wi_module*  module = wi_new_module(state->gc, args->file_path);
+    struct wi_module*  module = wi_new_module(state->gc, args->path);
     WI_GC_PUSH_ROOT(state->gc, module);
 
-    struct wi_closure* closure = wi_state_compile(state, args->file_path, args->src, module);
+    struct wi_closure* closure = wi_state_compile(state, args->src, module);
     wi_gc_pop_root(state->gc);
 
     if (!closure) {
@@ -63,8 +63,8 @@ _load(struct wi_state* state, void* data) {
 }
 
 enum wi_run_result
-wi_load(struct wi_state* state, const char* file_path, const char* src) {
-    struct _load_args args    = {file_path, src, WI_RUN_OK};
+wi_load(struct wi_state* state, const char* path, const char* src) {
+    struct _load_args args    = {path, src, WI_RUN_OK};
     state->was_eof_error      = false;
     enum wi_run_result result = wi_state_pcall(state, _load, &args);
     return result == WI_RUN_OK ? args.result : result;

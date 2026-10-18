@@ -135,6 +135,6 @@ void
 wi_delete_compilers(struct wi_gc* gc);
 
 struct wi_prototype*
-wi_compile(struct wi_state* state, const char* file_path, const char* src, struct wi_module* module);
+wi_compile(struct wi_state* state, const char* src, struct wi_module* module);
 
 #endif

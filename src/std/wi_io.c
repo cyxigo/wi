@@ -135,7 +135,7 @@ static void
 _io_open(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
 
-    char* file_path = wi_arg_string(state, 1, NULL, NULL);
+    char* path = wi_arg_string(state, 1, NULL, NULL);
     int   mode_count;
     char* mode     = wi_arg_string(state, 2, &mode_count, NULL);
     bool  updating = mode_count == 2 && mode[1] == '+';
@@ -147,13 +147,13 @@ _io_open(struct wi_state* state, uint8_t arg_count) {
 
     char binary_mode[4];
     snprintf(binary_mode, sizeof(binary_mode), "%sb", mode);
-    FILE* ptr = wi_fopen(file_path, binary_mode);
+    FILE* ptr = wi_fopen(path, binary_mode);
 
     if (!ptr) {
-        wi_state_error(state, "failed to open file %s: %s", file_path, strerror(errno));
+        wi_state_error(state, "failed to open file %s: %s", path, strerror(errno));
     }
 
-    struct _file* file = _file_new(ptr, file_path, mode, updating, false);
+    struct _file* file = _file_new(ptr, path, mode, updating, false);
 
     if (!file) {
         fclose(ptr);

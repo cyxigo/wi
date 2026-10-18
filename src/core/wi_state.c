@@ -53,11 +53,11 @@ _state_on_compile(struct wi_state* state) {
 }
 
 static char*
-_state_read_file(struct wi_state* state, const char* file_path) {
-    char* buf = wi_read_file(file_path);
+_state_read_file(struct wi_state* state, const char* path) {
+    char* buf = wi_read_file(path);
 
     if (!buf) {
-        wi_state_error(state, "failed to read file %s: %s", file_path, strerror(errno));
+        wi_state_error(state, "failed to read file %s: %s", path, strerror(errno));
     }
 
     return buf;
@@ -434,7 +434,7 @@ wi_state_error(struct wi_state* state, const char* format, ...) {
         struct wi_call_frame* frame     = &state->frames[i];
         struct wi_prototype*  prototype = frame->closure->prototype;
         int                   line      = prototype->code.lines.data[frame->ip - prototype->code.bytes.data - 1];
-        wi_printf(state, state->error, "   --> %s:%i", prototype->file_path, line);
+        wi_printf(state, state->error, "   --> %s:%i", prototype->path->buf, line);
 
         if (prototype->is_main) {
             state->error(state, " in main function\n");
@@ -925,9 +925,7 @@ _state_import(struct wi_state* state, wi_value path_value) {
     */
     struct wi_string* src_box = wi_make_calloc_string(state->gc, src);
     WI_GC_PUSH_ROOT(state->gc, src_box);
-
-    struct wi_closure* closure = wi_state_compile(state, path, src_box->buf, module);
-
+    struct wi_closure* closure = wi_state_compile(state, src_box->buf, module);
     wi_gc_pop_root(state->gc); /* src_box */
     wi_gc_pop_root(state->gc); /* module */
 
@@ -1577,7 +1575,8 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
             struct wi_module* module = wi_value_as_module(target);
 
             if (WI_UNLIKELY(!wi_table_get(&module->exports, name, NULL))) {
-                _ERROR("variable %s was not exported from module %s", wi_value_as_cstring(name), module->path);
+                _ERROR("variable %s was not exported from module %s", wi_value_as_cstring(name),
+                       module->path->buf);
             }
 
             wi_value vardata_value;
@@ -1662,8 +1661,8 @@ wi_state_call(struct wi_state* state, wi_value callable, uint8_t arg_count, bool
 }
 
 struct wi_closure*
-wi_state_compile(struct wi_state* state, const char* file_path, const char* src, struct wi_module* module) {
-    struct wi_prototype* prototype = wi_compile(state, file_path, src, module);
+wi_state_compile(struct wi_state* state, const char* src, struct wi_module* module) {
+    struct wi_prototype* prototype = wi_compile(state, src, module);
 
     if (!prototype) {
         return NULL;
@@ -1679,15 +1678,18 @@ wi_state_compile(struct wi_state* state, const char* file_path, const char* src,
 }
 
 struct _run_args {
-    const char*        file_path;
+    const char*        path;
     const char*        src;
     enum wi_run_result result;
 };
 
 static void
 _state_run(struct wi_state* state, void* data) {
-    struct _run_args*  args    = data;
-    struct wi_closure* closure = wi_state_compile(state, args->file_path, args->src, state->main_module);
+    struct _run_args* args   = data;
+    struct wi_module* module = state->main_module;
+    module->path             = wi_make_string(state->gc, args->path);
+    WI_GC_WRITE_BARRIER(state->gc, module, WI_MAKE_BOX_VALUE(module->path));
+    struct wi_closure* closure = wi_state_compile(state, args->src, module);
 
     if (!closure) {
         args->result = WI_RUN_ERROR;
@@ -1699,12 +1701,11 @@ _state_run(struct wi_state* state, void* data) {
 }
 
 enum wi_run_result
-wi_state_run(struct wi_state* state, const char* file_path, const char* src) {
-    struct _run_args args = {file_path, src, WI_RUN_OK};
+wi_state_run(struct wi_state* state, const char* path, const char* src) {
+    struct _run_args args = {path, src, WI_RUN_OK};
 
-    state->was_eof_error     = false;
-    state->interrupted       = 0;
-    state->main_module->path = file_path;
+    state->was_eof_error = false;
+    state->interrupted   = 0;
 
     enum wi_run_result result = wi_state_pcall(state, _state_run, &args);
     return result == WI_RUN_OK ? args.result : result;

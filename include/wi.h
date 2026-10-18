@@ -354,12 +354,12 @@ wi_state_pcall(wi_state* state, wi_pcall_fn fn, void* data);
  * Must not be called from a foreign library's `wi_module_init` or from `import_exists_fn`
  *
  * @param state Wi state instance
- * @param file_path Path to the script, used for error messages (**must** outlive the state, Wi keeps the pointer)
+ * @param path Module path, shown in error messages
  * @param src Code string
  * @return Run result
  */
 WI_API wi_run_result
-wi_state_run(wi_state* state, const char* file_path, const char* src);
+wi_state_run(wi_state* state, const char* path, const char* src);
 
 /**
  * Compile Wi code into a function without running it, pushing it onto the stack.
@@ -369,13 +369,13 @@ wi_state_run(wi_state* state, const char* file_path, const char* src);
  * Must not be called from a foreign library's `wi_module_init` or from `import_exists_fn`
  *
  * @param state Wi state instance
- * @param file_path Path to the script, used for error messages (**must** outlive the state, Wi keeps the pointer)
+ * @param path Module path, shown in error messages
  * @param src Code string
  * @return `WI_RUN_OK` and pushes the function on success, `WI_RUN_ERROR` and pushes nothing on a compile error,
  * `WI_RUN_OOM` on OOM
  */
 WI_API wi_run_result
-wi_load(wi_state* state, const char* file_path, const char* src);
+wi_load(wi_state* state, const char* path, const char* src);
 
 /**
  * Create a persistent reference to the value at the stack top, popping it.
@@ -672,7 +672,7 @@ wi_push_object(wi_state* state);
  * Push a new, empty module onto the stack
  *
  * @param state Wi state instance
- * @param path Module path, shown in error messages (**must** outlive the module, Wi keeps the pointer)
+ * @param path Module path, shown in error messages
  * @return Pointer to the created module
  */
 WI_API wi_module*

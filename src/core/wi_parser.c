@@ -131,7 +131,7 @@ _parser_error_va(struct wi_parser* parser, struct wi_token token, const char* fo
     }
 
     _parser_print_token_line(parser, state->error, token.kind == WI_TOKEN_EOF ? parser->last : token);
-    wi_printf(state, state->error, "   --> %s:%i:%i\n", parser->lexer->file_path, token.line, token.col);
+    wi_printf(state, state->error, "   --> %s:%i:%i\n", parser->lexer->path, token.line, token.col);
 }
 
 WI_NORETURN void
@@ -189,7 +189,7 @@ wi_parser_warning_at(struct wi_parser* parser, struct wi_token token, const char
 
     state->error(state, "\n");
     _parser_print_token_line(parser, state->error, token);
-    wi_printf(state, state->error, "   --> %s:%i:%i\n", parser->lexer->file_path, token.line, token.col);
+    wi_printf(state, state->error, "   --> %s:%i:%i\n", parser->lexer->path, token.line, token.col);
 }
 
 void

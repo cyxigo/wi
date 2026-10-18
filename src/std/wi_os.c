@@ -111,7 +111,7 @@ _os_args(struct wi_state* state, uint8_t arg_count) {
     /* +1 since we also need to insert the main script path */
     wi_value_buf_reserve(&result->items, state->script_argc + 1);
 
-    const char* path = state->main_module->path;
+    const char* path = state->main_module->path->buf;
 
     if (!wi_utf8_validate(path, (int)strlen(path))) {
         wi_state_error(state, "invalid utf-8 sequence in script path");
@@ -151,8 +151,8 @@ _os_system(struct wi_state* state, uint8_t arg_count) {
 static void
 _os_remove(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
-    char* file_path = wi_arg_string(state, 1, NULL, NULL);
-    wi_push_bool(state, wi_remove(file_path) == 0);
+    char* path = wi_arg_string(state, 1, NULL, NULL);
+    wi_push_bool(state, wi_remove(path) == 0);
 }
 
 static void

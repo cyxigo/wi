@@ -153,7 +153,7 @@ wi_value_type(wi_value value) {
 static char*
 _function_to_string(struct wi_prototype* prototype) {
     if (prototype->is_main) {
-        return wi_sprintf("<main function %p (%s)>", (void*)prototype, prototype->file_path);
+        return wi_sprintf("<main function %p (%s)>", (void*)prototype, prototype->path->buf);
     }
 
     return wi_sprintf("<function %p>", (void*)prototype);
@@ -212,7 +212,7 @@ wi_value_to_string(wi_value value) {
 
     if (wi_value_is_module(value)) {
         struct wi_module* module = wi_value_as_module(value);
-        return wi_sprintf("<module %p (%s)>", (void*)module, module->path);
+        return wi_sprintf("<module %p (%s)>", (void*)module, module->path->buf);
     }
 
     return wi_strdup("<unknown>");

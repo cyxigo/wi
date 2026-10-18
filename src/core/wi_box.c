@@ -105,11 +105,11 @@ wi_new_map(struct wi_gc* gc) {
 }
 
 struct wi_prototype*
-wi_new_prototype(struct wi_gc* gc, const char* file_path) {
+wi_new_prototype(struct wi_gc* gc, struct wi_string* path) {
     struct wi_prototype* prototype = WI_NEW_BOX(gc, struct wi_prototype, WI_BOX_PROTOTYPE);
 
-    prototype->file_path = file_path;
-    prototype->name      = NULL;
+    prototype->path = path;
+    prototype->name = NULL;
     wi_code_init(&prototype->code, gc);
     wi_value_buf_init(&prototype->constants, gc);
     prototype->is_main        = false;
@@ -203,9 +203,13 @@ wi_new_userdata(struct wi_gc* gc, struct wi_string* name, void* data, wi_userdat
 
 struct wi_module*
 wi_new_module(struct wi_gc* gc, const char* path) {
-    struct wi_module* module = WI_NEW_BOX(gc, struct wi_module, WI_BOX_MODULE);
+    struct wi_string* path_box = wi_make_string(gc, path);
+    WI_GC_PUSH_ROOT(gc, path_box);
 
-    module->path    = path;
+    struct wi_module* module = WI_NEW_BOX(gc, struct wi_module, WI_BOX_MODULE);
+    wi_gc_pop_root(gc);
+
+    module->path    = path_box;
     module->is_main = false;
     wi_table_init(&module->vars, gc);
     wi_table_init(&module->exports, gc);
