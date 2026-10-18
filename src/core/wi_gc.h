@@ -28,8 +28,8 @@ struct wi_gc {
     */
     struct wi_box* young;
     struct wi_box* old;
-    size_t         young_bytes;     /* how many allocated bytes are young boxes */
-    size_t         bytes_allocated; /* how many bytes allocated... at all */
+    size_t         bytes_since_gc;  /* how many bytes were allocated since the last collection */
+    size_t         bytes_allocated; /* how many bytes are allocated right now, garbage included */
     size_t         next_major;      /* when to do major collection, checking both young and old */
     bool           minor;           /* is the collection currently in progress a minor one? */
 
