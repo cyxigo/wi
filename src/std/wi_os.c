@@ -206,10 +206,11 @@ _os_listdir(struct wi_state* state, uint8_t arg_count) {
 
     WIN32_FIND_DATAW data;
     HANDLE           hfind = FindFirstFileW(wpattern, &data);
+    DWORD            error = GetLastError();
     free(wpattern);
 
     if (hfind == INVALID_HANDLE_VALUE) {
-        wi_state_error(state, "failed to list directory %s (error %lu)", path, GetLastError());
+        wi_state_error(state, "failed to list directory %s (error %lu)", path, error);
     }
 
     do {
