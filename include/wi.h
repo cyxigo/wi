@@ -144,7 +144,9 @@ typedef bool (*wi_import_exists_fn)(wi_state* state, const char* path);
 typedef void (*wi_foreign_fn)(wi_state* state, uint8_t arg_count);
 
 /**
- * Userdata finalizer - function called when the userdata gets collected by GC
+ * Userdata finalizer - function called when the userdata gets collected by GC or the state is deleted (not called
+ * if the userdata pointer is `NULL`).
+ * Runs in the middle of a collection, so it **must not** use Wi's API
  */
 typedef void (*wi_userdata_finalizer_fn)(void* data);
 
@@ -260,7 +262,8 @@ WI_API int
 wi_state_exit_code(wi_state* state);
 
 /**
- * Set the state callbacks. Safe to pass `NULL` for each. For more info about callbacks, check their definitions
+ * Set the state callbacks. Pass `NULL` to keep the current callback. For more info about callbacks, check their
+ * definitions
  *
  * @param state Wi state instance
  * @param out_fn Standard output callback
@@ -328,7 +331,8 @@ WI_API void
 wi_state_abort(wi_state* state);
 
 /**
- * Request the state to stop execution as soon as possible, returning `WI_RUN_ABORT` from `wi_state_run`.
+ * Request the state to stop execution as soon as possible, returning `WI_RUN_ABORT` from `wi_state_run` (or
+ * `wi_state_pcall`).
  *
  * In contrast to `wi_state_abort`, this function is safe to call
  * asynchronously (e.g., from a signal handler or another thread)

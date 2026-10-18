@@ -45,7 +45,7 @@ enum {
      * VM limits
      */
     WI_CSTACK_MAX = 200,     /* Maximum depth of nested expressions and of `wi_state_call` */
-    WI_STACK_MIN  = 20,      /* Minimum number of values on the VM stack */
+    WI_STACK_MIN  = 20,      /* Initial number of values on the VM stack */
     WI_STACK_MAX  = 1000000, /* Maximum number of values on the VM stack */
 };
 
