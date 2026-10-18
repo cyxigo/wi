@@ -136,17 +136,14 @@ wi_def(struct wi_state* state, const char* name) {
 static bool
 _find_in_table(struct wi_state* state, struct wi_table* table, const char* name) {
     struct wi_string* name_box = wi_make_string(state->gc, name);
-    WI_GC_PUSH_ROOT(state->gc, name_box);
+    wi_value          value;
 
-    wi_value value;
-    bool     found = wi_table_get(table, WI_MAKE_BOX_VALUE(name_box), &value);
-    wi_gc_pop_root(state->gc);
-
-    if (found) {
-        wi_state_ppush(state, value);
+    if (!wi_table_get(table, WI_MAKE_BOX_VALUE(name_box), &value)) {
+        return false;
     }
 
-    return found;
+    wi_state_ppush(state, value);
+    return true;
 }
 
 bool
@@ -764,13 +761,9 @@ wi_module_set(struct wi_state* state, struct wi_module* module, const char* name
 bool
 wi_module_get(struct wi_state* state, struct wi_module* module, const char* name) {
     struct wi_string* name_box = wi_make_string(state->gc, name);
-    WI_GC_PUSH_ROOT(state->gc, name_box);
+    wi_value          vardata_value;
 
-    wi_value vardata_value;
-    bool     found = wi_table_get(&module->vars, WI_MAKE_BOX_VALUE(name_box), &vardata_value);
-    wi_gc_pop_root(state->gc);
-
-    if (!found) {
+    if (!wi_table_get(&module->vars, WI_MAKE_BOX_VALUE(name_box), &vardata_value)) {
         return false;
     }
 
