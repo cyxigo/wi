@@ -430,7 +430,7 @@ wi_def_stm(wi_state* state);
 
 /**
  * Define the value at the stack top as a foreign (global) variable, popping it.
- * If the variable already exists, it is overwritten
+ * If the variable already exists, it is overwritten (scripts compiled before that keep the old value)
  *
  * @param state Wi state instance
  * @param name Variable name
@@ -1115,8 +1115,8 @@ WI_API bool
 wi_object_get(wi_state* state, wi_object* object, const char* name);
 
 /**
- * Iterate over an object's fields. Pass *iter = 0 on the first call.
- * Each call that finds a live field entry pushes its name then value and advances *iter
+ * Iterate over an object's fields. Pass `*iter = 0` on the first call.
+ * Each call that finds a live field entry pushes its name then value and advances `*iter`
  *
  * @param state Wi state instance
  * @param object Target object
@@ -1148,8 +1148,8 @@ WI_API bool
 wi_module_get(wi_state* state, wi_module* module, const char* name);
 
 /**
- * Iterate over a module's variables, including ones that were not exported. Pass *iter = 0 on the first call.
- * Each call that finds a live variable entry pushes its name then value and advances *iter
+ * Iterate over a module's variables, including ones that were not exported. Pass `*iter = 0` on the first call.
+ * Each call that finds a live variable entry pushes its name then value and advances `*iter`
  *
  * @param state Wi state instance
  * @param module Target module
