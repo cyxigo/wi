@@ -23,20 +23,21 @@ wi_abi_version(void) {
 }
 
 void
-wi_check_version(struct wi_state* state, int major, int minor) {
+wi_check_version(struct wi_state* state, int major, int minor, const char* name) {
     if (WI_LIKELY(major == WI_VERSION_MAJOR && minor <= WI_VERSION_MINOR)) {
         return;
     }
 
+    const char*         who      = name ? name : "foreign code";
     struct wi_compiler* compiler = state->gc->compiler;
 
     if (!compiler) {
-        wi_state_error(state, "foreign code needs Wi version %i.%i but running Wi %i.%i", major, minor,
+        wi_state_error(state, "%s needs Wi version %i.%i but running Wi %i.%i", who, major, minor,
                        WI_VERSION_MAJOR, WI_VERSION_MINOR);
     }
 
-    wi_parser_error_at_prev(compiler->parser, "foreign code needs Wi version %i.%i but running Wi %i.%i", major,
-                            minor, WI_VERSION_MAJOR, WI_VERSION_MINOR);
+    wi_parser_error_at_prev(compiler->parser, "%s needs Wi version %i.%i but running Wi %i.%i", who, major, minor,
+                            WI_VERSION_MAJOR, WI_VERSION_MINOR);
 }
 
 struct _load_args {

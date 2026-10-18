@@ -8,7 +8,7 @@
 ## Changed
 
 - wi_push_module now takes an explicit module path (foreign libraries must be rebuilt)
-- wi_check_version now takes the minor version too, WI_CHECK_VERSION is updated (foreign libraries must be rebuilt)
+- wi_check_version now takes the minor version and a name too, WI_CHECK_VERSION is updated (foreign libraries must be rebuilt)
 - wi_load, wi_def_std, wi_def_stm now return wi_run_result (foreign libraries and embedders must be updated)
 - Paths passed to wi_state_run, wi_load and wi_push_module are now copied, they no longer need to outlive the state
 

@@ -180,16 +180,19 @@ wi_abi_version(void);
  * @param state Wi state instance
  * @param major `WI_VERSION_MAJOR` of the code making the call
  * @param minor `WI_VERSION_MINOR` of the code making the call
+ * @param name Name of the code making the call, shown in the error message (your library's name, for example), can
+ * be `NULL`
  */
 WI_API void
-wi_check_version(wi_state* state, int major, int minor);
+wi_check_version(wi_state* state, int major, int minor, const char* name);
 
 /**
  * Call `wi_check_version` with `WI_VERSION_MAJOR` and `WI_VERSION_MINOR` provided by the included `wi_conf.h`
  *
  * @param state Wi state instance
+ * @param name name of the code making the call, can be `NULL`
  */
-#define WI_CHECK_VERSION(state) wi_check_version(state, WI_VERSION_MAJOR, WI_VERSION_MINOR)
+#define WI_CHECK_VERSION(state, name) wi_check_version(state, WI_VERSION_MAJOR, WI_VERSION_MINOR, name)
 
 /**
  * Create a new Wi state instance
@@ -271,12 +274,12 @@ wi_state_set_callbacks(wi_state* state, wi_print_fn out_fn, wi_print_fn error_fn
                        wi_import_load_fn import_load_fn, wi_import_exists_fn import_exists_fn);
 
 /**
- * Set the command line arguments that will be available to Wi scripts via os::args
+ * Set the command line arguments that will be available to Wi scripts via `os::args`
  *
  * @param state Wi state instance
  * @param argc Number of arguments
- * @param argv Array of argument strings (**must** be valid UTF-8, invalid - undefined behavior, and **must**
- * outlive the state, Wi keeps the pointer)
+ * @param argv Array of argument strings (**must** outlive the state, Wi keeps the pointer, `os::args` raises an
+ * error for invalid UTF-8)
  */
 WI_API void
 wi_state_set_args(wi_state* state, int argc, const char** argv);
@@ -450,7 +453,8 @@ WI_API bool
 wi_find(wi_state* state, const char* name);
 
 /**
- * Call a Wi function followed by its `arg_count` arguments at the stack top.
+ * Call a Wi function followed by its `arg_count` arguments at the stack top, popping them all and pushing the
+ * result (unless `drop` is set).
  * Must run inside `wi_state_run`, `wi_state_pcall`, or in a foreign (C) function
  *
  * @param state Wi state instance
