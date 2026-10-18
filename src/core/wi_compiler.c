@@ -340,7 +340,7 @@ _compiler_make_constant(struct wi_compiler* compiler, wi_value value) {
         WI_GC_WRITE_BARRIER(compiler->gc, compiler->prototype, value);
 
         if (index >= WI_CONSTANT_MAX) {
-            wi_parser_error_limit(compiler->parser, "constants in a prototype", WI_CONSTANT_MAX);
+            wi_parser_error_limit(compiler->parser, "constants in a function", WI_CONSTANT_MAX);
         }
 
         wi_table_set(&compiler->constants->items, value, wi_make_real_value(index));
