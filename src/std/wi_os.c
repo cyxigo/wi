@@ -194,6 +194,13 @@ _os_listdir(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     char*            path   = wi_arg_string(state, 1, NULL, NULL);
     struct wi_array* result = wi_push_array(state);
+    /*
+        make sure one more slot fits
+        pushing entries must not overflow the stack while the directory handle is open
+        (you know, memory leak)
+    */
+    wi_push_null(state);
+    wi_drop(state);
 
 #ifdef _WIN32
     char*    pattern  = wi_sprintf("%s\\*", path);

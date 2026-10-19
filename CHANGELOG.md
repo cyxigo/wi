@@ -28,3 +28,4 @@
 - Scripts starting with a UTF-8 BOM failing to compile
 - Local variable limit being 254 instead of the 255 reported in the error
 - Out of memory leaking internal buffers (call frames, GC stacks, compiler locals and upvalues, function expression compilers)
+- Stack overflow leaking the directory handle of os::listdir
