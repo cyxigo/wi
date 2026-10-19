@@ -558,12 +558,22 @@ wi_arg_check_function(struct wi_state* state, uint8_t arg, uint8_t arity) {
         _arg_error(state, "function", arg);
     }
 
+    uint8_t fn_arity;
+    bool    is_variadic;
+
     if (wi_value_is_closure(value)) {
         struct wi_prototype* prototype = wi_value_as_closure(value)->prototype;
-        wi_state_check_arity(state, prototype->arity, arity, prototype->is_variadic);
+        fn_arity                       = prototype->arity;
+        is_variadic                    = prototype->is_variadic;
     } else {
         struct wi_foreign* foreign = wi_value_as_foreign(value);
-        wi_state_check_arity(state, foreign->arity, arity, foreign->is_variadic);
+        fn_arity                   = foreign->arity;
+        is_variadic                = foreign->is_variadic;
+    }
+
+    if (is_variadic ? arity < fn_arity : arity != fn_arity) {
+        wi_state_error(state, "bad argument %hhu - expected a function that takes %hhu arguments but got %hhu",
+                       arg, arity, fn_arity);
     }
 }
 
