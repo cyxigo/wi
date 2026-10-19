@@ -261,46 +261,38 @@ static enum wi_token_kind
 _lexer_name_kind(struct wi_lexer* lexer) {
     switch (lexer->start[0]) {
         case 'i':
-            if (lexer->curr - lexer->start > 1) {
-                switch (lexer->start[1]) {
-                    case 'f':
-                        return _lexer_check_kw(lexer, 2, 0, "", WI_TOKEN_IF);
-                    case 'm':
-                        return _lexer_check_kw(lexer, 2, 4, "port", WI_TOKEN_IMPORT);
-                }
+            switch (lexer->start[1]) {
+                case 'f':
+                    return _lexer_check_kw(lexer, 2, 0, "", WI_TOKEN_IF);
+                case 'm':
+                    return _lexer_check_kw(lexer, 2, 4, "port", WI_TOKEN_IMPORT);
             }
 
             break;
         case 'e':
-            if (lexer->curr - lexer->start > 1) {
-                switch (lexer->start[1]) {
-                    case 'l':
-                        return _lexer_check_kw(lexer, 2, 2, "se", WI_TOKEN_ELSE);
-                    case 'x':
-                        return _lexer_check_kw(lexer, 2, 4, "port", WI_TOKEN_EXPORT);
-                }
+            switch (lexer->start[1]) {
+                case 'l':
+                    return _lexer_check_kw(lexer, 2, 2, "se", WI_TOKEN_ELSE);
+                case 'x':
+                    return _lexer_check_kw(lexer, 2, 4, "port", WI_TOKEN_EXPORT);
             }
 
             break;
         case 'n':
-            if (lexer->curr - lexer->start > 1) {
-                switch (lexer->start[1]) {
-                    case 'u':
-                        return _lexer_check_kw(lexer, 2, 2, "ll", WI_TOKEN_NULL);
-                    case 'e':
-                        return _lexer_check_kw(lexer, 2, 1, "w", WI_TOKEN_NEW);
-                }
+            switch (lexer->start[1]) {
+                case 'u':
+                    return _lexer_check_kw(lexer, 2, 2, "ll", WI_TOKEN_NULL);
+                case 'e':
+                    return _lexer_check_kw(lexer, 2, 1, "w", WI_TOKEN_NEW);
             }
 
             break;
         case 'f':
-            if (lexer->curr - lexer->start > 1) {
-                switch (lexer->start[1]) {
-                    case 'a':
-                        return _lexer_check_kw(lexer, 2, 3, "lse", WI_TOKEN_FALSE);
-                    case 'o':
-                        return _lexer_check_kw(lexer, 2, 1, "r", WI_TOKEN_FOR);
-                }
+            switch (lexer->start[1]) {
+                case 'a':
+                    return _lexer_check_kw(lexer, 2, 3, "lse", WI_TOKEN_FALSE);
+                case 'o':
+                    return _lexer_check_kw(lexer, 2, 1, "r", WI_TOKEN_FOR);
             }
 
             break;
@@ -311,13 +303,11 @@ _lexer_name_kind(struct wi_lexer* lexer) {
         case 'b':
             return _lexer_check_kw(lexer, 1, 4, "reak", WI_TOKEN_BREAK);
         case 'c':
-            if (lexer->curr - lexer->start > 1) {
-                switch (lexer->start[1]) {
-                    case 'o':
-                        return _lexer_check_kw(lexer, 2, 6, "ntinue", WI_TOKEN_CONTINUE);
-                    case 'a':
-                        return _lexer_check_kw(lexer, 2, 2, "se", WI_TOKEN_CASE);
-                }
+            switch (lexer->start[1]) {
+                case 'o':
+                    return _lexer_check_kw(lexer, 2, 6, "ntinue", WI_TOKEN_CONTINUE);
+                case 'a':
+                    return _lexer_check_kw(lexer, 2, 2, "se", WI_TOKEN_CASE);
             }
 
             break;
