@@ -26,7 +26,11 @@
  * module it created with `wi_push_module`, leaving it on the stack
  */
 #ifdef _WIN32
+#ifdef WI_DLL
 #define WI_API __declspec(dllexport)
+#else
+#define WI_API
+#endif /* WI_DLL */
 #define WI_MODULE_EXPORT __declspec(dllexport)
 #elif defined(__clang__) || (defined(__GNUC__) && __GNUC__ > 4)
 #define WI_API __attribute__((visibility("default")))
@@ -34,7 +38,7 @@
 #else
 #define WI_API
 #define WI_MODULE_EXPORT
-#endif
+#endif /* _WIN32 */
 
 /**
  * Define a table of foreign (C) functions as globals in one call.

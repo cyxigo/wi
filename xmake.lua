@@ -142,6 +142,10 @@ target("wi_shared")
     set_flags()
     set_src()
 
+    if is_plat("windows") then
+        add_defines("WI_DLL")
+    end
+
     if is_gnu() then
         add_cflags("-fvisibility=hidden", { force = true })
     end
