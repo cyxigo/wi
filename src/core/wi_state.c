@@ -421,7 +421,7 @@ wi_state_error(struct wi_state* state, const char* format, ...) {
             wi_state_oom(state, "failed to allocate an error message (wi_state_error)");
         }
 
-        recovery->error = wi_make_calloc_string(state->gc, error);
+        recovery->error = wi_make_malloc_string(state->gc, error);
         _state_jmp(state, recovery, WI_RUN_ERROR);
     }
 
@@ -533,7 +533,7 @@ _state_concat(struct wi_state* state) {
         free(b_buf);
     }
 
-    struct wi_string* result = wi_take_calloc_string(state->gc, buf, len);
+    struct wi_string* result = wi_take_malloc_string(state->gc, buf, len);
 
     wi_state_drop(state);
     wi_state_drop(state);
@@ -636,7 +636,7 @@ _state_subscript_get(struct wi_state* state, wi_value target, wi_value index) {
                 why assign to "->buf" you may ask? because wi_take_cstring frees passed to it buffer if it's
                 interned
             */
-            key = wi_make_calloc_string(state->gc, key)->buf;
+            key = wi_make_malloc_string(state->gc, key)->buf;
         }
 
         wi_state_error(state, "map has no key %s", key);
@@ -924,7 +924,7 @@ _state_import(struct wi_state* state, wi_value path_value) {
         we wrap src in a box in case wi_compile fails and causes oom error
         gc will have a reference to src and will be able to free it
     */
-    struct wi_string* src_box = wi_make_calloc_string(state->gc, src);
+    struct wi_string* src_box = wi_make_malloc_string(state->gc, src);
     WI_GC_PUSH_ROOT(state->gc, src_box);
     struct wi_closure* closure = wi_state_compile(state, src_box->buf, module);
     wi_gc_pop_root(state->gc); /* src_box */

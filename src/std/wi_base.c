@@ -121,7 +121,7 @@ _base_try(struct wi_state* state, uint8_t arg_count) {
     if (ok) {
         wi_push_null(state);
     } else {
-        struct wi_string* box = wi_make_calloc_string(state->gc, error);
+        struct wi_string* box = wi_make_malloc_string(state->gc, error);
         wi_state_ppush(state, WI_MAKE_BOX_VALUE(box));
     }
 
@@ -283,7 +283,7 @@ _base_string(struct wi_state* state, uint8_t arg_count) {
         wi_state_oom(state, "failed to allocate a string (_base_string)");
     }
 
-    struct wi_string* box = wi_make_calloc_string(state->gc, string);
+    struct wi_string* box = wi_make_malloc_string(state->gc, string);
     wi_state_ppush(state, WI_MAKE_BOX_VALUE(box));
 }
 

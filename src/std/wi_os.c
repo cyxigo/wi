@@ -232,7 +232,7 @@ _os_listdir(struct wi_state* state, uint8_t arg_count) {
             wi_state_oom(state, "failed to allocate a directory entry (_os_listdir)");
         }
 
-        struct wi_string* box = wi_make_calloc_string(state->gc, name);
+        struct wi_string* box = wi_make_malloc_string(state->gc, name);
         wi_state_ppush(state, WI_MAKE_BOX_VALUE(box));
         wi_array_add(state, result);
     } while (FindNextFileW(hfind, &data));

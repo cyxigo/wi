@@ -237,11 +237,11 @@ wi_state_interrupt(struct wi_state* state);
 void
 wi_state_ppush(struct wi_state* state, wi_value value);
 
-/* push AND validate a C allocated string (uses wi_make_calloc_string) */
+/* push AND validate a C allocated string (uses wi_make_malloc_string) */
 WI_INLINE void
 wi_state_ppush_utf8(struct wi_state* state, char* buf, const char* what) {
     /* boxed first so the error below doesn't leak buf, gc will free it */
-    struct wi_string* box = wi_make_calloc_string(state->gc, buf);
+    struct wi_string* box = wi_make_malloc_string(state->gc, buf);
 
     if (!wi_utf8_validate(box->buf, box->count)) {
         wi_state_error(state, "invalid utf-8 sequence in %s", what);

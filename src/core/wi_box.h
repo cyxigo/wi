@@ -82,18 +82,21 @@ struct wi_string*
 wi_copy_cstring(struct wi_gc* gc, const char* buf, int count);
 struct wi_string*
 wi_take_cstring(struct wi_gc* gc, char* buf, int count);
+/*
+    wi_take_cstring, while still expects an already allocated buffer, it expects a GC ALLOCATED buffer
+    this one raw dogs it with C malloc
+*/
 struct wi_string*
-wi_take_calloc_string(struct wi_gc* gc, char* buf, int count); /* calloc here means "C allocated" */
+wi_take_malloc_string(struct wi_gc* gc, char* buf, int count);
 
 WI_INLINE struct wi_string*
 wi_make_string(struct wi_gc* gc, const char* string) {
     return wi_copy_cstring(gc, string, (int)strlen(string));
 }
 
-/* calloc here means "C allocated" */
 WI_INLINE struct wi_string*
-wi_make_calloc_string(struct wi_gc* gc, char* string) {
-    return wi_take_calloc_string(gc, string, (int)strlen(string));
+wi_make_malloc_string(struct wi_gc* gc, char* string) {
+    return wi_take_malloc_string(gc, string, (int)strlen(string));
 }
 
 struct wi_array {

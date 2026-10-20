@@ -1376,7 +1376,7 @@ _compiler_import_script(struct wi_compiler* compiler, char* path, char** atts) {
     struct wi_state* state = compiler->state;
 
     if (state->import_exists(state, path)) {
-        struct wi_string* box      = wi_make_calloc_string(compiler->gc, path);
+        struct wi_string* box      = wi_make_malloc_string(compiler->gc, path);
         uint16_t          constant = _compiler_make_constant(compiler, WI_MAKE_BOX_VALUE(box));
         _compiler_emit_opcode_short(compiler, WI_OP_IMPORT, constant);
         return true;
@@ -1395,7 +1395,7 @@ _compiler_import_foreign(struct wi_compiler* compiler, char* lib_path, char** at
     }
 
     struct wi_state*  state      = compiler->state;
-    struct wi_string* path       = wi_make_calloc_string(compiler->gc, lib_path);
+    struct wi_string* path       = wi_make_malloc_string(compiler->gc, lib_path);
     wi_value          path_value = WI_MAKE_BOX_VALUE(path);
     wi_value          cached;
 
@@ -1523,7 +1523,7 @@ _compiler_import_expr(struct wi_compiler* compiler, bool can_assign) {
     }
 
     /* boxed so the error longjmp doesn't leak it, gc will free it */
-    struct wi_string* box = wi_make_calloc_string(compiler->gc, error);
+    struct wi_string* box = wi_make_malloc_string(compiler->gc, error);
     wi_parser_error_at_prev(compiler->parser, "%s", box->buf);
 }
 

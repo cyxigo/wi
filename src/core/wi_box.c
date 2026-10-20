@@ -83,7 +83,7 @@ wi_take_cstring(struct wi_gc* gc, char* buf, int count) {
 }
 
 struct wi_string*
-wi_take_calloc_string(struct wi_gc* gc, char* buf, int count) {
+wi_take_malloc_string(struct wi_gc* gc, char* buf, int count) {
     size_t add = (size_t)count + 1;
     gc->bytes_allocated += add;
     gc->bytes_since_gc += add;
