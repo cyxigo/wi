@@ -756,6 +756,17 @@ WI_API wi_map*
 wi_pop_map(wi_state* state);
 
 /**
+ * Pop an object from the stack with type-checking
+ *
+ * @param state Wi state instance
+ * @return The popped object
+ * @note The value is no longer on the stack, so the returned pointer stays valid only
+ * until the next call that can allocate
+ */
+WI_API wi_object*
+wi_pop_object(wi_state* state);
+
+/**
  * Pop userdata from the stack with type-checking
  *
  * @param state Wi state instance
@@ -766,17 +777,6 @@ wi_pop_map(wi_state* state);
  */
 WI_API void*
 wi_pop_userdata(wi_state* state, const char* name);
-
-/**
- * Pop an object from the stack with type-checking
- *
- * @param state Wi state instance
- * @return The popped object
- * @note The value is no longer on the stack, so the returned pointer stays valid only
- * until the next call that can allocate
- */
-WI_API wi_object*
-wi_pop_object(wi_state* state);
 
 /**
  * Pop a module from the stack with type-checking
@@ -870,6 +870,16 @@ WI_API bool
 wi_arg_is_map(wi_state* state, uint8_t arg);
 
 /**
+ * Check if argument is an object
+ *
+ * @param state Wi state instance
+ * @param arg Argument index (1-[arg_count])
+ * @return `true` if the argument is an object, `false` otherwise
+ */
+WI_API bool
+wi_arg_is_object(wi_state* state, uint8_t arg);
+
+/**
  * Check if argument is userdata
  *
  * @param state Wi state instance
@@ -879,16 +889,6 @@ wi_arg_is_map(wi_state* state, uint8_t arg);
  */
 WI_API bool
 wi_arg_is_userdata(wi_state* state, uint8_t arg, const char* name);
-
-/**
- * Check if argument is an object
- *
- * @param state Wi state instance
- * @param arg Argument index (1-[arg_count])
- * @return `true` if the argument is an object, `false` otherwise
- */
-WI_API bool
-wi_arg_is_object(wi_state* state, uint8_t arg);
 
 /**
  * Check if argument is a module
@@ -991,6 +991,16 @@ WI_API wi_map*
 wi_arg_map(wi_state* state, uint8_t arg);
 
 /**
+ * Get an object argument with type-checking
+ *
+ * @param state Wi state instance
+ * @param arg Argument index (1-[arg_count])
+ * @return Object argument
+ */
+WI_API wi_object*
+wi_arg_object(wi_state* state, uint8_t arg);
+
+/**
  * Get userdata argument with type-checking
  *
  * @param state Wi state instance
@@ -1000,16 +1010,6 @@ wi_arg_map(wi_state* state, uint8_t arg);
  */
 WI_API void*
 wi_arg_userdata(wi_state* state, uint8_t arg, const char* name);
-
-/**
- * Get an object argument with type-checking
- *
- * @param state Wi state instance
- * @param arg Argument index (1-[arg_count])
- * @return Object argument
- */
-WI_API wi_object*
-wi_arg_object(wi_state* state, uint8_t arg);
 
 /**
  * Get a module argument with type-checking
