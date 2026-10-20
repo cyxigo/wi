@@ -569,6 +569,7 @@ wi_read_line(char** line, const char* prompt) {
     /* remember what i said about platform-specific code? */
 #ifdef _WIN32
     printf("%s", prompt);
+    fflush(stdout);
 
     /* this mess wouldn't exist if windows api wasn't so complicated for NO reason!!! */
     HANDLE hstdin = GetStdHandle(STD_INPUT_HANDLE);
@@ -610,6 +611,7 @@ wi_read_line(char** line, const char* prompt) {
     return true;
 #else
     printf("%s", prompt);
+    fflush(stdout);
     return _read_line_fgets(line);
 #endif
 }

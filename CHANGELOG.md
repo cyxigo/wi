@@ -36,3 +36,4 @@
 - Stack overflow leaking the directory handle of os::listdir
 - WI_DEF_FOREIGN_ALL, WI_OBJECT_SET_FOREIGN_ALL and WI_MODULE_EXPORT_FOREIGN_ALL breaking when their arguments used i or entry (because they are all macros)
 - Stack overflow errors leaking buffers and file handles in foreign functions
+- std::input and the REPL not showing the prompt before reading on some platforms
