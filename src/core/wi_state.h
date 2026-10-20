@@ -10,13 +10,13 @@
 #include "wi_util.h"
 
 #ifdef _WIN32
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
+    #define WIN32_LEAN_AND_MEAN
+    #include <windows.h>
 typedef HMODULE wi_lib_handle;
 #else
+    #include <dlfcn.h>
 typedef void* wi_lib_handle;
-#include <dlfcn.h>
-#endif
+#endif /* _WIN32 */
 
 #include "../../include/wi_conf.h"
 #include "wi_box.h"

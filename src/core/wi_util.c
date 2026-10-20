@@ -1,5 +1,5 @@
 #ifndef _WIN32
-#define _POSIX_C_SOURCE 200809L
+    #define _POSIX_C_SOURCE 200809L
 #endif
 
 #include "wi_util.h"
@@ -14,23 +14,23 @@
 #include <string.h>
 
 #ifdef _WIN32
-#define WIN32_LEAN_AND_MEAN
-#include <io.h>
-#include <windows.h>
+    #define WIN32_LEAN_AND_MEAN
+    #include <io.h>
+    #include <windows.h>
 #else
-#include <sys/stat.h>
-#include <unistd.h>
-#endif
+    #include <sys/stat.h>
+    #include <unistd.h>
+#endif /* _WIN32 */
 
 #ifdef WI_USE_READLINE /* wi is linked with -lreadline */
-#include <readline/history.h>
-#include <readline/readline.h>
-#endif
+    #include <readline/history.h>
+    #include <readline/readline.h>
+#endif /* WI_USE_READLINE */
 
 #ifdef _WIN32
-#define _PATH_SEP '\\'
+    #define _PATH_SEP '\\'
 #else
-#define _PATH_SEP '/'
+    #define _PATH_SEP '/'
 #endif
 
 /*
@@ -157,7 +157,7 @@ wi_wide_to_utf8(const wchar_t* wstr) {
 
     return str;
 }
-#endif
+#endif /* _WIN32 */
 
 bool
 wi_file_exists(const char* path) {
@@ -168,7 +168,7 @@ wi_file_exists(const char* path) {
     return exists;
 #else
     return access(path, F_OK) == 0;
-#endif
+#endif /* _WIN32 */
 }
 
 FILE*
@@ -193,7 +193,7 @@ wi_fopen(const char* path, const char* mode) {
     return file;
 #else
     return fopen(path, mode);
-#endif
+#endif /* _WIN32 */
 }
 
 int
@@ -213,7 +213,7 @@ wi_remove(const char* path) {
     return result;
 #else
     return remove(path);
-#endif
+#endif /* _WIN32 */
 }
 
 int
@@ -228,7 +228,7 @@ wi_rename(const char* old, const char* new) {
     return result;
 #else
     return rename(old, new);
-#endif
+#endif /* _WIN32 */
 }
 
 bool
@@ -241,7 +241,7 @@ wi_is_dir(const char* path) {
 #else
     struct stat st;
     return stat(path, &st) == 0 && S_ISDIR(st.st_mode);
-#endif
+#endif /* _WIN32 */
 }
 
 bool
@@ -253,7 +253,7 @@ wi_mkdir(const char* path) {
     return created;
 #else
     return mkdir(path, 0777) == 0;
-#endif
+#endif /* _WIN32 */
 }
 
 int
@@ -265,7 +265,7 @@ wi_system(const char* command) {
     return status;
 #else
     return system(command);
-#endif
+#endif /* _WIN32 */
 }
 
 bool
@@ -285,7 +285,7 @@ wi_setenv(const char* name, const char* value, bool overwrite) {
     return result;
 #else
     return setenv(name, value, (int)overwrite) == 0;
-#endif
+#endif /* _WIN32 */
 }
 
 char*
@@ -306,7 +306,7 @@ wi_getenv(const char* name) {
 #else
     const char* value = getenv(name);
     return value ? wi_strdup(value) : NULL;
-#endif
+#endif /* _WIN32 */
 }
 
 char*
@@ -318,13 +318,13 @@ wi_getcwd(void) {
 #else
     char buf[WI_PATH_MAX];
     return getcwd(buf, sizeof(buf)) ? wi_strdup(buf) : NULL;
-#endif
+#endif /* _WIN32 */
 }
 
 char*
 wi_exe_dir(void) {
     char* exe = NULL;
-#if defined(_WIN32)
+#ifdef _WIN32
     wchar_t wexe[WI_PATH_MAX];
     DWORD   count = GetModuleFileNameW(NULL, wexe, WI_PATH_MAX);
 
@@ -339,7 +339,7 @@ wi_exe_dir(void) {
         buf[count] = '\0';
         exe        = wi_strdup(buf);
     }
-#endif
+#endif /* _WIN32 */
 
     /* cut the executable name off, we only need the directory */
     char* slash = exe ? strrchr(exe, _PATH_SEP) : NULL;
@@ -556,7 +556,7 @@ _read_line_fgets(char** line) {
     (*line)[strcspn(*line, "\r\n")] = '\0';
     return true;
 }
-#endif
+#endif /* _WIN32 || !WI_USE_READLINE */
 
 /*
     this function is split into three versions depending on the platform and definitions:
@@ -613,5 +613,5 @@ wi_read_line(char** line, const char* prompt) {
     printf("%s", prompt);
     fflush(stdout);
     return _read_line_fgets(line);
-#endif
+#endif /* _WIN32 || WI_USE_READLINE || else */
 }

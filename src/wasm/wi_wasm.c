@@ -1,9 +1,9 @@
 /* making clangd shut up */
 #ifdef __EMSCRIPTEN__
-#include <emscripten.h>
+    #include <emscripten.h>
 #else
-#define EMSCRIPTEN_KEEPALIVE
-#endif
+    #define EMSCRIPTEN_KEEPALIVE
+#endif /* __EMSCRIPTEN__ */
 
 #include <stddef.h>
 
@@ -39,7 +39,7 @@ _print_err(struct wi_state* state, const char* text) {
     WI_UNUSED(state);
     WI_UNUSED(text);
 }
-#endif
+#endif /* __EMSCRIPTEN__ */
 
 EMSCRIPTEN_KEEPALIVE void
 wi_wasm_init(void) {

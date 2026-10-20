@@ -1,5 +1,5 @@
 #ifndef _WIN32
-#define _POSIX_C_SOURCE 200809L
+    #define _POSIX_C_SOURCE 200809L
 #endif
 
 #include "wi_io.h"
@@ -14,12 +14,12 @@
 #include <string.h>
 
 #ifdef _WIN32
-#define _FSEEK _fseeki64
-#define _FTELL _ftelli64
+    #define _FSEEK _fseeki64
+    #define _FTELL _ftelli64
 #else
-#define _FSEEK fseeko
-#define _FTELL ftello
-#endif
+    #define _FSEEK fseeko
+    #define _FTELL ftello
+#endif /* _WIN32 */
 
 struct _file {
     FILE* ptr;

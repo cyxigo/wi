@@ -12,12 +12,12 @@
  * WI_NORETURN: Function does not return
  */
 #if defined(__clang__) || (defined(__GNUC__) && __GNUC__ > 4)
-#define WI_NORETURN __attribute__((noreturn))
+    #define WI_NORETURN __attribute__((noreturn))
 #elif defined(_MSC_VER)
-#define WI_NORETURN __declspec(noreturn)
+    #define WI_NORETURN __declspec(noreturn)
 #else
-#define WI_NORETURN
-#endif
+    #define WI_NORETURN
+#endif /* __clang__ || (__GNUC__ && __GNUC__ > 4) || _MSC_VER || else */
 
 /**
  * Platform-specific API export macros
@@ -26,19 +26,20 @@
  * module it created with `wi_push_module`, leaving it on the stack
  */
 #ifdef _WIN32
-#ifdef WI_DLL
-#define WI_API __declspec(dllexport)
-#else
-#define WI_API
-#endif /* WI_DLL */
-#define WI_MODULE_EXPORT __declspec(dllexport)
+    #ifdef WI_DLL
+        #define WI_API __declspec(dllexport)
+    #else
+        #define WI_API
+    #endif /* WI_DLL */
+
+    #define WI_MODULE_EXPORT __declspec(dllexport)
 #elif defined(__clang__) || (defined(__GNUC__) && __GNUC__ > 4)
-#define WI_API __attribute__((visibility("default")))
-#define WI_MODULE_EXPORT __attribute__((visibility("default")))
+    #define WI_API __attribute__((visibility("default")))
+    #define WI_MODULE_EXPORT __attribute__((visibility("default")))
 #else
-#define WI_API
-#define WI_MODULE_EXPORT
-#endif /* _WIN32 */
+    #define WI_API
+    #define WI_MODULE_EXPORT
+#endif /* _WIN32 || __clang__ || (__GNUC__ && __GNUC__ > 4) || else */
 
 /**
  * Define a table of foreign (C) functions as globals in one call.

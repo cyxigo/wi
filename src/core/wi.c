@@ -7,13 +7,13 @@
 #include <stdlib.h>
 #include <string.h>
 
-#ifdef _WIN32
-#define WIN32_LEAN_AND_MEAN
 /* clang-format off */
-#include <windows.h>
-#include <shellapi.h> /* CommandLineToArgvW, **must** come after windows.h */
+#ifdef _WIN32
+    #define WIN32_LEAN_AND_MEAN
+    #include <windows.h>
+    #include <shellapi.h> /* CommandLineToArgvW, **must** come after windows.h */
+#endif /* _WIN32 */
 /* clang-format on */
-#endif
 
 #include "../../include/wi.h"
 #include "../../include/wi_conf.h"

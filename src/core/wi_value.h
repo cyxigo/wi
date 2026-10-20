@@ -18,10 +18,9 @@ enum {
 };
 
 #ifndef WI_UNION_TAGGING
-#define WI_QNAN 0x7ffc000000000000 /* quiet NaN */
-#define WI_CNAN 0x7ff8000000000000 /* canon NaN */
-#define WI_SIGN_BIT 0x8000000000000000
-
+    #define WI_QNAN 0x7ffc000000000000 /* quiet NaN */
+    #define WI_CNAN 0x7ff8000000000000 /* canon NaN */
+    #define WI_SIGN_BIT 0x8000000000000000
 enum {
     WI_TAG_EMPTY = 3,
     WI_TAG_NULL  = 2,
@@ -83,7 +82,7 @@ wi_make_box_value(struct wi_box* box) {
     return WI_SIGN_BIT | WI_QNAN | (uintptr_t)box;
 }
 
-#define WI_MAKE_BOX_VALUE(box) wi_make_box_value((struct wi_box*)(box))
+    #define WI_MAKE_BOX_VALUE(box) wi_make_box_value((struct wi_box*)(box))
 
 WI_INLINE bool
 wi_value_is_real(wi_value value) {
@@ -193,7 +192,7 @@ wi_make_box_value(struct wi_box* box) {
     return (wi_value){.tag = WI_TAG_BOX, .as.box = box};
 }
 
-#define WI_MAKE_BOX_VALUE(box) wi_make_box_value((struct wi_box*)(box))
+    #define WI_MAKE_BOX_VALUE(box) wi_make_box_value((struct wi_box*)(box))
 
 WI_INLINE bool
 wi_value_is_real(wi_value value) {

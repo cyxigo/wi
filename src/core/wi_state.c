@@ -965,21 +965,21 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
 
 #if defined(__GNUC__) || defined(__clang__)
     static void* dispatch_table[] = {
-#define WI_OPCODE(name, _, __) __extension__ &&LABEL_##name,
-#include "wi_opcode.h"
-#undef WI_OPCODE
+    #define WI_OPCODE(name, _, __) __extension__ &&LABEL_##name,
+    #include "wi_opcode.h"
+    #undef WI_OPCODE
     };
 
-#define _INTERPRET _DISPATCH();
-#define _DISPATCH() __extension__({ goto* dispatch_table[(opcode = _READ_BYTE())]; })
-#define _OPCODE_LABEL(name) LABEL_##name
+    #define _INTERPRET _DISPATCH();
+    #define _DISPATCH() __extension__({ goto* dispatch_table[(opcode = _READ_BYTE())]; })
+    #define _OPCODE_LABEL(name) LABEL_##name
 #else
-#define _INTERPRET \
-    loop:          \
-    switch (opcode = _READ_BYTE())
-#define _DISPATCH() goto loop
-#define _OPCODE_LABEL(name) case WI_OP_##name
-#endif
+    #define _INTERPRET \
+    loop:              \
+        switch (opcode = _READ_BYTE())
+    #define _DISPATCH() goto loop
+    #define _OPCODE_LABEL(name) case WI_OP_##name
+#endif /* __GNUC__ || __clang__ || else */
 
 #define _CHECK_INTERRUPT()                 \
     if (WI_UNLIKELY(state->interrupted)) { \

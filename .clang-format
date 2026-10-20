@@ -11,3 +11,4 @@ AlwaysBreakAfterReturnType: All
 AlignArrayOfStructures: Left
 AlignConsecutiveDeclarations: true
 AlignConsecutiveAssignments: true
+IndentPPDirectives: BeforeHash

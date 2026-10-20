@@ -1,5 +1,5 @@
 #ifndef _WIN32
-#define _POSIX_C_SOURCE 200112L
+    #define _POSIX_C_SOURCE 200112L
 #endif
 
 #include "wi_os.h"
@@ -10,12 +10,12 @@
 #include <time.h>
 
 #ifdef _WIN32
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
+    #define WIN32_LEAN_AND_MEAN
+    #include <windows.h>
 #else
-#include <dirent.h>
-#include <sys/wait.h>
-#endif
+    #include <dirent.h>
+    #include <sys/wait.h>
+#endif /* _WIN32 */
 
 #include "../../include/wi.h"
 

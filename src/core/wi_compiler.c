@@ -1,5 +1,5 @@
 #ifndef _WIN32
-#define _POSIX_C_SOURCE 200809L
+    #define _POSIX_C_SOURCE 200809L
 #endif
 
 #include "wi_compiler.h"
@@ -13,10 +13,10 @@
 #include <string.h>
 
 #ifdef _WIN32
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
+    #define WIN32_LEAN_AND_MEAN
+    #include <windows.h>
 #else
-#include <dlfcn.h>
+    #include <dlfcn.h>
 #endif
 
 #include "../../include/wi_conf.h"
@@ -1272,14 +1272,14 @@ _compiler_new_expr(struct wi_compiler* compiler, bool can_assign) {
     it includes such things as string manipulation and... and that's enough to make you horrified
 */
 #ifdef _WIN32
-#define _LIB_EXT ".dll"
-#define _LIB_DIR "\\lib\\"
-#define _CUR_DIR ".\\"
+    #define _LIB_EXT ".dll"
+    #define _LIB_DIR "\\lib\\"
+    #define _CUR_DIR ".\\"
 #else
-#define _LIB_EXT ".so"
-#define _LIB_DIR "/lib/"
-#define _CUR_DIR "./"
-#endif
+    #define _LIB_EXT ".so"
+    #define _LIB_DIR "/lib/"
+    #define _CUR_DIR "./"
+#endif /* _WIN32 */
 
 static bool
 _import_is_absolute(const char* path) {
@@ -1289,7 +1289,7 @@ _import_is_absolute(const char* path) {
 #else
     /* every other os is actually sane (right, Windows?) */
     return path[0] == '/';
-#endif
+#endif /* _WIN32 */
 }
 
 /* length of the directory part of [path], including the trailing separator */
@@ -1402,7 +1402,7 @@ _compiler_import_foreign(struct wi_compiler* compiler, char* lib_path, char** at
 
     typedef struct wi_module* (*_module_init_fn)(struct wi_state* state);
     /* prepare for seeing horrifying things... platform-specific code!!! */
-#ifdef _WIN32
+    #ifdef _WIN32
     wchar_t* wpath = wi_utf8_to_wide(path->buf);
     HMODULE  lib   = wpath ? LoadLibraryW(wpath) : NULL;
     DWORD    error = GetLastError();
@@ -1420,7 +1420,7 @@ _compiler_import_foreign(struct wi_compiler* compiler, char* lib_path, char** at
 
     proc_conv.proc       = GetProcAddress(lib, "wi_module_init");
     _module_init_fn init = proc_conv.fn;
-#else  /* __linux__ */
+    #else  /* !_WIN32 */
     dlerror(); /* reset dlerror */
     void* lib = dlopen(path->buf, RTLD_NOW | RTLD_GLOBAL);
 
@@ -1437,7 +1437,7 @@ _compiler_import_foreign(struct wi_compiler* compiler, char* lib_path, char** at
 
     sym_conv.ptr         = dlsym(lib, "wi_module_init");
     _module_init_fn init = sym_conv.fn;
-#endif /* _WIN32 */
+    #endif /* _WIN32 */
 
     /* library loaded and we do not need attempts anymore */
     free(*atts);
@@ -1475,7 +1475,7 @@ _compiler_import_foreign(struct wi_compiler* compiler, char* lib_path, char** at
     wi_gc_pop_root(compiler->gc);
     return true;
 }
-#endif /* defined(_WIN32) || defined(__linux__) */
+#endif /* _WIN32 || __linux__ */
 
 static void
 _compiler_import_expr(struct wi_compiler* compiler, bool can_assign) {
