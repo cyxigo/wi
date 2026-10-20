@@ -8,6 +8,16 @@
 #include "wi_conf.h"
 
 /**
+ * Utility macros
+ * WI_NORETURN: Function does not return
+ */
+#if defined(__clang__) || (defined(__GNUC__) && __GNUC__ > 4)
+#define WI_NORETURN __attribute__((noreturn))
+#else
+#define WI_NORETURN
+#endif
+
+/**
  * Platform-specific API export macros
  * WI_API: Used to mark all public API functions
  * WI_MODULE_EXPORT: Used to mark a foreign library's entry point (`wi_module_init`), which **must** return the Wi
@@ -317,7 +327,7 @@ wi_state_extra(wi_state* state);
  * @param format Format string
  * @param ... Format arguments
  */
-WI_API void
+WI_API WI_NORETURN void
 wi_state_error(wi_state* state, const char* format, ...);
 
 /**
@@ -327,7 +337,7 @@ wi_state_error(wi_state* state, const char* format, ...);
  *
  * @param state Wi state instance
  */
-WI_API void
+WI_API WI_NORETURN void
 wi_state_abort(wi_state* state);
 
 /**
