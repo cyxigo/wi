@@ -31,11 +31,11 @@
  * @param state Wi state instance
  * @param functions A C array of `wi_foreign_entry`
  */
-#define WI_DEF_FOREIGN_ALL(state, functions)                                 \
-    for (size_t i = 0; i < sizeof(functions) / sizeof(functions[0]); i++) {  \
-        wi_foreign_entry* entry = &functions[i];                             \
-        wi_push_foreign(state, entry->fn, entry->arity, entry->is_variadic); \
-        wi_def(state, entry->name);                                          \
+#define WI_DEF_FOREIGN_ALL(state, functions)                                             \
+    for (size_t wi_i_ = 0; wi_i_ < sizeof(functions) / sizeof(functions[0]); wi_i_++) {  \
+        wi_foreign_entry* wi_entry_ = &functions[wi_i_];                                 \
+        wi_push_foreign(state, wi_entry_->fn, wi_entry_->arity, wi_entry_->is_variadic); \
+        wi_def(state, wi_entry_->name);                                                  \
     }
 
 /**
@@ -46,11 +46,11 @@
  * @param object Target object
  * @param functions A C array of `wi_foreign_entry`
  */
-#define WI_OBJECT_SET_FOREIGN_ALL(state, object, functions)                  \
-    for (size_t i = 0; i < sizeof(functions) / sizeof(functions[0]); i++) {  \
-        wi_foreign_entry* entry = &functions[i];                             \
-        wi_push_foreign(state, entry->fn, entry->arity, entry->is_variadic); \
-        wi_object_set(state, object, entry->name);                           \
+#define WI_OBJECT_SET_FOREIGN_ALL(state, object, functions)                              \
+    for (size_t wi_i_ = 0; wi_i_ < sizeof(functions) / sizeof(functions[0]); wi_i_++) {  \
+        wi_foreign_entry* wi_entry_ = &functions[wi_i_];                                 \
+        wi_push_foreign(state, wi_entry_->fn, wi_entry_->arity, wi_entry_->is_variadic); \
+        wi_object_set(state, object, wi_entry_->name);                                   \
     }
 
 /**
@@ -61,11 +61,11 @@
  * @param module Target module
  * @param functions A C array of `wi_foreign_entry`
  */
-#define WI_MODULE_EXPORT_FOREIGN_ALL(state, module, functions)               \
-    for (size_t i = 0; i < sizeof(functions) / sizeof(functions[0]); i++) {  \
-        wi_foreign_entry* entry = &functions[i];                             \
-        wi_push_foreign(state, entry->fn, entry->arity, entry->is_variadic); \
-        wi_module_set(state, module, entry->name);                           \
+#define WI_MODULE_EXPORT_FOREIGN_ALL(state, module, functions)                           \
+    for (size_t wi_i_ = 0; wi_i_ < sizeof(functions) / sizeof(functions[0]); wi_i_++) {  \
+        wi_foreign_entry* wi_entry_ = &functions[wi_i_];                                 \
+        wi_push_foreign(state, wi_entry_->fn, wi_entry_->arity, wi_entry_->is_variadic); \
+        wi_module_set(state, module, wi_entry_->name);                                   \
     }
 
 /**
