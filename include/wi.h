@@ -149,7 +149,9 @@ typedef char* (*wi_import_load_fn)(wi_state* state, const char* path);
 typedef bool (*wi_import_exists_fn)(wi_state* state, const char* path);
 
 /**
- * Foreign (C) function pointer, called from Wi scripts
+ * Foreign (C) function pointer, called from Wi scripts.
+ * Must leave exactly one value, the result, on the stack top (push null for "nothing"), everything else it pushed
+ * is discarded. Up to `WI_FFI_STACK_MIN` values can be pushed without triggering a stack overflow error
  */
 typedef void (*wi_foreign_fn)(wi_state* state, uint8_t arg_count);
 
@@ -202,7 +204,8 @@ wi_check_version(wi_state* state, int major, int minor, const char* name);
  * Call `wi_check_version` with `WI_VERSION_MAJOR` and `WI_VERSION_MINOR` provided by the included `wi_conf.h`
  *
  * @param state Wi state instance
- * @param name name of the code making the call, can be `NULL`
+ * @param name Name of the code making the call, shown in the error message (your library's name, for example), can
+ * be `NULL`
  */
 #define WI_CHECK_VERSION(state, name) wi_check_version(state, WI_VERSION_MAJOR, WI_VERSION_MINOR, name)
 
@@ -344,8 +347,10 @@ wi_state_abort(wi_state* state);
  * Request the state to stop execution as soon as possible, returning `WI_RUN_ABORT` from `wi_state_run` (or
  * `wi_state_pcall`).
  *
- * In contrast to `wi_state_abort`, this function is safe to call
- * asynchronously (e.g., from a signal handler or another thread)
+ * In contrast to `wi_state_abort`, this one only sets a flag, so it is safe to call from a signal handler. The
+ * flag is checked on loop iterations and calls, so a long foreign function (e.g. `os::sleep`) stops only after it
+ * returns. Another thread can call it too, but C99 has no atomics, so that works on mainstream platforms (still is
+ * undefined behavior) and **is not a guarantee**
  *
  * @param state Wi state instance
  */
@@ -353,10 +358,9 @@ WI_API void
 wi_state_interrupt(wi_state* state);
 
 /**
- * Run a C function, but in a protected mode. That means Wi can catch fatal errors like OOM there.
- * **Always** use this function when dealing with Wi's API that simply does not return a `wi_run_result` - meaning,
- * it allocates.
- * Can be nested
+ * Run a C function in protected mode. A runtime error, OOM or abort raised inside it is caught and returned
+ * instead of unwinding into nowhere. Use this for Wi API calls that can allocate when you are not already inside
+ * `wi_state_run` or a foreign function. Can be nested
  *
  * @param state Wi state instance
  * @param fn Function to run
