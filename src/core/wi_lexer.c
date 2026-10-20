@@ -431,7 +431,7 @@ _lexer_string(struct wi_lexer* lexer) {
             return token;
         }
 
-        if (_lexer_check(lexer, '\\') && !_lexer_check_next(lexer, '\0')) {
+        if (_lexer_check(lexer, '\\') && !_lexer_check_next(lexer, '\0') && !_lexer_check_next(lexer, '\n')) {
             _lexer_advance(lexer);
         }
 

@@ -38,3 +38,4 @@
 - Stack overflow errors leaking buffers and file handles in foreign functions
 - std::input and the REPL not showing the prompt before reading on some platforms
 - Ctrl+C ending a script with exit status 0 (now 130)
+- A backslash at the end of a line in a string literal reporting a corrupted error on the wrong line (now "unfinished string")
