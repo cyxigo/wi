@@ -326,7 +326,7 @@ _lexer_name_kind(struct wi_lexer* lexer) {
 
 static struct wi_token
 _lexer_name(struct wi_lexer* lexer) {
-    while (wi_is_alnum(_lexer_peek(lexer))) {
+    while (wi_is_name_char(_lexer_peek(lexer))) {
         _lexer_advance(lexer);
     }
 
@@ -574,7 +574,7 @@ wi_lexer_next(struct wi_lexer* lexer) {
         return wi_token_make_error("non-ascii character in a name", lexer->line, lexer->start_col);
     }
 
-    if (wi_is_alpha(c)) {
+    if (wi_is_name_start(c)) {
         return _lexer_name(lexer);
     }
 

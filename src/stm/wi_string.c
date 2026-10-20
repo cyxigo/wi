@@ -145,17 +145,6 @@ _string_endswith(struct wi_state* state, uint8_t arg_count) {
     wi_push_bool(state, result);
 }
 
-/* different than wi_is_alpha, wi_is_alpha counts '_' as a letter */
-static bool
-_is_alpha(char c) {
-    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
-}
-
-static bool
-_is_alnum(char c) {
-    return wi_is_digit(c) || _is_alpha(c);
-}
-
 static void
 _string_class_check(struct wi_state* state, bool (*fn)(char c)) {
     int   count;
@@ -178,13 +167,13 @@ _string_isdigit(struct wi_state* state, uint8_t arg_count) {
 static void
 _string_isalpha(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
-    _string_class_check(state, _is_alpha);
+    _string_class_check(state, wi_is_alpha);
 }
 
 static void
 _string_isalnum(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
-    _string_class_check(state, _is_alnum);
+    _string_class_check(state, wi_is_alnum);
 }
 
 static void

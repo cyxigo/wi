@@ -34,12 +34,22 @@ wi_is_hex_digit(char c) {
 
 WI_INLINE bool
 wi_is_alpha(char c) {
-    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_';
+    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
 }
 
 WI_INLINE bool
 wi_is_alnum(char c) {
     return wi_is_digit(c) || wi_is_alpha(c);
+}
+
+WI_INLINE bool
+wi_is_name_start(char c) {
+    return wi_is_alpha(c) || c == '_';
+}
+
+WI_INLINE bool
+wi_is_name_char(char c) {
+    return wi_is_name_start(c) || wi_is_digit(c);
 }
 
 enum wi_token_kind {
