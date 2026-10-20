@@ -233,6 +233,8 @@ wi_state_abort(struct wi_state* state);
 void
 wi_state_interrupt(struct wi_state* state);
 
+void
+wi_state_reserve_stack(struct wi_state* state, int count);
 /* ppush means protected push, calls _state_reserve_stack */
 void
 wi_state_ppush(struct wi_state* state, wi_value value);

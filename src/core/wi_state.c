@@ -765,6 +765,11 @@ _state_reserve_stack(struct wi_state* state, int needed) {
 }
 
 void
+wi_state_reserve_stack(struct wi_state* state, int count) {
+    _state_reserve_stack(state, count);
+}
+
+void
 wi_state_ppush(struct wi_state* state, wi_value value) {
     _state_reserve_stack(state, 1);
     wi_state_push(state, value);
@@ -1618,6 +1623,7 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
 void
 wi_state_call_foreign(struct wi_state* state, struct wi_foreign* foreign, uint8_t arg_count) {
     wi_state_check_arity(state, foreign->arity, arg_count, foreign->is_variadic);
+    _state_reserve_stack(state, WI_FFI_STACK_MIN);
     ptrdiff_t ffi_stack_offset = state->ffi_stack ? state->ffi_stack - state->stack : -1;
 
     state->ffi_stack = state->stack_top - arg_count - 1;

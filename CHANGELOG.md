@@ -2,7 +2,10 @@
 
 ## Added
 
+- WI_FFI_STACK_MIN (API)
+- WI_NORETURN (API)
 - WI_RUN_OOM (API)
+- wi_state_reserve_stack (API)
 - wi_state_pcall/wi_pcall_fn (API)
 
 ## Changed
@@ -13,6 +16,8 @@
 - Paths passed to wi_state_run, wi_load and wi_push_module are now copied, they no longer need to outlive the state
 - "too many constants" compile error calling functions "prototypes" (technically correct but confusing and can be mistaken for prototype as in prototype-based OOP)
 - Callback arity mismatches (e.g. array->each with a function of the wrong arity) now report the arity mismatch more clearly
+- Foreign functions can now push up to WI_FFI_STACK_MIN values without triggering a stack overflow error
+- wi_state_error and wi_state_abort are now marked noreturn in wi.h
 
 ## Fixed
 
@@ -29,3 +34,5 @@
 - Local variable limit being 254 instead of the 255 reported in the error
 - Out of memory leaking internal buffers (call frames, GC stacks, compiler locals and upvalues, function expression compilers)
 - Stack overflow leaking the directory handle of os::listdir
+- WI_DEF_FOREIGN_ALL, WI_OBJECT_SET_FOREIGN_ALL and WI_MODULE_EXPORT_FOREIGN_ALL breaking when their arguments used i or entry (because they are all macros)
+- Stack overflow errors leaking buffers and file handles in foreign functions

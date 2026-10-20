@@ -705,6 +705,17 @@ WI_API void
 wi_drop(wi_state* state);
 
 /**
+ * Make sure `count` more values can be pushed without raising a stack overflow error.
+ * Foreign functions already get `WI_FFI_STACK_MIN` of them for free, call this before pushing more than that
+ * while holding something you have to free
+ *
+ * @param state Wi state instance
+ * @param count Number of values
+ */
+WI_API void
+wi_state_reserve_stack(wi_state* state, int count);
+
+/**
  * Pop a real from the stack with type-checking
  *
  * @param state Wi state instance
