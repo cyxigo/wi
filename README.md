@@ -1,4 +1,6 @@
-<img width="150" alt="wi" src="https://github.com/user-attachments/assets/7c25acaf-bb2a-4ae7-ac22-2542f7b64676" />
+<a href="https://wi-lang.pages.dev">
+    <img width="150" alt="wi" src="https://github.com/user-attachments/assets/7c25acaf-bb2a-4ae7-ac22-2542f7b64676" />
+</a>
 
 ## Wi is a small, fast, embeddable, prototype-based scripting language
 
