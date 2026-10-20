@@ -21,6 +21,7 @@
 
 static wi_state*             _g_state          = NULL;
 static volatile sig_atomic_t _g_script_running = 0;
+static volatile sig_atomic_t _g_interrupted    = 0;
 static const char*           _g_exec           = "";
 
 static void
@@ -38,6 +39,7 @@ _sigint_handler(int sig) {
     }
 
     if (_g_script_running) {
+        _g_interrupted = 1;
         wi_state_interrupt(_g_state);
         return;
     }
@@ -46,6 +48,11 @@ _sigint_handler(int sig) {
     printf("\n");
     wi_delete_state(_g_state);
     exit(EXIT_SUCCESS);
+}
+
+static int
+_exit_code(void) {
+    return _g_interrupted ? 128 + SIGINT : wi_state_exit_code(_g_state);
 }
 
 static wi_run_result
@@ -120,7 +127,7 @@ _repl(void) {
         buf_len = 0;
 
         if (result == WI_RUN_ABORT || result == WI_RUN_OOM) {
-            exit_code = result == WI_RUN_OOM ? EXIT_FAILURE : wi_state_exit_code(_g_state);
+            exit_code = result == WI_RUN_OOM ? EXIT_FAILURE : _exit_code();
             break;
         }
     }
@@ -328,7 +335,7 @@ main(int argc, const char** argv) {
 
     char*         src       = _read_file(path);
     wi_run_result result    = _run(path, src);
-    int           exit_code = wi_state_exit_code(_g_state);
+    int           exit_code = _exit_code();
     free(src);
     _delete_g_state();
 
