@@ -1,2 +1,8 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# Force headers to be counted as C
+*.h linguist-language=C
+
+# Benchmarks contain many languages, and they are completely unrelated to the implementation
+test/benchmark/** linguist-documentation
