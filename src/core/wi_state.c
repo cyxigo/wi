@@ -881,7 +881,6 @@ _state_resolve_method(struct wi_state* state, wi_value receiver, wi_value name) 
         default:
         error:
             wi_state_error(state, "value type %s has no methods", wi_value_type(receiver));
-            break;
     }
 
     if (WI_UNLIKELY(!wi_table_get(methods, name, &function))) {

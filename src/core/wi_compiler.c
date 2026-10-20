@@ -509,7 +509,6 @@ _compiler_resolve_local(struct wi_compiler* compiler, struct wi_token name, wi_v
         if (wi_token_lexemes_equal(name, local->name)) {
             if (local->depth == -1) {
                 wi_parser_error_at(compiler->parser, name, "cannot use local variable inside its own initializer");
-                return -1;
             }
 
             local->used = true;
@@ -731,8 +730,6 @@ _compiler_parse_prec(struct wi_compiler* compiler, enum _prec min_prec) {
 
     if (!pref) {
         wi_parser_error_at_prev(compiler->parser, "unexpected symbol");
-        wi_parser_leave(compiler->parser);
-        return;
     }
 
     bool can_assign = min_prec <= _PREC_ASSIGNMENT;
@@ -817,7 +814,6 @@ _compiler_add_esc_char(struct wi_compiler* compiler, struct wi_char_buf* buf, ch
         default:
             wi_char_buf_free(buf);
             wi_parser_error_at_prev(compiler->parser, "invalid escape sequence \\%c", c);
-            break;
     }
 }
 
