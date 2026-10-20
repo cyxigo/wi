@@ -9,13 +9,16 @@
 #include "../../include/wi.h"
 
 #if defined(__clang__) || (defined(__GNUC__) && __GNUC__ > 4)
-#define WI_NORETURN __attribute__((noreturn))
 #define WI_UNLIKELY(x) __builtin_expect(!!(x), 0)
 #define WI_LIKELY(x) __builtin_expect(!!(x), 1)
 #define WI_INLINE __attribute__((always_inline)) static inline
 #define WI_UNREACHABLE() __builtin_unreachable()
+#elif defined(_MSC_VER)
+#define WI_UNLIKELY(x) (x)
+#define WI_LIKELY(x) (x)
+#define WI_INLINE static __forceinline
+#define WI_UNREACHABLE() __assume(0)
 #else
-#define WI_NORETURN
 #define WI_UNLIKELY(x) (x)
 #define WI_LIKELY(x) (x)
 #define WI_INLINE static inline

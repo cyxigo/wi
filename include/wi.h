@@ -13,6 +13,8 @@
  */
 #if defined(__clang__) || (defined(__GNUC__) && __GNUC__ > 4)
 #define WI_NORETURN __attribute__((noreturn))
+#elif defined(_MSC_VER)
+#define WI_NORETURN __declspec(noreturn)
 #else
 #define WI_NORETURN
 #endif
