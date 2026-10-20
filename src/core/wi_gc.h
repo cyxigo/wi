@@ -23,8 +23,8 @@ struct wi_gc {
         generational garbage collector!
         two generations, boxes start out young
         the first time one survives a collection (minor or major), it's promoted to old
-        a minor collection only ever walks young
-        a major collection walks both!
+        a minor collection walks young and the remembered old boxes (see below)
+        a major collection walks both
     */
     struct wi_box* young;
     struct wi_box* old;
@@ -97,10 +97,11 @@ void
 wi_gc_remember(struct wi_gc* gc, struct wi_box* parent);
 
 /*
-    needs to be called when an existing box's field is set to a value that MIGHT be another box
-    if the parent is old and the value is a young box, then the parent gets remembered
-    the next minor collection checks those remembered parents
-    any function that mutates an existing box's contents must call this
+    needs to be called after an existing box's field is set to a value that MIGHT be another box
+    if the parent is old and the value is young, the parent gets remembered and the next minor collection traces it
+    without that, the minor collection would skip the old parent and free the young value it points to
+    not needed when a collection can't separate the two: a bulk copy (e.g. _array_copy) keeps its source
+    and destination on the stack for the whole call, so a collection in the middle simply promotes them together
 */
 WI_INLINE void
 wi_gc_write_barrier(struct wi_gc* gc, struct wi_box* parent, wi_value value) {
