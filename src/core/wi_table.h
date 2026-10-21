@@ -58,10 +58,10 @@ wi_table_reserve(struct wi_table* table, int count);
 void
 wi_table_copy(struct wi_table* src, struct wi_table* dest);
 
-#define WI_TABLE_SET_FOREIGN_ALL(table, functions)                                             \
-    for (size_t i = 0; i < sizeof(functions) / sizeof(functions[0]); i++) {                    \
-        wi_foreign_entry* entry = &functions[i];                                               \
-        wi_table_set_foreign(table, entry->name, entry->fn, entry->arity, entry->is_variadic); \
+#define WI_TABLE_SET_FOREIGN_ALL(table, functions)                                                             \
+    for (size_t wi_i_ = 0; wi_i_ < sizeof(functions) / sizeof(functions[0]); wi_i_++) {                        \
+        wi_foreign_entry* wi_entry_ = &functions[wi_i_];                                                       \
+        wi_table_set_foreign(table, wi_entry_->name, wi_entry_->fn, wi_entry_->arity, wi_entry_->is_variadic); \
     }
 
 #endif
