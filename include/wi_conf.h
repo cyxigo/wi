@@ -19,7 +19,7 @@ enum {
      * Version numbers
      */
     WI_VERSION_MAJOR = 9,
-    WI_VERSION_MINOR = 8,
+    WI_VERSION_MINOR = 9,
     WI_VERSION_PATCH = 0,
 
     /**

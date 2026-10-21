@@ -1,7 +1,7 @@
 includes("@builtin/xpack")
 
 set_project("Wi")
-set_version("9.8.0-beta")
+set_version("9.9.0-beta")
 set_description("The Wi programming language")
 set_license("MIT")
 

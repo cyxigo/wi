@@ -1,6 +1,8 @@
 ## [Unreleased]
 
-## Added
+## [9.9.0-beta] - 2026-10-22
+
+### Added
 
 - WI_FFI_STACK_MIN (API)
 - WI_NORETURN (API)
@@ -8,7 +10,7 @@
 - wi_state_reserve_stack (API)
 - wi_state_pcall/wi_pcall_fn (API)
 
-## Changed
+### Changed
 
 - wi_push_module now takes an explicit module path (foreign libraries must be rebuilt)
 - wi_check_version now takes the minor version and a name too, WI_CHECK_VERSION is updated (foreign libraries must be rebuilt)
@@ -21,7 +23,7 @@
 - Calling a method via -> on a value that has no methods now reports "cannot use operator '->' on a value of type X" like the other operators
 - import expression now looks for scripts and foreign libraries in lib/wi next to the bin directory instead of lib next to the executable
 
-## Fixed
+### Fixed
 
 - wi_load reporting a stale EOF error from a previous compile
 - Old generation accumulating under heavy allocation pressure
