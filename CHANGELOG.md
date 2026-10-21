@@ -18,7 +18,7 @@
 - Callback arity mismatches (e.g. array->each with a function of the wrong arity) now report the arity mismatch more clearly
 - Foreign functions can now push up to WI_FFI_STACK_MIN values without triggering a stack overflow error
 - wi_state_error and wi_state_abort are now marked noreturn in wi.h
-- Calling a method with `->` on a value that has no methods now reports "cannot use operator '->' on a value of type X" like the other operators
+- Calling a method via -> on a value that has no methods now reports "cannot use operator '->' on a value of type X" like the other operators
 
 ## Fixed
 
