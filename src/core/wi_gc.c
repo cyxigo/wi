@@ -160,11 +160,12 @@ wi_gc_realloc(struct wi_gc* gc, void* ptr, size_t old_size, size_t new_size) {
             wi_gc_collect_major(gc);
         } else if (WI_UNLIKELY(!gc->compiler && gc->bytes_since_gc > gc->young_max)) {
             /*
-                why !gc->compiler you may ask? minor collections are NOT worth it at the compile-time
-                we do not allocate THAT much garbage that we need them, in fact, compilation is not a
-                gc heavy thing (most of the compiler are C allocations) at all, so yep, not worth it
-                the write barriers we DO have are some reachable edge cases
-                (yk, promoting still happens, and REPL is a thing)
+                why !gc->compiler you may ask? minor collections are NOT worth it at the compile time
+                compilation allocates very little garbage (most of the compiler is C allocations)
+                this is also why the compiler has almost no write barriers: with no minor collection
+                there is nothing to miss a young box held by an old one
+                the ones we DO have are for boxes that outlive the compile (prototype, module), which a
+                major collection or the REPL can promote in the middle of it
             */
             wi_gc_collect_minor(gc);
         }
