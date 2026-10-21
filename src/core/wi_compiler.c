@@ -1273,11 +1273,11 @@ _compiler_new_expr(struct wi_compiler* compiler, bool can_assign) {
 */
 #ifdef _WIN32
     #define _LIB_EXT ".dll"
-    #define _LIB_DIR "\\lib\\"
+    #define _LIB_DIR "\\..\\lib\\wi\\"
     #define _CUR_DIR ".\\"
 #else
     #define _LIB_EXT ".so"
-    #define _LIB_DIR "/lib/"
+    #define _LIB_DIR "/../lib/wi/"
     #define _CUR_DIR "./"
 #endif /* _WIN32 */
 
@@ -1325,7 +1325,10 @@ _import_script_path(struct wi_compiler* compiler, struct wi_token name, const ch
     return path;
 }
 
-/* path in the "lib" directory next to the wi executable, or NULL if that can't be located */
+/*
+    path in the "lib/wi" directory next to the "bin" directory of the wi executable
+    or NULL if that can't be located
+*/
 static char*
 _import_lib_path(struct wi_compiler* compiler, struct wi_token name, const char* ext) {
     char* dir = wi_exe_dir();
@@ -1486,8 +1489,8 @@ _compiler_import_expr(struct wi_compiler* compiler, bool can_assign) {
     /*
         ./file.wi
         ./file/init.wi
-        lib/file.wi
-        lib/file/init.wi
+        <exe>/../lib/wi/file.wi
+        <exe>/../lib/wi/file/init.wi
     */
     if (_compiler_import_script(compiler, _import_script_path(compiler, name, ".wi", false), &atts) ||
         _compiler_import_script(compiler, _import_script_path(compiler, name, "/init.wi", false), &atts) ||
@@ -1499,7 +1502,7 @@ _compiler_import_expr(struct wi_compiler* compiler, bool can_assign) {
 
     /*
         ./lib.so
-        lib/lib.so
+        <exe>/../lib/wi/lib.so
     */
 #if defined(_WIN32) || defined(__linux__)
     if (_compiler_import_foreign(compiler, _import_script_path(compiler, name, _LIB_EXT, true), &atts) ||
