@@ -1459,11 +1459,9 @@ _compiler_import_foreign(struct wi_compiler* compiler, char* lib_path, char** at
     bool                is_new = !node->module;
 
     if (is_new) {
-        ptrdiff_t top = state->stack_top - state->stack;
-        node->module  = init(state);
+        node->module = init(state);
 
         if (!node->module) {
-            state->stack_top = state->stack + top;
             wi_gc_pop_root(compiler->gc);
             wi_parser_error_at_prev(compiler->parser,
                                     "library %s did not return a valid module from wi_module_init", path->buf);
@@ -2002,9 +2000,10 @@ wi_compile(struct wi_state* state, const char* src, struct wi_module* module) {
         wi_state_oom(state, "failed to allocate the parser (wi_compile)");
     }
 
-    int roots      = state->gc->temp_root_count;
-    int globals    = module->globals.count;
-    int jmp_result = setjmp(parser->error_jmp);
+    int       roots      = state->gc->temp_root_count;
+    int       globals    = module->globals.count;
+    ptrdiff_t top        = state->stack_top - state->stack;
+    int       jmp_result = setjmp(parser->error_jmp);
 
     if (jmp_result == WI_RUN_OK) {
         struct wi_compiler* compiler = wi_new_compiler(NULL, state, parser, module);
@@ -2030,6 +2029,7 @@ wi_compile(struct wi_state* state, const char* src, struct wi_module* module) {
 
     wi_delete_compilers(state->gc);
     wi_delete_parser(parser);
+    state->stack_top           = state->stack + top;
     state->gc->temp_root_count = roots;
 
     for (int i = 0; i < module->vars.capacity; i++) {

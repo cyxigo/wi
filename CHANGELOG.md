@@ -44,3 +44,4 @@
 - std::try failing with a stack overflow when called with 255 arguments
 - Error carets being misaligned on lines indented with tabs
 - Assigning to a function's own name inside its body silently overwriting the running function (now a compile error)
+- Failed compilations leaving values pushed by a foreign library on the stack (e.g. wi_check_version after wi_push_module)
