@@ -84,7 +84,18 @@ _parser_print_token_line(struct wi_parser* parser, wi_print_fn fn, struct wi_tok
 
     wi_printf(state, fn, " %*s | \n", line_width, "");
     wi_printf(state, fn, " %*i | %.*s\n", line_width, token.line, (int)(line_end - line_start), line_start);
-    wi_printf(state, fn, " %*s | %*s", line_width, "", token.col - 1, "");
+    wi_printf(state, fn, " %*s | ", line_width, "");
+
+    const char* pad = line_start;
+
+    for (int i = 1; i < token.col; i++) {
+        /* tabs stay tabs */
+        fn(state, pad < line_end && *pad == '\t' ? "\t" : " ");
+
+        if (pad < line_end) {
+            pad += wi_utf8_cp_len(*pad);
+        }
+    }
 
     /*
         a token can span multiple lines (raw strings!) and only the first line got printed above

@@ -41,3 +41,4 @@
 - Ctrl+C ending a script with exit status 0 (now 130)
 - A backslash at the end of a line in a string literal reporting a corrupted error on the wrong line (now "unfinished string")
 - std::try failing with a stack overflow when called with 255 arguments
+- Error carets being misaligned on lines indented with tabs
