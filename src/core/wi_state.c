@@ -473,12 +473,12 @@ wi_state_interrupt(struct wi_state* state) {
 }
 
 WI_INLINE wi_value
-_make_arith_value(wi_real real) {
+_state_make_arith_value(wi_real real) {
     return wi_make_real_value(wi_canon_real(real));
 }
 
 WI_INLINE void
-_bit_shift(struct wi_state* state, bool right) {
+_state_bit_shift(struct wi_state* state, bool right) {
     wi_value b = wi_state_pop(state);
     wi_value a = wi_state_pop(state);
 
@@ -857,30 +857,32 @@ _state_resolve_field(struct wi_state* state, struct wi_object* object, wi_value 
 
 WI_INLINE wi_value
 _state_resolve_method(struct wi_state* state, wi_value receiver, wi_value name) {
-    if (WI_UNLIKELY(!wi_value_is_box(receiver))) {
-        goto error;
-    }
-
-    struct wi_box*   box = wi_value_as_box(receiver);
-    struct wi_table* methods;
+    struct wi_table* methods = NULL;
     wi_value         function;
 
-    switch (box->kind) {
-        case WI_BOX_OBJECT:
-            _state_resolve_field(state, (struct wi_object*)box, name, &function);
-            return function;
-        case WI_BOX_STRING:
-            methods = &state->stm_string;
-            break;
-        case WI_BOX_ARRAY:
-            methods = &state->stm_array;
-            break;
-        case WI_BOX_MAP:
-            methods = &state->stm_map;
-            break;
-        default:
-        error:
-            wi_state_error(state, "cannot use operator '->' on a value of type %s", wi_value_type(receiver));
+    if (WI_LIKELY(wi_value_is_box(receiver))) {
+        struct wi_box* box = wi_value_as_box(receiver);
+
+        switch (box->kind) {
+            case WI_BOX_OBJECT:
+                _state_resolve_field(state, (struct wi_object*)box, name, &function);
+                return function;
+            case WI_BOX_STRING:
+                methods = &state->stm_string;
+                break;
+            case WI_BOX_ARRAY:
+                methods = &state->stm_array;
+                break;
+            case WI_BOX_MAP:
+                methods = &state->stm_map;
+                break;
+            default:
+                break;
+        }
+    }
+
+    if (WI_UNLIKELY(!methods)) {
+        wi_state_error(state, "cannot use operator '->' on a value of type %s", wi_value_type(receiver));
     }
 
     if (WI_UNLIKELY(!wi_table_get(methods, name, &function))) {
@@ -1109,23 +1111,23 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
         }
         /* clang-format on */
         _OPCODE_LABEL(ADD) : {
-            _BINARY_OP(+, _make_arith_value);
+            _BINARY_OP(+, _state_make_arith_value);
             _DISPATCH();
         }
         _OPCODE_LABEL(SUBTRACT) : {
-            _BINARY_OP(-, _make_arith_value);
+            _BINARY_OP(-, _state_make_arith_value);
             _DISPATCH();
         }
         _OPCODE_LABEL(MULTIPLY) : {
-            _BINARY_OP(*, _make_arith_value);
+            _BINARY_OP(*, _state_make_arith_value);
             _DISPATCH();
         }
         _OPCODE_LABEL(DIVIDE) : {
-            _BINARY_OP(/, _make_arith_value);
+            _BINARY_OP(/, _state_make_arith_value);
             _DISPATCH();
         }
         _OPCODE_LABEL(INT_DIVIDE) : {
-            _BINARY_EXPR("//", _make_arith_value, trunc(a_real / b_real));
+            _BINARY_EXPR("//", _state_make_arith_value, trunc(a_real / b_real));
             _DISPATCH();
         }
         _OPCODE_LABEL(NEGATE) : {
@@ -1139,11 +1141,11 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
             _DISPATCH();
         }
         _OPCODE_LABEL(POWER) : {
-            _BINARY_EXPR("**", _make_arith_value, pow(a_real, b_real));
+            _BINARY_EXPR("**", _state_make_arith_value, pow(a_real, b_real));
             _DISPATCH();
         }
         _OPCODE_LABEL(MODULO) : {
-            _BINARY_EXPR("%%", _make_arith_value, fmod(a_real, b_real));
+            _BINARY_EXPR("%%", _state_make_arith_value, fmod(a_real, b_real));
             _DISPATCH();
         }
         _OPCODE_LABEL(GREATER) : {
@@ -1206,12 +1208,12 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
         }
         _OPCODE_LABEL(BIT_SHL) : {
             frame->ip = ip;
-            _bit_shift(state, false);
+            _state_bit_shift(state, false);
             _DISPATCH();
         }
         _OPCODE_LABEL(BIT_SHR) : {
             frame->ip = ip;
-            _bit_shift(state, true);
+            _state_bit_shift(state, true);
             _DISPATCH();
         }
         _OPCODE_LABEL(LEN) : {
