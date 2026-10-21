@@ -84,6 +84,10 @@ function set_flags()
         add_packages("readline")
     end
 
+    if not is_plat("windows") then
+        add_defines("_FILE_OFFSET_BITS=64")
+    end
+
     -- i hate msvc
     if is_msvc() then
         add_defines("_CRT_SECURE_NO_WARNINGS")
