@@ -2775,6 +2775,7 @@ function ___syscall_unlinkat(dirfd, path, flags) {
         return -e.errno;
     }
 }
+var __abort_js = () => abort("");
 var __emscripten_system = (command) => {
     if (ENVIRONMENT_IS_NODE) {
         if (!command) return 1;
@@ -3158,42 +3159,42 @@ function assignWasmExports(wasmExports) {
     __indirect_function_table = wasmTable = wasmExports["M"];
 }
 var wasmImports = {
-    I: ___syscall_faccessat,
-    j: ___syscall_fcntl64,
-    D: ___syscall_getcwd,
-    w: ___syscall_getdents64,
-    F: ___syscall_ioctl,
-    z: ___syscall_mkdirat,
-    k: ___syscall_openat,
-    s: ___syscall_renameat,
-    t: ___syscall_rmdir,
-    r: ___syscall_stat64,
-    v: ___syscall_unlinkat,
-    q: __emscripten_system,
-    o: __emscripten_throw_longjmp,
-    x: __gmtime_js,
-    J: _print_err,
-    l: _print_out,
-    y: __tzset_js,
-    H: _clock_time_get,
-    G: _emscripten_date_now,
-    h: _emscripten_get_now,
-    p: _emscripten_resize_heap,
-    B: _environ_get,
-    C: _environ_sizes_get,
-    d: _fd_close,
-    E: _fd_read,
-    A: _fd_seek,
-    i: _fd_write,
-    f: invoke_ii,
-    e: invoke_iii,
-    n: invoke_iiii,
-    g: invoke_iiiii,
-    c: invoke_vi,
-    b: invoke_vii,
-    a: invoke_viii,
-    u: invoke_viiii,
-    m: invoke_vij,
+    H: ___syscall_faccessat,
+    g: ___syscall_fcntl64,
+    C: ___syscall_getcwd,
+    v: ___syscall_getdents64,
+    E: ___syscall_ioctl,
+    y: ___syscall_mkdirat,
+    h: ___syscall_openat,
+    r: ___syscall_renameat,
+    s: ___syscall_rmdir,
+    q: ___syscall_stat64,
+    u: ___syscall_unlinkat,
+    I: __abort_js,
+    p: __emscripten_system,
+    n: __emscripten_throw_longjmp,
+    w: __gmtime_js,
+    i: _print_err,
+    j: _print_out,
+    x: __tzset_js,
+    G: _clock_time_get,
+    F: _emscripten_date_now,
+    e: _emscripten_get_now,
+    o: _emscripten_resize_heap,
+    A: _environ_get,
+    B: _environ_sizes_get,
+    c: _fd_close,
+    D: _fd_read,
+    z: _fd_seek,
+    f: _fd_write,
+    d: invoke_ii,
+    J: invoke_iii,
+    l: invoke_iiiii,
+    k: invoke_iijii,
+    b: invoke_vi,
+    a: invoke_vii,
+    m: invoke_viii,
+    t: invoke_viiii,
 };
 function invoke_ii(index, a1) {
     var sp = stackSave();
@@ -3265,20 +3266,10 @@ function invoke_vi(index, a1) {
         _setThrew(1, 0);
     }
 }
-function invoke_iiii(index, a1, a2, a3) {
+function invoke_iijii(index, a1, a2, a3, a4) {
     var sp = stackSave();
     try {
-        return getWasmTableEntry(index)(a1, a2, a3);
-    } catch (e) {
-        stackRestore(sp);
-        if (!(e instanceof EmscriptenEH)) throw e;
-        _setThrew(1, 0);
-    }
-}
-function invoke_vij(index, a1, a2) {
-    var sp = stackSave();
-    try {
-        getWasmTableEntry(index)(a1, a2);
+        return getWasmTableEntry(index)(a1, a2, a3, a4);
     } catch (e) {
         stackRestore(sp);
         if (!(e instanceof EmscriptenEH)) throw e;

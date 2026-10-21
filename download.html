@@ -32,7 +32,7 @@
             <a class="button" href="https://github.com/cyxigo/wi/tree/main">Source code</a>
             <hr />
 
-            <img src="res/wi-9.8.0.png" style="max-width: 300px" />
+            <img src="res/wi-9.9.0.png" style="max-width: 300px" />
             <div class="table-scroll">
                 <table>
                     <thead>
@@ -45,11 +45,11 @@
                     <tbody>
                         <tr>
                             <td>Windows</td>
-                            <td>AMD64</td>
+                            <td>x86_64</td>
                             <td>
                                 <a
                                     class="link"
-                                    href="https://github.com/cyxigo/wi/releases/download/v9.8.0-beta/wi-win64.zip"
+                                    href="https://github.com/cyxigo/wi/releases/download/v9.9.0-beta/wi-windows-x86_64.zip"
                                     >Download</a
                                 >
                             </td>
@@ -60,18 +60,18 @@
                             <td>
                                 <a
                                     class="link"
-                                    href="https://github.com/cyxigo/wi/releases/download/v9.8.0-beta/wi-win32.zip"
+                                    href="https://github.com/cyxigo/wi/releases/download/v9.9.0-beta/wi-windows-x86.zip"
                                     >Download</a
                                 >
                             </td>
                         </tr>
                         <tr>
                             <td>Linux</td>
-                            <td>AMD64</td>
+                            <td>x86_64</td>
                             <td>
                                 <a
                                     class="link"
-                                    href="https://github.com/cyxigo/wi/releases/download/v9.8.0-beta/wi-linux64.zip"
+                                    href="https://github.com/cyxigo/wi/releases/download/v9.9.0-beta/wi-linux-x86_64.zip"
                                     >Download</a
                                 >
                             </td>
@@ -82,7 +82,7 @@
                             <td>
                                 <a
                                     class="link"
-                                    href="https://github.com/cyxigo/wi/releases/download/v9.8.0-beta/wi-linux-arm64.zip"
+                                    href="https://github.com/cyxigo/wi/releases/download/v9.9.0-beta/wi-linux-arm64.zip"
                                     >Download</a
                                 >
                             </td>
@@ -90,50 +90,102 @@
                     </tbody>
                 </table>
             </div>
-            <a class="link" href="https://github.com/cyxigo/wi/releases">All versions</a>
+            <a class="link" href="https://github.com/cyxigo/wi/releases">Older releases</a>
 
-            <h3>New features</h3>
+            <h3>Added</h3>
             <ul>
-                <li>Add std::call</li>
-                <li>Add wi_abi_version and wi_check_version/WI_CHECK_VERSION</li>
-                <li>Include the main script path as the first item in os::args</li>
-                <li>Add find to array, map and string</li>
-                <li>Add io::stdin, io::stdout, and io::stderr</li>
+                <li>WI_FFI_STACK_MIN (API)</li>
+                <li>WI_NORETURN (API)</li>
+                <li>WI_RUN_OOM (API)</li>
+                <li>wi_state_reserve_stack (API)</li>
+                <li>wi_state_pcall/wi_pcall_fn (API)</li>
             </ul>
 
-            <h3>Changes</h3>
+            <h3>Changed</h3>
             <ul>
-                <li>std::real now rejects blank strings and skips trailing spaces</li>
-                <li>std::isfunction now returns true for foreign (C) functions too</li>
-                <li>Overflowing hex/octal/binary literals are now an error</li>
-                <li>std::assert now validates the message before checking the condition</li>
-                <li>io::writebytes now appends a NUL byte</li>
-                <li>Libraries now live as long as the state does</li>
-                <li>Speed up new a, b merging and array->insertat</li>
+                <li>wi_push_module now takes an explicit module path (foreign libraries must be rebuilt)</li>
+                <li>
+                    wi_check_version now takes the minor version and a name too, WI_CHECK_VERSION is updated
+                    (foreign libraries must be rebuilt)
+                </li>
+                <li>
+                    wi_load, wi_def_std, wi_def_stm now return wi_run_result (foreign libraries and embedders must
+                    be updated)
+                </li>
+                <li>
+                    Paths passed to wi_state_run, wi_load and wi_push_module are now copied, they no longer need to
+                    outlive the state
+                </li>
+                <li>
+                    "too many constants" compile error calling functions "prototypes" (technically correct but
+                    confusing and can be mistaken for prototype as in prototype-based OOP)
+                </li>
+                <li>
+                    Callback arity mismatches (e.g. array->each with a function of the wrong arity) now report the
+                    arity mismatch more clearly
+                </li>
+                <li>
+                    Foreign functions can now push up to WI_FFI_STACK_MIN values without triggering a stack
+                    overflow error
+                </li>
+                <li>wi_state_error and wi_state_abort are now marked noreturn in wi.h</li>
+                <li>
+                    Calling a method via -> on a value that has no methods now reports "cannot use operator '->' on
+                    a value of type X" like the other operators
+                </li>
+                <li>
+                    import expression now looks for scripts and foreign libraries in lib/wi next to the bin
+                    directory instead of lib next to the executable
+                </li>
             </ul>
 
-            <h3>Bugs fixed</h3>
+            <h3>Fixed</h3>
             <ul>
-                <li>Fix import crashes with foreign libraries (NULL module, missing exe path)</li>
-                <li>Fix C stack overflow not being detected through foreign calls</li>
-                <li>Fix off-by-one in the global and constant limits</li>
-                <li>Fix missing write barriers in variable definition</li>
-                <li>Fix function fields recursing into themselves</li>
-                <li>Fix implicit returns not getting TCO</li>
-                <li>Fix switch not requiring its closing brace</li>
-                <li>Fix wi_pcall leaving the callee's upvalues open on failure</li>
-                <li>Fix the REPL returning EXIT_SUCCESS instead of the real exit code</li>
-                <li>Fix std::equals missing the C stack overflow check</li>
-                <li>Fix io::writebytes error messages</li>
-                <li>Fix wi_read_stream failing on pipes</li>
-                <li>Fix array->slice with an empty slice</li>
-                <li>Fix off-by-one in stack accounting in returns</li>
-                <li>Fix interrupts being ignored after foreign calls</li>
-                <li>Fix string->select/where leaking on error</li>
-                <li>Fix string->each not returning the string</li>
-                <li>Fix lexer errors pointing at the wrong character</li>
-                <li>Fix std::try hanging forever on stack overflow</li>
-                <li>Fix std::real ignoring the sign in hex/octal/binary strings</li>
+                <li>wi_load reporting a stale EOF error from a previous compile</li>
+                <li>Old generation accumulating under heavy allocation pressure</li>
+                <li>Lexer errors in the first token not being reported</li>
+                <li>"expected X" errors after a string pointing at its closing quote</li>
+                <li>if without else emitting an unnecessary jump opcode</li>
+                <li>
+                    io::close, io::flush, io::write, io::read, io::writebytes, io::readbytes, and io::seek not
+                    reporting what actually caused the failure
+                </li>
+                <li>Windows mangling non-ASCII paths, environment variables and command-line arguments</li>
+                <li>
+                    Out of memory being indistinguishable from a regular runtime error (now returns WI_RUN_OOM)
+                </li>
+                <li>
+                    Failed compilations leaving their globals defined (e.g. a multi-line REPL input reporting
+                    "already defined")
+                </li>
+                <li>Scripts starting with a UTF-8 BOM failing to compile</li>
+                <li>Local variable limit being 254 instead of the 255 reported in the error</li>
+                <li>
+                    Out of memory leaking internal buffers (call frames, GC stacks, compiler locals and upvalues,
+                    function expression compilers)
+                </li>
+                <li>Stack overflow leaking the directory handle of os::listdir</li>
+                <li>
+                    WI_DEF_FOREIGN_ALL, WI_OBJECT_SET_FOREIGN_ALL and WI_MODULE_EXPORT_FOREIGN_ALL breaking when
+                    their arguments used i or entry (because they are all macros)
+                </li>
+                <li>Stack overflow errors leaking buffers and file handles in foreign functions</li>
+                <li>std::input and the REPL not showing the prompt before reading on some platforms</li>
+                <li>Ctrl+C ending a script with exit status 0 (now 130)</li>
+                <li>
+                    A backslash at the end of a line in a string literal reporting a corrupted error on the wrong
+                    line (now "unfinished string")
+                </li>
+                <li>std::try failing with a stack overflow when called with 255 arguments</li>
+                <li>Error carets being misaligned on lines indented with tabs</li>
+                <li>
+                    Assigning to a function's own name inside its body silently overwriting the running function
+                    (now a compile error)
+                </li>
+                <li>
+                    Failed compilations leaving values pushed by a foreign library on the stack (e.g.
+                    wi_check_version after wi_push_module)
+                </li>
             </ul>
         </div>
 
