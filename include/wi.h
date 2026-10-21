@@ -221,7 +221,7 @@ wi_check_version(wi_state* state, int major, int minor, const char* name);
  *
  * @param conf Wi configuration, see `wi_conf.h` for more (**must** outlive the state, Wi keeps the pointer)
  * @return The new Wi state instance, or `NULL` if out of memory
- * @note Must be freed via `wi_delete_state`
+ * @note Must be freed via `wi_delete_state`. A state must only be used from one thread, one state = one thread
  */
 WI_API wi_state*
 wi_new_state(wi_conf* conf);
@@ -354,10 +354,9 @@ wi_state_abort(wi_state* state);
  * Request the state to stop execution as soon as possible, returning `WI_RUN_ABORT` from `wi_state_run` (or
  * `wi_state_pcall`).
  *
- * In contrast to `wi_state_abort`, this one only sets a flag, so it is safe to call from a signal handler. The
+ * In contrast to `wi_state_abort`, this one only sets a flag, so it is safe to call **from a signal handler**. The
  * flag is checked on loop iterations and calls, so a long foreign function (e.g. `os::sleep`) stops only after it
- * returns. Another thread can call it too, but C99 has no atomics, so that works on mainstream platforms (still is
- * undefined behavior) and **is not a guarantee**
+ * returns
  *
  * @param state Wi state instance
  */
@@ -480,7 +479,7 @@ wi_find(wi_state* state, const char* name);
 /**
  * Call a Wi function followed by its `arg_count` arguments at the stack top, popping them all and pushing the
  * result (unless `drop` is set).
- * Must run inside `wi_state_run`, `wi_state_pcall`, or in a foreign (C) function
+ * Must only be called inside `wi_state_run`, `wi_state_pcall`, or a foreign (C) function
  *
  * @param state Wi state instance
  * @param arg_count Argument count
@@ -491,7 +490,8 @@ wi_call(wi_state* state, uint8_t arg_count, bool drop);
 
 /**
  * Protected `wi_call`: a runtime error raised by the call is caught instead of propagating (OOM and abort are
- * not). Must run inside `wi_state_run`, `wi_state_pcall`, or in a foreign (C) function.
+ * not).
+ * Must only be called inside `wi_state_run`, `wi_state_pcall`, or a foreign (C) function
  * On failure the callee and its arguments are popped and nothing is pushed
  *
  * @param state Wi state instance

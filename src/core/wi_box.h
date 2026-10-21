@@ -83,8 +83,8 @@ wi_copy_cstring(struct wi_gc* gc, const char* buf, int count);
 struct wi_string*
 wi_take_cstring(struct wi_gc* gc, char* buf, int count);
 /*
-    wi_take_cstring still takes ownership of an already allocated buffer, but a GC ALLOCATED one
-    this one raw dogs it with C malloc
+    like wi_take_cstring, takes ownership of an already allocated buffer
+    but this one raw dogs it with C malloc instead of a GC allocated one
 */
 struct wi_string*
 wi_take_malloc_string(struct wi_gc* gc, char* buf, int count);
