@@ -196,5 +196,6 @@ xpack("wi")
     set_basename("wi-$(plat)-$(arch)")
 
     add_installfiles("include/wi.hpp", { prefixdir = "include" })
+    add_installfiles("lib/wi/README.md", { prefixdir = "lib/wi" })
     add_installfiles("LICENSE", "CHANGELOG.md", "README.md")
 xpack_end()
