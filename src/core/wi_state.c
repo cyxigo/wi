@@ -880,7 +880,7 @@ _state_resolve_method(struct wi_state* state, wi_value receiver, wi_value name) 
             break;
         default:
         error:
-            wi_state_error(state, "value type %s has no methods", wi_value_type(receiver));
+            wi_state_error(state, "cannot use operator '->' on a value of type %s", wi_value_type(receiver));
     }
 
     if (WI_UNLIKELY(!wi_table_get(methods, name, &function))) {
