@@ -104,8 +104,8 @@ _base_try(struct wi_state* state, uint8_t arg_count) {
     struct wi_object* result = wi_push_object(state);
     char*             error;
 
-    for (uint8_t i = 1; i <= arg_count; i++) {
-        wi_push_arg(state, i);
+    for (int i = 1; i <= arg_count; i++) {
+        wi_push_arg(state, (uint8_t)i);
     }
 
     bool ok = wi_pcall(state, (uint8_t)(arg_count - 1), false, &error);
