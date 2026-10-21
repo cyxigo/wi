@@ -1,5 +1,6 @@
-set_project("Wi")
+includes("@builtin/xpack")
 
+set_project("Wi")
 set_version("9.8.0-beta")
 set_description("The Wi programming language")
 set_license("MIT")
@@ -106,7 +107,9 @@ function set_src()
         set_targetdir("bin/$(arch)")
     end
 
-    add_headerfiles("src/core/*.h", "src/std/*.h", "src/stm/*.h", "include/*.h")
+    -- install = false means it won't be included in the xpack .zip
+    add_headerfiles("src/core/*.h", "src/std/*.h", "src/stm/*.h", { install = false })
+    add_headerfiles("include/*.h") -- and this will be included
     add_files("src/core/*.c|wi.c", "src/std/*.c", "src/stm/*.c")
     add_includedirs("src/core", "src/std", "src/stm", "include")
 end
@@ -132,6 +135,7 @@ target("wi")
     if is_msvc() then
         add_ldflags("/IMPLIB:bin/wi_exe.lib", { force = true })
     end
+target_end()
 
 target("wi_shared")
     set_enabled(not is_plat("wasm"))
@@ -149,6 +153,7 @@ target("wi_shared")
     if is_gnu() then
         add_cflags("-fvisibility=hidden", { force = true })
     end
+target_end()
 
 target("wi_wasm")
     set_enabled(is_plat("wasm"))
@@ -176,3 +181,15 @@ target("wi_wasm")
 
     set_src()
     add_files("src/wasm/wi_wasm.c")
+target_end()
+
+-- this is such a blessing thank you xmake
+xpack("wi")
+    set_formats("zip")
+    
+    add_targets("wi", "wi_shared")
+    set_basename("wi-$(plat)-$(arch)")
+
+    add_installfiles("include/wi.hpp", { prefixdir = "include" })
+    add_installfiles("LICENSE", "CHANGELOG.md", "README.md")
+xpack_end()

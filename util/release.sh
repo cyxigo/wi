@@ -1,5 +1,6 @@
 #!/bin/bash
-# script to build wi, for windows + linux by default, or wasm with -w/--wasm
+# script to build wi (into ./bin) and pack release zips (into ./dist)
+# for windows + linux by default, or wasm with -w/--wasm
 # supports -r/--release, -d/--debug, -w/--wasm
 set -e
 
@@ -26,11 +27,15 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# configure from scratch and build
+# configure from scratch, build, and (unless wasm) pack into ./dist
 # $@ - extra xmake config flags
 build() {
     xmake f -c -m "$mode" "$@" > /dev/null
     xmake
+
+    if ! $wasm; then
+        xmake pack -o dist
+    fi
 }
 
 if $wasm; then

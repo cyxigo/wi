@@ -58,3 +58,6 @@ build
 
 # Visual Studio Code
 .vscode
+
+# release.sh xpack output
+/dist/
