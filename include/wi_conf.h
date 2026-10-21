@@ -7,7 +7,7 @@
 /**
  * Wi version as a string
  */
-#define WI_VERSION_STRING "9.8.0-beta"
+#define WI_VERSION_STRING "9.9.0-beta"
 
 /**
  * Format that Wi uses to print any real
