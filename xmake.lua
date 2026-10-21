@@ -128,6 +128,7 @@ target("wi")
     add_files("src/core/wi.c")
     
     if is_plat("linux") then
+        add_cflags("-fvisibility=hidden", { force = true })
         add_ldflags("-rdynamic", { force = true })
     end
 
