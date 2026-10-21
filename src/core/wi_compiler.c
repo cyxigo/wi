@@ -1121,6 +1121,8 @@ _compiler_function_expr(struct wi_compiler* outer, bool can_assign) {
         fields are not visible to function/method bodies, unless via self
         but here, field "f" WILL be able to find itself because of this local trick
         that must not happen!!! so we politely reject fields from our cool local trickery.
+        the name is const too!
+        it's the running function, assigning to it would only overwrite the callee slot
     */
     if (var_name.kind == WI_TOKEN_NAME) {
         compiler->locals[0].name = (struct wi_token){
@@ -1130,6 +1132,7 @@ _compiler_function_expr(struct wi_compiler* outer, bool can_assign) {
             .line  = compiler->parser->curr.line,
             .col   = compiler->parser->curr.col,
         };
+        wi_attr_set(&compiler->locals[0].vardata, WI_ATTR_CONST);
     }
 
     _compiler_begin_scope(compiler);
