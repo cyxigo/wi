@@ -354,9 +354,9 @@ wi_state_abort(wi_state* state);
  * Request the state to stop execution as soon as possible, returning `WI_RUN_ABORT` from `wi_state_run` (or
  * `wi_state_pcall`).
  *
- * In contrast to `wi_state_abort`, this one only sets a flag, so it is safe to call **from a signal handler**. The
- * flag is checked on loop iterations and calls, so a long foreign function (e.g. `os::sleep`) stops only after it
- * returns
+ * In contrast to `wi_state_abort`, this one only sets a flag, so it is safe to call **from a signal handler**, but
+ * not from another thread (one state = one thread). The flag is checked on loop iterations and calls, so a long
+ * foreign function (e.g. `os::sleep`) stops only after it returns
  *
  * @param state Wi state instance
  */
@@ -490,9 +490,8 @@ wi_call(wi_state* state, uint8_t arg_count, bool drop);
 
 /**
  * Protected `wi_call`: a runtime error raised by the call is caught instead of propagating (OOM and abort are
- * not).
+ * not). On failure the callee and its arguments are popped and nothing is pushed.
  * Must only be called inside `wi_state_run`, `wi_state_pcall`, or a foreign (C) function
- * On failure the callee and its arguments are popped and nothing is pushed
  *
  * @param state Wi state instance
  * @param arg_count Argument count
@@ -759,8 +758,8 @@ wi_pop_bool(wi_state* state);
  * @param count Optional pointer to store the string byte count, can be `NULL`
  * @param len Optional pointer to store the string length (codepoint count), can be `NULL`
  * @return The popped string
- * @note The value is no longer on the stack, so the returned pointer stays valid only until the next call that can
- * allocate
+ * @note The value is no longer on the stack, so the returned pointer stays valid only
+ * until the next call that can allocate
  */
 WI_API char*
 wi_pop_string(wi_state* state, int* count, int* len);
