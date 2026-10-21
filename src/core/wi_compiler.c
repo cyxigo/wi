@@ -1276,11 +1276,11 @@ _compiler_new_expr(struct wi_compiler* compiler, bool can_assign) {
 */
 #ifdef _WIN32
     #define _LIB_EXT ".dll"
-    #define _LIB_DIR "\\..\\lib\\wi\\"
+    #define _LIB_DIR "\\lib\\wi\\"
     #define _CUR_DIR ".\\"
 #else
     #define _LIB_EXT ".so"
-    #define _LIB_DIR "/../lib/wi/"
+    #define _LIB_DIR "/lib/wi/"
     #define _CUR_DIR "./"
 #endif /* _WIN32 */
 
@@ -1334,7 +1334,7 @@ _import_script_path(struct wi_compiler* compiler, struct wi_token name, const ch
 */
 static char*
 _import_lib_path(struct wi_compiler* compiler, struct wi_token name, const char* ext) {
-    char* dir = wi_exe_dir();
+    char* dir = wi_install_dir();
 
     if (!dir) {
         return NULL;

@@ -321,8 +321,9 @@ wi_getcwd(void) {
 #endif /* _WIN32 */
 }
 
+/* directory above the one the wi executable lives in (usually "bin"), NULL if it can't be located */
 char*
-wi_exe_dir(void) {
+wi_install_dir(void) {
     char* exe = NULL;
 #ifdef _WIN32
     wchar_t wexe[WI_PATH_MAX];
@@ -341,11 +342,13 @@ wi_exe_dir(void) {
     }
 #endif /* _WIN32 */
 
-    /* cut the executable name off, we only need the directory */
-    char* slash = exe ? strrchr(exe, _PATH_SEP) : NULL;
+    /* cut the executable name and its directory off */
+    for (int i = 0; exe && i < 2; i++) {
+        char* slash = strrchr(exe, _PATH_SEP);
 
-    if (slash) {
-        *slash = '\0';
+        if (slash) {
+            *slash = '\0';
+        }
     }
 
     return exe;

@@ -70,7 +70,7 @@ wi_getenv(const char* name);
 char*
 wi_getcwd(void);
 char*
-wi_exe_dir(void);
+wi_install_dir(void);
 
 int
 wi_utf8_len(const char* buf, int count);
