@@ -776,8 +776,8 @@ _compiler_var_expr(struct wi_compiler* compiler, bool can_assign) {
 }
 
 static void
-_compiler_add_esc_char(struct wi_compiler* compiler, struct wi_char_buf* buf, char c) {
-    switch (c) {
+_compiler_add_esc_char(struct wi_compiler* compiler, struct wi_char_buf* buf, const char* esc) {
+    switch (*esc) {
         case 'r':
             wi_char_buf_add(buf, '\r');
             break;
@@ -813,7 +813,8 @@ _compiler_add_esc_char(struct wi_compiler* compiler, struct wi_char_buf* buf, ch
             break;
         default:
             wi_char_buf_free(buf);
-            wi_parser_error_at_prev(compiler->parser, "invalid escape sequence \\%c", c);
+            wi_parser_error_at_prev(compiler->parser, "invalid escape sequence \\%.*s", (int)wi_utf8_cp_len(*esc),
+                                    esc);
     }
 }
 
@@ -825,7 +826,7 @@ _compiler_push_string(struct wi_compiler* compiler, struct wi_token token) {
 
     for (int i = 0; i < token.count; i++) {
         if (token.start[i] == '\\' && i + 1 < token.count) {
-            _compiler_add_esc_char(compiler, &buf, token.start[++i]);
+            _compiler_add_esc_char(compiler, &buf, &token.start[++i]);
         } else {
             wi_char_buf_add(&buf, token.start[i]);
         }
