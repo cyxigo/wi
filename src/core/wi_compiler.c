@@ -150,7 +150,7 @@ wi_delete_compilers(struct wi_gc* gc) {
     gc->compiler = NULL;
 }
 
-static const int _opcode_effects[] = {
+static const int _g_opcode_effects[] = {
 #define WI_OPCODE(_, __, effect) effect,
 #include "wi_opcode.h"
 #undef WI_OPCODE
@@ -164,7 +164,7 @@ _compiler_emit_byte(struct wi_compiler* compiler, uint8_t byte) {
 static void
 _compiler_emit_opcode(struct wi_compiler* compiler, uint8_t opcode) {
     _compiler_emit_byte(compiler, opcode);
-    compiler->slot_count += _opcode_effects[opcode];
+    compiler->slot_count += _g_opcode_effects[opcode];
 
     if (compiler->slot_count > compiler->prototype->max_slot_count) {
         compiler->prototype->max_slot_count = compiler->slot_count;
