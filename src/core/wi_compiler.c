@@ -854,7 +854,7 @@ _compiler_lit_expr(struct wi_compiler* compiler, bool can_assign) {
             break;
         }
         case WI_TOKEN_STRING:
-            _compiler_push_string(compiler, compiler->parser->prev);
+            _compiler_push_string(compiler, literal);
             break;
         case WI_TOKEN_RAW_STRING: {
             wi_value value = WI_MAKE_BOX_VALUE(wi_copy_cstring(compiler->gc, literal.start, literal.count));
