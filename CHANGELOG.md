@@ -1,5 +1,9 @@
 ## [Unreleased]
 
+### Fixed
+
+- math::log with base 2 or 10 returning slightly inexact results (e.g. math::log(1000, 10) was 2.9999999999999996
+
 ## [9.9.0-beta] - 2026-10-22
 
 ### Added

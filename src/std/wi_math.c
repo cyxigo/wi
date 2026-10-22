@@ -104,7 +104,7 @@ _math_log(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     wi_real value = wi_arg_real(state, 1);
     wi_real base  = wi_arg_real(state, 2);
-    wi_push_real(state, log(value) / log(base));
+    wi_push_real(state, base == 2.0 ? log2(value) : base == 10.0 ? log10(value) : log(value) / log(base));
 }
 
 static void
