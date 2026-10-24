@@ -42,27 +42,51 @@ Want to try it? [Try it here!](https://wi-lang.pages.dev/try)
 
 ## Supported platforms
 
-| Platform | Toolchain         | Support |
-| -------- | ----------------- | ------- |
-| Linux    | GCC, Clang, MinGW | Full    |
-| Windows  | MSVC, MinGW       | Full    |
-| WASM     | Emscripten        | Partial |
+| Platform | Toolchain (Compiler) | Support |
+| -------- | -------------------- | ------- |
+| Linux    | GCC, Clang, MinGW    | Full    |
+| Windows  | MSVC, MinGW          | Full    |
+| WASM     | Emscripten           | Minimal |
 
-WASM support is pretty minimal – only [two basic functions](https://github.com/cyxigo/wi/blob/main/src/wasm/wi_wasm.c), and no foreign libraries. Since it's only used by that [little Wi playground](https://wi-lang.pages.dev/try).  
-Other platforms (macOS, BSD, etc.) are not officially supported. Wi may build there, but it is not tested and foreign libraries are unavailable. Contributions towards the support of different platforms can be done via [pull requests](https://github.com/cyxigo/wi/pulls)!
+Other platforms (macOS, BSD, etc.) are not officially supported.  
+Wi may build there, but it is not tested and foreign libraries are unavailable. Contributions towards the support of different platforms can be done via [pull requests](https://github.com/cyxigo/wi/pulls)!
 
-## Building
+WASM support is only [two basic functions](https://github.com/cyxigo/wi/blob/main/src/wasm/wi_wasm.c), and no foreign libraries. Since it's only used by that [little Wi playground](https://wi-lang.pages.dev/try).
 
-Requires [`xmake`](https://xmake.io/guide/quick-start.html#installation) and any **C99** compiler. Then simply:
+## Building From Source
+
+Wi has **zero external dependencies** (aside from, well, the C standard library) and uses [`xmake`](https://xmake.io) as its build system.
+
+To get Wi executable:
+
+```bash
+xmake build wi
+```
+
+To get Wi shared library:
+
+```bash
+xmake build wi_shared
+```
+
+To get both just:
 
 ```bash
 xmake
 ```
 
-For max speed and performance, it is better to use **GNU99** compatible compiler, since Wi uses many **GNU** extensions for performance tweaks. Wi has zero dependencies but it would be nice to have the `readline` library if you're building Wi on Linux (Wi uses it for better REPL).  
-This produces Wi shared library and executable.
+To get WASM build:
 
-To build release zips for all platforms, use [`release.sh`](https://github.com/cyxigo/wi/blob/main/util/release.sh) (see the script for flags).
+```bash
+xmake f -p wasm
+xmake
+```
+
+If you are on Linux, it is highly recommended to have the `readline` package installed, as Wi uses it for a much better REPL experience.
+
+For max speed and performance, it is better to use **GNU99** compatible compiler, since Wi uses many **GNU** extensions for performance tweaks.
+
+To build release zips for all platforms, use [`release.sh`](https://github.com/cyxigo/wi/blob/main/util/release.sh) (requires a lot of different compilers, see the script for flags).
 
 ## Structure
 
@@ -78,8 +102,16 @@ The Wi source code is organized into the following directories:
 
 ## Notes
 
-This programming language was created by me, and only me – a single person. It's in beta, because I'm still designing it and **breaking syntax changes can happen**, though right now – very unlikely, and if it happens, it's documented in the [CHANGELOG.md](https://github.com/cyxigo/wi/blob/main/CHANGELOG.md). The standard library is designed to be minimal, but useful. Other than the FFI/API, the code is not heavily commented.
+### What does `beta` mean for Wi?
+
+It means **breaking syntax and API/FFI changes can happen**. But don't be scared right away! Wi v9 seriously improved on that. Right now, syntax changes are highly unlikely, and FFI/API changes only happen for a good reason (like making DX better). If anything does break, it's documented right away in the [CHANGELOG.md](https://github.com/cyxigo/wi/blob/main/CHANGELOG.md) and the wiki is updated right after.
+
+### Thread safety
+
+If you're embedding Wi, and dealing with multiple threads, just follow one simple rule: one state = one thread. Kind of like Lua does it.
+
+### Use of AI
+
+Wi is written by hand. For better, or worse.
 
 Some parts may still need polish, and I'm very open to suggestions – if you have one, [open an issue](https://github.com/cyxigo/wi/issues)!
-
-No AI was used in the development of Wi – I'm all by myself.
