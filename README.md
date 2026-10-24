@@ -48,12 +48,13 @@ Want to try it? [Try it here!](https://wi-lang.pages.dev/try)
 | Windows  | MSVC, MinGW          | Full    |
 | WASM     | Emscripten           | Minimal |
 
-Other platforms (macOS, BSD, etc.) are not officially supported.  
+Other platforms (macOS, BSD, etc.) are not officially supported.
+
 Wi may build there, but it is not tested and foreign libraries are unavailable. Contributions towards the support of different platforms can be done via [pull requests](https://github.com/cyxigo/wi/pulls)!
 
 WASM support is only [two basic functions](https://github.com/cyxigo/wi/blob/main/src/wasm/wi_wasm.c), and no foreign libraries. Since it's only used by that [little Wi playground](https://wi-lang.pages.dev/try).
 
-## Building From Source
+## Building from source
 
 Wi has **zero external dependencies** (aside from, well, the C standard library) and uses [`xmake`](https://xmake.io) as its build system.
 
@@ -102,7 +103,7 @@ The Wi source code is organized into the following directories:
 
 ## Notes
 
-### What does `beta` mean for Wi?
+### What `beta` actually means for Wi
 
 It means **breaking syntax and API/FFI changes can happen**. But don't be scared right away! Wi v9 seriously improved on that. Right now, syntax changes are highly unlikely, and FFI/API changes only happen for a good reason (like making DX better). If anything does break, it's documented right away in the [CHANGELOG.md](https://github.com/cyxigo/wi/blob/main/CHANGELOG.md) and the wiki is updated right after.
 
