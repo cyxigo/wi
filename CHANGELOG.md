@@ -1,5 +1,10 @@
 ## [Unreleased]
 
+### Changed
+
+- Globals/locals now report one single unified "cannot use variable x inside its own initializer"
+- Assigning to a function's own name inside its body now assigns the variable like anywhere else (was a compile error)
+
 ### Fixed
 
 - math::log with base 2 or 10 returning slightly inexact results (e.g. math::log(1000, 10) was 2.9999999999999996

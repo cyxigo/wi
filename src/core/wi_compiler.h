@@ -47,7 +47,7 @@ wi_value_as_vardata(wi_value value) {
 
 struct wi_local {
     struct wi_token name;
-    int             depth; /* -1 = uninitialized */
+    int             depth;
     bool            is_captured;
     bool            used;
     wi_vardata      vardata;
@@ -124,6 +124,7 @@ struct wi_compiler {
     struct wi_switch* switch_;
 
     int last_call;
+    int global_decl; /* slot of the global being initialized, -1 = none */
 };
 
 struct wi_compiler*
