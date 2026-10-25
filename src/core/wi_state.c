@@ -1103,8 +1103,8 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
         _OPCODE_LABEL(LOAD_LOCAL_2) :
         _OPCODE_LABEL(LOAD_LOCAL_3) :
         _OPCODE_LABEL(LOAD_LOCAL_4) :
-        _OPCODE_LABEL(LOAD_LOCAL_5) : 
-        _OPCODE_LABEL(LOAD_LOCAL_6) : 
+        _OPCODE_LABEL(LOAD_LOCAL_5) :
+        _OPCODE_LABEL(LOAD_LOCAL_6) :
         _OPCODE_LABEL(LOAD_LOCAL_7) :
         _OPCODE_LABEL(LOAD_LOCAL_8) : {
             wi_state_push(state, frame->slots[opcode - WI_OP_LOAD_LOCAL_0]);
