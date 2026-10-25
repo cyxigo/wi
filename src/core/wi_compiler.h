@@ -125,6 +125,7 @@ struct wi_compiler {
 
     int last_call;
     int global_decl; /* slot of the global being initialized, -1 = none */
+    int global_base; /* module globals count when the compile started */
 };
 
 struct wi_compiler*

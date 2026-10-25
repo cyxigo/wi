@@ -98,6 +98,7 @@ wi_new_compiler(struct wi_compiler* outer, struct wi_state* state, struct wi_par
 
     compiler->last_call   = -1;
     compiler->global_decl = -1;
+    compiler->global_base = module->globals.count;
 
     /* everything is initialized by now, so an allocation failure below can safely delete this compiler */
     compiler->gc->compiler       = compiler;
@@ -134,9 +135,44 @@ wi_delete_compiler(struct wi_compiler* compiler) {
 }
 
 /*
+    undefine globals that were defined in this compiler's wi_compile
+    will skip if a compiler is a function compiler
+*/
+static void
+_compiler_undef_globals(struct wi_compiler* compiler) {
+    if (!compiler || compiler->outer) {
+        return;
+    }
+
+    struct wi_module* module = compiler->module;
+
+    for (int i = 0; i < module->vars.capacity; i++) {
+        struct wi_entry* entry = &module->vars.entries[i];
+
+        if (wi_value_is_empty(entry->key)) {
+            continue;
+        }
+
+        uint16_t index = wi_vardata_index(wi_value_as_vardata(entry->value));
+
+        if (index < compiler->global_base) {
+            continue;
+        }
+
+        wi_table_delete(&module->exports, entry->key);
+        wi_table_delete(&module->vars, entry->key);
+    }
+
+    module->globals.count = compiler->global_base;
+}
+
+/*
     we walk from the innermost compiler to the outermost, because not all compilers are always freed
+
     _compiler_function_expr is another place where we allocate a compiler, and it can leak if we do not
     reach the end of _compiler_function_expr where we delete it
+
+    the outermost one also undefines the globals it has defined
 */
 void
 wi_delete_compilers(struct wi_gc* gc) {
@@ -144,6 +180,7 @@ wi_delete_compilers(struct wi_gc* gc) {
 
     while (curr) {
         struct wi_compiler* outer = curr->outer;
+        _compiler_undef_globals(curr);
         wi_delete_compiler(curr);
         curr = outer;
     }
@@ -1978,7 +2015,6 @@ wi_compile(struct wi_state* state, const char* src, struct wi_module* module) {
     }
 
     int       roots      = state->gc->temp_root_count;
-    int       globals    = module->globals.count;
     ptrdiff_t top        = state->stack_top - state->stack;
     int       jmp_result = setjmp(parser->error_jmp);
 
@@ -2008,17 +2044,6 @@ wi_compile(struct wi_state* state, const char* src, struct wi_module* module) {
     wi_delete_parser(parser);
     state->stack_top           = state->stack + top;
     state->gc->temp_root_count = roots;
-
-    for (int i = 0; i < module->vars.capacity; i++) {
-        struct wi_entry* entry = &module->vars.entries[i];
-
-        if (!wi_value_is_empty(entry->key) && wi_vardata_index(wi_value_as_vardata(entry->value)) >= globals) {
-            wi_table_delete(&module->exports, entry->key);
-            wi_table_delete(&module->vars, entry->key);
-        }
-    }
-
-    module->globals.count = globals;
 
     if (jmp_result == WI_RUN_OOM) {
         wi_state_fatal_jmp(state, WI_RUN_OOM);

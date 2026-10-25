@@ -9,6 +9,7 @@
 
 - math::log with base 2 or 10 returning slightly inexact results (e.g. math::log(1000, 10) was 2.9999999999999996
 - Invalid escape sequences with a non-ASCII character reporting a broken character in the error message
+- Errors raised by a foreign library's wi_module_init leaving the globals of the failed compilation defined
 
 ## [9.9.0-beta] - 2026-10-22
 
