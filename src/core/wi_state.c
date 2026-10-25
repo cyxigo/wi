@@ -846,10 +846,12 @@ _state_tail_call(struct wi_state* state, struct wi_call_frame* frame, struct wi_
     frame->ip      = prototype->code.bytes.data;
 }
 
-WI_INLINE void
-_state_resolve_field(struct wi_state* state, struct wi_object* object, wi_value name, wi_value* value) {
-    if (WI_LIKELY(wi_table_get(&object->fields, name, value))) {
-        return;
+WI_INLINE wi_value
+_state_resolve_field(struct wi_state* state, struct wi_object* object, wi_value name) {
+    wi_value value;
+
+    if (WI_LIKELY(wi_table_get(&object->fields, name, &value))) {
+        return value;
     }
 
     wi_state_error(state, "object has no field %s", wi_value_as_cstring(name));
@@ -865,8 +867,7 @@ _state_resolve_method(struct wi_state* state, wi_value receiver, wi_value name) 
 
         switch (box->kind) {
             case WI_BOX_OBJECT:
-                _state_resolve_field(state, (struct wi_object*)box, name, &function);
-                return function;
+                return _state_resolve_field(state, (struct wi_object*)box, name);
             case WI_BOX_STRING:
                 methods = &state->stm_string;
                 break;
@@ -1498,9 +1499,8 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
             }
 
             struct wi_object* object = wi_value_as_object(target);
-            wi_value          value;
-            frame->ip = ip;
-            _state_resolve_field(state, object, name, &value);
+            frame->ip                = ip;
+            wi_value value           = _state_resolve_field(state, object, name);
 
             wi_state_drop(state);
             wi_state_push(state, value);
