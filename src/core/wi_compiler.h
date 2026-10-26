@@ -126,6 +126,14 @@ struct wi_compiler {
     int last_call;
     int global_decl; /* slot of the global being initialized, -1 = none */
     int global_base; /* module globals count when the compile started */
+
+    /*
+        the last variable a function captured while it was still being initialized (f in f := || => f;)
+        lives in the compiler that owns the variable (the root one for globals)
+        _compiler_parse_prec reads it and decides if that capture is "fine"
+        (this concept of "fine" is explained way better in _compiler_parse_prec itself)
+    */
+    struct wi_token uninit_use;
 };
 
 struct wi_compiler*

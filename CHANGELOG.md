@@ -2,7 +2,7 @@
 
 ### Changed
 
-- Globals/locals now report one single unified "cannot use variable x inside its own initializer"
+- Globals/locals now report one single unified "variable x is used but not initialized"
 - Assigning to a function's own name inside its body now assigns the variable like anywhere else (was a compile error)
 
 ### Fixed
@@ -10,6 +10,7 @@
 - math::log with base 2 or 10 returning slightly inexact results (e.g. math::log(1000, 10) was 2.9999999999999996
 - Invalid escape sequences with a non-ASCII character reporting a broken character in the error message
 - Errors raised by a foreign library's wi_module_init leaving the globals of the failed compilation defined
+- Reassigning a foreign variable (e.g. std) pointing at the name instead of the =
 
 ## [9.9.0-beta] - 2026-10-22
 

@@ -100,6 +100,8 @@ wi_new_compiler(struct wi_compiler* outer, struct wi_state* state, struct wi_par
     compiler->global_decl = -1;
     compiler->global_base = module->globals.count;
 
+    compiler->uninit_use = WI_BLANK_TOKEN;
+
     /* everything is initialized by now, so an allocation failure below can safely delete this compiler */
     compiler->gc->compiler       = compiler;
     compiler->prototype          = wi_new_prototype(compiler->gc, compiler->module->path);
@@ -600,7 +602,14 @@ _compiler_resolve_upvalue(struct wi_compiler* compiler, struct wi_token name, wi
     int local = _compiler_resolve_local(compiler->outer, name, vardata);
 
     if (local != -1) {
-        compiler->outer->locals[local].is_captured = true;
+        struct wi_local* outer_local = &compiler->outer->locals[local];
+        outer_local->is_captured     = true;
+
+        /* depth -1 means this local is still being initialized, _compiler_parse_prec checks if it's "fine" */
+        if (outer_local->depth == -1) {
+            compiler->outer->uninit_use = name;
+        }
+
         return _compiler_add_upvalue(compiler, (uint8_t)local, true);
     }
 
@@ -670,8 +679,8 @@ _compiler_var(struct wi_compiler* compiler, struct wi_token name, bool can_assig
         }
 
         if (!wi_value_is_empty(foreign)) {
-            if (can_assign && wi_parser_check(compiler->parser, WI_TOKEN_EQUAL)) {
-                wi_parser_error_at(compiler->parser, name, "cannot reassign variable %s", global_name->buf);
+            if (can_assign && wi_parser_match(compiler->parser, WI_TOKEN_EQUAL)) {
+                wi_parser_error_at_prev(compiler->parser, "cannot reassign variable %s", global_name->buf);
             }
 
             _compiler_emit_push(compiler, foreign);
@@ -680,12 +689,28 @@ _compiler_var(struct wi_compiler* compiler, struct wi_token name, bool can_assig
 
         vardata = wi_value_as_vardata(vardata_value);
         arg     = wi_vardata_index(vardata);
-        in_init = arg == compiler->global_decl;
+
+        struct wi_compiler* root = compiler;
+
+        while (root->outer) {
+            root = root->outer;
+        }
+
+        /*
+            this global is being initialized right now at this very moment!!
+            it exists (as null) sure, but its initializer isn't done yet
+            directly inside the initializer that's an error, inside a function it *might* be "fine"
+            so we only remember it in the root compiler and let _compiler_parse_prec decide
+        */
+        if (arg == root->global_decl) {
+            root->uninit_use = name;
+            in_init          = root == compiler;
+        }
     }
 
     if (in_init) {
-        wi_parser_error_at(compiler->parser, name, "cannot use variable %.*s inside its own initializer",
-                           name.count, name.start);
+        wi_parser_error_at(compiler->parser, name, "variable %.*s is used but not initialized", name.count,
+                           name.start);
     }
 
     if (wi_attr_is_set(vardata, WI_ATTR_DEPRECATED)) {
@@ -789,9 +814,26 @@ _compiler_parse_prec(struct wi_compiler* compiler, enum _prec min_prec) {
         _compiler_parse_prec is the only spot that gets called for literally EVERY
         piece of an expression, so it's the only place we CAN ask
         "hey is that a |, a ||, or a (" before parsing and parsing and so on
+
+        and the same reason is why the "used before initialized" check lives here too
+        now lets finally talk about what is a "fine" use of an uninitialized variable!
+        f := || => f();         is fine, the function runs later, f exists by then
+        f := (|| => f())();     is NOT! the function runs right now, f doesn't exist yet
+        f := g(|| => f);        is NOT! g can call it right now and we can't know
+
+        when a function captures a variable that is still being initialized, its name is captured in
+        compiler->uninit_use so we remember where uninit_use pointed before this part of the expression and compare
+        after; if it moved, something in here captured such a variable
+        runs_now tells us if this part could actually run what it captured: a name, or any infix operator (call,
+        subscript, a binary operator, etc.) can, a simple function/array/map/object just stores it and is safe
+
+        confusing? sure. but hey, this is syntax based machinery, who said it will be simple?
+        also naming yeah probably not as clear but like man i have no idea what to name these little
+        freaks of variables
     */
     struct wi_token    var_name  = compiler->var_name;
     enum wi_token_kind pref_kind = compiler->parser->prev.kind;
+    const char*        old_use   = compiler->uninit_use.start;
 
     if (pref_kind != WI_TOKEN_PIPE && pref_kind != WI_TOKEN_PIPE_PIPE && pref_kind != WI_TOKEN_OPEN_PAREN) {
         compiler->var_name = WI_BLANK_TOKEN;
@@ -799,10 +841,17 @@ _compiler_parse_prec(struct wi_compiler* compiler, enum _prec min_prec) {
 
     pref(compiler, can_assign);
     compiler->var_name = WI_BLANK_TOKEN; /* the name belongs to the prefix only, infix shall not see it!!! */
+    bool runs_now      = pref_kind == WI_TOKEN_NAME;
 
     while (_compiler_get_rule(compiler->parser->curr.kind)->prec >= min_prec) {
+        runs_now = true;
         wi_parser_advance(compiler->parser);
         _compiler_get_rule(compiler->parser->prev.kind)->inf(compiler, can_assign);
+    }
+
+    if (runs_now && compiler->uninit_use.start != old_use) {
+        wi_parser_error_at(compiler->parser, compiler->uninit_use, "variable %.*s is used but not initialized",
+                           compiler->uninit_use.count, compiler->uninit_use.start);
     }
 
     compiler->var_name = var_name;
