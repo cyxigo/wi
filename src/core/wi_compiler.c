@@ -455,7 +455,6 @@ _compiler_decl_local(struct wi_compiler* compiler, struct wi_token name, wi_vard
 
         if (wi_token_lexemes_equal(name, local->name)) {
             wi_parser_error_at(compiler->parser, name, "variable %.*s is already defined", name.count, name.start);
-            return;
         }
     }
 
