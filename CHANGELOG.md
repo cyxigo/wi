@@ -12,6 +12,7 @@
 - Errors raised by a foreign library's wi_module_init leaving the globals of the failed compilation defined
 - Reassigning a foreign variable (e.g. std) pointing at the name instead of the =
 - << and >> reporting the wrong operand when neither has an integer representation
+- os::system running the command before the script's own buffered output
 
 ## [9.9.0-beta] - 2026-10-22
 

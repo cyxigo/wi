@@ -258,6 +258,7 @@ wi_mkdir(const char* path) {
 
 int
 wi_system(const char* command) {
+    fflush(NULL); /* system doesn't flush so we do it ourselves */
 #ifdef _WIN32
     wchar_t* wcommand = wi_utf8_to_wide(command);
     int      status   = wcommand ? _wsystem(wcommand) : -1;
