@@ -27,8 +27,6 @@ struct wi_entry {
     wi_value value;
 };
 
-extern const double WI_TABLE_MAX_LOAD;
-
 struct wi_table {
     struct wi_gc*    gc;
     struct wi_entry* entries;

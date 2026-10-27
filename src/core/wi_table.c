@@ -9,7 +9,15 @@
 #include "wi_util.h"
 #include "wi_value.h"
 
-const double WI_TABLE_MAX_LOAD = 0.75;
+/*
+    tables are never filled past 3/4 of their capacity, which is always 0 or a power of two
+    once again we pull up some trickery
+    ....was this even worth it?
+*/
+WI_INLINE int
+_max_count(int capacity) {
+    return capacity - (capacity >> 2);
+}
 
 static void
 _init_entries(struct wi_entry* entries, int capacity) {
@@ -106,10 +114,10 @@ wi_table_set(struct wi_table* table, wi_value key, wi_value value) {
         so we pick the actual capacity based on table->live_count instead
         this allows us to shrink tables like the string intern table, which tend to accumulate TONS of tombstones
     */
-    if (WI_UNLIKELY(table->count + 1 > table->capacity * WI_TABLE_MAX_LOAD)) {
+    if (WI_UNLIKELY(table->count + 1 > _max_count(table->capacity))) {
         int capacity = WI_TABLE_MIN_CAPACITY;
 
-        while (table->live_count + 1 > capacity * WI_TABLE_MAX_LOAD) {
+        while (table->live_count + 1 > _max_count(capacity)) {
             capacity = wi_table_grow_capacity(capacity);
         }
 
@@ -223,7 +231,7 @@ wi_table_reserve(struct wi_table* table, int count) {
     int needed   = table->count + count;
     int capacity = table->capacity;
 
-    while (needed > capacity * WI_TABLE_MAX_LOAD) {
+    while (needed > _max_count(capacity)) {
         capacity = wi_table_grow_capacity(capacity);
     }
 
