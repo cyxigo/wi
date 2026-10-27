@@ -11,6 +11,7 @@
 - Invalid escape sequences with a non-ASCII character reporting a broken character in the error message
 - Errors raised by a foreign library's wi_module_init leaving the globals of the failed compilation defined
 - Reassigning a foreign variable (e.g. std) pointing at the name instead of the =
+- << and >> reporting the wrong operand when neither has an integer representation
 
 ## [9.9.0-beta] - 2026-10-22
 

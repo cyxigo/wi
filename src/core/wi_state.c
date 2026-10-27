@@ -487,8 +487,8 @@ _state_bit_shift(struct wi_state* state, bool right) {
                        wi_value_type(a), wi_value_type(b));
     }
 
-    int64_t b_int = wi_state_real_to_int(state, wi_value_as_real(b));
     int64_t a_int = wi_state_real_to_int(state, wi_value_as_real(a));
+    int64_t b_int = wi_state_real_to_int(state, wi_value_as_real(b));
 
     if (WI_UNLIKELY(b_int < 0 || b_int >= 64)) {
         wi_state_error(state, "shift amount out of range: %lld", b_int);
