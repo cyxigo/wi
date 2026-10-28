@@ -40,68 +40,17 @@ whiskers->meow();   %% Whiskers says meow! (=^･ω･^=)
 
 Want to try it? [Try it here!](https://wi-lang.pages.dev/try)
 
-## Supported platforms
-
-| Platform | Toolchain (Compiler) | Support |
-| -------- | -------------------- | ------- |
-| Linux    | GCC, Clang, MinGW    | Full    |
-| Windows  | MSVC, MinGW          | Full    |
-| WASM     | Emscripten           | Minimal |
-
-Other platforms (macOS, BSD, etc.) are not officially supported.
-
-Wi may build there, but it is not tested and foreign libraries are unavailable. Contributions towards the support of different platforms can be done via [pull requests](https://github.com/cyxigo/wi/pulls)!
-
-WASM support is only [two basic functions](https://github.com/cyxigo/wi/blob/main/src/wasm/wi_wasm.c), and no foreign libraries. Since it's only used by that [little Wi playground](https://wi-lang.pages.dev/try).
-
 ## Building from source
 
-Wi has **zero external dependencies** (aside from, well, the C standard library) and uses [`xmake`](https://xmake.io) as its build system.
-
-To get Wi executable:
-
-```bash
-xmake build wi
-```
-
-To get Wi shared library:
-
-```bash
-xmake build wi_shared
-```
-
-To get both just:
-
-```bash
-xmake
-```
-
-To get WASM build:
-
-```bash
-xmake f -p wasm
-xmake
-```
-
-If you are on Linux, it is highly recommended to have the `readline` package installed, as Wi uses it for a much better REPL experience.
-
-For max speed and performance, it is better to use **GNU99** compatible compiler, since Wi uses many **GNU** extensions for performance tweaks.
-
-To build release zips for all platforms, use [`release.sh`](https://github.com/cyxigo/wi/blob/main/util/release.sh) (requires a lot of different compilers, see the script for flags).
-
-## Structure
-
-The Wi source code is organized into the following directories:
-
-| Directory  | Description                                                  |
-| ---------- | ------------------------------------------------------------ |
-| `include`  | Public API headers (`wi_conf.h`, `wi.h`, `wi.hpp`)           |
-| `src/core` | Core components – compiler, VM, GC, API implementation, etc. |
-| `src/std`  | Standard library implementation                              |
-| `src/stm`  | Standard method library implementation                       |
-| `src/wasm` | WASM embedding functions                                     |
+For the source code structure and build instructions, please refer to [`BUILDING.md`](https://github.com/cyxigo/wi/blob/main/BUILDING.md).
 
 ## Notes
+
+### Supported platforms
+
+Officially supported and tested platforms are **Linux**, **Windows** and **WASM**.
+
+Other platforms such as macOS, BSD, etc. are not officially supported. Wi _may_ compile there, but it is not tested and foreign libraries are unavailable.
 
 ### What `beta` actually means for Wi
 
