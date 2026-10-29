@@ -1744,9 +1744,6 @@ void
 wi_state_seed_rand(struct wi_state* state, uint64_t seed) {
     for (int i = 0; i < 4; i++) {
         seed += 0x9e3779b97f4a7c15ull;
-        uint64_t z           = seed;
-        z                    = (z ^ (z >> 30)) * 0xbf58476d1ce4e5b9ull;
-        z                    = (z ^ (z >> 27)) * 0x94d049bb133111ebull;
-        state->rand_state[i] = z ^ (z >> 31);
+        state->rand_state[i] = wi_mix64(seed);
     }
 }

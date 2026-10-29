@@ -28,6 +28,17 @@
 #define WI_UNUSED(x) (void)x
 #define WI_PATH_MAX 4096
 
+/*
+    splitmix64 finalizer, mixes all 64 bits of [x]
+    funny numbers you throwin around man
+*/
+WI_INLINE uint64_t
+wi_mix64(uint64_t x) {
+    x = (x ^ (x >> 30)) * 0xbf58476d1ce4e5b9ull;
+    x = (x ^ (x >> 27)) * 0x94d049bb133111ebull;
+    return x ^ (x >> 31);
+}
+
 char*
 wi_vasprintf(const char* format, va_list args);
 char*

@@ -51,6 +51,13 @@ wi_value_print(struct wi_state* state, wi_value value) {
     free(text);
 }
 
+/* folded like, into 32 bits, yk, get it? */
+static uint32_t
+_folded_hash(uint64_t bits) {
+    bits = wi_mix64(bits);
+    return (uint32_t)bits ^ (uint32_t)(bits >> 32);
+}
+
 static uint32_t
 _real_hash(wi_real real) {
     uint64_t bits;
@@ -61,13 +68,7 @@ _real_hash(wi_real real) {
         bits = 0;
     }
 
-    bits ^= bits >> 30;
-    bits *= 0xbf58476d1ce4e5b9ull;
-    bits ^= bits >> 27;
-    bits *= 0x94d049bb133111ebull;
-    bits ^= bits >> 31;
-
-    return (uint32_t)bits ^ (uint32_t)(bits >> 32);
+    return _folded_hash(bits);
 }
 
 uint32_t
@@ -83,7 +84,7 @@ wi_value_hash(wi_value value) {
             return ((struct wi_string*)box)->hash;
         }
 
-        return (uint32_t)((uintptr_t)box >> 2);
+        return _folded_hash((uint64_t)(uintptr_t)box);
     }
 
     if (WI_UNLIKELY(wi_value_is_null(value))) {
