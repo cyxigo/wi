@@ -41,10 +41,10 @@ build() {
 if $wasm; then
     build -p wasm
 else
-    build -p windows --toolchain=mingw
-    build -p linux
     build -p windows -a x86 --toolchain=mingw
+    build -p windows --toolchain=mingw
     build -p linux -a arm64 --cross=aarch64-linux-gnu-
+    build -p linux
 fi
 
 echo "done"
