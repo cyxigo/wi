@@ -80,56 +80,26 @@
 
             Want to try it? <a class="link" href="https://wi-lang.pages.dev/try">Try it here!</a>
 
-            <h2>Supported platforms</h2>
-            <div class="table-scroll">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Platform</th>
-                            <th>Toolchain</th>
-                            <th>Support</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>Linux</td>
-                            <td>GCC, Clang, MinGW</td>
-                            <td>Full</td>
-                        </tr>
-                        <tr>
-                            <td>Windows</td>
-                            <td>MSVC, MinGW</td>
-                            <td>Full</td>
-                        </tr>
-                        <tr>
-                            <td>WASM</td>
-                            <td>Emscripten</td>
-                            <td>Partial</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+            <h3>Supported platforms</h3>
+            Officially supported and tested platforms are Linux, Windows and WASM.
             <br />
+            Other platforms such as macOS, BSD, etc. are not officially supported. Wi may compile there, but it is
+            <br />
+            not tested and foreign libraries are unavailable.
 
-            WASM support is pretty minimal – only
-            <a class="link" href="https://github.com/cyxigo/wi/blob/main/src/wasm/wi_wasm.c">two basic functions</a
-            >, and no foreign libraries. Since it's only used by that
-            <a class="link" href="https://wi-lang.pages.dev/try">little Wi playground</a>.
+            <h3>What beta actually means for Wi</h3>
+            It means breaking syntax and API/FFI changes can happen. But don't be scared right away! Wi v9
             <br />
-            Other platforms (macOS, BSD, etc.) are not officially supported. Wi may build there, but it is not
-            tested and foreign libraries are unavailable. <br />
-            Contributions towards the support of different platforms can be done via
-            <a class="link" href="https://github.com/cyxigo/wi/pulls">pull requests</a>!
+            seriously improved on that. Right now, syntax changes are highly unlikely, and FFI/API changes only
+            <br />
+            happen for a good reason (like making DX better). If anything does break, it's documented right
+            <br />
+            away in the CHANGELOG.md and the wiki is updated right after.
 
-            <h2>Notes</h2>
-            This programming language was created by me, and only me – a single person. It's in beta, because I'm
-            still designing it and <b>breaking syntax changes can happen</b>, though right now – very unlikely; the
-            project is finally gaining some stability both in syntax and in FFI/API. The standard library is
-            designed to be minimal, but useful. Other than the FFI/API, the code is not heavily commented. Some
-            parts may still need polish, and I'm very open to suggestions – if you have one,
-            <a class="link" href="https://github.com/cyxigo/wi/issues">open an issue</a>!
-            <br />
-            No AI was used in the development of Wi – I'm all by myself.
+            <h3>Thread safety</h3>
+            If you're embedding Wi, and dealing with multiple threads, just follow one simple rule: one state = one
+            thread. <br />
+            Kind of like Lua does it.
         </div>
 
         <footer>
