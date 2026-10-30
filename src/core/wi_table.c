@@ -106,6 +106,27 @@ _table_adjust_capacity(struct wi_table* table, int capacity) {
 
 bool
 wi_table_set(struct wi_table* table, wi_value key, wi_value value) {
+    if (WI_UNLIKELY(table->capacity == 0)) {
+        _table_adjust_capacity(table, WI_TABLE_MIN_CAPACITY);
+    }
+
+    struct wi_entry* entry = _find_entry(table->entries, table->capacity, key);
+
+    /* overwriting a live key moves nothing, so iterators over the table stay valid */
+    if (!wi_value_is_empty(entry->key)) {
+        entry->value = value;
+        return false;
+    }
+
+    if (wi_value_is_null(entry->value)) {
+        table->count++;
+    }
+
+    table->live_count++;
+    entry->key   = key;
+    entry->value = value;
+    table->mod_count++;
+
     /*
         table->count is "slots ever used" (live entries + tombstones)
         that's what actually decides when to resize
@@ -124,22 +145,7 @@ wi_table_set(struct wi_table* table, wi_value key, wi_value value) {
         _table_adjust_capacity(table, capacity);
     }
 
-    struct wi_entry* entry      = _find_entry(table->entries, table->capacity, key);
-    bool             is_new_key = wi_value_is_empty(entry->key);
-
-    if (WI_UNLIKELY(is_new_key)) {
-        if (wi_value_is_null(entry->value)) {
-            table->count++;
-        }
-
-        table->live_count++;
-    }
-
-    entry->key   = key;
-    entry->value = value;
-    table->mod_count++;
-
-    return is_new_key;
+    return true;
 }
 
 void

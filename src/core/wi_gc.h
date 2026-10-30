@@ -118,7 +118,6 @@ wi_gc_write_barrier(struct wi_gc* gc, struct wi_box* parent, wi_value value) {
 WI_INLINE void
 wi_gc_array_set(struct wi_gc* gc, struct wi_array* array, int index, wi_value value) {
     array->items.data[index] = value;
-    array->items.mod_count++;
     wi_gc_write_barrier(gc, (struct wi_box*)array, value);
 }
 
@@ -130,11 +129,9 @@ wi_gc_array_add(struct wi_gc* gc, struct wi_array* array, wi_value value) {
 
 WI_INLINE void
 wi_gc_table_set(struct wi_gc* gc, struct wi_box* parent, struct wi_table* table, wi_value key, wi_value value) {
-    if (wi_table_set(table, key, value)) {
-        wi_gc_write_barrier(gc, parent, key);
-    }
-
+    wi_gc_write_barrier(gc, parent, key);
     wi_gc_write_barrier(gc, parent, value);
+    wi_table_set(table, key, value);
 }
 
 #define WI_GC_TABLE_SET(gc, parent, table, key, value) \

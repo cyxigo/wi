@@ -4,6 +4,7 @@
 
 - Globals/locals now report one single unified "variable x is used but not initialized"
 - Assigning to a function's own name inside its body now assigns the variable like anywhere else (was a compile error)
+- Assigning to an existing map key or array index while iterating (e.g. inside ->each) no longer raises "modified during iteration"
 
 ### Fixed
 
