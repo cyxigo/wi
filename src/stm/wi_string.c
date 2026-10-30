@@ -18,9 +18,10 @@ _string_bytes(struct wi_state* state, uint8_t arg_count) {
     wi_value_buf_reserve(&array->items, count);
 
     for (int i = 0; i < count; i++) {
-        wi_push_real(state, (wi_real)(unsigned char)string[i]);
-        wi_array_add(state, array);
+        array->items.data[i] = wi_make_real_value((uint8_t)string[i]);
     }
+
+    array->items.count = count;
 }
 
 static void

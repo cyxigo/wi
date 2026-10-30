@@ -4,7 +4,6 @@
 
 - Globals/locals now report one single unified "variable x is used but not initialized"
 - Assigning to a function's own name inside its body now assigns the variable like anywhere else (was a compile error)
-- Assigning to an existing map key or array index while iterating (e.g. inside ->each) no longer raises "modified during iteration"
 
 ### Fixed
 
@@ -14,6 +13,7 @@
 - Reassigning a foreign variable (e.g. std) pointing at the name instead of the =
 - << and >> reporting the wrong operand when neither has an integer representation
 - os::system running the command before the script's own buffered output
+- Assigning to an existing map key or array index while iterating (e.g. inside ->each) raising "modified during iteration"
 
 ## [9.9.0-beta] - 2026-10-22
 
