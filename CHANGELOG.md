@@ -14,6 +14,7 @@
 - << and >> reporting the wrong operand when neither has an integer representation
 - os::system running the command before the script's own buffered output
 - Assigning to an existing map key or array index while iterating (e.g. inside ->each) raising "modified during iteration"
+- Empty string interpolation ("${ }") reporting a confusing "expected string" error at the end of the line
 
 ## [9.9.0-beta] - 2026-10-22
 

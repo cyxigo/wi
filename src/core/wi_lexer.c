@@ -422,6 +422,18 @@ _lexer_string(struct wi_lexer* lexer) {
                 return wi_token_make_error("string interpolation nested too deeply (limit is 8)", line, col);
             }
 
+            /* check for an empty interpolation */
+            int         interp_col = lexer->curr_col + 1; /* point at the starting { */
+            const char* end        = lexer->curr + 2;
+
+            while (wi_is_space(*end)) {
+                end++;
+            }
+
+            if (*end == '}') {
+                return wi_token_make_error("empty string interpolation", line, interp_col);
+            }
+
             struct wi_token token = _lexer_make_token(lexer, WI_TOKEN_INTERP);
 
             _lexer_advance(lexer); /* $ */
