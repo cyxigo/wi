@@ -1,5 +1,7 @@
 ## [Unreleased]
 
+## [9.9.1-beta] - 2026-10-30
+
 ### Changed
 
 - Globals/locals now report one single unified "variable x is used but not initialized"
