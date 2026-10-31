@@ -191,7 +191,7 @@ target_end()
 -- this is such a blessing thank you xmake
 xpack("wi")
     set_formats("zip")
-    
+
     add_targets("wi", "wi_shared")
     set_basename("wi-$(plat)-$(arch)")
 
