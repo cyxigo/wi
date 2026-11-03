@@ -1,5 +1,9 @@
 ## [Unreleased]
 
+### Changed
+
+- Updated disassembly printing format (such as constant indexes now being "[XXXXX]")
+
 ## [9.9.1-beta] - 2026-10-30
 
 ### Changed

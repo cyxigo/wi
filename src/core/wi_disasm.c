@@ -8,6 +8,9 @@
 #include "wi_util.h"
 #include "wi_value.h"
 
+#define _OFFSET_FORMAT "%04i"     /* 0001 */
+#define _CONSTANT_FORMAT "[%05i]" /* [00001] */
+
 static int
 _simple_instr(struct wi_state* state, int offset, const char* format, ...) {
     va_list args;
@@ -42,7 +45,7 @@ _constant_instr(struct wi_state* state, const char* name, const char* arg_name, 
     wi_value value    = prototype->constants.data[constant];
 
     wi_printf(state, state->out, "%-16s ", name);
-    wi_printf(state, state->out, "C:%05hu ", constant);
+    wi_printf(state, state->out, _CONSTANT_FORMAT " ", constant);
     wi_value_print(state, value);
     wi_printf(state, state->out, " (%s)\n", arg_name);
 
@@ -51,14 +54,15 @@ _constant_instr(struct wi_state* state, const char* name, const char* arg_name, 
 
 static int
 _jump_instr(struct wi_state* state, const char* name, int sign, struct wi_prototype* prototype, int offset) {
-    uint16_t jump = wi_code_short(&prototype->code, offset + 1);
-    wi_printf(state, state->out, "%-16s O:%03i -> O:%03i\n", name, offset, offset + 3 + sign * jump);
+    uint16_t jump   = wi_code_short(&prototype->code, offset + 1);
+    int      target = offset + 3 + sign * jump;
+    wi_printf(state, state->out, "%-16s " _OFFSET_FORMAT " -> " _OFFSET_FORMAT "\n", name, offset, target);
     return offset + 3;
 }
 
-int
-wi_prototype_disasm_instr(struct wi_state* state, struct wi_prototype* prototype, int offset) {
-    wi_printf(state, state->out, "%04i ", offset);
+static int
+_prototype_disasm_instr(struct wi_state* state, struct wi_prototype* prototype, int offset) {
+    wi_printf(state, state->out, _OFFSET_FORMAT, offset);
     uint8_t* bytes = prototype->code.bytes.data;
     int*     lines = prototype->code.lines.data;
     int      line  = lines[offset];
@@ -73,7 +77,7 @@ wi_prototype_disasm_instr(struct wi_state* state, struct wi_prototype* prototype
 
     switch (opcode) {
         case WI_OP_PUSH:
-            return _constant_instr(state, "push", "constant index", prototype, offset);
+            return _constant_instr(state, "push", "constant", prototype, offset);
         case WI_OP_PUSH_NULL:
             return _simple_instr(state, offset, "push_null");
         case WI_OP_PUSH_TRUE:
@@ -197,7 +201,7 @@ wi_prototype_disasm_instr(struct wi_state* state, struct wi_prototype* prototype
             for (int i = 0; i < wi_value_as_prototype(prototype_value)->upvalue_count; i++) {
                 uint8_t index    = bytes[offset++];
                 uint8_t is_local = bytes[offset++];
-                wi_printf(state, state->out, "    %04i    | %-16s at %hhu\n", offset - 2,
+                wi_printf(state, state->out, "    " _OFFSET_FORMAT "    | %-16s at %hhu\n", offset - 2,
                           is_local ? "local" : "upvalue", index);
             }
 
@@ -253,7 +257,7 @@ wi_prototype_disasm(struct wi_state* state, struct wi_prototype* prototype) {
     for (int i = 0; i < prototype->constants.count; i++) {
         wi_value value = prototype->constants.data[i];
 
-        wi_printf(state, state->out, "    C:%05i ", i);
+        wi_printf(state, state->out, "    " _CONSTANT_FORMAT " ", i);
         wi_value_print(state, value);
         wi_printf(state, state->out, " (%s)\n", wi_value_type(value));
     }
@@ -262,6 +266,6 @@ wi_prototype_disasm(struct wi_state* state, struct wi_prototype* prototype) {
 
     for (int offset = 0; offset < prototype->code.bytes.count;) {
         state->out(state, "    ");
-        offset = wi_prototype_disasm_instr(state, prototype, offset);
+        offset = _prototype_disasm_instr(state, prototype, offset);
     }
 }
