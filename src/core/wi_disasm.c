@@ -187,16 +187,11 @@ _prototype_disasm_instr(struct wi_state* state, struct wi_prototype* prototype, 
         case WI_OP_SUBSCRIPT_GET:
             return _simple_instr(state, offset, "subscript_get");
         case WI_OP_PUSH_CLOSURE: {
-            offset++;
-            uint16_t constant        = wi_code_short(&prototype->code, offset);
-            wi_value prototype_value = prototype->constants.data[constant];
+            uint16_t constant = wi_code_short(&prototype->code, offset + 1);
+            int      count    = wi_value_as_prototype(prototype->constants.data[constant])->upvalue_count;
+            offset            = _constant_instr(state, "push_closure", "function", prototype, offset);
 
-            wi_printf(state, state->out, "%-16s ", "push_closure");
-            wi_value_print(state, prototype_value);
-            state->out(state, "\n");
-            offset += 2;
-
-            for (int i = 0; i < wi_value_as_prototype(prototype_value)->upvalue_count; i++) {
+            for (int i = 0; i < count; i++) {
                 uint8_t index    = bytes[offset++];
                 uint8_t is_local = bytes[offset++];
                 wi_printf(state, state->out, "    " _OFFSET_FORMAT "   | %-16s %s %hhu (index)\n", offset - 2,
