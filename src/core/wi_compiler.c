@@ -1854,9 +1854,9 @@ _compiler_switch_stmt(struct wi_compiler* compiler) {
         and that switch was in a loop
         and then one of the cases had break statement in it
         we would break out of the loop yes, but we also would have a situation like this:
-        0017    | jump_if_false    O:017 -> O:026
-        0020    | jump             O:020 -> O:037 <------ break
-        0023    | jump             O:023 -> O:026 <------ jump that is SUPPOSED TO jump to our naive POP
+        0017   | jump_if_false    0017 -> 0026
+        0020   | jump             0020 -> 0037 -> O:037 <------ break
+        0023   | jump             0023 -> 0026 <------ jump that is SUPPOSED TO jump to our naive POP
         see that? we completely, and naively, skipped that one POP, and the switch value is now on the stack!
         so this local is a small trick - we leave the job of popping the switch value to the compiler
         (normally - via _compiler_end_scope, in a situation like this, via - _compiler_pop_loop_locals)
