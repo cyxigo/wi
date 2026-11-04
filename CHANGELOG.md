@@ -4,6 +4,10 @@
 
 - New io functions: io::writeall, io::readall, io::writeallbytes, io::readallbytes
 
+### Fixed
+
+- import leaking its list of failed attempts when the function it was in ran out of constants
+
 ### Changed
 
 - Updated disassembly printing format (such as constant indexes now being "[XXXXX]")
