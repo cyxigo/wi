@@ -1,5 +1,9 @@
 ## [Unreleased]
 
+### Added
+
+- New io functions: io::writeall, io::readall, io::writeallbytes, io::readallbytes
+
 ### Changed
 
 - Updated disassembly printing format (such as constant indexes now being "[XXXXX]")
