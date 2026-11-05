@@ -7,6 +7,7 @@
 ### Fixed
 
 - import leaking its list of failed attempts when the function it was in ran out of constants
+- array->where, array->find and map->where reading freed memory when the callback overwrote the item it was called with and the GC was triggered
 
 ### Changed
 

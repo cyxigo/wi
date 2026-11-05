@@ -253,9 +253,24 @@ _array_join(struct wi_state* state, uint8_t arg_count) {
 
 static void
 _array_call(struct wi_state* state, struct wi_array* array, int mod_count, wi_value item, bool drop) {
-    wi_arg_function(state, 2, 1);
+    bool is_box = wi_value_is_box(item);
+
+    /*
+        the callback can overwrite item in the array and we will lose the reference to it
+        some functions may use the item after the call soooo yeah root that thing
+    */
+    if (is_box) {
+        WI_GC_PUSH_ROOT(state->gc, wi_value_as_box(item));
+    }
+
+    wi_push_arg(state, 2);
     wi_state_ppush(state, item);
     wi_call(state, 1, drop);
+
+    if (is_box) {
+        wi_gc_pop_root(state->gc);
+    }
+
     wi_state_check_mod_count(state, "array", array->items.mod_count, mod_count);
 }
 

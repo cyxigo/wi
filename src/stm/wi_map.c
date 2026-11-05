@@ -95,10 +95,26 @@ _map_remove(struct wi_state* state, uint8_t arg_count) {
 
 static void
 _map_call(struct wi_state* state, struct wi_map* map, int mod_count, wi_value key, wi_value value, bool drop) {
-    wi_arg_function(state, 2, 2);
+    bool is_box = wi_value_is_box(value);
+
+    /*
+        same reason as _array_call
+        key doesn't need rooting because we can modify key memory only via deleting
+        which will bump mod_count and then fail mod_count check
+    */
+    if (is_box) {
+        WI_GC_PUSH_ROOT(state->gc, wi_value_as_box(value));
+    }
+
+    wi_push_arg(state, 2);
     wi_state_ppush(state, key);
     wi_state_ppush(state, value);
     wi_call(state, 2, drop);
+
+    if (is_box) {
+        wi_gc_pop_root(state->gc);
+    }
+
     wi_state_check_mod_count(state, "map", map->items.mod_count, mod_count);
 }
 
