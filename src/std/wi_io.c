@@ -329,7 +329,7 @@ _io_readbytes(struct wi_state* state, uint8_t arg_count) {
 }
 
 static void
-_io_writeall(struct wi_state* state, uint8_t arg_count) {
+_io_writefile(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     char*         path = wi_arg_string(state, 1, NULL, NULL);
     struct _file* file = _file_open(state, path, "w", false);
@@ -339,7 +339,7 @@ _io_writeall(struct wi_state* state, uint8_t arg_count) {
 }
 
 static void
-_io_readall(struct wi_state* state, uint8_t arg_count) {
+_io_readfile(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     char*         path = wi_arg_string(state, 1, NULL, NULL);
     struct _file* file = _file_open(state, path, "r", false);
@@ -347,7 +347,7 @@ _io_readall(struct wi_state* state, uint8_t arg_count) {
 }
 
 static void
-_io_writeallbytes(struct wi_state* state, uint8_t arg_count) {
+_io_writefilebytes(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     char*            path  = wi_arg_string(state, 1, NULL, NULL);
     struct wi_array* bytes = wi_arg_array(state, 2);
@@ -359,7 +359,7 @@ _io_writeallbytes(struct wi_state* state, uint8_t arg_count) {
 }
 
 static void
-_io_readallbytes(struct wi_state* state, uint8_t arg_count) {
+_io_readfilebytes(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     char*         path = wi_arg_string(state, 1, NULL, NULL);
     struct _file* file = _file_open(state, path, "r", false);
@@ -403,19 +403,19 @@ wi_state_def_std_io(struct wi_state* state) {
     struct wi_module* module = wi_push_module(state, "io");
     wi_def(state, "io");
     wi_foreign_entry functions[] = {
-        {"exists",        _io_exists,        1, false},
-        {"open",          _io_open,          2, false},
-        {"close",         _io_close,         1, false},
-        {"flush",         _io_flush,         1, false},
-        {"write",         _io_write,         2, false},
-        {"read",          _io_read,          1, false},
-        {"writebytes",    _io_writebytes,    2, false},
-        {"readbytes",     _io_readbytes,     1, false},
-        {"writeall",      _io_writeall,      2, false},
-        {"readall",       _io_readall,       1, false},
-        {"writeallbytes", _io_writeallbytes, 2, false},
-        {"readallbytes",  _io_readallbytes,  1, false},
-        {"seek",          _io_seek,          3, false},
+        {"exists",         _io_exists,         1, false},
+        {"open",           _io_open,           2, false},
+        {"close",          _io_close,          1, false},
+        {"flush",          _io_flush,          1, false},
+        {"write",          _io_write,          2, false},
+        {"read",           _io_read,           1, false},
+        {"writebytes",     _io_writebytes,     2, false},
+        {"readbytes",      _io_readbytes,      1, false},
+        {"writefile",      _io_writefile,      2, false},
+        {"readfile",       _io_readfile,       1, false},
+        {"writefilebytes", _io_writefilebytes, 2, false},
+        {"readfilebytes",  _io_readfilebytes,  1, false},
+        {"seek",           _io_seek,           3, false},
     };
     WI_MODULE_EXPORT_FOREIGN_ALL(state, module, functions);
 

@@ -2,7 +2,7 @@
 
 ### Added
 
-- New io functions: io::writeall, io::readall, io::writeallbytes, io::readallbytes
+- New io functions: io::writefile, io::readfile, io::writefilebytes, io::readfilebytes
 
 ### Fixed
 
