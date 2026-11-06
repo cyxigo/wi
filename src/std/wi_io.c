@@ -166,21 +166,26 @@ _file_write_text(struct wi_state* state, struct _file* file, wi_value value) {
 }
 
 static char*
-_file_read(struct wi_state* state, struct _file* file, int* count) {
+_file_read(struct wi_state* state, struct _file* file, int* count, bool close) {
     _file_check_read(state, file);
     char* content = wi_read_stream(file->ptr, count);
+    int   err     = errno;
+
+    if (close) {
+        _file_close(file);
+    }
 
     if (!content) {
-        wi_state_error(state, "failed to read file %s: %s", file->path, strerror(errno));
+        wi_state_error(state, "failed to read file %s: %s", file->path, strerror(err));
     }
 
     return content;
 }
 
 static void
-_file_read_text(struct wi_state* state, struct _file* file) {
+_file_read_text(struct wi_state* state, struct _file* file, bool close) {
     int   count;
-    char* content = _file_read(state, file, &count);
+    char* content = _file_read(state, file, &count, close);
 
     if (!wi_utf8_validate(content, count)) {
         free(content);
@@ -231,9 +236,9 @@ _file_write_bytes(struct wi_state* state, struct _file* file, struct wi_array* b
 }
 
 static void
-_file_read_bytes(struct wi_state* state, struct _file* file) {
+_file_read_bytes(struct wi_state* state, struct _file* file, bool close) {
     int   count;
-    char* content = _file_read(state, file, &count);
+    char* content = _file_read(state, file, &count, close);
 
     struct wi_array* result = wi_push_array(state);
     wi_value_buf_reserve(&result->items, count);
@@ -303,7 +308,7 @@ static void
 _io_read(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     struct _file* file = wi_arg_userdata(state, 1, "file");
-    _file_read_text(state, file);
+    _file_read_text(state, file, false);
 }
 
 static void
@@ -320,7 +325,7 @@ static void
 _io_readbytes(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     struct _file* file = wi_arg_userdata(state, 1, "file");
-    _file_read_bytes(state, file);
+    _file_read_bytes(state, file, false);
 }
 
 static void
@@ -338,8 +343,7 @@ _io_readall(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     char*         path = wi_arg_string(state, 1, NULL, NULL);
     struct _file* file = _file_open(state, path, "r", false);
-    _file_read_text(state, file);
-    _file_close(file);
+    _file_read_text(state, file, true);
 }
 
 static void
@@ -359,8 +363,7 @@ _io_readallbytes(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     char*         path = wi_arg_string(state, 1, NULL, NULL);
     struct _file* file = _file_open(state, path, "r", false);
-    _file_read_bytes(state, file);
-    _file_close(file);
+    _file_read_bytes(state, file, true);
 }
 
 static void
