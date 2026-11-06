@@ -192,6 +192,23 @@ _file_read_text(struct wi_state* state, struct _file* file) {
 }
 
 static void
+_bytes_check(struct wi_state* state, struct wi_array* bytes) {
+    for (int i = 0; i < bytes->items.count; i++) {
+        wi_value value = bytes->items.data[i];
+
+        if (WI_UNLIKELY(!wi_value_is_real(value))) {
+            wi_state_error(state, "cannot write a value of type %s as a byte", wi_value_type(value));
+        }
+
+        wi_real real = wi_value_as_real(value);
+
+        if (real != trunc(real) || real < 0 || real > 255) {
+            wi_state_error(state, "real " WI_REAL_FORMAT " has no byte representation", real);
+        }
+    }
+}
+
+static void
 _file_write_bytes(struct wi_state* state, struct _file* file, struct wi_array* bytes) {
     _file_check_write(state, file);
     uint8_t* buf = (uint8_t*)malloc((size_t)bytes->items.count + 1);
@@ -201,21 +218,7 @@ _file_write_bytes(struct wi_state* state, struct _file* file, struct wi_array* b
     }
 
     for (int i = 0; i < bytes->items.count; i++) {
-        wi_value value = bytes->items.data[i];
-
-        if (WI_UNLIKELY(!wi_value_is_real(value))) {
-            free(buf);
-            wi_state_error(state, "cannot write a value of type %s as a byte", wi_value_type(value));
-        }
-
-        wi_real real = wi_value_as_real(value);
-
-        if (real != trunc(real) || real < 0 || real > 255) {
-            free(buf);
-            wi_state_error(state, "real " WI_REAL_FORMAT " has no byte representation", real);
-        }
-
-        buf[i] = (uint8_t)real;
+        buf[i] = (uint8_t)wi_value_as_real(bytes->items.data[i]);
     }
 
     buf[bytes->items.count] = '\0';
@@ -308,6 +311,7 @@ _io_writebytes(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     struct _file*    file  = wi_arg_userdata(state, 1, "file");
     struct wi_array* bytes = wi_arg_array(state, 2);
+    _bytes_check(state, bytes);
     _file_write_bytes(state, file, bytes);
     wi_push_null(state);
 }
@@ -343,7 +347,8 @@ _io_writeallbytes(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     char*            path  = wi_arg_string(state, 1, NULL, NULL);
     struct wi_array* bytes = wi_arg_array(state, 2);
-    struct _file*    file  = _file_open(state, path, "w", false);
+    _bytes_check(state, bytes);
+    struct _file* file = _file_open(state, path, "w", false);
     _file_write_bytes(state, file, bytes);
     _file_check_close(state, file);
     wi_push_null(state);
