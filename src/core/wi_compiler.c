@@ -1237,8 +1237,9 @@ _compiler_function_expr(struct wi_compiler* outer, bool can_assign) {
     }
 
     /*
-        the compiler is freed only in two places: at the end of this amazing function, and in the error
-        recovery path of wi_compile, which finds it through the compiler chain
+        the compiler is freed only in three places: at the end of this amazing function, in the error
+        recovery path of wi_compile, and in _state_jmp when an error jumps over a compile in progress
+        (e.g. an error in a foreign library's wi_module_init), the last two find it through the compiler chain
         _compiler_end removes it from that chain, so everything that can fail (making the constant, emitting
         into outer, which can run out of memory too) must come BEFORE it
         and wi_delete_compiler must come right after, or a longjmp in between would leak the compiler
