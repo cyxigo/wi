@@ -370,16 +370,8 @@ wi_pop_bool(struct wi_state* state) {
     return wi_value_as_bool(value);
 }
 
-char*
-wi_pop_string(struct wi_state* state, int* count, int* len) {
-    wi_value value = wi_state_pop(state);
-
-    if (WI_UNLIKELY(!wi_value_is_string(value))) {
-        _pop_error(state, "string", value);
-    }
-
-    struct wi_string* string = wi_value_as_string(value);
-
+static char*
+_string_data(struct wi_string* string, int* count, int* len) {
     if (count) {
         *count = string->count;
     }
@@ -389,6 +381,17 @@ wi_pop_string(struct wi_state* state, int* count, int* len) {
     }
 
     return string->buf;
+}
+
+char*
+wi_pop_string(struct wi_state* state, int* count, int* len) {
+    wi_value value = wi_state_pop(state);
+
+    if (WI_UNLIKELY(!wi_value_is_string(value))) {
+        _pop_error(state, "string", value);
+    }
+
+    return _string_data(wi_value_as_string(value), count, len);
 }
 
 struct wi_array*
@@ -537,17 +540,7 @@ wi_arg_string(struct wi_state* state, uint8_t arg, int* count, int* len) {
         _arg_error(state, "string", arg);
     }
 
-    struct wi_string* string = wi_value_as_string(state->ffi_stack[arg]);
-
-    if (count) {
-        *count = string->count;
-    }
-
-    if (len) {
-        *len = string->len;
-    }
-
-    return string->buf;
+    return _string_data(wi_value_as_string(state->ffi_stack[arg]), count, len);
 }
 
 void
