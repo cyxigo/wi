@@ -19,6 +19,31 @@
 
 #include "../../include/wi.h"
 
+/*
+    yeah im goin wild on these
+    we don't support even HALF of those officially btw
+    but well might support in the future!
+*/
+#ifdef _WIN32
+    #define _OS_NAME "windows"
+#elif defined(__linux__)
+    #define _OS_NAME "linux"
+#elif defined(__APPLE__)
+    #define _OS_NAME "macos"
+#elif defined(__FreeBSD__)
+    #define _OS_NAME "freebsd"
+#elif defined(__OpenBSD__)
+    #define _OS_NAME "openbsd"
+#elif defined(__NetBSD__)
+    #define _OS_NAME "netbsd"
+#elif defined(__DragonFly__)
+    #define _OS_NAME "dragonfly"
+#elif defined(__EMSCRIPTEN__)
+    #define _OS_NAME "wasm"
+#else
+    #define _OS_NAME "unknown"
+#endif /* _WIN32 || __linux__ || __APPLE__ || BSDs || __EMSCRIPTEN__ || else */
+
 static void
 _os_clock(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
@@ -301,4 +326,7 @@ wi_state_def_std_os(struct wi_state* state) {
         {"sleep",     _os_sleep,     1, false},
     };
     WI_MODULE_EXPORT_FOREIGN_ALL(state, module, functions);
+
+    wi_push_string(state, _OS_NAME);
+    wi_module_set(state, module, "NAME");
 }
