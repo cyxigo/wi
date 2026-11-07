@@ -14,6 +14,7 @@
 ### Changed
 
 - Updated disassembly printing format (such as constant indexes now being "[XXXXX]")
+- std::puts now outputs a blank newline instead of nothing if no arguments are provided
 
 ## [9.9.1-beta] - 2026-10-30
 

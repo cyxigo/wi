@@ -18,6 +18,11 @@ _print(struct wi_state* state, uint8_t arg_count, bool newline) {
         }
     }
 
+    /* std::puts must output a blank newline if no arguments are provided */
+    if (newline && arg_count == 0) {
+        state->out(state, "\n");
+    }
+
     wi_push_null(state);
 }
 
