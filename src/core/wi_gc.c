@@ -80,11 +80,9 @@ _gc_free_box(struct wi_gc* gc, struct wi_box* box) {
         }
         case WI_BOX_PROTOTYPE: {
             struct wi_prototype* prototype = (struct wi_prototype*)box;
-
             wi_code_free(&prototype->code);
             wi_value_buf_free(&prototype->constants);
             WI_GC_FREE(gc, struct wi_prototype, box);
-
             break;
         }
         case WI_BOX_FOREIGN:
