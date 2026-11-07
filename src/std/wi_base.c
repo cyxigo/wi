@@ -455,4 +455,7 @@ wi_state_def_std_base(struct wi_state* state) {
         {"equals",     _base_equals,     2, false},
     };
     WI_MODULE_EXPORT_FOREIGN_ALL(state, module, functions);
+
+    wi_push_string(state, WI_VERSION_STRING);
+    wi_module_set(state, module, "VERSION");
 }

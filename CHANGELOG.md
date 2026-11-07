@@ -2,6 +2,7 @@
 
 ### Added
 
+- New std constant: std::VERSION
 - New io functions: io::writefile, io::readfile, io::writefilebytes, io::readfilebytes
 
 ### Fixed
