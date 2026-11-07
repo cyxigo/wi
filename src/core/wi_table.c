@@ -234,7 +234,8 @@ wi_table_reserve(struct wi_table* table, int count) {
         return;
     }
 
-    int needed   = table->count + count;
+    /* + 1 because wi_table_set grows as soon as count + 1 does not fit */
+    int needed   = table->count + count + 1;
     int capacity = table->capacity;
 
     while (needed > _max_count(capacity)) {
