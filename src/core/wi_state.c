@@ -35,25 +35,25 @@ _state_close_upvalues(struct wi_state* state, wi_value* last) {
 }
 
 static void
-_state_out(struct wi_state* state, const char* text) {
+_state_default_out(struct wi_state* state, const char* text) {
     WI_UNUSED(state);
     fputs(text, stdout);
 }
 
 static void
-_state_error(struct wi_state* state, const char* text) {
+_state_default_error(struct wi_state* state, const char* text) {
     WI_UNUSED(state);
     fputs(text, stderr);
 }
 
 static void
-_state_on_compile(struct wi_state* state) {
+_state_default_on_compile(struct wi_state* state) {
     WI_UNUSED(state);
     /* do nothing */
 }
 
 static char*
-_state_read_file(struct wi_state* state, const char* path) {
+_state_default_import_load(struct wi_state* state, const char* path) {
     char* buf = wi_read_file(path);
 
     if (!buf) {
@@ -64,7 +64,7 @@ _state_read_file(struct wi_state* state, const char* path) {
 }
 
 static bool
-_state_import_exists(struct wi_state* state, const char* path) {
+_state_default_import_exists(struct wi_state* state, const char* path) {
     WI_UNUSED(state);
     return wi_file_exists(path);
 }
@@ -98,12 +98,12 @@ wi_new_state(wi_conf* conf) {
     state->was_eof_error = false;
     state->exit_code     = 0;
 
-    state->out   = _state_out;
-    state->error = _state_error;
+    state->out   = _state_default_out;
+    state->error = _state_default_error;
 
-    state->on_compile    = _state_on_compile;
-    state->import_load   = _state_read_file;
-    state->import_exists = _state_import_exists;
+    state->on_compile    = _state_default_on_compile;
+    state->import_load   = _state_default_import_load;
+    state->import_exists = _state_default_import_exists;
 
     state->extra = NULL;
 
