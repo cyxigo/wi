@@ -1102,7 +1102,8 @@ WI_API int
 wi_map_count(wi_map* map);
 
 /**
- * Set map key to a value, both need to be at the stack top pushed in order key -> value, popping both
+ * Set map key to a value, both need to be at the stack top pushed in order key -> value, popping both.
+ * Raises a runtime error if the key is NaN
  *
  * @param state Wi state instance
  * @param map Target map
