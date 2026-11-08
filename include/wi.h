@@ -1177,7 +1177,7 @@ WI_API void
 wi_module_set(wi_state* state, wi_module* module, const char* name);
 
 /**
- * Get a global variable from a module and push it onto the stack
+ * Get a global variable from a module (exported or not) and push it onto the stack
  *
  * @param state Wi state instance
  * @param module Target module
