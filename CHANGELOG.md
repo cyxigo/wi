@@ -1,20 +1,22 @@
 ## [Unreleased]
 
+## [9.10.0-beta] - 2026-11-8
+
 ### Added
 
 - std::VERSION
 - os::NAME
 - io::writefile, io::readfile, io::writefilebytes, io::readfilebytes
 
-### Fixed
-
-- import leaking its list of failed attempts when the function it was in ran out of constants
-- array->where, array->find and map->where reading freed memory when the callback overwrote the item it was called with and the GC was triggered
-
 ### Changed
 
 - Updated disassembly printing format (such as constant indexes now being "[XXXXX]")
 - std::puts now outputs a blank newline instead of nothing if no arguments are provided
+
+### Fixed
+
+- import leaking its list of failed attempts when the function it was in ran out of constants
+- array->where, array->find and map->where reading freed memory when the callback overwrote the item it was called with and the GC was triggered
 
 ## [9.9.1-beta] - 2026-10-30
 

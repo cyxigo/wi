@@ -7,7 +7,7 @@
 /**
  * Wi version as a string
  */
-#define WI_VERSION_STRING "9.9.1-beta"
+#define WI_VERSION_STRING "9.10.0-beta"
 
 /**
  * Format that Wi uses to print any real
@@ -19,8 +19,8 @@ enum {
      * Version numbers
      */
     WI_VERSION_MAJOR = 9,
-    WI_VERSION_MINOR = 9,
-    WI_VERSION_PATCH = 1,
+    WI_VERSION_MINOR = 10,
+    WI_VERSION_PATCH = 0,
 
     /**
      * Compiler limits
