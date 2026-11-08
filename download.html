@@ -32,7 +32,7 @@
             <a class="button" href="https://github.com/cyxigo/wi/tree/main">Source code</a>
             <hr />
 
-            <img src="res/wi-9.9.1.png" style="max-width: 300px" />
+            <img src="res/wi-9.10.0.png" style="max-width: 300px" />
             <div class="table-scroll">
                 <table>
                     <thead>
@@ -49,7 +49,7 @@
                             <td>
                                 <a
                                     class="link"
-                                    href="https://github.com/cyxigo/wi/releases/download/v9.9.1-beta/wi-windows-x86_64.zip"
+                                    href="https://github.com/cyxigo/wi/releases/download/v9.10.0-beta/wi-windows-x86_64.zip"
                                     >Download</a
                                 >
                             </td>
@@ -60,7 +60,7 @@
                             <td>
                                 <a
                                     class="link"
-                                    href="https://github.com/cyxigo/wi/releases/download/v9.9.1-beta/wi-windows-x86.zip"
+                                    href="https://github.com/cyxigo/wi/releases/download/v9.10.0-beta/wi-windows-x86.zip"
                                     >Download</a
                                 >
                             </td>
@@ -71,7 +71,7 @@
                             <td>
                                 <a
                                     class="link"
-                                    href="https://github.com/cyxigo/wi/releases/download/v9.9.1-beta/wi-linux-x86_64.zip"
+                                    href="https://github.com/cyxigo/wi/releases/download/v9.10.0-beta/wi-linux-x86_64.zip"
                                     >Download</a
                                 >
                             </td>
@@ -82,7 +82,7 @@
                             <td>
                                 <a
                                     class="link"
-                                    href="https://github.com/cyxigo/wi/releases/download/v9.9.1-beta/wi-linux-arm64.zip"
+                                    href="https://github.com/cyxigo/wi/releases/download/v9.10.0-beta/wi-linux-arm64.zip"
                                     >Download</a
                                 >
                             </td>
@@ -92,41 +92,27 @@
             </div>
             <a class="link" href="https://github.com/cyxigo/wi/releases">Older releases</a>
 
+            <h3>Added</h3>
+            <ul>
+                <li>std::VERSION</li>
+                <li>os::NAME</li>
+                <li>io::writefile, io::readfile, io::writefilebytes, io::readfilebytes</li>
+            </ul>
+
             <h3>Changed</h3>
             <ul>
-                <li>Globals/locals now report one single unified "variable x is used but not initialized"</li>
-                <li>
-                    Assigning to a function's own name inside its body now assigns the variable like anywhere else
-                    (was a compile error)
-                </li>
+                <li>Updated disassembly printing format (such as constant indexes now being "[XXXXX]")</li>
+                <li>std::puts now outputs a blank newline instead of nothing if no arguments are provided</li>
             </ul>
 
             <h3>Fixed</h3>
             <ul>
                 <li>
-                    math::log with base 2 or 10 returning slightly inexact results (e.g. math::log(1000, 10) was
-                    2.9999999999999996
+                    import leaking its list of failed attempts when the function it was in ran out of constants
                 </li>
                 <li>
-                    Invalid escape sequences with a non-ASCII character reporting a broken character in the error
-                    message
-                </li>
-                <li>
-                    Errors raised by a foreign library's wi_module_init leaving the globals of the failed
-                    compilation defined
-                </li>
-                <li>Reassigning a foreign variable (e.g. std) pointing at the name instead of the =</li>
-                <li>
-                    &lt;&lt; and &gt;&gt; reporting the wrong operand when neither has an integer representation
-                </li>
-                <li>os::system running the command before the script's own buffered output</li>
-                <li>
-                    Assigning to an existing map key or array index while iterating (e.g. inside ->each) raising
-                    "modified during iteration"
-                </li>
-                <li>
-                    Empty string interpolation ("${ }") reporting a confusing "expected string" error at the end of
-                    the line
+                    array->where, array->find and map->where reading freed memory when the callback overwrote the
+                    item it was called with and the GC was triggered
                 </li>
             </ul>
         </div>
