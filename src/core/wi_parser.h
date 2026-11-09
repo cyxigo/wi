@@ -62,7 +62,7 @@ wi_parser_check(struct wi_parser* parser, enum wi_token_kind kind);
 
 /*
     check NAME := and NAME @
-    both, unmistakenly, are variable declarations
+    both, unmistakably, are variable declarations
 */
 WI_INLINE bool
 wi_parser_check_decl(struct wi_parser* parser) {
