@@ -1339,13 +1339,15 @@ _compiler_new_expr(struct wi_compiler* compiler, bool can_assign) {
 */
 #ifdef _WIN32
     #define _LIB_EXT ".dll"
-    #define _LIB_DIR "\\lib\\wi\\"
-    #define _CUR_DIR ".\\"
+    #define _DIR_SEP "\\"
 #else
     #define _LIB_EXT ".so"
-    #define _LIB_DIR "/lib/wi/"
-    #define _CUR_DIR "./"
+    #define _DIR_SEP "/"
 #endif /* _WIN32 */
+
+#define _CURR_DIR "." _DIR_SEP
+#define _LIB_DIR _DIR_SEP "lib" _DIR_SEP "wi" _DIR_SEP
+#define _INIT_FILE _DIR_SEP "init.wi"
 
 static bool
 _import_is_absolute(const char* path) {
@@ -1381,7 +1383,7 @@ _import_script_path(struct wi_compiler* compiler, struct wi_token name, const ch
     bool        absolute = _import_is_absolute(name.start);
     int         dir_len  = absolute ? 0 : _import_dir_len(base);
     /* dlopen searches the system directories unless the path has a slash in it */
-    const char* prefix = is_lib && !absolute && dir_len == 0 ? _CUR_DIR : "";
+    const char* prefix = is_lib && !absolute && dir_len == 0 ? _CURR_DIR : "";
     char*       path   = wi_sprintf("%s%.*s%.*s%s", prefix, dir_len, base, name.count, name.start, ext);
 
     if (!path) {
@@ -1563,9 +1565,9 @@ _compiler_import_expr(struct wi_compiler* compiler, bool can_assign) {
         <exe>/../lib/wi/file/init.wi
     */
     if (_compiler_import_script(compiler, _import_script_path(compiler, name, ".wi", false), &atts) ||
-        _compiler_import_script(compiler, _import_script_path(compiler, name, "/init.wi", false), &atts) ||
+        _compiler_import_script(compiler, _import_script_path(compiler, name, _INIT_FILE, false), &atts) ||
         _compiler_import_script(compiler, _import_lib_path(compiler, name, ".wi"), &atts) ||
-        _compiler_import_script(compiler, _import_lib_path(compiler, name, "/init.wi"), &atts)) {
+        _compiler_import_script(compiler, _import_lib_path(compiler, name, _INIT_FILE), &atts)) {
         free(atts);
         return;
     }

@@ -1,5 +1,9 @@
 ## [Unreleased]
 
+### Fixed
+
+- import on Windows looking for init.wi with a forward slash (e.g. .\file/init.wi)
+
 ## [9.10.0-beta] - 2026-11-8
 
 ### Added
