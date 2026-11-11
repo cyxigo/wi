@@ -126,6 +126,11 @@ _repl(void) {
         buf     = NULL;
         buf_len = 0;
 
+        if (result == WI_RUN_ABORT && _g_interrupted) {
+            _g_interrupted = 0;
+            continue;
+        }
+
         if (result == WI_RUN_ABORT || result == WI_RUN_OOM) {
             exit_code = result == WI_RUN_OOM ? EXIT_FAILURE : _exit_code();
             break;
