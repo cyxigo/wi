@@ -164,11 +164,11 @@ _map_select(struct wi_state* state, uint8_t arg_count) {
             WI_GC_PUSH_ROOT(state->gc, wi_value_as_box(value));
         }
 
-        wi_arg_function(state, 2, 1);
+        wi_push_arg(state, 2);
         wi_state_ppush(state, key);
         wi_call(state, 1, false);
 
-        wi_arg_function(state, 3, 1);
+        wi_push_arg(state, 3);
         wi_state_ppush(state, value);
         wi_call(state, 1, false);
 

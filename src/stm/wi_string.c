@@ -352,7 +352,7 @@ _string_call(struct wi_state* state, const char* string, size_t i, char* cp_buf,
     memcpy(cp_buf, string + i, cp_len);
     cp_buf[cp_len] = '\0';
 
-    wi_arg_function(state, 2, 1);
+    wi_push_arg(state, 2);
     wi_push_lstring(state, cp_buf, (int)cp_len);
     wi_call(state, 1, drop);
 

@@ -337,7 +337,7 @@ _aqsort_partition(struct wi_state* state, struct wi_array* array, int lo, int hi
     int i = lo - 1;
 
     for (int j = lo; j < hi; j++) {
-        wi_arg_function(state, 2, 2);
+        wi_push_arg(state, 2);
         wi_state_ppush(state, array->items.data[j]);
         wi_state_ppush(state, pi);
         wi_call(state, 2, false);
