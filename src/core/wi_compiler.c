@@ -1415,7 +1415,7 @@ _import_lib_path(struct wi_compiler* compiler, struct wi_token name, const char*
     return path;
 }
 
-/* note one failed attempt at the given path, appending to [*atts] */
+/* note one failed attempt with a specific format, appending to [*atts] */
 static void
 _import_note_attempt(struct wi_compiler* compiler, char** atts, const char* format, ...) {
     va_list args;
