@@ -88,6 +88,10 @@ function set_flags()
         add_defines("_FILE_OFFSET_BITS=64")
     end
 
+    if is_plat("windows") and is_gnu() then
+        add_ldflags("-static-libgcc", { force = true })
+    end
+
     -- i hate msvc
     if is_msvc() then
         add_defines("_CRT_SECURE_NO_WARNINGS")
