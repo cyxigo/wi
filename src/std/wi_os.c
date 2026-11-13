@@ -76,15 +76,15 @@ static void
 _os_date(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     wi_real   time_real = wi_arg_real(state, 1);
-    time_t    time      = (time_t)wi_state_real_to_int(state, time_real);
+    time_t    secs      = (time_t)wi_state_real_to_int(state, time_real);
     struct tm tm;
 
 #ifdef _WIN32
-    if (gmtime_s(&tm, &time) != 0) {
+    if (gmtime_s(&tm, &secs) != 0) {
         wi_state_error(state, "date out of range: " WI_REAL_FORMAT, time_real);
     }
 #else
-    if (!gmtime_r(&time, &tm)) {
+    if (!gmtime_r(&secs, &tm)) {
         wi_state_error(state, "date out of range: " WI_REAL_FORMAT, time_real);
     }
 #endif
