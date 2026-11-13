@@ -218,7 +218,7 @@ _math_round(struct wi_state* state, uint8_t arg_count) {
         return;
     }
 
-    double scale = pow(10.0, wi_arg_real(state, 2));
+    wi_real scale = pow(10.0, wi_arg_real(state, 2));
     wi_push_real(state, round(real * scale) / scale);
 }
 
