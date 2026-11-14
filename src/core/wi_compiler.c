@@ -60,7 +60,7 @@ _compiler_add_local(struct wi_compiler* compiler, struct wi_token name, wi_varda
     local->name            = name;
     local->depth           = init ? compiler->scope_depth : -1;
     local->is_captured     = false;
-    local->used            = init;
+    local->is_used         = init;
     local->vardata         = attrs;
 
     return local;
@@ -491,7 +491,7 @@ _compiler_begin_scope(struct wi_compiler* compiler) {
 
 static void
 _compiler_warn_unused(struct wi_compiler* compiler, struct wi_local* local) {
-    if (!local->used && !wi_attr_is_set(local->vardata, WI_ATTR_UNUSED)) {
+    if (!local->is_used && !wi_attr_is_set(local->vardata, WI_ATTR_UNUSED)) {
         wi_parser_warning_at(compiler->parser, local->name, "local variable %.*s was defined but not used",
                              local->name.count, local->name.start);
     }
@@ -539,7 +539,7 @@ _compiler_resolve_local(struct wi_compiler* compiler, struct wi_token name, wi_v
         struct wi_local* local = &compiler->locals[i];
 
         if (wi_token_lexemes_equal(name, local->name)) {
-            local->used = true;
+            local->is_used = true;
 
             if (vardata) {
                 *vardata = local->vardata;

@@ -49,7 +49,7 @@ struct wi_local {
     struct wi_token name;
     int             depth;
     bool            is_captured;
-    bool            used;
+    bool            is_used;
     wi_vardata      vardata;
 };
 
