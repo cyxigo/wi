@@ -1586,7 +1586,7 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
                 _ERROR("variable %s is used but not defined", wi_value_as_cstring(name));
             }
 
-            int index = wi_vardata_index(wi_value_as_vardata(vardata_value));
+            int index = wi_value_as_vardata_index(vardata_value);
 
             wi_state_drop(state);
             wi_state_push(state, module->globals.data[index]);

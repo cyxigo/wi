@@ -155,7 +155,7 @@ _compiler_undef_globals(struct wi_compiler* compiler) {
             continue;
         }
 
-        uint16_t index = wi_vardata_index(wi_value_as_vardata(entry->value));
+        uint16_t index = wi_value_as_vardata_index(entry->value);
 
         if (index < compiler->global_base) {
             continue;

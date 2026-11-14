@@ -45,6 +45,11 @@ wi_value_as_vardata(wi_value value) {
     return (wi_vardata)wi_value_as_real(value);
 }
 
+WI_INLINE uint16_t
+wi_value_as_vardata_index(wi_value value) {
+    return wi_vardata_index(wi_value_as_vardata(value));
+}
+
 struct wi_local {
     struct wi_token name;
     int             depth;

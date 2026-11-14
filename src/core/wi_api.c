@@ -736,7 +736,7 @@ wi_module_set(struct wi_state* state, struct wi_module* module, const char* name
     wi_value existing;
 
     if (wi_table_get(&module->vars, name_value, &existing)) {
-        int index                   = wi_vardata_index(wi_value_as_vardata(existing));
+        int index                   = wi_value_as_vardata_index(existing);
         module->globals.data[index] = value;
     } else {
         int index = module->globals.count;
@@ -769,7 +769,7 @@ wi_module_get(struct wi_state* state, struct wi_module* module, const char* name
         return false;
     }
 
-    int index = wi_vardata_index(wi_value_as_vardata(vardata_value));
+    int index = wi_value_as_vardata_index(vardata_value);
     wi_state_ppush(state, module->globals.data[index]);
     return true;
 }
@@ -785,7 +785,7 @@ wi_module_next(struct wi_state* state, struct wi_module* module, int* iter) {
             continue;
         }
 
-        int index = wi_vardata_index(wi_value_as_vardata(entry->value));
+        int index = wi_value_as_vardata_index(entry->value);
         wi_state_ppush(state, entry->key);
         wi_state_ppush(state, module->globals.data[index]);
         return true;
