@@ -323,7 +323,7 @@ _array_where(struct wi_state* state, uint8_t arg_count) {
 }
 
 static int
-_aqsort_partition(struct wi_state* state, struct wi_array* array, int lo, int hi, int mod_count) {
+_array_qsort_partition(struct wi_state* state, struct wi_array* array, int lo, int hi, int mod_count) {
     int pii = lo + (int)(wi_state_rand_next(state) % (uint64_t)(hi - lo + 1));
     _array_swap(array, pii, hi);
 
@@ -358,15 +358,15 @@ _aqsort_partition(struct wi_state* state, struct wi_array* array, int lo, int hi
 }
 
 static void
-_aqsort(struct wi_state* state, struct wi_array* array, int lo, int hi, int mod_count) {
+_array_qsort(struct wi_state* state, struct wi_array* array, int lo, int hi, int mod_count) {
     while (lo < hi) { /* loop for tail recursion */
-        int pi = _aqsort_partition(state, array, lo, hi, mod_count);
+        int pi = _array_qsort_partition(state, array, lo, hi, mod_count);
 
         if (pi - lo < hi - pi) {
-            _aqsort(state, array, lo, pi - 1, mod_count);
+            _array_qsort(state, array, lo, pi - 1, mod_count);
             lo = pi + 1;
         } else {
-            _aqsort(state, array, pi + 1, hi, mod_count);
+            _array_qsort(state, array, pi + 1, hi, mod_count);
             hi = pi - 1;
         }
     }
@@ -379,7 +379,7 @@ _array_sort(struct wi_state* state, uint8_t arg_count) {
     wi_arg_check_function(state, 2, 2);
 
     if (array->items.count > 1) {
-        _aqsort(state, array, 0, array->items.count - 1, array->items.mod_count);
+        _array_qsort(state, array, 0, array->items.count - 1, array->items.mod_count);
     }
 
     array->items.mod_count++;
