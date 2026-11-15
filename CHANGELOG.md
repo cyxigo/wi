@@ -1,5 +1,10 @@
 ## [Unreleased]
 
+### Changed
+
+- Calling a function that takes self with one argument too few now hints at '->'
+- Using '.' on a string, array or map now hints at '->'
+
 ### Fixed
 
 - import on Windows looking for init.wi with a forward slash (e.g. .\file/init.wi)

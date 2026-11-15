@@ -114,6 +114,7 @@ wi_new_prototype(struct wi_gc* gc, struct wi_string* path) {
     wi_value_buf_init(&prototype->constants, gc);
     prototype->is_main        = false;
     prototype->is_variadic    = false;
+    prototype->takes_self     = false;
     prototype->arity          = 0;
     prototype->upvalue_count  = 0;
     prototype->max_slot_count = 0;

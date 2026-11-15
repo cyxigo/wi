@@ -448,6 +448,19 @@ wi_state_error(struct wi_state* state, const char* format, ...) {
     wi_state_fatal_jmp(state, WI_RUN_ERROR);
 }
 
+WI_NORETURN void
+wi_state_arity_error(struct wi_state* state, uint8_t arity, uint8_t arg_count, bool is_variadic, bool takes_self) {
+    const char* hint = "";
+
+    /* one argument short on a function that takes self, most likely '.' was used instead of '->' */
+    if (takes_self && arg_count + 1 == arity) {
+        hint = " (the function takes 'self', if you called it with '.', use '->')";
+    }
+
+    wi_state_error(state, "expected %s%hhu arguments but got %hhu%s", is_variadic ? "at least " : "", arity,
+                   arg_count, hint);
+}
+
 void
 wi_state_report_oom(struct wi_state* state, const char* what) {
     /* directly because wi_printf allocates via wi_vprintf */
@@ -772,7 +785,7 @@ wi_state_ppush(struct wi_state* state, wi_value value) {
 WI_INLINE void
 _state_call(struct wi_state* state, struct wi_closure* closure, uint8_t arg_count) {
     struct wi_prototype* prototype = closure->prototype;
-    wi_state_check_arity(state, prototype->arity, arg_count, prototype->is_variadic);
+    wi_state_check_arity(state, prototype->arity, arg_count, prototype->is_variadic, prototype->takes_self);
 
     /* grow the frames if needed */
     if (WI_UNLIKELY(state->frame_count == state->frame_capacity)) {
@@ -817,7 +830,7 @@ WI_INLINE void
 _state_tail_call(struct wi_state* state, struct wi_call_frame* frame, struct wi_closure* closure,
                  uint8_t arg_count) {
     struct wi_prototype* prototype = closure->prototype;
-    wi_state_check_arity(state, prototype->arity, arg_count, prototype->is_variadic);
+    wi_state_check_arity(state, prototype->arity, arg_count, prototype->is_variadic, prototype->takes_self);
     /* calculate and, if needed, grow the slots starting from the reused frame slots */
     _state_reserve_stack(state, prototype->max_slot_count + prototype->is_variadic);
     _state_close_upvalues(state, frame->slots);
@@ -849,6 +862,11 @@ _state_resolve_field(struct wi_state* state, struct wi_object* object, wi_value 
     }
 
     wi_state_error(state, "object has no field %s", wi_value_as_cstring(name));
+}
+
+WI_INLINE bool
+_state_has_methods(wi_value value) {
+    return wi_value_is_string(value) || wi_value_is_array(value) || wi_value_is_map(value);
 }
 
 WI_INLINE wi_value
@@ -1489,7 +1507,8 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
             wi_value target = wi_state_top(state);
 
             if (WI_UNLIKELY(!wi_value_is_object(target))) {
-                _ERROR("cannot use operator '.' on a value of type %s", wi_value_type(target));
+                _ERROR("cannot use operator '.' on a value of type %s%s", wi_value_type(target),
+                       _state_has_methods(target) ? " (did you mean '->'?)" : "");
             }
 
             struct wi_object* object = wi_value_as_object(target);
@@ -1617,7 +1636,7 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
 
 void
 wi_state_call_foreign(struct wi_state* state, struct wi_foreign* foreign, uint8_t arg_count) {
-    wi_state_check_arity(state, foreign->arity, arg_count, foreign->is_variadic);
+    wi_state_check_arity(state, foreign->arity, arg_count, foreign->is_variadic, false);
     _state_reserve_stack(state, WI_FFI_STACK_MIN);
     ptrdiff_t ffi_stack_offset = state->ffi_stack ? state->ffi_stack - state->stack : -1;
 

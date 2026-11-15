@@ -252,14 +252,17 @@ wi_state_ppush_utf8(struct wi_state* state, char* buf, const char* what) {
     wi_state_ppush(state, WI_MAKE_BOX_VALUE(box));
 }
 
+WI_NORETURN void
+wi_state_arity_error(struct wi_state* state, uint8_t arity, uint8_t arg_count, bool is_variadic, bool takes_self);
+
 WI_INLINE void
-wi_state_check_arity(struct wi_state* state, uint8_t arity, uint8_t arg_count, bool is_variadic) {
+wi_state_check_arity(struct wi_state* state, uint8_t arity, uint8_t arg_count, bool is_variadic, bool takes_self) {
     if (WI_UNLIKELY(is_variadic)) {
         if (WI_UNLIKELY(arg_count < arity)) {
-            wi_state_error(state, "expected at least %hhu arguments but got %hhu", arity, arg_count);
+            wi_state_arity_error(state, arity, arg_count, true, takes_self);
         }
     } else if (WI_UNLIKELY(arg_count != arity)) {
-        wi_state_error(state, "expected %hhu arguments but got %hhu", arity, arg_count);
+        wi_state_arity_error(state, arity, arg_count, false, takes_self);
     }
 }
 

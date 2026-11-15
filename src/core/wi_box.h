@@ -143,6 +143,7 @@ struct wi_prototype {
     struct wi_value_buf constants;
     bool                is_main;
     bool                is_variadic;
+    bool                takes_self; /* does this prototype have a first parameter called "self"? */
     uint8_t             arity;
     uint8_t             upvalue_count;
     int                 max_slot_count;

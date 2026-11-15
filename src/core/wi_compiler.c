@@ -734,9 +734,9 @@ _compiler_var(struct wi_compiler* compiler, struct wi_token name, bool can_assig
 }
 
 static bool
-_check_attr(struct wi_token token, const char* attr) {
-    size_t len = strlen(attr);
-    return token.count == (int)len && memcmp(token.start, attr, len) == 0;
+_token_is(struct wi_token token, const char* lexeme) {
+    size_t len = strlen(lexeme);
+    return token.count == (int)len && memcmp(token.start, lexeme, len) == 0;
 }
 
 static wi_vardata
@@ -746,11 +746,11 @@ _compiler_parse_attrs(struct wi_compiler* compiler) {
     while (wi_parser_match(compiler->parser, WI_TOKEN_AT)) {
         struct wi_token token = wi_parser_expect(compiler->parser, WI_TOKEN_NAME);
 
-        if (_check_attr(token, "const")) {
+        if (_token_is(token, "const")) {
             wi_attr_set(&vardata, WI_ATTR_CONST);
-        } else if (_check_attr(token, "unused")) {
+        } else if (_token_is(token, "unused")) {
             wi_attr_set(&vardata, WI_ATTR_UNUSED);
-        } else if (_check_attr(token, "deprecated")) {
+        } else if (_token_is(token, "deprecated")) {
             wi_attr_set(&vardata, WI_ATTR_DEPRECATED);
         } else {
             wi_parser_error_at(compiler->parser, token, "unknown attribute %.*s", token.count, token.start);
@@ -1217,6 +1217,11 @@ _compiler_function_expr(struct wi_compiler* outer, bool can_assign) {
             compiler->prototype->arity++;
             _compiler_param(compiler);
         } while (wi_parser_match(compiler->parser, WI_TOKEN_COMMA));
+    }
+
+    /* local 0 is the function itself, local 1 is the first parameter */
+    if (compiler->prototype->arity > 0) {
+        compiler->prototype->takes_self = _token_is(compiler->locals[1].name, "self");
     }
 
     if (has_params) {
