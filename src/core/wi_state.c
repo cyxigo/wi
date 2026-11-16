@@ -454,7 +454,7 @@ wi_state_arity_error(struct wi_state* state, uint8_t arity, uint8_t arg_count, b
 
     /* one argument short on a function that takes self, most likely '.' was used instead of '->' */
     if (takes_self && arg_count + 1 == arity) {
-        hint = " (the function takes 'self', if you called it with '.', use '->')";
+        hint = " ('->' passes self)";
     }
 
     wi_state_error(state, "expected %s%hhu arguments but got %hhu%s", is_variadic ? "at least " : "", arity,
