@@ -401,7 +401,7 @@ _lexer_real(struct wi_lexer* lexer) {
 
 static struct wi_token
 _lexer_string(struct wi_lexer* lexer) {
-    /* skip first character, i.e. " */
+    /* skip first character, i.e. " (or the } that closed an interpolation) */
     lexer->start     = lexer->curr;
     lexer->start_col = lexer->curr_col;
 

@@ -452,7 +452,10 @@ WI_NORETURN void
 wi_state_arity_error(struct wi_state* state, uint8_t arity, uint8_t arg_count, bool is_variadic, bool takes_self) {
     const char* hint = "";
 
-    /* one argument short on a function that takes self, most likely '.' was used instead of '->' */
+    /*
+        one argument short on a function that takes self, either '.' was used instead of '->'
+        or an argument is missing
+    */
     if (takes_self && arg_count + 1 == arity) {
         hint = " ('->' passes self)";
     }
