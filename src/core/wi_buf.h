@@ -22,6 +22,11 @@ wi_grow_capacity(int capacity) {
     return capacity < WI_BUF_DEFAULT_CAPACITY ? WI_BUF_DEFAULT_CAPACITY : capacity * WI_BUF_CAPACITY_FACTOR;
 }
 
+/*
+    reserve is exact on purpose
+    tables need power of two capacities, buffers don't
+    rounding up here (like wi_table_reserve) only makes them slower
+*/
 #define WI_DECL_BUF(type, name)                                                                              \
     struct wi_##name##_buf {                                                                                 \
         struct wi_gc* gc;                                                                                    \
