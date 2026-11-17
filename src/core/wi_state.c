@@ -402,7 +402,7 @@ wi_state_pcall(struct wi_state* state, wi_pcall_fn fn, void* data) {
         fn(state, data);
     }
 
-    /* on failure wi_state_fatal_jmp already popped everything below us */
+    /* on failure wi_state_fatal_jmp already popped everything above us */
     wi_state_pop_recovery(state);
     return (enum wi_run_result)result;
 }
@@ -943,8 +943,8 @@ _state_import(struct wi_state* state, wi_value path_value) {
     WI_GC_PUSH_ROOT(state->gc, module);
 
     /*
-        we wrap src in a box in case wi_compile fails and causes oom error
-        gc will have a reference to src and will be able to free it
+        we wrap src in a box because anything below can jump out of here
+        (oom, or the error after a failed compile)
     */
     struct wi_string* src_box = wi_make_malloc_string(state->gc, src);
     WI_GC_PUSH_ROOT(state->gc, src_box);
