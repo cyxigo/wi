@@ -183,7 +183,8 @@ target("wi_wasm")
     add_ldflags(
         "-sEXPORTED_FUNCTIONS=['_wi_wasm_init','_wi_wasm_run']",
         "-sEXPORTED_RUNTIME_METHODS=['ccall']",
-        "-sALLOW_MEMORY_GROWTH=1", 
+        "-sALLOW_MEMORY_GROWTH=1",
+        "-sSTACK_SIZE=1MB",
         { force = true }
     )
 
