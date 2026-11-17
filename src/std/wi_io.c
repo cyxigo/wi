@@ -287,7 +287,7 @@ static void
 _io_flush(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     struct _file* file = wi_arg_userdata(state, 1, "file");
-    _file_check_open(state, file);
+    _file_check_write(state, file);
 
     if (fflush(file->ptr) != 0) {
         wi_state_error(state, "failed to flush file %s: %s", file->path, strerror(errno));
