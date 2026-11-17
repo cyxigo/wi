@@ -1439,6 +1439,12 @@ _import_note_attempt(struct wi_compiler* compiler, char** atts, const char* form
     *atts = added;
 }
 
+static void
+_import_delete_attempts(char** atts) {
+    free(*atts);
+    *atts = NULL;
+}
+
 static bool
 _compiler_import_script(struct wi_compiler* compiler, char* path, char** atts) {
     if (!path) {
@@ -1449,8 +1455,7 @@ _compiler_import_script(struct wi_compiler* compiler, char* path, char** atts) {
 
     if (state->import_exists(state, path)) {
         /* the constant below can hit the limit and error, yikes right */
-        free(*atts);
-        *atts                      = NULL;
+        _import_delete_attempts(atts);
         struct wi_string* box      = wi_make_malloc_string(compiler->gc, path);
         uint16_t          constant = _compiler_make_constant(compiler, WI_MAKE_BOX_VALUE(box));
         _compiler_emit_opcode_short(compiler, WI_OP_IMPORT, constant);
@@ -1475,9 +1480,7 @@ _compiler_import_foreign(struct wi_compiler* compiler, char* lib_path, char** at
     wi_value          cached;
 
     if (wi_table_get(&state->imported, path_value, &cached)) {
-        /* free because thing below can error yeah yeah */
-        free(*atts);
-        *atts = NULL;
+        _import_delete_attempts(atts);
         _compiler_emit_push(compiler, cached);
         return true;
     }
@@ -1522,8 +1525,7 @@ _compiler_import_foreign(struct wi_compiler* compiler, char* lib_path, char** at
     #endif /* _WIN32 */
 
     /* library loaded and we do not need attempts anymore */
-    free(*atts);
-    *atts = NULL;
+    _import_delete_attempts(atts);
 
     if (!init) {
         wi_lib_close(lib);
