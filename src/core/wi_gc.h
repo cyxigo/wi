@@ -61,19 +61,14 @@ wi_delete_gc(struct wi_gc* gc);
 WI_NORETURN void
 wi_state_oom(struct wi_state* state, const char* what);
 
+struct wi_box**
+wi_gc_grow_boxes(struct wi_gc* gc, struct wi_box** boxes, int* capacity, const char* oom_what);
+
 WI_INLINE void
 wi_gc_push_root(struct wi_gc* gc, struct wi_box* root) {
     if (WI_UNLIKELY(gc->temp_root_count + 1 > gc->temp_root_capacity)) {
-        int             capacity = wi_grow_capacity(gc->temp_root_capacity);
-        struct wi_box** roots =
-            (struct wi_box**)realloc(gc->temp_roots, sizeof(struct wi_box*) * (size_t)capacity);
-
-        if (!roots) {
-            wi_state_oom(gc->state, "failed to allocate temp roots (wi_gc_push_root)");
-        }
-
-        gc->temp_roots         = roots;
-        gc->temp_root_capacity = capacity;
+        gc->temp_roots = wi_gc_grow_boxes(gc, gc->temp_roots, &gc->temp_root_capacity,
+                                          "failed to allocate temp roots (wi_gc_push_root)");
     }
 
     gc->temp_roots[gc->temp_root_count++] = root;

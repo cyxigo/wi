@@ -183,6 +183,19 @@ wi_gc_realloc(struct wi_gc* gc, void* ptr, size_t old_size, size_t new_size) {
     return result;
 }
 
+struct wi_box**
+wi_gc_grow_boxes(struct wi_gc* gc, struct wi_box** boxes, int* capacity, const char* what) {
+    int             new_capacity = wi_grow_capacity(*capacity);
+    struct wi_box** new_boxes    = (struct wi_box**)realloc(boxes, sizeof(struct wi_box*) * (size_t)new_capacity);
+
+    if (WI_UNLIKELY(!new_boxes)) {
+        wi_state_oom(gc->state, what);
+    }
+
+    *capacity = new_capacity;
+    return new_boxes;
+}
+
 static void
 _gc_mark_box(struct wi_gc* gc, struct wi_box* box) {
     if (!box || box->is_marked || (gc->minor && box->is_old)) {
@@ -201,17 +214,9 @@ _gc_mark_box(struct wi_gc* gc, struct wi_box* box) {
         return;
     }
 
-    if (gc->gray_count + 1 > gc->gray_capacity) {
-        int             capacity = wi_grow_capacity(gc->gray_capacity);
-        struct wi_box** stack =
-            (struct wi_box**)realloc(gc->gray_stack, sizeof(struct wi_box*) * (size_t)capacity);
-
-        if (WI_UNLIKELY(!stack)) {
-            wi_state_oom(gc->state, "failed to allocate gray stack (_gc_mark_box)");
-        }
-
-        gc->gray_stack    = stack;
-        gc->gray_capacity = capacity;
+    if (WI_UNLIKELY(gc->gray_count + 1 > gc->gray_capacity)) {
+        gc->gray_stack = wi_gc_grow_boxes(gc, gc->gray_stack, &gc->gray_capacity,
+                                          "failed to allocate gray stack (_gc_mark_box)");
     }
 
     gc->gray_stack[gc->gray_count++] = box;
@@ -372,16 +377,8 @@ wi_gc_remember(struct wi_gc* gc, struct wi_box* parent) {
     parent->is_remembered = true;
 
     if (WI_UNLIKELY(gc->remembered_count + 1 > gc->remembered_capacity)) {
-        int             capacity = wi_grow_capacity(gc->remembered_capacity);
-        struct wi_box** remembered =
-            (struct wi_box**)realloc(gc->remembered, sizeof(struct wi_box*) * (size_t)capacity);
-
-        if (WI_UNLIKELY(!remembered)) {
-            wi_state_oom(gc->state, "failed to allocate remembered stack (wi_gc_remember)");
-        }
-
-        gc->remembered          = remembered;
-        gc->remembered_capacity = capacity;
+        gc->remembered = wi_gc_grow_boxes(gc, gc->remembered, &gc->remembered_capacity,
+                                          "failed to allocate remembered stack (wi_gc_remember)");
     }
 
     gc->remembered[gc->remembered_count++] = parent;
