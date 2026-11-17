@@ -78,6 +78,11 @@ wi_parser_is_at_end(struct wi_parser* parser) {
     return wi_parser_check(parser, WI_TOKEN_EOF);
 }
 
+WI_INLINE bool
+wi_parser_is_at_block_end(struct wi_parser* parser) {
+    return wi_parser_check(parser, WI_TOKEN_CLOSE_BRACE) || wi_parser_is_at_end(parser);
+}
+
 struct wi_token
 wi_parser_expect(struct wi_parser* parser, enum wi_token_kind kind);
 

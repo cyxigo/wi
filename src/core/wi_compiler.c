@@ -526,7 +526,7 @@ _compiler_name_decl(struct wi_compiler* compiler);
 
 static void
 _compiler_block(struct wi_compiler* compiler) {
-    while (!wi_parser_check(compiler->parser, WI_TOKEN_CLOSE_BRACE) && !wi_parser_is_at_end(compiler->parser)) {
+    while (!wi_parser_is_at_block_end(compiler->parser)) {
         _compiler_decl(compiler);
     }
 
@@ -1285,7 +1285,7 @@ _compiler_object_expr(struct wi_compiler* compiler, bool can_assign) {
     uint16_t field_count = 0;
     wi_parser_expect(compiler->parser, WI_TOKEN_OPEN_BRACE);
 
-    while (!wi_parser_check(compiler->parser, WI_TOKEN_CLOSE_BRACE) && !wi_parser_is_at_end(compiler->parser)) {
+    while (!wi_parser_is_at_block_end(compiler->parser)) {
         if (field_count == UINT16_MAX) {
             wi_parser_error_limit(compiler->parser, "fields in an object", UINT16_MAX);
         }
@@ -1324,7 +1324,7 @@ _compiler_new_expr(struct wi_compiler* compiler, bool can_assign) {
         return;
     }
 
-    while (!wi_parser_check(compiler->parser, WI_TOKEN_CLOSE_BRACE) && !wi_parser_is_at_end(compiler->parser)) {
+    while (!wi_parser_is_at_block_end(compiler->parser)) {
         struct wi_token name     = wi_parser_expect(compiler->parser, WI_TOKEN_NAME);
         uint16_t        constant = _compiler_name_constant(compiler, name);
         _compiler_field_value(compiler, name);
@@ -1882,7 +1882,7 @@ _compiler_switch_stmt(struct wi_compiler* compiler) {
 
     compiler->switch_ = switch_;
 
-    while (!wi_parser_check(compiler->parser, WI_TOKEN_CLOSE_BRACE) && !wi_parser_is_at_end(compiler->parser)) {
+    while (!wi_parser_is_at_block_end(compiler->parser)) {
         if (!wi_parser_match(compiler->parser, WI_TOKEN_CASE) &&
             !wi_parser_match(compiler->parser, WI_TOKEN_DEFAULT)) {
             wi_parser_error_at_curr(compiler->parser, "unexpected symbol");
