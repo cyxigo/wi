@@ -1,4 +1,11 @@
-/* name, size, stack effect */
+/*
+    this file is meant to be included after WI_OPCODE is defined to generate
+    enums (wi_state.h), stack effects (wi_compiler.c) and so on
+    (see http://en.wikipedia.org/wiki/X_Macro for more)
+
+    arguments are:
+    name, size (-1 = variable, see wi_prototype_instr_size), stack effects
+*/
 WI_OPCODE(PUSH, 3, 1)
 WI_OPCODE(PUSH_NULL, 1, 1)
 WI_OPCODE(PUSH_TRUE, 1, 1)
