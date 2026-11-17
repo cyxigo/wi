@@ -1852,6 +1852,33 @@ _compiler_case_value(struct wi_compiler* compiler) {
 }
 
 static void
+_compiler_case_clause(struct wi_compiler* compiler, struct wi_switch* switch_) {
+    _compiler_case_value(compiler);
+
+    /* parse multiple values, i.e. just emit OR for each is_equal */
+    while (wi_parser_match(compiler->parser, WI_TOKEN_COMMA)) {
+        int or_jump = _compiler_emit_jump(compiler, WI_OP_OR);
+        _compiler_case_value(compiler);
+        _compiler_patch_jump(compiler, or_jump); /* patch OR */
+        /* stack is back to [switch, is_equal] */
+    }
+
+    wi_parser_expect(compiler->parser, WI_TOKEN_COLON); /* ...a colon */
+
+    /*
+        is_equal -> don't jump, let end_jump execute
+        !is_equal -> skip this case AND end_jump (i.e. go to the next case)
+    */
+    int skip_jump = _compiler_emit_jump(compiler, WI_OP_JUMP_IF_FALSE);
+    _compiler_stmt(compiler);
+
+    /* jump over the rest of the switch */
+    int end_jump = _compiler_emit_jump(compiler, WI_OP_JUMP);
+    wi_int_buf_add(&switch_->end_jumps, end_jump);
+    _compiler_patch_jump(compiler, skip_jump);
+}
+
+static void
 _compiler_switch_stmt(struct wi_compiler* compiler) {
     _compiler_paren_expr(compiler);
     wi_parser_expect(compiler->parser, WI_TOKEN_OPEN_BRACE);
@@ -1897,30 +1924,7 @@ _compiler_switch_stmt(struct wi_compiler* compiler) {
         enum wi_token_kind kind = compiler->parser->prev.kind;
 
         if (kind == WI_TOKEN_CASE) {
-            _compiler_case_value(compiler);
-
-            /* parse multiple values, i.e. just emit OR for each is_equal */
-            while (wi_parser_match(compiler->parser, WI_TOKEN_COMMA)) {
-                int or_jump = _compiler_emit_jump(compiler, WI_OP_OR);
-                _compiler_case_value(compiler);
-                _compiler_patch_jump(compiler, or_jump); /* patch OR */
-                /* stack is back to [switch, is_equal] */
-            }
-
-            wi_parser_expect(compiler->parser, WI_TOKEN_COLON); /* ...a colon */
-
-            /*
-                is_equal -> don't jump, let end_jump execute
-                !is_equal -> skip this case AND end_jump (i.e. go to the next case)
-            */
-            int skip_jump = _compiler_emit_jump(compiler, WI_OP_JUMP_IF_FALSE);
-            _compiler_stmt(compiler);
-
-            /* jump over the rest of the switch */
-            int end_jump = _compiler_emit_jump(compiler, WI_OP_JUMP);
-            wi_int_buf_add(&switch_->end_jumps, end_jump);
-
-            _compiler_patch_jump(compiler, skip_jump);
+            _compiler_case_clause(compiler, switch_);
         }
 
         if (kind == WI_TOKEN_DEFAULT) {
