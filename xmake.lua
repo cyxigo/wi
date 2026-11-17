@@ -5,12 +5,22 @@ set_version("9.10.0-beta")
 set_description("The Wi programming language")
 set_license("MIT")
 
--- i hate msvc
-function is_msvc()
-    return is_plat("windows") and get_config("toolchain") == "msvc"
+-- check if our toolchain can accept gnu flags like -fno-common -fno-stack-protector
+-- on anything other than god forsaken windows we just return true
+function is_gnu()
+    if not is_plat("windows") then
+        return true -- linux/macosx/bsd default toolchains are always gcc/clang
+    end
+
+    local toolchain = get_config("toolchain")
+    return toolchain == "mingw" or toolchain == "clang" or toolchain == "gcc"
 end
 
 -- i hate msvc
+function is_msvc()
+    return is_plat("windows") and not is_gnu()
+end
+
 set_languages(is_msvc() and "c11" or "c99")
 
 -- NaN boxing is not nearly a portable thingy so Wi has an option to use union tagging
@@ -44,17 +54,6 @@ end
 -- wi uses horrid winapi on windows with ReadConsoleW and other winapi horror functions
 if not is_plat("windows") and not get_config("cross") then
     add_requires("readline", { optional = true })
-end
-
--- check if our toolchain can accept gnu flags like -fno-common -fno-stack-protector
--- on anything other than god forsaken windows we just return true
-function is_gnu()
-    if not is_plat("windows") then
-        return true -- linux/macosx/bsd default toolchains are always gcc/clang
-    end
-
-    local toolchain = get_config("toolchain")
-    return toolchain == "mingw" or toolchain == "clang" or toolchain == "gcc"
 end
 
 -- compiler flags shared by every native (non-wasm) target
