@@ -90,21 +90,23 @@ _os_date(struct wi_state* state, uint8_t arg_count) {
 #endif
 
     struct wi_object* result = wi_push_object(state);
+    const struct {
+        const char* name;
+        int         value;
+    } fields[] = {
+        {"year",    tm.tm_year + 1900},
+        {"month",   tm.tm_mon + 1    },
+        {"day",     tm.tm_mday       },
+        {"hour",    tm.tm_hour       },
+        {"minute",  tm.tm_min        },
+        {"second",  tm.tm_sec        },
+        {"weekday", tm.tm_wday       },
+    };
 
-    wi_push_real(state, tm.tm_year + 1900);
-    wi_object_set(state, result, "year");
-    wi_push_real(state, tm.tm_mon + 1);
-    wi_object_set(state, result, "month");
-    wi_push_real(state, tm.tm_mday);
-    wi_object_set(state, result, "day");
-    wi_push_real(state, tm.tm_hour);
-    wi_object_set(state, result, "hour");
-    wi_push_real(state, tm.tm_min);
-    wi_object_set(state, result, "minute");
-    wi_push_real(state, tm.tm_sec);
-    wi_object_set(state, result, "second");
-    wi_push_real(state, tm.tm_wday);
-    wi_object_set(state, result, "weekday");
+    for (size_t i = 0; i < sizeof(fields) / sizeof(fields[0]); i++) {
+        wi_push_real(state, fields[i].value);
+        wi_object_set(state, result, fields[i].name);
+    }
 }
 
 static void
