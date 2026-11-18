@@ -565,8 +565,8 @@ _read_line_fgets(char** line) {
 /*
     this function is split into three versions depending on the platform and definitions:
     on windows: use ReadConsoleW and convert input in utf-16 to utf-8
-    on linux: if WI_USE_READLINE is defined, we use the readline library and its features
-              else - fallback to fgets (_read_line_fgets)
+    elsewhere:  if WI_USE_READLINE is defined, we use the readline library and its features
+                else - fallback to fgets (_read_line_fgets)
 */
 bool
 wi_read_line(char** line, const char* prompt) {
