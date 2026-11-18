@@ -1,9 +1,18 @@
 ## [Unreleased]
 
+### Added
+
+- wi_def_builtin, WI_BUILTIN_X (API)
+- WI_DEPRECATED (API)
+
 ### Changed
 
 - Calling a function that takes self with one argument too few now hints at '->'
 - Using '.' on a string, array or map now hints at '->'
+
+### Deprecated
+
+- wi_def_std and wi_def_stm (API), use wi_def_builtin
 
 ### Fixed
 

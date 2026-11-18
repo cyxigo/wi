@@ -96,31 +96,43 @@ wi_ref_delete(struct wi_state* state, wi_ref ref) {
     wi_table_delete(&state->refs, wi_make_real_value(ref));
 }
 
+static const struct {
+    wi_builtin bit;
+    void (*def)(struct wi_state* state);
+} _g_builtins[] = {
+    {WI_BUILTIN_BASE,   wi_state_def_std_base  },
+    {WI_BUILTIN_OS,     wi_state_def_std_os    },
+    {WI_BUILTIN_IO,     wi_state_def_std_io    },
+    {WI_BUILTIN_MATH,   wi_state_def_std_math  },
+    {WI_BUILTIN_STRING, wi_state_def_stm_string},
+    {WI_BUILTIN_ARRAY,  wi_state_def_stm_array },
+    {WI_BUILTIN_MAP,    wi_state_def_stm_map   },
+};
+
 static void
-_def_stm(struct wi_state* state, void* data) {
-    WI_UNUSED(data);
-    wi_state_def_stm_string(state);
-    wi_state_def_stm_array(state);
-    wi_state_def_stm_map(state);
+_def_builtin(struct wi_state* state, void* data) {
+    wi_builtin* builtins = data;
+
+    for (size_t i = 0; i < sizeof(_g_builtins) / sizeof(_g_builtins[0]); i++) {
+        if (*builtins & _g_builtins[i].bit) {
+            _g_builtins[i].def(state);
+        }
+    }
 }
 
 enum wi_run_result
-wi_def_stm(struct wi_state* state) {
-    return wi_state_pcall(state, _def_stm, NULL);
-}
-
-static void
-_def_std(struct wi_state* state, void* data) {
-    WI_UNUSED(data);
-    wi_state_def_std_base(state);
-    wi_state_def_std_os(state);
-    wi_state_def_std_io(state);
-    wi_state_def_std_math(state);
+wi_def_builtin(struct wi_state* state, wi_builtin builtins) {
+    return wi_state_pcall(state, _def_builtin, &builtins);
 }
 
 enum wi_run_result
 wi_def_std(struct wi_state* state) {
-    return wi_state_pcall(state, _def_std, NULL);
+    return wi_def_builtin(state, WI_BUILTIN_STD);
+}
+
+enum wi_run_result
+wi_def_stm(struct wi_state* state) {
+    return wi_def_builtin(state, WI_BUILTIN_STM);
 }
 
 void

@@ -328,7 +328,7 @@ main(int argc, const char** argv) {
 
     wi_state_set_args(_g_state, script_argc, script_argv);
 
-    if (wi_def_stm(_g_state) != WI_RUN_OK || wi_def_std(_g_state) != WI_RUN_OK) {
+    if (wi_def_builtin(_g_state, WI_BUILTIN_ALL) != WI_RUN_OK) {
         _delete_g_state();
         return EXIT_FAILURE;
     }

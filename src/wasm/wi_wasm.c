@@ -55,7 +55,7 @@ wi_wasm_init(void) {
 
     wi_state_set_callbacks(_g_state, _print_out, _print_err, NULL, NULL, NULL);
 
-    if (wi_def_stm(_g_state) != WI_RUN_OK || wi_def_std(_g_state) != WI_RUN_OK) {
+    if (wi_def_builtin(_g_state, WI_BUILTIN_ALL) != WI_RUN_OK) {
         wi_delete_state(_g_state);
         _g_state = NULL;
     }

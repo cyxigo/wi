@@ -10,13 +10,17 @@
 /**
  * Utility macros
  * WI_NORETURN: Function does not return
+ * WI_DEPRECATED: Function is deprecated
  */
 #if defined(__clang__) || (defined(__GNUC__) && __GNUC__ > 4)
     #define WI_NORETURN __attribute__((noreturn))
+    #define WI_DEPRECATED(msg) __attribute__((deprecated(msg)))
 #elif defined(_MSC_VER)
     #define WI_NORETURN __declspec(noreturn)
+    #define WI_DEPRECATED(msg) __declspec(deprecated(msg))
 #else
     #define WI_NORETURN
+    #define WI_DEPRECATED(msg)
 #endif /* __clang__ || (__GNUC__ && __GNUC__ > 4) || _MSC_VER || else */
 
 /**
@@ -129,6 +133,25 @@ typedef enum wi_run_result {
     WI_RUN_ABORT, /* Execution was aborted early via `wi_state_abort` */
     WI_RUN_OOM,   /* Ran out of memory, the state must only be deleted after this */
 } wi_run_result;
+
+/**
+ * Builtin libraries bitmask
+ */
+typedef uint32_t wi_builtin;
+
+enum {
+    WI_BUILTIN_BASE   = 1 << 0, /* The `std` module */
+    WI_BUILTIN_OS     = 1 << 1, /* The `os` module */
+    WI_BUILTIN_IO     = 1 << 2, /* The `io` module */
+    WI_BUILTIN_MATH   = 1 << 3, /* The `math` module */
+    WI_BUILTIN_STRING = 1 << 4, /* String methods */
+    WI_BUILTIN_ARRAY  = 1 << 5, /* Array methods */
+    WI_BUILTIN_MAP    = 1 << 6, /* Map methods */
+
+    WI_BUILTIN_STD = WI_BUILTIN_BASE | WI_BUILTIN_OS | WI_BUILTIN_IO | WI_BUILTIN_MATH, /* The standard library */
+    WI_BUILTIN_STM = WI_BUILTIN_STRING | WI_BUILTIN_ARRAY | WI_BUILTIN_MAP, /* The standard method library */
+    WI_BUILTIN_ALL = WI_BUILTIN_STD | WI_BUILTIN_STM,                       /* Every builtin */
+};
 
 /**
  * Callback to print... something. Used by Wi for standard/error output printing
@@ -437,23 +460,34 @@ WI_API void
 wi_ref_delete(wi_state* state, wi_ref ref);
 
 /**
- * Define the standard library (STD) in a state
+ * Define builtin libraries in a state.
+ * Methods (STM) are only reachable via the `->` method-call operator
  *
  * @param state Wi state instance
+ * @param builtins Builtin libraries bitmask flags
  * @return `WI_RUN_OK` on success, `WI_RUN_OOM` on OOM (cannot return `WI_RUN_ERROR`)
  */
 WI_API wi_run_result
-wi_def_std(wi_state* state);
+wi_def_builtin(wi_state* state, wi_builtin builtins);
+
+/**
+ * Define the standard library (STD) in a state
+ *
+ * @deprecated Use `wi_def_builtin` with `WI_BUILTIN_STD`
+ * @param state Wi state instance
+ * @return `WI_RUN_OK` on success, `WI_RUN_OOM` on OOM (cannot return `WI_RUN_ERROR`)
+ */
+WI_API WI_DEPRECATED("use wi_def_builtin with WI_BUILTIN_STD") wi_run_result wi_def_std(wi_state* state);
 
 /**
  * Define the standard method library (STM) in a state - methods for builtin types:
  * string, array, map. Only reachable via the `->` method-call operator
  *
+ * @deprecated Use `wi_def_builtin` with `WI_BUILTIN_STM`
  * @param state Wi state instance
  * @return `WI_RUN_OK` on success, `WI_RUN_OOM` on OOM (cannot return `WI_RUN_ERROR`)
  */
-WI_API wi_run_result
-wi_def_stm(wi_state* state);
+WI_API WI_DEPRECATED("use wi_def_builtin with WI_BUILTIN_STM") wi_run_result wi_def_stm(wi_state* state);
 
 /**
  * Define the value at the stack top as a foreign (global) variable, popping it.
