@@ -135,8 +135,7 @@ struct wi_compiler {
     /*
         the last variable a function captured while it was still being initialized (f in f := || => f;)
         lives in the compiler that owns the variable (the root one for globals)
-        _compiler_parse_prec reads it and decides if that capture is "fine"
-        (this concept of "fine" is explained way better in _compiler_parse_prec itself)
+        _compiler_parse_prec compares its .start to detect new captures and points the error at it
     */
     struct wi_token uninit_use;
 };

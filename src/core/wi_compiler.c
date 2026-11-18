@@ -815,17 +815,28 @@ _compiler_parse_prec(struct wi_compiler* compiler, enum _prec min_prec) {
         piece of an expression, so it's the only place we CAN ask
         "hey is that a |, a ||, or a (" before parsing and parsing and so on
 
-        and the same reason is why the "used before initialized" check lives here too
+        and the same reason is why the "used before initialized" check is here too
         now lets finally talk about what is a "fine" use of an uninitialized variable!
         f := || => f();         is fine, the function runs later, f exists by then
         f := (|| => f())();     is NOT! the function runs right now, f doesn't exist yet
         f := g(|| => f);        is NOT! g can call it right now and we can't know
 
-        when a function captures a variable that is still being initialized, its name is captured in
-        compiler->uninit_use so we remember where uninit_use pointed before this part of the expression and compare
-        after; if it moved, something in here captured such a variable
-        runs_now tells us if this part could actually run what it captured: a name, or any infix operator (call,
-        subscript, a binary operator, etc.) can, a simple function/array/map/object just stores it and is safe
+        so how do we know a function captured something? when it captures a variable that is still being
+        initialized we can't tell yet if it will run before the initializer ends, so we just note it:
+        compiler->uninit_use = the captured name
+        that token does two jobs: the error points at it, and its .start tells us a capture happened
+        so "uninit_use.start changed" means "something in between captured such a variable"
+
+        every call of this function remembers .start on the way in (old_use) and compares on the way out
+        so every level asks "did something INSIDE ME capture?"
+        the capture is written to the compiler that OWNS the variable, not to the compiler of the function
+        that captured it, so the levels inside the function body never see it, only the levels around it do
+
+        changed alone isn't enough though, capturing is fine if the part only STORES the function
+        runs_now asks "could this part RUN what it captured?": a name or any infix operator (call, subscript,
+        a binary operator, etc.) can, a plain function/array/map/object just stores it
+        (|| => f)() is the example: the "||" level has no infix so it's safe, the "(" level has the call, so
+        it errors
 
         confusing? sure. but hey, this is syntax based machinery, who said it will be simple?
         also naming yeah probably not as clear but like man i have no idea what to name these little
