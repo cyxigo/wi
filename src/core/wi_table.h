@@ -10,7 +10,7 @@ struct wi_string;
 
 /*
     tables grow from a smaller floor than our good old buffers because most of them back objects,
-    which rarely carry more than a few fields (capacity 4 already holds 3)
+    which rarely carry more than a few fields
     so we start at 4 instead, might need to tune this a bit though
 */
 enum {
