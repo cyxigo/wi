@@ -1,5 +1,7 @@
 ## [Unreleased]
 
+## [9.11.0-beta] - 2026-11-19
+
 ### Added
 
 - wi_def_builtin, WI_BUILTIN_X (API)
