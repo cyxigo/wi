@@ -61,3 +61,7 @@ xmake f --werror=[y or n]
 Both flags are opt-in.
 
 Wi also (optionally) uses the `readline` library for the REPL and `std::input`. Xmake will try to fetch it automatically and define `WI_USE_READLINE` if it succeeds. On Windows however this is ignored and WinAPI will be used instead. In case you are building Wi with something other than Xmake and want to use `readline` you must define `WI_USE_READLINE` yourself.
+
+Same goes for `WI_DLL` on Windows, it is defined automatically by Xmake for `wi_shared` target (shared library target), so if you are trying to build a shared library for Windows without Xmake don't forget to define that too.
+
+(it is required so API functions actually get exported, for more, view [`wi.h`](https://github.com/cyxigo/wi/blob/main/include/wi.h) directly)
