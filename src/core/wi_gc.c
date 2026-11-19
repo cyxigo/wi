@@ -184,12 +184,12 @@ wi_gc_realloc(struct wi_gc* gc, void* ptr, size_t old_size, size_t new_size) {
 }
 
 struct wi_box**
-wi_gc_grow_boxes(struct wi_gc* gc, struct wi_box** boxes, int* capacity, const char* what) {
+wi_gc_grow_boxes(struct wi_gc* gc, struct wi_box** boxes, int* capacity, const char* oom_msg) {
     int             new_capacity = wi_grow_capacity(*capacity);
     struct wi_box** new_boxes    = (struct wi_box**)realloc(boxes, sizeof(struct wi_box*) * (size_t)new_capacity);
 
     if (WI_UNLIKELY(!new_boxes)) {
-        wi_state_oom(gc->state, what);
+        wi_state_oom(gc->state, oom_msg);
     }
 
     *capacity = new_capacity;

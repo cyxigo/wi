@@ -62,7 +62,7 @@ WI_NORETURN void
 wi_state_oom(struct wi_state* state, const char* what);
 
 struct wi_box**
-wi_gc_grow_boxes(struct wi_gc* gc, struct wi_box** boxes, int* capacity, const char* oom_what);
+wi_gc_grow_boxes(struct wi_gc* gc, struct wi_box** boxes, int* capacity, const char* oom_msg);
 
 WI_INLINE void
 wi_gc_push_root(struct wi_gc* gc, struct wi_box* root) {
