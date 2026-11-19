@@ -59,3 +59,5 @@ xmake f --werror=[y or n]
 ```
 
 Both flags are opt-in.
+
+Wi also (optionally) uses the `readline` library for the REPL and `std::input`. Xmake will try to fetch it automatically and define `WI_USE_READLINE` if it succeeds. On Windows however this is ignored and WinAPI will be used instead. In case you are building Wi with something other than Xmake and want to use `readline` you must define `WI_USE_READLINE` yourself.
