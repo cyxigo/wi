@@ -7,4 +7,4 @@ The `import "name"` statement looks for:
 - `name.wi` or `name/init.wi` (Wi modules)
 - `name.so` or `name.dll` (Linux or Windows foreign libraries)
 
-**In this exact directory.** For example, `import "math";` will look for `math.wi`, `math/init.wi`, or `math.so` here.
+**In this exact directory.** For example, `import "name";` will look for `name.wi`, `name/init.wi`, or `name.so` here.
