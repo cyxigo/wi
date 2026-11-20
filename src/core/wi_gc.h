@@ -68,7 +68,7 @@ WI_INLINE void
 wi_gc_push_root(struct wi_gc* gc, struct wi_box* root) {
     if (WI_UNLIKELY(gc->temp_root_count + 1 > gc->temp_root_capacity)) {
         gc->temp_roots = wi_gc_grow_boxes(gc, gc->temp_roots, &gc->temp_root_capacity,
-                                          "failed to allocate temp roots (wi_gc_push_root)");
+                                          "failed to allocate the temp roots (wi_gc_push_root)");
     }
 
     gc->temp_roots[gc->temp_root_count++] = root;

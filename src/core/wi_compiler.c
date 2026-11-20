@@ -49,7 +49,7 @@ _compiler_add_local(struct wi_compiler* compiler, struct wi_token name, wi_varda
             (struct wi_local*)realloc(compiler->locals, sizeof(struct wi_local) * (size_t)capacity);
 
         if (!locals) {
-            wi_parser_oom(compiler->parser, "failed to allocate compiler locals (_compiler_add_local)");
+            wi_parser_oom(compiler->parser, "failed to allocate the compiler locals (_compiler_add_local)");
         }
 
         compiler->locals         = locals;
@@ -579,7 +579,7 @@ _compiler_add_upvalue(struct wi_compiler* compiler, uint8_t index, bool is_local
             (struct wi_cupvalue*)realloc(compiler->upvalues, sizeof(struct wi_cupvalue) * (size_t)capacity);
 
         if (!upvalues) {
-            wi_parser_oom(compiler->parser, "failed to allocate compiler upvalues (_compiler_add_upvalue)");
+            wi_parser_oom(compiler->parser, "failed to allocate the compiler upvalues (_compiler_add_upvalue)");
         }
 
         compiler->upvalues         = upvalues;

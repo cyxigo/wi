@@ -663,7 +663,7 @@ _state_subscript_get(struct wi_state* state, wi_value target, wi_value index) {
             key = wi_value_to_string(index);
 
             if (WI_UNLIKELY(!key)) {
-                wi_state_oom(state, "failed to allocate key string for an error message (_state_subscript_get)");
+                wi_state_oom(state, "failed to allocate a key string for an error message (_state_subscript_get)");
             }
 
             /*
@@ -822,7 +822,7 @@ _state_call(struct wi_state* state, struct wi_closure* closure, uint8_t arg_coun
             (struct wi_call_frame*)realloc(state->frames, sizeof(struct wi_call_frame) * (size_t)capacity);
 
         if (WI_UNLIKELY(!frames)) {
-            wi_state_oom(state, "failed to allocate call frames (_state_call)");
+            wi_state_oom(state, "failed to allocate the call frames (_state_call)");
         }
 
         state->frames         = frames;

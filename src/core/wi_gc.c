@@ -216,7 +216,7 @@ _gc_mark_box(struct wi_gc* gc, struct wi_box* box) {
 
     if (WI_UNLIKELY(gc->gray_count + 1 > gc->gray_capacity)) {
         gc->gray_stack = wi_gc_grow_boxes(gc, gc->gray_stack, &gc->gray_capacity,
-                                          "failed to allocate gray stack (_gc_mark_box)");
+                                          "failed to allocate the gray stack (_gc_mark_box)");
     }
 
     gc->gray_stack[gc->gray_count++] = box;
@@ -378,7 +378,7 @@ wi_gc_remember(struct wi_gc* gc, struct wi_box* parent) {
 
     if (WI_UNLIKELY(gc->remembered_count + 1 > gc->remembered_capacity)) {
         gc->remembered = wi_gc_grow_boxes(gc, gc->remembered, &gc->remembered_capacity,
-                                          "failed to allocate remembered stack (wi_gc_remember)");
+                                          "failed to allocate the remembered stack (wi_gc_remember)");
     }
 
     gc->remembered[gc->remembered_count++] = parent;
