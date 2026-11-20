@@ -20,6 +20,7 @@ struct wi_parser {
     struct wi_token last;
 
     uint8_t c_depth;
+    int     cleanup_count; /* state's cleanup count when the parser was created */
 };
 
 struct wi_parser*

@@ -80,6 +80,8 @@ _repl_append_line(char* buf, size_t* buf_len, char* line) {
 
     if (!new_buf) {
         fprintf(stderr, "%s: out of memory: failed to allocate the repl input buffer\n", _g_exec);
+        free(buf);
+        free(line);
         _delete_g_state();
         exit(EXIT_FAILURE);
     }
@@ -147,6 +149,7 @@ _read_file(const char* path) {
 
     if (!buf) {
         fprintf(stderr, "%s: failed to read file %s: %s\n", _g_exec, path, strerror(errno));
+        _delete_g_state();
         exit(EXIT_FAILURE);
     }
 

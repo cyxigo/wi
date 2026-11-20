@@ -216,6 +216,18 @@ _os_mkdir(struct wi_state* state, uint8_t arg_count) {
     wi_push_bool(state, wi_mkdir(path));
 }
 
+#ifdef _WIN32
+static void
+_find_cleanup(void* handle) {
+    FindClose((HANDLE)handle);
+}
+#else
+static void
+_dir_cleanup(void* dir) {
+    closedir((DIR*)dir);
+}
+#endif /* _WIN32 */
+
 static void
 _os_listdir(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
@@ -240,6 +252,8 @@ _os_listdir(struct wi_state* state, uint8_t arg_count) {
         wi_state_error(state, "failed to list directory %s (error %lu)", path, error);
     }
 
+    wi_state_push_cleanup(state, hfind, _find_cleanup);
+
     do {
         if (wcscmp(data.cFileName, L".") == 0 || wcscmp(data.cFileName, L"..") == 0) {
             continue;
@@ -248,7 +262,6 @@ _os_listdir(struct wi_state* state, uint8_t arg_count) {
         char* name = wi_wide_to_utf8(data.cFileName);
 
         if (!name) {
-            FindClose(hfind);
             wi_state_oom(state, "failed to allocate a directory entry (_os_listdir)");
         }
 
@@ -257,7 +270,7 @@ _os_listdir(struct wi_state* state, uint8_t arg_count) {
         wi_array_add(state, result);
     } while (FindNextFileW(hfind, &data));
 
-    FindClose(hfind);
+    wi_state_pop_cleanup(state);
 #else
     DIR* dir = opendir(path);
 
@@ -265,6 +278,7 @@ _os_listdir(struct wi_state* state, uint8_t arg_count) {
         wi_state_error(state, "failed to list directory %s: %s", path, strerror(errno));
     }
 
+    wi_state_push_cleanup(state, dir, _dir_cleanup);
     struct dirent* entry;
 
     while ((entry = readdir(dir))) {
@@ -273,7 +287,6 @@ _os_listdir(struct wi_state* state, uint8_t arg_count) {
         }
 
         if (!wi_utf8_validate(entry->d_name, (int)strlen(entry->d_name))) {
-            closedir(dir);
             wi_state_error(state, "invalid utf-8 sequence in directory entry");
         }
 
@@ -281,7 +294,7 @@ _os_listdir(struct wi_state* state, uint8_t arg_count) {
         wi_array_add(state, result);
     }
 
-    closedir(dir);
+    wi_state_pop_cleanup(state);
 #endif
 }
 

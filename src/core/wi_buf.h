@@ -97,4 +97,9 @@ wi_char_buf_append(struct wi_char_buf* buf, const char* chars, int count) {
     buf->mod_count++;
 }
 
+WI_INLINE void
+wi_char_buf_cleanup(void* buf) {
+    wi_char_buf_free((struct wi_char_buf*)buf);
+}
+
 #endif

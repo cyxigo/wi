@@ -68,7 +68,15 @@ struct wi_recovery {
     wi_value*           stack_top;
     wi_value*           ffi_stack;
     int                 temp_root_count;
+    int                 cleanup_count;
     struct wi_string*   error; /* runtime error this recovery caught, never set on catch_all ones */
+};
+
+typedef void (*wi_cleanup_fn)(void* data);
+
+struct wi_cleanup {
+    void*         data;
+    wi_cleanup_fn fn;
 };
 
 struct wi_state {
@@ -101,6 +109,15 @@ struct wi_state {
     int                   frame_capacity;
     int                   frame_count;
     uint8_t               c_depth;
+
+    /*
+        C resources (buffers, handles) owned by code that is in the middle of running
+        (foreign functions, the compiler), if an error jumps over it,
+        _state_jmp or _parser_jmp runs whatever it left here
+    */
+    struct wi_cleanup* cleanups;
+    int                cleanup_capacity;
+    int                cleanup_count;
 
     wi_value* stack;
     int       stack_capacity;
@@ -204,6 +221,33 @@ struct wi_recovery*
 wi_state_push_recovery(struct wi_state* state);
 void
 wi_state_pop_recovery(struct wi_state* state);
+
+void
+wi_state_grow_cleanups(struct wi_state* state, void* data, wi_cleanup_fn fn);
+
+WI_INLINE void
+wi_state_push_cleanup(struct wi_state* state, void* data, wi_cleanup_fn fn) {
+    if (WI_UNLIKELY(state->cleanup_count + 1 > state->cleanup_capacity)) {
+        wi_state_grow_cleanups(state, data, fn);
+    }
+
+    struct wi_cleanup* cleanup = &state->cleanups[state->cleanup_count++];
+    cleanup->data              = data;
+    cleanup->fn                = fn;
+}
+
+/* runs the last cleanup and removes it */
+WI_INLINE void
+wi_state_pop_cleanup(struct wi_state* state) {
+    struct wi_cleanup* cleanup = &state->cleanups[--state->cleanup_count];
+    cleanup->fn(cleanup->data);
+}
+
+/* removes the last cleanup without running it, for when something else took ownership */
+WI_INLINE void
+wi_state_drop_cleanup(struct wi_state* state) {
+    state->cleanup_count--;
+}
 
 WI_NORETURN void
 wi_state_fatal_jmp(struct wi_state* state, enum wi_run_result result);

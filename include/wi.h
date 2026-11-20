@@ -188,7 +188,7 @@ typedef void (*wi_foreign_fn)(wi_state* state, uint8_t arg_count);
 /**
  * Userdata finalizer - function called when the userdata gets collected by GC or the state is deleted (not called
  * if the userdata pointer is `NULL`).
- * Runs in the middle of a collection, so it **must not** use Wi's API
+ * Runs in the middle of a collection or while an error unwinds, so it **must not** use Wi's API
  */
 typedef void (*wi_userdata_finalizer_fn)(void* data);
 
@@ -717,6 +717,7 @@ wi_push_foreign(wi_state* state, wi_foreign_fn fn, uint8_t arity, bool is_variad
  * @param name Userdata name, used for type-checking
  * @param userdata Pointer to userdata
  * @param finalizer Userdata finalizer
+ * @note Takes ownership of `userdata`: if pushing fails (OOM, stack overflow), `finalizer` is called on it
  */
 WI_API void
 wi_push_userdata(wi_state* state, const char* name, void* userdata, wi_userdata_finalizer_fn finalizer);

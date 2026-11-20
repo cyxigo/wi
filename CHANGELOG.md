@@ -1,5 +1,7 @@
 ## [Unreleased]
 
+- Out of memory or runtime errors leaking C resources (handles, buffers, etc.)
+
 ## [9.11.0-beta] - 2026-11-19
 
 ### Added

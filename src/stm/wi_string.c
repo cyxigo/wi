@@ -4,7 +4,6 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <stdlib.h>
 #include <string.h>
 
 #include "../../include/wi.h"
@@ -206,6 +205,7 @@ _string_replace(struct wi_state* state, uint8_t arg_count) {
 
     struct wi_char_buf buf;
     wi_char_buf_init(&buf, state->gc);
+    wi_state_push_cleanup(state, &buf, wi_char_buf_cleanup);
 
     int i = 0;
 
@@ -220,7 +220,7 @@ _string_replace(struct wi_state* state, uint8_t arg_count) {
     }
 
     wi_push_lstring(state, buf.data, buf.count);
-    wi_char_buf_free(&buf);
+    wi_state_pop_cleanup(state);
 }
 
 static void
@@ -375,26 +375,14 @@ _string_each(struct wi_state* state, uint8_t arg_count) {
 }
 
 static void
-_char_buf_finalizer(void* data) {
-    struct wi_char_buf* buf = data;
-    wi_char_buf_free(buf);
-    free(buf);
-}
-
-static void
 _string_collect(struct wi_state* state, bool select) {
     int   count;
     char* string = wi_arg_string(state, 1, &count, NULL);
     wi_arg_check_function(state, 2, 1);
 
-    struct wi_char_buf* buf = (struct wi_char_buf*)malloc(sizeof(struct wi_char_buf));
-
-    if (!buf) {
-        wi_state_oom(state, "failed to allocate a string buffer (_string_collect)");
-    }
-
-    wi_char_buf_init(buf, state->gc);
-    wi_push_userdata(state, "char_buf", buf, _char_buf_finalizer);
+    struct wi_char_buf buf;
+    wi_char_buf_init(&buf, state->gc);
+    wi_state_push_cleanup(state, &buf, wi_char_buf_cleanup);
 
     for (size_t i = 0; i < (size_t)count;) {
         char     cp_buf[5];
@@ -403,11 +391,11 @@ _string_collect(struct wi_state* state, bool select) {
 
         if (!select) {
             if (!wi_value_is_falsy(result)) {
-                wi_char_buf_append(buf, cp_buf, (int)cp_len);
+                wi_char_buf_append(&buf, cp_buf, (int)cp_len);
             }
         } else if (wi_value_is_string(result)) {
             struct wi_string* box = wi_value_as_string(result);
-            wi_char_buf_append(buf, box->buf, box->count);
+            wi_char_buf_append(&buf, box->buf, box->count);
         } else {
             wi_state_error(state, "callback must return a string but got %s", wi_value_type(result));
         }
@@ -416,8 +404,8 @@ _string_collect(struct wi_state* state, bool select) {
         i += cp_len;
     }
 
-    wi_push_lstring(state, buf->data, buf->count);
-    wi_char_buf_free(buf);
+    wi_push_lstring(state, buf.data, buf.count);
+    wi_state_pop_cleanup(state);
 }
 
 static void

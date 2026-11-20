@@ -116,6 +116,8 @@ _base_try(struct wi_state* state, uint8_t arg_count) {
     bool ok = wi_pcall(state, (uint8_t)(arg_count - 1), false, &error);
 
     if (!ok) {
+        struct wi_string* box = wi_make_malloc_string(state->gc, error);
+        wi_state_ppush(state, WI_MAKE_BOX_VALUE(box));
         wi_push_null(state);
     }
 
@@ -125,9 +127,6 @@ _base_try(struct wi_state* state, uint8_t arg_count) {
 
     if (ok) {
         wi_push_null(state);
-    } else {
-        struct wi_string* box = wi_make_malloc_string(state->gc, error);
-        wi_state_ppush(state, WI_MAKE_BOX_VALUE(box));
     }
 
     wi_object_set(state, result, "error");

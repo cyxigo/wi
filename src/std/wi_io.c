@@ -239,6 +239,7 @@ static void
 _file_read_bytes(struct wi_state* state, struct _file* file, bool close) {
     int   count;
     char* content = _file_read(state, file, &count, close);
+    wi_state_push_cleanup(state, content, free);
 
     struct wi_array* result = wi_push_array(state);
     wi_value_buf_reserve(&result->items, count);
@@ -248,7 +249,7 @@ _file_read_bytes(struct wi_state* state, struct _file* file, bool close) {
     }
 
     result->items.count = count;
-    free(content);
+    wi_state_pop_cleanup(state);
 }
 
 static void

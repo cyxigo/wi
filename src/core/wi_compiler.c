@@ -915,7 +915,6 @@ _compiler_add_esc_char(struct wi_compiler* compiler, struct wi_char_buf* buf, co
             wi_char_buf_add(buf, '$');
             break;
         default:
-            wi_char_buf_free(buf);
             wi_parser_error_at_prev(compiler->parser, "invalid escape sequence \\%.*s", (int)wi_utf8_cp_len(*esc),
                                     esc);
     }
@@ -925,6 +924,7 @@ static void
 _compiler_push_string(struct wi_compiler* compiler, struct wi_token token) {
     struct wi_char_buf buf;
     wi_char_buf_init(&buf, compiler->gc);
+    wi_state_push_cleanup(compiler->state, &buf, wi_char_buf_cleanup);
     wi_char_buf_reserve(&buf, token.count);
 
     for (int i = 0; i < token.count; i++) {
@@ -936,7 +936,7 @@ _compiler_push_string(struct wi_compiler* compiler, struct wi_token token) {
     }
 
     struct wi_string* string = wi_copy_cstring(compiler->gc, buf.data, buf.count);
-    wi_char_buf_free(&buf);
+    wi_state_pop_cleanup(compiler->state);
     _compiler_emit_push(compiler, WI_MAKE_BOX_VALUE(string));
 }
 
@@ -1451,7 +1451,8 @@ _import_note_attempt(struct wi_compiler* compiler, char** atts, const char* form
 }
 
 static void
-_import_delete_attempts(char** atts) {
+_import_delete_attempts(void* data) {
+    char** atts = data;
     free(*atts);
     *atts = NULL;
 }
@@ -1462,19 +1463,17 @@ _compiler_import_script(struct wi_compiler* compiler, char* path, char** atts) {
         return false;
     }
 
-    struct wi_state* state = compiler->state;
+    /* boxed first so an error below doesn't leak path, gc will free it */
+    struct wi_state*  state = compiler->state;
+    struct wi_string* box   = wi_make_malloc_string(compiler->gc, path);
 
-    if (state->import_exists(state, path)) {
-        /* the constant below can hit the limit and error, yikes right */
-        _import_delete_attempts(atts);
-        struct wi_string* box      = wi_make_malloc_string(compiler->gc, path);
-        uint16_t          constant = _compiler_make_constant(compiler, WI_MAKE_BOX_VALUE(box));
+    if (state->import_exists(state, box->buf)) {
+        uint16_t constant = _compiler_make_constant(compiler, WI_MAKE_BOX_VALUE(box));
         _compiler_emit_opcode_short(compiler, WI_OP_IMPORT, constant);
         return true;
     }
 
-    _import_note_attempt(compiler, atts, "no script %s", path);
-    free(path);
+    _import_note_attempt(compiler, atts, "no script %s", box->buf);
     return false;
 }
 
@@ -1491,7 +1490,6 @@ _compiler_import_foreign(struct wi_compiler* compiler, char* lib_path, char** at
     wi_value          cached;
 
     if (wi_table_get(&state->imported, path_value, &cached)) {
-        _import_delete_attempts(atts);
         _compiler_emit_push(compiler, cached);
         return true;
     }
@@ -1535,9 +1533,6 @@ _compiler_import_foreign(struct wi_compiler* compiler, char* lib_path, char** at
     _module_init_fn init = sym_conv.fn;
     #endif /* _WIN32 */
 
-    /* library loaded and we do not need attempts anymore */
-    _import_delete_attempts(atts);
-
     if (!init) {
         wi_lib_close(lib);
         wi_parser_error_at_prev(compiler->parser, "library %s did not export wi_module_init", path->buf);
@@ -1575,6 +1570,7 @@ _compiler_import_expr(struct wi_compiler* compiler, bool can_assign) {
     WI_UNUSED(can_assign);
     struct wi_token name = wi_parser_expect(compiler->parser, WI_TOKEN_STRING);
     char*           atts = NULL;
+    wi_state_push_cleanup(compiler->state, &atts, _import_delete_attempts);
 
     /*
         ./file.wi
@@ -1586,7 +1582,7 @@ _compiler_import_expr(struct wi_compiler* compiler, bool can_assign) {
         _compiler_import_script(compiler, _import_script_path(compiler, name, _INIT_FILE, false), &atts) ||
         _compiler_import_script(compiler, _import_lib_path(compiler, name, ".wi"), &atts) ||
         _compiler_import_script(compiler, _import_lib_path(compiler, name, _INIT_FILE), &atts)) {
-        free(atts);
+        wi_state_pop_cleanup(compiler->state);
         return;
     }
 
@@ -1597,7 +1593,7 @@ _compiler_import_expr(struct wi_compiler* compiler, bool can_assign) {
 #if defined(_WIN32) || defined(__linux__)
     if (_compiler_import_foreign(compiler, _import_script_path(compiler, name, _LIB_EXT, true), &atts) ||
         _compiler_import_foreign(compiler, _import_lib_path(compiler, name, _LIB_EXT), &atts)) {
-        free(atts);
+        wi_state_pop_cleanup(compiler->state);
         return;
     }
 #else
@@ -1605,7 +1601,7 @@ _compiler_import_expr(struct wi_compiler* compiler, bool can_assign) {
 #endif
 
     char* error = wi_sprintf("failed to import module %.*s%s", name.count, name.start, atts);
-    free(atts);
+    wi_state_pop_cleanup(compiler->state);
 
     if (!error) {
         wi_parser_oom(compiler->parser, "failed to allocate an error message (_compiler_import_expr)");

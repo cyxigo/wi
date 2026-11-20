@@ -327,12 +327,28 @@ wi_push_object(struct wi_state* state) {
 
 void
 wi_push_userdata(struct wi_state* state, const char* name, void* userdata, wi_userdata_finalizer_fn finalizer) {
+    bool owned = userdata && finalizer;
+
+    if (owned) {
+        wi_state_push_cleanup(state, userdata, finalizer);
+    }
+
     struct wi_string* name_box = wi_make_string(state->gc, name);
     WI_GC_PUSH_ROOT(state->gc, name_box);
 
-    struct wi_userdata* box = wi_new_userdata(state->gc, name_box, userdata, finalizer);
+    /*
+        no data yet, so if anything below fails the box has nothing to finalize
+        otherwise the cleanup and the GC would both run the finalizer on it
+    */
+    struct wi_userdata* box = wi_new_userdata(state->gc, name_box, NULL, finalizer);
     wi_gc_pop_root(state->gc);
     wi_state_ppush(state, WI_MAKE_BOX_VALUE(box));
+
+    box->data = userdata;
+
+    if (owned) {
+        wi_state_drop_cleanup(state);
+    }
 }
 
 void

@@ -224,31 +224,34 @@ _array_join(struct wi_state* state, uint8_t arg_count) {
 
     struct wi_char_buf buf;
     wi_char_buf_init(&buf, state->gc);
+    wi_state_push_cleanup(state, &buf, wi_char_buf_cleanup);
 
     for (int i = 0; i < array->items.count; i++) {
         if (i > 0) {
             wi_char_buf_append(&buf, sep, sep_count);
         }
 
-        wi_value item = array->items.data[i];
-        int      item_count;
-        bool     owned;
-        char*    item_buf = wi_value_to_buf(item, &item_count, &owned);
+        int   item_count;
+        bool  owned;
+        char* item_buf = wi_value_to_buf(array->items.data[i], &item_count, &owned);
 
         if (!item_buf) {
-            wi_char_buf_free(&buf);
             wi_state_oom(state, "failed to allocate a string for join (_array_join)");
+        }
+
+        if (owned) {
+            wi_state_push_cleanup(state, item_buf, free);
         }
 
         wi_char_buf_append(&buf, item_buf, item_count);
 
         if (owned) {
-            free(item_buf);
+            wi_state_pop_cleanup(state);
         }
     }
 
     wi_push_lstring(state, buf.data, buf.count);
-    wi_char_buf_free(&buf);
+    wi_state_pop_cleanup(state);
 }
 
 static void

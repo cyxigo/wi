@@ -35,7 +35,10 @@ wi_new_box(struct wi_gc* gc, size_t size, enum wi_box_kind kind) {
 
 struct wi_string*
 wi_new_string(struct wi_gc* gc, char* buf, int count, uint32_t hash) {
+    /* the box can run out of memory before it owns buf */
+    wi_state_push_cleanup(gc->state, buf, free);
     struct wi_string* string = WI_NEW_BOX(gc, struct wi_string, WI_BOX_STRING);
+    wi_state_drop_cleanup(gc->state);
 
     string->buf   = buf;
     string->count = count;
@@ -163,7 +166,10 @@ wi_new_closure(struct wi_gc* gc, struct wi_prototype* prototype, struct wi_modul
         upvalues[i] = NULL;
     }
 
+    /* the box can run out of memory before it owns upvalues */
+    wi_state_push_cleanup(gc->state, upvalues, free);
     struct wi_closure* closure = WI_NEW_BOX(gc, struct wi_closure, WI_BOX_CLOSURE);
+    wi_state_drop_cleanup(gc->state);
 
     closure->prototype     = prototype;
     closure->upvalues      = upvalues;

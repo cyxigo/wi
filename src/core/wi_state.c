@@ -114,6 +114,10 @@ wi_new_state(wi_conf* conf) {
 
     state->recoveries = NULL;
 
+    state->cleanups         = NULL;
+    state->cleanup_capacity = 0;
+    state->cleanup_count    = 0;
+
     state->frames         = NULL;
     state->frame_capacity = 0;
 
@@ -160,6 +164,7 @@ wi_new_state(wi_conf* conf) {
 void
 wi_delete_state(struct wi_state* state) {
     free(state->frames);
+    free(state->cleanups);
     free(state->stack);
 
     wi_table_free(&state->foreign);
@@ -310,6 +315,7 @@ _state_new_recovery(struct wi_state* state, bool catch_all) {
     recovery->stack_top       = state->stack_top;
     recovery->ffi_stack       = state->ffi_stack;
     recovery->temp_root_count = state->gc->temp_root_count;
+    recovery->cleanup_count   = state->cleanup_count;
     recovery->error           = NULL;
     state->recoveries         = recovery;
 
@@ -339,6 +345,21 @@ wi_state_pop_recovery(struct wi_state* state) {
     free(recovery);
 }
 
+void
+wi_state_grow_cleanups(struct wi_state* state, void* data, wi_cleanup_fn fn) {
+    int                capacity = wi_grow_capacity(state->cleanup_capacity);
+    struct wi_cleanup* cleanups =
+        (struct wi_cleanup*)realloc(state->cleanups, sizeof(struct wi_cleanup) * (size_t)capacity);
+
+    if (WI_UNLIKELY(!cleanups)) {
+        fn(data);
+        wi_state_oom(state, "failed to allocate a cleanup (wi_state_grow_cleanups)");
+    }
+
+    state->cleanups         = cleanups;
+    state->cleanup_capacity = capacity;
+}
+
 static WI_NORETURN void
 _state_jmp(struct wi_state* state, struct wi_recovery* recovery, enum wi_run_result result) {
     /*
@@ -349,6 +370,10 @@ _state_jmp(struct wi_state* state, struct wi_recovery* recovery, enum wi_run_res
     if (!recovery->compiler && state->gc->compiler) {
         wi_delete_parser(state->gc->compiler->parser);
         wi_delete_compilers(state->gc);
+    }
+
+    while (state->cleanup_count > recovery->cleanup_count) {
+        wi_state_pop_cleanup(state);
     }
 
     _state_close_upvalues(state, recovery->stack_top);
@@ -939,18 +964,19 @@ _state_import(struct wi_state* state, wi_value path_value) {
         wi_state_error(state, "failed to load module %s", path);
     }
 
-    struct wi_module* module = wi_new_module(state->gc, path);
-    WI_GC_PUSH_ROOT(state->gc, module);
-
     /*
-        we wrap src in a box because anything below can jump out of here
+        we wrap src in a box first because anything below can jump out of here
         (oom, or the error after a failed compile)
     */
     struct wi_string* src_box = wi_make_malloc_string(state->gc, src);
     WI_GC_PUSH_ROOT(state->gc, src_box);
+
+    struct wi_module* module = wi_new_module(state->gc, path);
+    WI_GC_PUSH_ROOT(state->gc, module);
+
     struct wi_closure* closure = wi_state_compile(state, src_box->buf, module);
-    wi_gc_pop_root(state->gc); /* src_box */
     wi_gc_pop_root(state->gc); /* module */
+    wi_gc_pop_root(state->gc); /* src_box */
 
     if (!closure) {
         wi_state_error(state, "failed to compile module %s", path);

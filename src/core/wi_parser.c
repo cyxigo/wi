@@ -27,7 +27,8 @@ wi_new_parser(struct wi_lexer* lexer, struct wi_gc* gc) {
     parser->next = wi_lexer_next(parser->lexer); /* first token, wi_compile advances onto it */
     parser->last = WI_BLANK_TOKEN;
 
-    parser->c_depth = 0;
+    parser->c_depth       = 0;
+    parser->cleanup_count = gc->state->cleanup_count;
 
     return parser;
 }
@@ -145,13 +146,24 @@ _parser_error_va(struct wi_parser* parser, struct wi_token token, const char* fo
     wi_printf(state, state->error, "   --> %s:%i:%i\n", parser->lexer->path, token.line, token.col);
 }
 
+static WI_NORETURN void
+_parser_jmp(struct wi_parser* parser, enum wi_run_result result) {
+    struct wi_state* state = parser->gc->state;
+
+    while (state->cleanup_count > parser->cleanup_count) {
+        wi_state_pop_cleanup(state);
+    }
+
+    longjmp(parser->error_jmp, (int)result);
+}
+
 WI_NORETURN void
 wi_parser_error_at(struct wi_parser* parser, struct wi_token token, const char* format, ...) {
     va_list args;
     va_start(args, format);
     _parser_error_va(parser, token, format, args);
     va_end(args);
-    longjmp(parser->error_jmp, WI_RUN_ERROR);
+    _parser_jmp(parser, WI_RUN_ERROR);
 }
 
 WI_NORETURN void
@@ -160,7 +172,7 @@ wi_parser_error_at_prev(struct wi_parser* parser, const char* format, ...) {
     va_start(args, format);
     _parser_error_va(parser, parser->prev, format, args);
     va_end(args);
-    longjmp(parser->error_jmp, WI_RUN_ERROR);
+    _parser_jmp(parser, WI_RUN_ERROR);
 }
 
 WI_NORETURN void
@@ -169,7 +181,7 @@ wi_parser_error_at_curr(struct wi_parser* parser, const char* format, ...) {
     va_start(args, format);
     _parser_error_va(parser, parser->curr, format, args);
     va_end(args);
-    longjmp(parser->error_jmp, WI_RUN_ERROR);
+    _parser_jmp(parser, WI_RUN_ERROR);
 }
 
 WI_NORETURN void
@@ -180,7 +192,7 @@ wi_parser_error_limit(struct wi_parser* parser, const char* what, int limit) {
 WI_NORETURN void
 wi_parser_oom(struct wi_parser* parser, const char* what) {
     wi_state_report_oom(parser->gc->state, what);
-    longjmp(parser->error_jmp, WI_RUN_OOM);
+    _parser_jmp(parser, WI_RUN_OOM);
 }
 
 void
