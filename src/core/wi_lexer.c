@@ -531,31 +531,18 @@ _lexer_skip_whitespace(struct wi_lexer* lexer) {
     for (;;) {
         char c = _lexer_peek(lexer);
 
-        switch (c) {
-            case ' ':
-            case '\r':
-            case '\t':
-            case '\n':
-                _lexer_advance(lexer);
-                break;
-            case '%':
-                if (_lexer_check_next(lexer, '%')) {
-                    _lexer_skip_line(lexer);
-                } else if (_lexer_check_next(lexer, '*')) {
-                    struct wi_token error = _lexer_skip_block(lexer);
+        if (wi_is_space(c)) {
+            _lexer_advance(lexer);
+        } else if (c == '%' && _lexer_check_next(lexer, '%')) {
+            _lexer_skip_line(lexer);
+        } else if (c == '%' && _lexer_check_next(lexer, '*')) {
+            struct wi_token error = _lexer_skip_block(lexer);
 
-                    if (error.kind != WI_TOKEN_BLANK) {
-                        return error;
-                    }
-
-                    break;
-                } else {
-                    return WI_BLANK_TOKEN;
-                }
-
-                break;
-            default:
-                return WI_BLANK_TOKEN;
+            if (error.kind != WI_TOKEN_BLANK) {
+                return error;
+            }
+        } else {
+            return WI_BLANK_TOKEN;
         }
     }
 }
