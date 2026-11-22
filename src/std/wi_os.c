@@ -165,10 +165,15 @@ _os_system(struct wi_state* state, uint8_t arg_count) {
     char* command = wi_arg_string(state, 1, NULL, NULL);
     int   status  = wi_system(command);
 
-    /* on POSIX, system() returns a wait code instead of an exit code, we need the latter */
+    /*
+        on POSIX, system() returns a wait code instead of an exit code
+        we need the latter (128 + signal if killed)
+    */
 #ifndef _WIN32
     if (status != -1 && WIFEXITED(status)) {
         status = WEXITSTATUS(status);
+    } else if (status != -1 && WIFSIGNALED(status)) {
+        status = 128 + WTERMSIG(status);
     }
 #endif
 

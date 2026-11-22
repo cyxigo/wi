@@ -2,6 +2,7 @@
 
 ### Fixed
 
+- os::system returning the same value for a process killed by a signal as for one that exited with that code
 - std::real handling leading spaces differently per base
 - Out of memory or runtime errors leaking C resources (handles, buffers, etc.)
 
