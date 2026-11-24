@@ -1,5 +1,7 @@
 ## [Unreleased]
 
+## [9.11.1-beta] - 2026-11-24
+
 ### Fixed
 
 - os::system returning the same value for a process killed by a signal as for one that exited with that code
