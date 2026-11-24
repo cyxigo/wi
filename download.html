@@ -32,7 +32,7 @@
             <a class="button" href="https://github.com/cyxigo/wi/tree/main">Source code</a>
             <hr />
 
-            <img src="res/wi-9.11.0.png" style="max-width: 300px" />
+            <img src="res/wi-9.11.1.png" style="max-width: 300px" />
             <div class="table-scroll">
                 <table>
                     <thead>
@@ -49,7 +49,7 @@
                             <td>
                                 <a
                                     class="link"
-                                    href="https://github.com/cyxigo/wi/releases/download/v9.11.0-beta/wi-windows-x86_64.zip"
+                                    href="https://github.com/cyxigo/wi/releases/download/v9.11.1-beta/wi-windows-x86_64.zip"
                                     >Download</a
                                 >
                             </td>
@@ -60,7 +60,7 @@
                             <td>
                                 <a
                                     class="link"
-                                    href="https://github.com/cyxigo/wi/releases/download/v9.11.0-beta/wi-windows-x86.zip"
+                                    href="https://github.com/cyxigo/wi/releases/download/v9.11.1-beta/wi-windows-x86.zip"
                                     >Download</a
                                 >
                             </td>
@@ -71,7 +71,7 @@
                             <td>
                                 <a
                                     class="link"
-                                    href="https://github.com/cyxigo/wi/releases/download/v9.11.0-beta/wi-linux-x86_64.zip"
+                                    href="https://github.com/cyxigo/wi/releases/download/v9.11.1-beta/wi-linux-x86_64.zip"
                                     >Download</a
                                 >
                             </td>
@@ -82,7 +82,7 @@
                             <td>
                                 <a
                                     class="link"
-                                    href="https://github.com/cyxigo/wi/releases/download/v9.11.0-beta/wi-linux-arm64.zip"
+                                    href="https://github.com/cyxigo/wi/releases/download/v9.11.1-beta/wi-linux-arm64.zip"
                                     >Download</a
                                 >
                             </td>
@@ -92,28 +92,14 @@
             </div>
             <a class="link" href="https://github.com/cyxigo/wi/releases">Older releases</a>
 
-            <h3>Added</h3>
-            <ul>
-                <li>wi_def_builtin, WI_BUILTIN_X (API)</li>
-                <li>WI_DEPRECATED (API)</li>
-            </ul>
-
-            <h3>Changed</h3>
-            <ul>
-                <li>Calling a function that takes self with one argument too few now hints at '->'</li>
-                <li>Using '.' on a string, array or map now hints at '->'</li>
-            </ul>
-
-            <h3>Deprecated</h3>
-            <ul>
-                <li>wi_def_std and wi_def_stm (API), use wi_def_builtin</li>
-            </ul>
-
             <h3>Fixed</h3>
             <ul>
-                <li>import on Windows looking for init.wi with a forward slash (e.g. .\file/init.wi)</li>
-                <li>Ctrl+C in the REPL exiting instead of stopping the running input</li>
-                <li>io::flush not raising an error when called on files opened for reading only</li>
+                <li>
+                    os::system returning the same value for a process killed by a signal as for one that exited
+                    with that code
+                </li>
+                <li>std::real handling leading spaces differently per base</li>
+                <li>Out of memory or runtime errors leaking C resources (handles, buffers, etc.)</li>
             </ul>
         </div>
 
