@@ -934,15 +934,20 @@ _state_resolve_method(struct wi_state* state, wi_value receiver, wi_value name) 
 }
 
 WI_INLINE void
-_state_set_field(struct wi_state* state, wi_value name, wi_value target) {
+_state_set_field(struct wi_state* state, wi_value name, wi_value target, bool init) {
     if (WI_UNLIKELY(!wi_value_is_object(target))) {
         wi_state_error(state, "cannot use operator '.' on a value of type %s", wi_value_type(target));
     }
 
-    struct wi_object* object = wi_value_as_object(target);
-    wi_value          value  = wi_state_top(state);
-    /* literal black magic to just make the compiler optimize the hell out of write barriers */
-    bool is_new_key = wi_table_set(&object->fields, name, value);
+    struct wi_object* object     = wi_value_as_object(target);
+    wi_value          value      = wi_state_top(state);
+    bool              is_new_key = false;
+
+    if (init) {
+        is_new_key = wi_table_set(&object->fields, name, value);
+    } else if (WI_UNLIKELY(!wi_table_replace(&object->fields, name, value))) {
+        wi_state_error(state, "object has no field %s", wi_value_as_cstring(name));
+    }
 
     if (WI_LIKELY(!object->box.is_old)) {
         return;
@@ -1515,7 +1520,7 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
             wi_value name   = _READ_CONSTANT();
             wi_value target = wi_state_peek(state, 1);
             frame->ip       = ip;
-            _state_set_field(state, name, target);
+            _state_set_field(state, name, target, true);
 
             wi_state_drop(state);
             _DISPATCH();
@@ -1524,7 +1529,7 @@ _state_interpreter_loop(struct wi_state* state, int base_frame_count, bool drop_
             wi_value name   = _READ_CONSTANT();
             wi_value target = wi_state_peek(state, 1);
             frame->ip       = ip;
-            _state_set_field(state, name, target);
+            _state_set_field(state, name, target, false);
 
             wi_value value = wi_state_pop(state);
             wi_state_drop(state);

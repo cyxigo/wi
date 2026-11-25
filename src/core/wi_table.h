@@ -46,6 +46,8 @@ wi_table_set(struct wi_table* table, wi_value key, wi_value value);
 void
 wi_table_set_foreign(struct wi_table* table, const char* name, wi_foreign_fn fn, uint8_t arity, bool is_variadic);
 bool
+wi_table_replace(struct wi_table* table, wi_value key, wi_value value);
+bool
 wi_table_get(struct wi_table* table, wi_value key, wi_value* value);
 bool
 wi_table_delete(struct wi_table* table, wi_value key);
