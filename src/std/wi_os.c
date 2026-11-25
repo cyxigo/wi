@@ -80,14 +80,14 @@ _os_date(struct wi_state* state, uint8_t arg_count) {
     struct tm tm;
 
 #ifdef _WIN32
-    if (gmtime_s(&tm, &secs) != 0) {
-        wi_state_error(state, "date out of range: " WI_REAL_FORMAT, time_real);
-    }
+    bool ok = gmtime_s(&tm, &secs) == 0;
 #else
-    if (!gmtime_r(&secs, &tm)) {
+    bool ok = gmtime_r(&secs, &tm) != NULL;
+#endif
+
+    if (!ok) {
         wi_state_error(state, "date out of range: " WI_REAL_FORMAT, time_real);
     }
-#endif
 
     struct wi_object* result = wi_push_object(state);
     const struct {
