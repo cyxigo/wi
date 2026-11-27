@@ -3,6 +3,7 @@
 ### Changed
 
 - Assigning to a field an object doesn't have now raises an error, new fields can only be added with 'new'
+- string->compare renamed to string->less
 
 ## [9.11.1-beta] - 2026-11-24
 

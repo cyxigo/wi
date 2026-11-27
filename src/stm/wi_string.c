@@ -177,7 +177,7 @@ _string_isalnum(struct wi_state* state, uint8_t arg_count) {
 }
 
 static void
-_string_compare(struct wi_state* state, uint8_t arg_count) {
+_string_less(struct wi_state* state, uint8_t arg_count) {
     WI_UNUSED(arg_count);
     int   a_count;
     char* a = wi_arg_string(state, 1, &a_count, NULL);
@@ -457,7 +457,7 @@ wi_state_def_stm_string(struct wi_state* state) {
         {"isdigit",    _string_isdigit,    1, false},
         {"isalpha",    _string_isalpha,    1, false},
         {"isalnum",    _string_isalnum,    1, false},
-        {"compare",    _string_compare,    2, false},
+        {"less",       _string_less,       2, false},
         {"replace",    _string_replace,    3, false},
         {"split",      _string_split,      2, false},
         {"reverse",    _string_reverse,    1, false},
