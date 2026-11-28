@@ -176,7 +176,7 @@ struct wi_lexer {
     int         curr_col;
 
     /*
-        this array tracks how much there are } to end the { in string interpolation, but why?
+        this array tracks how many } are left to end the { in string interpolation, but why?
         because interpolation can include something like { "x": 10 } - suddenly, a map!
         and so we can check "does this } end string interpolation OR something else?"
     */
